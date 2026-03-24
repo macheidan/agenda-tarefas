@@ -124,7 +124,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
           <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
             Descrição
           </label>
-          <RichTextEditor value={description} onChange={setDescription} placeholder="Descreva a tarefa..." />
+          <RichTextEditor value={description} onChange={setDescription} placeholder="Descreva a tarefa..." resizable />
         </div>
 
         <div className={styles.fields}>

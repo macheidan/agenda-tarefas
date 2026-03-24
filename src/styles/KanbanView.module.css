@@ -81,7 +81,7 @@
   font-weight: 500;
   color: #1a1a1a;
   margin: 0 0 6px;
-  padding-right: 28px;
+  padding-right: 56px;
 }
 
 .cardBottom {
@@ -119,6 +119,32 @@
 
 .archiveBtn:hover {
   background: #f0f0f0;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: 8px;
+  right: 34px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.card:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  background: #fee2e2;
 }
 
 /* Recurrence group styles */

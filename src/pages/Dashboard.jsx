@@ -83,6 +83,7 @@ export default function Dashboard() {
             onUpdateStatus={handleUpdateStatus}
             onTaskClick={handleTaskClick}
             onArchive={archiveTask}
+            onDelete={deleteTask}
           />
         )}
         {activeTab === 'chat' && (

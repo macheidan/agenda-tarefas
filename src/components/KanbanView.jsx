@@ -50,7 +50,7 @@ const RECURRENCE_LABELS = {
   monthly: 'Mensal',
 };
 
-export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchive }) {
+export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchive, onDelete }) {
   const { isAdmin } = useAuth();
   const [expandedGroups, setExpandedGroups] = useState({});
 
@@ -58,7 +58,17 @@ export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchi
     if (!result.destination) return;
     const { draggableId, destination } = result;
     const newStatus = destination.droppableId;
-    onUpdateStatus(draggableId, newStatus);
+
+    // Check if it's a group drag
+    if (draggableId.startsWith('group:')) {
+      const groupId = draggableId.replace('group:', '');
+      const groupTasks = tasks.filter(
+        (t) => t.recurrenceGroup === groupId && t.recurrence !== 'once'
+      );
+      groupTasks.forEach((t) => onUpdateStatus(t.id, newStatus));
+    } else {
+      onUpdateStatus(draggableId, newStatus);
+    }
   };
 
   const toggleGroup = (groupId) => {
@@ -71,57 +81,57 @@ export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchi
   };
 
   const renderCard = (task, index, isDraggable = true) => {
-    if (!isDraggable) {
-      return (
-        <div
-          key={task.id}
-          className={styles.card}
-          onClick={() => onTaskClick(task)}
-          style={{ marginLeft: 12, borderLeft: '3px solid #ddd' }}
-        >
-          <p className={styles.cardTitle}>{task.title}</p>
+    const cardContent = (provided, snapshot) => (
+      <div
+        ref={provided?.innerRef}
+        {...(provided?.draggableProps || {})}
+        {...(provided?.dragHandleProps || {})}
+        className={`${styles.card} ${snapshot?.isDragging ? styles.dragging : ''}`}
+        onClick={() => onTaskClick(task)}
+        style={{
+          ...(provided?.draggableProps?.style || {}),
+          ...(!isDraggable ? { marginLeft: 12, borderLeft: '3px solid #ddd' } : {}),
+        }}
+      >
+        <p className={styles.cardTitle}>{task.title}</p>
+        <div className={styles.cardBottom}>
           <span className={styles.cardDate}>{task.date}</span>
-          {isAdmin && task.status === 'done' && (
-            <button
-              className={styles.archiveBtn}
-              onClick={(e) => { e.stopPropagation(); onArchive(task.id); }}
-              title="Arquivar"
-            >
-              📦
-            </button>
+          {task.finishDate && (
+            <span className={styles.cardDate}> → {task.finishDate}</span>
           )}
         </div>
+        {isAdmin && task.status === 'done' && (
+          <button
+            className={styles.archiveBtn}
+            onClick={(e) => { e.stopPropagation(); onArchive(task.id); }}
+            title="Arquivar"
+          >
+            📦
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            className={styles.deleteBtn}
+            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+            title="Excluir"
+          >
+            🗑
+          </button>
+        )}
+      </div>
+    );
+
+    if (!isDraggable) {
+      return (
+        <Draggable key={task.id} draggableId={task.id} index={index}>
+          {(provided, snapshot) => cardContent(provided, snapshot)}
+        </Draggable>
       );
     }
 
     return (
       <Draggable key={task.id} draggableId={task.id} index={index}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            {...provided.dragHandleProps}
-            className={`${styles.card} ${snapshot.isDragging ? styles.dragging : ''}`}
-            onClick={() => onTaskClick(task)}
-          >
-            <p className={styles.cardTitle}>{task.title}</p>
-            <div className={styles.cardBottom}>
-              <span className={styles.cardDate}>{task.date}</span>
-              {task.finishDate && (
-                <span className={styles.cardDate}> → {task.finishDate}</span>
-              )}
-            </div>
-            {isAdmin && task.status === 'done' && (
-              <button
-                className={styles.archiveBtn}
-                onClick={(e) => { e.stopPropagation(); onArchive(task.id); }}
-                title="Arquivar"
-              >
-                📦
-              </button>
-            )}
-          </div>
-        )}
+        {(provided, snapshot) => cardContent(provided, snapshot)}
       </Draggable>
     );
   };
@@ -159,27 +169,50 @@ export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchi
 
                       const { group } = item;
                       const isExpanded = expandedGroups[group.groupId];
+                      const groupDraggableIdx = draggableIndex++;
 
                       return (
-                        <div key={group.groupId} className={styles.groupWrapper}>
-                          <div
-                            className={styles.groupHeader}
-                            onClick={() => toggleGroup(group.groupId)}
-                          >
-                            <span className={styles.groupToggle}>
-                              {isExpanded ? '▼' : '▶'}
-                            </span>
-                            <span className={styles.groupTitle}>{group.title}</span>
-                            <span className={styles.groupBadge}>
-                              {RECURRENCE_LABELS[group.recurrence]} · {group.tasks.length}
-                            </span>
-                          </div>
-                          {isExpanded && (
-                            <div className={styles.groupTasks}>
-                              {group.tasks.map((task) => renderCard(task, null, false))}
+                        <Draggable
+                          key={`group:${group.groupId}`}
+                          draggableId={`group:${group.groupId}`}
+                          index={groupDraggableIdx}
+                        >
+                          {(groupProvided, groupSnapshot) => (
+                            <div
+                              ref={groupProvided.innerRef}
+                              {...groupProvided.draggableProps}
+                              className={`${styles.groupWrapper} ${groupSnapshot.isDragging ? styles.dragging : ''}`}
+                            >
+                              <div
+                                className={styles.groupHeader}
+                                {...groupProvided.dragHandleProps}
+                                onClick={() => toggleGroup(group.groupId)}
+                              >
+                                <span className={styles.groupToggle}>
+                                  {isExpanded ? '▼' : '▶'}
+                                </span>
+                                <span className={styles.groupTitle}>{group.title}</span>
+                                <span className={styles.groupBadge}>
+                                  {RECURRENCE_LABELS[group.recurrence]} · {group.tasks.length}
+                                </span>
+                              </div>
+                              {isExpanded && (
+                                <Droppable droppableId={`${col.id}:group:${group.groupId}`} type="GROUP_TASK">
+                                  {(innerProvided) => (
+                                    <div
+                                      ref={innerProvided.innerRef}
+                                      {...innerProvided.droppableProps}
+                                      className={styles.groupTasks}
+                                    >
+                                      {group.tasks.map((task, i) => renderCard(task, i, false))}
+                                      {innerProvided.placeholder}
+                                    </div>
+                                  )}
+                                </Droppable>
+                              )}
                             </div>
                           )}
-                        </div>
+                        </Draggable>
                       );
                     })}
                     {provided.placeholder}
