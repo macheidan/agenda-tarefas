@@ -100,15 +100,32 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
     }
   };
 
+  const hasUnsavedContent = () => {
+    if (isEditing) {
+      return title !== (task.title || '') || description !== (task.description || '');
+    }
+    return title.trim() !== '' || (description.trim() !== '' && description !== '<p></p>');
+  };
+
+  const handleClose = () => {
+    if (hasUnsavedContent()) {
+      if (window.confirm('Você tem alterações não salvas. Deseja realmente fechar?')) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
+
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === status);
 
   const recurrenceLabel =
     recurrence === 'daily' ? 'dias úteis' : recurrence === 'weekly' ? 'semanas' : 'meses';
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={handleClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeBtn} onClick={onClose}>
+        <button className={styles.closeBtn} onClick={handleClose}>
           &times;
         </button>
 
