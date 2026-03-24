@@ -3,10 +3,10 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import styles from '../styles/CalendarView.module.css';
 
-const STATUS_COLORS = {
-  not_started: '#9e9e9e',
-  in_progress: '#2196f3',
-  done: '#4caf50',
+const STATUS_CLASSES = {
+  not_started: 'event-not-started',
+  in_progress: 'event-in-progress',
+  done: 'event-done',
 };
 
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
@@ -15,13 +15,12 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       id: task.id,
       title: task.title,
       start: task.date,
-      backgroundColor: STATUS_COLORS[task.status] || '#9e9e9e',
-      borderColor: STATUS_COLORS[task.status] || '#9e9e9e',
+      backgroundColor: 'transparent',
+      borderColor: 'transparent',
+      classNames: [STATUS_CLASSES[task.status] || 'event-not-started'],
       extendedProps: { task },
     };
 
-    // If there's a finishDate, make it a multi-day event
-    // FullCalendar end date is exclusive, so add 1 day
     if (task.finishDate && task.finishDate > task.date) {
       const endDate = new Date(task.finishDate + 'T12:00:00');
       endDate.setDate(endDate.getDate() + 1);
@@ -30,6 +29,19 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
 
     return event;
   });
+
+  const renderEventContent = (eventInfo) => {
+    const task = eventInfo.event.extendedProps.task;
+    const time = task.endDate || null;
+
+    return (
+      <div className={styles.eventItem}>
+        <span className={styles.eventIcon}>📄</span>
+        <span className={styles.eventLabel}>{eventInfo.event.title}</span>
+        {time && <span className={styles.eventTime}>{time}</span>}
+      </div>
+    );
+  };
 
   return (
     <div className={styles.container}>
@@ -43,6 +55,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
           right: '',
         }}
         events={events}
+        eventContent={renderEventContent}
         dateClick={(info) => onDateClick(info.dateStr)}
         eventClick={(info) => {
           info.jsEvent.preventDefault();
