@@ -115,7 +115,7 @@ export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchi
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
             title="Excluir"
           >
-            🗑
+            <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 16, lineHeight: 1 }}>✕</span>
           </button>
         )}
       </div>

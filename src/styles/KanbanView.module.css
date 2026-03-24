@@ -118,7 +118,7 @@
 }
 
 .archiveBtn:hover {
-  background: #f0f0f0;
+  background: #f4f4f4;
 }
 
 .deleteBtn {
@@ -144,7 +144,7 @@
 }
 
 .deleteBtn:hover {
-  background: #fee2e2;
+  background: #f4f4f4;
 }
 
 /* Recurrence group styles */
