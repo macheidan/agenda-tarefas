@@ -4,7 +4,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import styles from '../styles/CalendarView.module.css';
 
 const STATUS_BG = {
-  not_started: '#e9e9e7',
+  not_started: '#f4f4f4',
   in_progress: '#dbe5f0',
   done: '#f1fae3',
 };
