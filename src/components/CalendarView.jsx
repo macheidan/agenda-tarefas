@@ -16,7 +16,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       title: task.title,
       start: task.date,
       backgroundColor: '#ffffff',
-      borderColor: STATUS_COLORS[task.status] || '#9e9e9e',
+      borderColor: '#e9e9e7',
       extendedProps: { task },
     };
 
