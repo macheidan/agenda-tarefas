@@ -13,7 +13,7 @@ const STATUS_COLORS = {
   done: '#4caf50',
 };
 
-export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onClearChat, selectedUid }) {
+export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onClearChat }) {
   const { isAdmin } = useAuth();
 
   const sorted = [...archivedTasks].sort((a, b) => b.date?.localeCompare(a.date));
@@ -26,8 +26,8 @@ export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onC
           <button
             className={styles.clearChatBtn}
             onClick={() => {
-              if (window.confirm('Limpar todo o chat deste usuário? Esta ação não pode ser desfeita.')) {
-                onClearChat(selectedUid);
+              if (window.confirm('Limpar todas as mensagens de todos os chats? Esta ação não pode ser desfeita.')) {
+                onClearChat();
               }
             }}
           >

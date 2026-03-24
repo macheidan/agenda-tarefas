@@ -23,7 +23,7 @@ export default function Dashboard() {
 
   const { tasks, archivedTasks, addTask, updateTask, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
-  const { conversations, totalUnread, sendMessage, markAsRead, clearChat } =
+  const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
     useChat(user, isAdmin);
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
@@ -99,8 +99,7 @@ export default function Dashboard() {
             archivedTasks={archivedTasks}
             onUnarchive={unarchiveTask}
             onDelete={deleteTask}
-            onClearChat={clearChat}
-            selectedUid={selectedUid}
+            onClearChat={clearAllChats}
           />
         )}
       </main>

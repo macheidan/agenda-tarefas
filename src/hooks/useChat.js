@@ -159,7 +159,18 @@ export function useChat(currentUser, isAdmin) {
     await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
   }, []);
 
+  const clearAllChats = useCallback(async () => {
+    const roomIds = Object.keys(conversations);
+    await Promise.all(
+      roomIds.map(async (roomId) => {
+        const messagesRef = collection(db, 'chats', roomId, 'messages');
+        const snapshot = await getDocs(messagesRef);
+        await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
+      })
+    );
+  }, [conversations]);
+
   const totalUnread = Object.values(unreadMap).reduce((sum, n) => sum + n, 0);
 
-  return { conversations, unreadMap, totalUnread, sendMessage, markAsRead, clearChat };
+  return { conversations, unreadMap, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats };
 }
