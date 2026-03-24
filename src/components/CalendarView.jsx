@@ -4,9 +4,9 @@ import interactionPlugin from '@fullcalendar/interaction';
 import styles from '../styles/CalendarView.module.css';
 
 const STATUS_BG = {
-  not_started: '#f4f4f4',
-  in_progress: '#dbe5f0',
-  done: '#f1fae3',
+  not_started: '#fafafa',
+  in_progress: '#eef5fd',
+  done: '#d0ffb2',
 };
 
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
@@ -17,7 +17,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       title: task.title,
       start: task.date,
       backgroundColor: bg,
-      borderColor: 'transparent',
+      borderColor: '#e8e8e8',
       extendedProps: { task },
     };
 
