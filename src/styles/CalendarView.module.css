@@ -75,6 +75,10 @@
   background: #eff6ff !important;
 }
 
+.container :global(.fc .fc-daygrid-day-number) {
+  color: #a6a6a6;
+}
+
 .container :global(.fc th) {
   font-size: 13px;
   font-weight: 500;
