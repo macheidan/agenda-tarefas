@@ -44,6 +44,11 @@
   background: #f9f9f9;
 }
 
+.container :global(.fc .fc-day-sat),
+.container :global(.fc .fc-day-sun) {
+  background: #f9f9f9;
+}
+
 .container :global(.fc .fc-event) {
   border: 1px solid #e8e8e8 !important;
   border-radius: 4px;
