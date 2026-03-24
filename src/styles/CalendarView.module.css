@@ -72,7 +72,7 @@
 }
 
 .container :global(.fc .fc-day-today) {
-  background: #eff6ff !important;
+  background: #fffbe1 !important;
 }
 
 .container :global(.fc .fc-daygrid-day-number) {
