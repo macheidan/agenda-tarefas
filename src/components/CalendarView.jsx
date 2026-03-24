@@ -3,20 +3,21 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import styles from '../styles/CalendarView.module.css';
 
-const STATUS_COLORS = {
-  not_started: '#9e9e9e',
-  in_progress: '#2196f3',
-  done: '#4caf50',
+const STATUS_BG = {
+  not_started: '#e9e9e7',
+  in_progress: '#dbe5f0',
+  done: '#f1fae3',
 };
 
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   const events = tasks.map((task) => {
+    const bg = STATUS_BG[task.status] || '#e9e9e7';
     const event = {
       id: task.id,
       title: task.title,
       start: task.date,
-      backgroundColor: '#ffffff',
-      borderColor: '#e9e9e7',
+      backgroundColor: bg,
+      borderColor: 'transparent',
       extendedProps: { task },
     };
 

@@ -45,8 +45,7 @@
 }
 
 .container :global(.fc .fc-event) {
-  background: #ffffff !important;
-  border: 1px solid #e9e9e7 !important;
+  border: none !important;
   border-radius: 4px;
   padding: 4px 8px;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
