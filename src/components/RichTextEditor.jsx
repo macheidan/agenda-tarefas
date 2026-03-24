@@ -1,14 +1,24 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import styles from '../styles/RichTextEditor.module.css';
 
 export default function RichTextEditor({ value, onChange, placeholder, resizable }) {
   const editorRef = useRef(null);
+  const internalValue = useRef(value || '');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
+
+  // Only set innerHTML when value changes externally (not from user input)
+  useEffect(() => {
+    if (editorRef.current && value !== internalValue.current) {
+      internalValue.current = value || '';
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value]);
 
   const exec = useCallback((command, val = null) => {
     document.execCommand(command, false, val);
     if (editorRef.current && onChange) {
+      internalValue.current = editorRef.current.innerHTML;
       onChange(editorRef.current.innerHTML);
     }
     editorRef.current?.focus();
@@ -16,6 +26,7 @@ export default function RichTextEditor({ value, onChange, placeholder, resizable
 
   const handleInput = () => {
     if (editorRef.current && onChange) {
+      internalValue.current = editorRef.current.innerHTML;
       onChange(editorRef.current.innerHTML);
     }
   };
@@ -154,7 +165,6 @@ export default function RichTextEditor({ value, onChange, placeholder, resizable
         className={`${styles.editor} ${resizable ? styles.resizable : ''}`}
         contentEditable
         suppressContentEditableWarning
-        dangerouslySetInnerHTML={{ __html: value || '' }}
         onInput={handleInput}
         onClick={() => { setShowColorPicker(false); setShowHighlightPicker(false); }}
         data-placeholder={placeholder || 'Descreva a tarefa...'}
