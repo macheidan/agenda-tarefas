@@ -6,7 +6,7 @@
 }
 
 .container :global(.fc) {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .container :global(.fc .fc-toolbar-title) {
@@ -44,53 +44,30 @@
   background: #f9f9f9;
 }
 
-/* Event list container - each day cell acts as the list container */
-.container :global(.fc .fc-daygrid-day-events) {
-  padding: 0;
-  margin: 0;
-}
-
-/* Base event styles - list item look */
 .container :global(.fc .fc-event) {
   background: #ffffff;
-  border: none;
-  border-bottom: 1px solid #eeeeee;
-  border-radius: 0;
-  padding: 0;
-  margin: 0;
+  border: 1px solid #f4f4f4;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
   cursor: pointer;
   transition: background 0.15s;
-  border-left: 2px solid #e0e0e0;
 }
 
 .container :global(.fc .fc-event:hover) {
   background: #f4f4f4;
 }
 
+.container :global(.fc .fc-event .fc-event-title) {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
 .container :global(.fc .fc-event .fc-event-main) {
-  padding: 0;
-  color: #222;
-}
-
-/* Status-based left border colors */
-.container :global(.fc .fc-event.event-not-started) {
-  border-left-color: #e0e0e0;
-}
-
-.container :global(.fc .fc-event.event-in-progress) {
-  border-left-color: #90caf9;
-}
-
-.container :global(.fc .fc-event.event-in-progress:hover) {
-  background: #e3f2fd;
-}
-
-.container :global(.fc .fc-event.event-done) {
-  border-left-color: #a5d6a7;
-}
-
-.container :global(.fc .fc-event.event-done:hover) {
-  background: #e8f5e9;
+  color: #1a1a1a;
 }
 
 .container :global(.fc .fc-day-today) {
@@ -103,37 +80,4 @@
   color: #888;
   text-transform: uppercase;
   padding: 8px 0;
-}
-
-/* Custom event item layout */
-.eventItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  gap: 8px;
-  width: 100%;
-  line-height: 1.4;
-}
-
-.eventIcon {
-  font-size: 14px;
-  color: #aaa;
-  flex-shrink: 0;
-}
-
-.eventLabel {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 400;
-  color: #222;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.eventTime {
-  font-size: 14px;
-  color: #888;
-  flex-shrink: 0;
 }
