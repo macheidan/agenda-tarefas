@@ -1,7 +1,15 @@
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/Header.module.css';
 
-export default function Header({ activeTab, onTabChange, onNewTask, users, selectedUid, onSelectUser }) {
+export default function Header({
+  activeTab,
+  onTabChange,
+  onNewTask,
+  users,
+  selectedUid,
+  onSelectUser,
+  totalUnread,
+}) {
   const { user, logout, isAdmin } = useAuth();
 
   return (
@@ -25,6 +33,14 @@ export default function Header({ activeTab, onTabChange, onNewTask, users, selec
                 ))}
             </select>
           )}
+          {isAdmin && (
+            <button
+              className={`${styles.archivedBtn} ${activeTab === 'archived' ? styles.archivedActive : ''}`}
+              onClick={() => onTabChange('archived')}
+            >
+              Arquivados
+            </button>
+          )}
           <img className={styles.avatar} src={user.photoURL} alt={user.displayName} />
           <span className={styles.userName}>{user.displayName}</span>
           <button className={styles.logoutBtn} onClick={logout}>
@@ -46,6 +62,13 @@ export default function Header({ activeTab, onTabChange, onNewTask, users, selec
             onClick={() => onTabChange('kanban')}
           >
             Kanban
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'chat' ? styles.active : ''}`}
+            onClick={() => onTabChange('chat')}
+          >
+            Chat
+            {totalUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
           </button>
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>

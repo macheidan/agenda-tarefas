@@ -2,11 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{uid} {
-      allow read, write: if request.auth.uid == uid
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == uid
         || request.auth.token.email == "ADMIN_EMAIL_PLACEHOLDER";
     }
     match /tasks/{uid}/items/{taskId} {
       allow read, write: if request.auth.uid == uid
+        || request.auth.token.email == "ADMIN_EMAIL_PLACEHOLDER";
+    }
+    match /chats/{roomId}/messages/{messageId} {
+      allow read, write: if request.auth.uid == roomId
         || request.auth.token.email == "ADMIN_EMAIL_PLACEHOLDER";
     }
   }

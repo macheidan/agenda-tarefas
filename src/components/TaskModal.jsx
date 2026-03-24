@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import RichTextEditor from './RichTextEditor';
 import styles from '../styles/TaskModal.module.css';
 
 const STATUS_OPTIONS = [
@@ -11,7 +12,7 @@ const STATUS_OPTIONS = [
 
 const RECURRENCE_OPTIONS = [
   { value: 'once', label: 'Uma Vez' },
-  { value: 'daily', label: 'Diária' },
+  { value: 'daily', label: 'Diária (dias úteis)' },
   { value: 'weekly', label: 'Semanal' },
   { value: 'monthly', label: 'Mensal' },
 ];
@@ -21,7 +22,9 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
   const isEditing = !!task;
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
+  const [finishDate, setFinishDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [recurrence, setRecurrence] = useState('once');
   const [recurrenceCount, setRecurrenceCount] = useState(2);
@@ -33,7 +36,9 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
   useEffect(() => {
     if (task) {
       setTitle(task.title || '');
+      setDescription(task.description || '');
       setDate(task.date || '');
+      setFinishDate(task.finishDate || '');
       setEndDate(task.endDate || '');
       setRecurrence(task.recurrence || 'once');
       setStatus(task.status || 'not_started');
@@ -49,7 +54,9 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
     if (isEditing) {
       onUpdate(task.id, {
         title: title.trim(),
+        description,
         date,
+        finishDate: finishDate || null,
         endDate: endDate || null,
         recurrence,
         status,
@@ -58,7 +65,9 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
     } else {
       onSave({
         title: title.trim(),
+        description,
         date,
+        finishDate: finishDate || null,
         endDate: endDate || null,
         recurrence,
         recurrenceCount: recurrence !== 'once' ? recurrenceCount : 1,
@@ -94,7 +103,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === status);
 
   const recurrenceLabel =
-    recurrence === 'daily' ? 'dias' : recurrence === 'weekly' ? 'semanas' : 'meses';
+    recurrence === 'daily' ? 'dias úteis' : recurrence === 'weekly' ? 'semanas' : 'meses';
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -111,10 +120,22 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
           onChange={(e) => setTitle(e.target.value)}
         />
 
+        <div className={styles.field} style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
+            Descrição
+          </label>
+          <RichTextEditor value={description} onChange={setDescription} placeholder="Descreva a tarefa..." />
+        </div>
+
         <div className={styles.fields}>
           <div className={styles.field}>
-            <label>Data</label>
+            <label>Data de início</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+
+          <div className={styles.field}>
+            <label>Data de término (opcional)</label>
+            <input type="date" value={finishDate} onChange={(e) => setFinishDate(e.target.value)} />
           </div>
 
           <div className={styles.field}>

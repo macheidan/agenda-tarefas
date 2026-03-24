@@ -10,14 +10,26 @@ const STATUS_COLORS = {
 };
 
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
-  const events = tasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    date: task.date,
-    backgroundColor: STATUS_COLORS[task.status] || '#9e9e9e',
-    borderColor: STATUS_COLORS[task.status] || '#9e9e9e',
-    extendedProps: { task },
-  }));
+  const events = tasks.map((task) => {
+    const event = {
+      id: task.id,
+      title: task.title,
+      start: task.date,
+      backgroundColor: STATUS_COLORS[task.status] || '#9e9e9e',
+      borderColor: STATUS_COLORS[task.status] || '#9e9e9e',
+      extendedProps: { task },
+    };
+
+    // If there's a finishDate, make it a multi-day event
+    // FullCalendar end date is exclusive, so add 1 day
+    if (task.finishDate && task.finishDate > task.date) {
+      const endDate = new Date(task.finishDate + 'T12:00:00');
+      endDate.setDate(endDate.getDate() + 1);
+      event.end = endDate.toISOString().split('T')[0];
+    }
+
+    return event;
+  });
 
   return (
     <div className={styles.container}>
@@ -37,7 +49,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
           onTaskClick(info.event.extendedProps.task);
         }}
         height="auto"
-        dayMaxEvents={3}
+        dayMaxEvents={false}
         buttonText={{
           today: 'Hoje',
         }}

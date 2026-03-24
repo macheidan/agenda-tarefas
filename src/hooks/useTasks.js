@@ -10,13 +10,27 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
+function isWeekday(date) {
+  const day = date.getDay();
+  return day !== 0 && day !== 6;
+}
+
+function nextWeekday(date) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + 1);
+  while (!isWeekday(d)) {
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
+}
+
 export function useTasks(uid) {
-  const [tasks, setTasks] = useState([]);
+  const [allTasks, setAllTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!uid) {
-      setTasks([]);
+      setAllTasks([]);
       setLoading(false);
       return;
     }
@@ -24,38 +38,43 @@ export function useTasks(uid) {
     const colRef = collection(db, 'tasks', uid, 'items');
     const unsubscribe = onSnapshot(colRef, (snapshot) => {
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setTasks(items);
+      setAllTasks(items);
       setLoading(false);
     });
 
     return unsubscribe;
   }, [uid]);
 
+  const tasks = allTasks.filter((t) => !t.archived);
+  const archivedTasks = allTasks.filter((t) => t.archived);
+
   const addTask = async (taskData, currentUser) => {
     const colRef = collection(db, 'tasks', uid, 'items');
 
     if (taskData.recurrence !== 'once' && taskData.recurrenceCount > 1) {
       const groupId = crypto.randomUUID();
-      const baseDate = new Date(taskData.date);
+      const baseDate = new Date(taskData.date + 'T12:00:00');
       const docs = [];
 
-      for (let i = 0; i < taskData.recurrenceCount; i++) {
-        const occurrenceDate = new Date(baseDate);
-        if (taskData.recurrence === 'daily') occurrenceDate.setDate(baseDate.getDate() + i);
-        else if (taskData.recurrence === 'weekly') occurrenceDate.setDate(baseDate.getDate() + i * 7);
-        else if (taskData.recurrence === 'monthly') occurrenceDate.setMonth(baseDate.getMonth() + i);
-
-        docs.push({
-          title: taskData.title,
-          date: occurrenceDate.toISOString().split('T')[0],
-          endDate: taskData.endDate || null,
-          recurrence: taskData.recurrence,
-          recurrenceGroup: groupId,
-          status: 'not_started',
-          comments: [],
-          createdAt: Timestamp.now(),
-          createdBy: currentUser.uid,
-        });
+      if (taskData.recurrence === 'daily') {
+        let current = new Date(baseDate);
+        if (!isWeekday(current)) {
+          current = nextWeekday(current);
+        }
+        for (let i = 0; i < taskData.recurrenceCount; i++) {
+          docs.push(buildTaskDoc(taskData, current, groupId, currentUser));
+          current = nextWeekday(current);
+        }
+      } else {
+        for (let i = 0; i < taskData.recurrenceCount; i++) {
+          const occurrenceDate = new Date(baseDate);
+          if (taskData.recurrence === 'weekly') {
+            occurrenceDate.setDate(baseDate.getDate() + i * 7);
+          } else if (taskData.recurrence === 'monthly') {
+            occurrenceDate.setMonth(baseDate.getMonth() + i);
+          }
+          docs.push(buildTaskDoc(taskData, occurrenceDate, groupId, currentUser));
+        }
       }
 
       return Promise.all(docs.map((d) => addDoc(colRef, d)));
@@ -63,16 +82,36 @@ export function useTasks(uid) {
 
     return addDoc(colRef, {
       title: taskData.title,
+      description: taskData.description || '',
       date: taskData.date,
+      finishDate: taskData.finishDate || null,
       endDate: taskData.endDate || null,
       recurrence: taskData.recurrence || 'once',
       recurrenceGroup: null,
       status: 'not_started',
+      archived: false,
       comments: [],
       createdAt: Timestamp.now(),
       createdBy: currentUser.uid,
     });
   };
+
+  function buildTaskDoc(taskData, date, groupId, currentUser) {
+    return {
+      title: taskData.title,
+      description: taskData.description || '',
+      date: date.toISOString().split('T')[0],
+      finishDate: taskData.finishDate || null,
+      endDate: taskData.endDate || null,
+      recurrence: taskData.recurrence,
+      recurrenceGroup: groupId,
+      status: 'not_started',
+      archived: false,
+      comments: [],
+      createdAt: Timestamp.now(),
+      createdBy: currentUser.uid,
+    };
+  }
 
   const updateTask = async (taskId, updates) => {
     const taskRef = doc(db, 'tasks', uid, 'items', taskId);
@@ -84,5 +123,15 @@ export function useTasks(uid) {
     return deleteDoc(taskRef);
   };
 
-  return { tasks, loading, addTask, updateTask, deleteTask };
+  const archiveTask = async (taskId) => {
+    const taskRef = doc(db, 'tasks', uid, 'items', taskId);
+    return updateDoc(taskRef, { archived: true });
+  };
+
+  const unarchiveTask = async (taskId) => {
+    const taskRef = doc(db, 'tasks', uid, 'items', taskId);
+    return updateDoc(taskRef, { archived: false });
+  };
+
+  return { tasks, archivedTasks, loading, addTask, updateTask, deleteTask, archiveTask, unarchiveTask };
 }
