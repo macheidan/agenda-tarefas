@@ -45,8 +45,9 @@
 }
 
 .container :global(.fc .fc-event) {
-  background: #ffffff;
-  border: 1px solid #f4f4f4;
+  background: #ffffff !important;
+  border-width: 1px;
+  border-style: solid;
   border-radius: 4px;
   padding: 4px 8px;
   font-family: 'Roboto', sans-serif;
@@ -58,7 +59,7 @@
 }
 
 .container :global(.fc .fc-event:hover) {
-  background: #f4f4f4;
+  background: #f4f4f4 !important;
 }
 
 .container :global(.fc .fc-event .fc-event-title) {
