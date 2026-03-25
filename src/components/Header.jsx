@@ -9,6 +9,7 @@ export default function Header({
   selectedUid,
   onSelectUser,
   totalUnread,
+  ideasEnabled,
 }) {
   const { user, logout, isAdmin } = useAuth();
 
@@ -41,6 +42,14 @@ export default function Header({
               Arquivados
             </button>
           )}
+          {isAdmin && (
+            <button
+              className={`${styles.archivedBtn} ${activeTab === 'settings' ? styles.archivedActive : ''}`}
+              onClick={() => onTabChange('settings')}
+            >
+              Configuração
+            </button>
+          )}
           <img className={styles.avatar} src={user.photoURL} alt={user.displayName} />
           <span className={styles.userName}>{user.displayName}</span>
           <button className={styles.logoutBtn} onClick={logout}>
@@ -70,6 +79,14 @@ export default function Header({
             Chat
             {totalUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
           </button>
+          {ideasEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'ideas' ? styles.active : ''}`}
+              onClick={() => onTabChange('ideas')}
+            >
+              Ideias
+            </button>
+          )}
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>
           + Nova

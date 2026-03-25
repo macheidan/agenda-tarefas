@@ -3,11 +3,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../hooks/useTasks';
 import { useUsers } from '../hooks/useUsers';
 import { useChat } from '../hooks/useChat';
+import { useSettings } from '../hooks/useSettings';
 import Header from '../components/Header';
 import CalendarView from '../components/CalendarView';
 import KanbanView from '../components/KanbanView';
 import ArchivedView from '../components/ArchivedView';
 import ChatView from '../components/ChatView';
+import SettingsView from '../components/SettingsView';
+import IdeasView from '../components/IdeasView';
 import TaskModal from '../components/TaskModal';
 import styles from '../styles/Dashboard.module.css';
 
@@ -25,9 +28,12 @@ export default function Dashboard() {
     useTasks(selectedUid);
   const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
     useChat(user, isAdmin);
+  const { settings } = useSettings(user.uid);
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
   const viewingUser = users.find((u) => u.uid === selectedUid);
+
+  const ideasEnabled = isAdmin || settings.ideasEnabled;
 
   const handleDateClick = (dateStr) => {
     setEditingTask(null);
@@ -61,6 +67,7 @@ export default function Dashboard() {
         selectedUid={selectedUid}
         onSelectUser={setSelectedUid}
         totalUnread={totalUnread}
+        ideasEnabled={ideasEnabled}
       />
 
       {viewingOther && viewingUser && (
@@ -94,6 +101,7 @@ export default function Dashboard() {
             onMarkAsRead={markAsRead}
           />
         )}
+        {activeTab === 'ideas' && ideasEnabled && <IdeasView />}
         {activeTab === 'archived' && isAdmin && (
           <ArchivedView
             archivedTasks={archivedTasks}
@@ -102,6 +110,7 @@ export default function Dashboard() {
             onClearChat={clearAllChats}
           />
         )}
+        {activeTab === 'settings' && isAdmin && <SettingsView />}
       </main>
 
       {modalOpen && (
