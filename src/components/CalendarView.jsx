@@ -10,8 +10,12 @@ const STATUS_BG = {
 };
 
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
+  const today = new Date().toISOString().split('T')[0];
+
   const events = tasks.map((task) => {
-    const bg = STATUS_BG[task.status] || '#e9e9e7';
+    const isOverdue =
+      task.status !== 'done' && task.finishDate && task.finishDate < today;
+    const bg = isOverdue ? '#fff0f0' : (STATUS_BG[task.status] || '#e9e9e7');
     const event = {
       id: task.id,
       title: task.title,
