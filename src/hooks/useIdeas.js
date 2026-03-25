@@ -25,6 +25,19 @@ export function useIdeas(targetUid, currentUser) {
     const unsub = onSnapshot(q, (snapshot) => {
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       setIdeas(items);
+    }, (error) => {
+      console.error('Firestore ideas query error:', error);
+      // Fallback: query without orderBy if composite index is missing
+      const fallbackQ = query(ideasRef, where('targetUid', '==', targetUid));
+      onSnapshot(fallbackQ, (snapshot) => {
+        const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        items.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+        setIdeas(items);
+      });
     });
 
     return unsub;
