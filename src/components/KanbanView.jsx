@@ -9,7 +9,13 @@ const COLUMNS = [
   { id: 'done', title: 'Concluído', color: '#4caf50' },
 ];
 
-function groupByRecurrence(tasks) {
+const RECURRENCE_LABELS = {
+  daily: 'Diária',
+  weekly: 'Semanal',
+  monthly: 'Mensal',
+};
+
+function buildColumnItems(tasks) {
   const singles = [];
   const groups = {};
 
@@ -25,30 +31,45 @@ function groupByRecurrence(tasks) {
       }
       groups[task.recurrenceGroup].tasks.push(task);
     } else {
-      singles.push({ type: 'single', task });
+      singles.push(task);
     }
   });
 
-  const result = [...singles];
-  Object.values(groups).forEach((group) => {
-    group.tasks.sort((a, b) => a.date.localeCompare(b.date));
-    result.push({ type: 'group', group });
+  // Sort group tasks by date
+  Object.values(groups).forEach((g) => {
+    g.tasks.sort((a, b) => a.date.localeCompare(b.date));
   });
 
-  result.sort((a, b) => {
-    const dateA = a.type === 'single' ? a.task.date : a.group.tasks[0]?.date || '';
-    const dateB = b.type === 'single' ? b.task.date : b.group.tasks[0]?.date || '';
-    return dateA.localeCompare(dateB);
+  // Build flat list of draggable items with group headers interleaved
+  const items = [];
+  const usedGroups = new Set();
+
+  // Combine singles and first task of each group, sort by date
+  const allEntries = [
+    ...singles.map((t) => ({ sortDate: t.date, type: 'single', task: t })),
+    ...Object.values(groups).map((g) => ({
+      sortDate: g.tasks[0]?.date || '',
+      type: 'group',
+      group: g,
+    })),
+  ];
+  allEntries.sort((a, b) => a.sortDate.localeCompare(b.sortDate));
+
+  allEntries.forEach((entry) => {
+    if (entry.type === 'single') {
+      items.push({ kind: 'task', task: entry.task, inGroup: false });
+    } else {
+      const g = entry.group;
+      items.push({ kind: 'groupHeader', group: g });
+      // Group tasks will be rendered conditionally when expanded
+      g.tasks.forEach((t) => {
+        items.push({ kind: 'task', task: t, inGroup: true, groupId: g.groupId });
+      });
+    }
   });
 
-  return result;
+  return items;
 }
-
-const RECURRENCE_LABELS = {
-  daily: 'Diária',
-  weekly: 'Semanal',
-  monthly: 'Mensal',
-};
 
 export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchive, onDelete }) {
   const { isAdmin } = useAuth();
@@ -58,101 +79,27 @@ export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchi
     if (!result.destination) return;
     const { draggableId, destination } = result;
     const newStatus = destination.droppableId;
-
-    // Check if it's a group drag
-    if (draggableId.startsWith('group:')) {
-      const groupId = draggableId.replace('group:', '');
-      const groupTasks = tasks.filter(
-        (t) => t.recurrenceGroup === groupId && t.recurrence !== 'once'
-      );
-      groupTasks.forEach((t) => onUpdateStatus(t.id, newStatus));
-    } else {
-      onUpdateStatus(draggableId, newStatus);
-    }
+    onUpdateStatus(draggableId, newStatus);
   };
 
   const toggleGroup = (groupId) => {
     setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
   };
 
-  const getColumnItems = (columnId) => {
-    const colTasks = tasks.filter((t) => t.status === columnId);
-    return groupByRecurrence(colTasks);
-  };
-
-  const renderCard = (task, index, isDraggable = true) => {
-    const cardContent = (provided, snapshot) => (
-      <div
-        ref={provided?.innerRef}
-        {...(provided?.draggableProps || {})}
-        {...(provided?.dragHandleProps || {})}
-        className={`${styles.card} ${snapshot?.isDragging ? styles.dragging : ''}`}
-        onClick={() => onTaskClick(task)}
-        style={{
-          ...(provided?.draggableProps?.style || {}),
-          ...(!isDraggable ? { marginLeft: 12, borderLeft: '3px solid #ddd' } : {}),
-        }}
-      >
-        <p className={styles.cardTitle}>{task.title}</p>
-        <div className={styles.cardBottom}>
-          <span className={styles.cardDate}>{task.date}</span>
-          {task.finishDate && (
-            <span className={styles.cardDate}> → {task.finishDate}</span>
-          )}
-        </div>
-        {isAdmin && task.status === 'done' && (
-          <button
-            className={styles.archiveBtn}
-            onClick={(e) => { e.stopPropagation(); onArchive(task.id); }}
-            title="Arquivar"
-          >
-            📦
-          </button>
-        )}
-        {isAdmin && (
-          <button
-            className={styles.deleteBtn}
-            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-            title="Excluir"
-          >
-            <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 16, lineHeight: 1 }}>✕</span>
-          </button>
-        )}
-      </div>
-    );
-
-    if (!isDraggable) {
-      return (
-        <Draggable key={task.id} draggableId={task.id} index={index}>
-          {(provided, snapshot) => cardContent(provided, snapshot)}
-        </Draggable>
-      );
-    }
-
-    return (
-      <Draggable key={task.id} draggableId={task.id} index={index}>
-        {(provided, snapshot) => cardContent(provided, snapshot)}
-      </Draggable>
-    );
-  };
-
-  let draggableIndex = 0;
-
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className={styles.board}>
         {COLUMNS.map((col) => {
-          const items = getColumnItems(col.id);
-          draggableIndex = 0;
+          const colTasks = tasks.filter((t) => t.status === col.id);
+          const items = buildColumnItems(colTasks);
+          let draggableIndex = 0;
 
           return (
             <div key={col.id} className={styles.column}>
               <div className={styles.columnHeader} style={{ borderTopColor: col.color }}>
                 <span className={styles.columnDot} style={{ background: col.color }} />
                 <h3>{col.title}</h3>
-                <span className={styles.count}>
-                  {tasks.filter((t) => t.status === col.id).length}
-                </span>
+                <span className={styles.count}>{colTasks.length}</span>
               </div>
               <Droppable droppableId={col.id}>
                 {(provided, snapshot) => (
@@ -162,53 +109,69 @@ export default function KanbanView({ tasks, onUpdateStatus, onTaskClick, onArchi
                     className={`${styles.columnBody} ${snapshot.isDraggingOver ? styles.dragOver : ''}`}
                   >
                     {items.map((item) => {
-                      if (item.type === 'single') {
-                        const idx = draggableIndex++;
-                        return renderCard(item.task, idx, true);
+                      if (item.kind === 'groupHeader') {
+                        const g = item.group;
+                        const isExpanded = expandedGroups[g.groupId];
+                        return (
+                          <div
+                            key={`gh:${g.groupId}`}
+                            className={styles.groupHeader}
+                            onClick={() => toggleGroup(g.groupId)}
+                          >
+                            <span className={styles.groupToggle}>
+                              {isExpanded ? '▼' : '▶'}
+                            </span>
+                            <span className={styles.groupTitle}>{g.title}</span>
+                            <span className={styles.groupBadge}>
+                              {RECURRENCE_LABELS[g.recurrence]} · {g.tasks.length}
+                            </span>
+                          </div>
+                        );
                       }
 
-                      const { group } = item;
-                      const isExpanded = expandedGroups[group.groupId];
-                      const groupDraggableIdx = draggableIndex++;
+                      // task item
+                      const { task, inGroup, groupId } = item;
+                      if (inGroup && !expandedGroups[groupId]) return null;
 
+                      const idx = draggableIndex++;
                       return (
-                        <Draggable
-                          key={`group:${group.groupId}`}
-                          draggableId={`group:${group.groupId}`}
-                          index={groupDraggableIdx}
-                        >
-                          {(groupProvided, groupSnapshot) => (
+                        <Draggable key={task.id} draggableId={task.id} index={idx}>
+                          {(dragProvided, dragSnapshot) => (
                             <div
-                              ref={groupProvided.innerRef}
-                              {...groupProvided.draggableProps}
-                              className={`${styles.groupWrapper} ${groupSnapshot.isDragging ? styles.dragging : ''}`}
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...dragProvided.dragHandleProps}
+                              className={`${styles.card} ${dragSnapshot.isDragging ? styles.dragging : ''}`}
+                              onClick={() => onTaskClick(task)}
+                              style={{
+                                ...dragProvided.draggableProps.style,
+                                ...(inGroup ? { marginLeft: 12, borderLeft: '3px solid #ddd' } : {}),
+                              }}
                             >
-                              <div
-                                className={styles.groupHeader}
-                                {...groupProvided.dragHandleProps}
-                                onClick={() => toggleGroup(group.groupId)}
-                              >
-                                <span className={styles.groupToggle}>
-                                  {isExpanded ? '▼' : '▶'}
-                                </span>
-                                <span className={styles.groupTitle}>{group.title}</span>
-                                <span className={styles.groupBadge}>
-                                  {RECURRENCE_LABELS[group.recurrence]} · {group.tasks.length}
-                                </span>
+                              <p className={styles.cardTitle}>{task.title}</p>
+                              <div className={styles.cardBottom}>
+                                <span className={styles.cardDate}>{task.date}</span>
+                                {task.finishDate && (
+                                  <span className={styles.cardDate}> → {task.finishDate}</span>
+                                )}
                               </div>
-                              {isExpanded && (
-                                <Droppable droppableId={`${col.id}:group:${group.groupId}`} type="GROUP_TASK">
-                                  {(innerProvided) => (
-                                    <div
-                                      ref={innerProvided.innerRef}
-                                      {...innerProvided.droppableProps}
-                                      className={styles.groupTasks}
-                                    >
-                                      {group.tasks.map((task, i) => renderCard(task, i, false))}
-                                      {innerProvided.placeholder}
-                                    </div>
-                                  )}
-                                </Droppable>
+                              {isAdmin && task.status === 'done' && (
+                                <button
+                                  className={styles.archiveBtn}
+                                  onClick={(e) => { e.stopPropagation(); onArchive(task.id); }}
+                                  title="Arquivar"
+                                >
+                                  📦
+                                </button>
+                              )}
+                              {isAdmin && (
+                                <button
+                                  className={styles.deleteBtn}
+                                  onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+                                  title="Excluir"
+                                >
+                                  <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 16, lineHeight: 1 }}>✕</span>
+                                </button>
                               )}
                             </div>
                           )}
