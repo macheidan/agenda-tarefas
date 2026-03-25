@@ -104,6 +104,20 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+.cardUnread {
+  border-left: 3px solid #2563eb;
+  background: #f8faff;
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .cardHeader {
   padding: 14px 16px;
   cursor: pointer;
@@ -251,6 +265,22 @@
 .commentDate {
   font-size: 11px;
   color: #999;
+}
+
+.deleteCommentBtn {
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: #ccc;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+  margin-left: auto;
+  transition: color 0.15s;
+}
+
+.deleteCommentBtn:hover {
+  color: #ef4444;
 }
 
 .commentText {

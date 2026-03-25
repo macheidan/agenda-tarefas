@@ -5,11 +5,11 @@ import { useUsers } from '../hooks/useUsers';
 import { useChat } from '../hooks/useChat';
 import { useSettings } from '../hooks/useSettings';
 import { useTaskAlarm } from '../hooks/useTaskAlarm';
+import { useIdeas } from '../hooks/useIdeas';
 import Header from '../components/Header';
 import CalendarView from '../components/CalendarView';
 import KanbanView from '../components/KanbanView';
 import ArchivedView from '../components/ArchivedView';
-import ChatView from '../components/ChatView';
 import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
 import TaskModal from '../components/TaskModal';
@@ -32,10 +32,13 @@ export default function Dashboard() {
   const { settings } = useSettings(user.uid);
   useTaskAlarm(tasks);
 
+  const ideasEnabled = isAdmin || settings.ideasEnabled;
+  const ideasTargetUid = selectedUid;
+  const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
+    useIdeas(ideasTargetUid, user);
+
   const viewingOther = isAdmin && selectedUid !== user.uid;
   const viewingUser = users.find((u) => u.uid === selectedUid);
-
-  const ideasEnabled = isAdmin || settings.ideasEnabled;
 
   const handleDateClick = (dateStr) => {
     setEditingTask(null);
@@ -68,8 +71,8 @@ export default function Dashboard() {
         users={users}
         selectedUid={selectedUid}
         onSelectUser={setSelectedUid}
-        totalUnread={totalUnread}
         ideasEnabled={ideasEnabled}
+        ideasUnread={ideasUnread}
       />
 
       {viewingOther && viewingUser && (
@@ -95,15 +98,16 @@ export default function Dashboard() {
             onDelete={deleteTask}
           />
         )}
-        {activeTab === 'chat' && (
-          <ChatView
-            users={users}
-            conversations={conversations}
-            onSendMessage={sendMessage}
-            onMarkAsRead={markAsRead}
+        {activeTab === 'ideas' && ideasEnabled && (
+          <IdeasView
+            ideas={ideas}
+            addIdea={addIdea}
+            addComment={addComment}
+            deleteComment={deleteComment}
+            deleteIdea={deleteIdea}
+            markAsRead={markIdeaAsRead}
           />
         )}
-        {activeTab === 'ideas' && ideasEnabled && <IdeasView />}
         {activeTab === 'archived' && isAdmin && (
           <ArchivedView
             archivedTasks={archivedTasks}

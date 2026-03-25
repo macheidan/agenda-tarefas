@@ -8,8 +8,8 @@ export default function Header({
   users,
   selectedUid,
   onSelectUser,
-  totalUnread,
   ideasEnabled,
+  ideasUnread,
 }) {
   const { user, logout, isAdmin } = useAuth();
 
@@ -72,19 +72,13 @@ export default function Header({
           >
             Kanban
           </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'chat' ? styles.active : ''}`}
-            onClick={() => onTabChange('chat')}
-          >
-            Chat
-            {totalUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
-          </button>
           {ideasEnabled && (
             <button
               className={`${styles.tab} ${activeTab === 'ideas' ? styles.active : ''}`}
               onClick={() => onTabChange('ideas')}
             >
               Ideias
+              {ideasUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
             </button>
           )}
         </div>

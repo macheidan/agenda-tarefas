@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useIdeas } from '../hooks/useIdeas';
 import RichTextEditor from './RichTextEditor';
 import styles from '../styles/IdeasView.module.css';
 
-export default function IdeasView() {
+export default function IdeasView({ ideas, addIdea, addComment, deleteComment, deleteIdea, markAsRead }) {
   const { user, isAdmin } = useAuth();
-  const { ideas, addIdea, addComment, deleteIdea } = useIdeas();
 
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -35,6 +33,14 @@ export default function IdeasView() {
     addComment(ideaId, comments, replyText, user, parentIdx);
     setReplyText('');
     setReplyTo(null);
+  };
+
+  const handleExpand = (ideaId) => {
+    const isExpanding = expandedIdea !== ideaId;
+    setExpandedIdea(isExpanding ? ideaId : null);
+    if (isExpanding) {
+      markAsRead(ideaId);
+    }
   };
 
   const formatDate = (ts) => {
@@ -98,10 +104,11 @@ export default function IdeasView() {
         {ideas.map((idea) => {
           const isExpanded = expandedIdea === idea.id;
           const topComments = getTopLevelComments(idea.comments || []);
+          const isUnread = !idea.readBy?.includes(user.uid);
 
           return (
-            <div key={idea.id} className={styles.card}>
-              <div className={styles.cardHeader} onClick={() => setExpandedIdea(isExpanded ? null : idea.id)}>
+            <div key={idea.id} className={`${styles.card} ${isUnread ? styles.cardUnread : ''}`}>
+              <div className={styles.cardHeader} onClick={() => handleExpand(idea.id)}>
                 <div className={styles.authorRow}>
                   <img
                     className={styles.authorAvatar}
@@ -112,6 +119,7 @@ export default function IdeasView() {
                     <span className={styles.authorName}>{idea.authorName}</span>
                     <span className={styles.date}>{formatDate(idea.createdAt)}</span>
                   </div>
+                  {isUnread && <span className={styles.unreadDot} />}
                 </div>
                 <div className={styles.cardTitleRow}>
                   <h3 className={styles.cardTitle}>{idea.title}</h3>
@@ -130,7 +138,7 @@ export default function IdeasView() {
                     />
                   )}
 
-                  {(isAdmin || idea.authorUid === user.uid) && (
+                  {isAdmin && (
                     <button
                       className={styles.deleteBtn}
                       onClick={() => {
@@ -165,6 +173,18 @@ export default function IdeasView() {
                               <div className={styles.commentMeta}>
                                 <span className={styles.commentAuthor}>{comment.authorName}</span>
                                 <span className={styles.commentDate}>{formatDate(comment.createdAt)}</span>
+                                {isAdmin && (
+                                  <button
+                                    className={styles.deleteCommentBtn}
+                                    onClick={() => {
+                                      if (window.confirm('Excluir este comentário?')) {
+                                        deleteComment(idea.id, idea.comments, comment._index);
+                                      }
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                )}
                               </div>
                               <div
                                 className={styles.commentText}
@@ -190,6 +210,18 @@ export default function IdeasView() {
                                 <div className={styles.commentMeta}>
                                   <span className={styles.commentAuthor}>{reply.authorName}</span>
                                   <span className={styles.commentDate}>{formatDate(reply.createdAt)}</span>
+                                  {isAdmin && (
+                                    <button
+                                      className={styles.deleteCommentBtn}
+                                      onClick={() => {
+                                        if (window.confirm('Excluir esta resposta?')) {
+                                          deleteComment(idea.id, idea.comments, reply._index);
+                                        }
+                                      }}
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
                                 </div>
                                 <div
                                   className={styles.commentText}
