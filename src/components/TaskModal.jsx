@@ -117,7 +117,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
     }
   };
 
-  const currentStatus = STATUS_OPTIONS.find((s) => s.value === status);
+  const currentStatus = STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
 
   const recurrenceLabel =
     recurrence === 'daily' ? 'dias úteis' : recurrence === 'weekly' ? 'semanas' : 'meses';
