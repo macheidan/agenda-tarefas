@@ -4,6 +4,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useUsers } from '../hooks/useUsers';
 import { useChat } from '../hooks/useChat';
 import { useSettings } from '../hooks/useSettings';
+import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import Header from '../components/Header';
 import CalendarView from '../components/CalendarView';
 import KanbanView from '../components/KanbanView';
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
     useChat(user, isAdmin);
   const { settings } = useSettings(user.uid);
+  useTaskAlarm(tasks);
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
   const viewingUser = users.find((u) => u.uid === selectedUid);
