@@ -27,7 +27,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
   const [finishDate, setFinishDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [recurrence, setRecurrence] = useState('once');
-  const [recurrenceCount, setRecurrenceCount] = useState(2);
+  const [recurrenceCount, setRecurrenceCount] = useState('');
   const [status, setStatus] = useState('not_started');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [comments, setComments] = useState([]);
@@ -70,7 +70,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
         finishDate: finishDate || null,
         endDate: endDate || null,
         recurrence,
-        recurrenceCount: recurrence !== 'once' ? recurrenceCount : 1,
+        recurrenceCount: recurrence !== 'once' ? (recurrenceCount || 2) : 1,
       });
     }
     onClose();
@@ -173,13 +173,14 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
 
           {recurrence !== 'once' && !isEditing && (
             <div className={styles.field}>
-              <label>Repetir por {recurrenceCount} {recurrenceLabel}</label>
+              <label>Repetir por {recurrenceCount || ''} {recurrenceLabel}</label>
               <input
                 type="number"
                 min="2"
                 max="365"
                 value={recurrenceCount}
-                onChange={(e) => setRecurrenceCount(parseInt(e.target.value) || 2)}
+                onChange={(e) => setRecurrenceCount(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
+                placeholder="Quantidade"
               />
             </div>
           )}
