@@ -2,14 +2,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUsers } from '../hooks/useUsers';
 import { useSettings } from '../hooks/useSettings';
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import styles from '../styles/SettingsView.module.css';
 
 export default function SettingsView() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const users = useUsers();
   const [userSettings, setUserSettings] = useState({});
+  const [removedUsers, setRemovedUsers] = useState(new Set());
 
   // Admin loads settings for all users
   useEffect(() => {
@@ -35,6 +36,15 @@ export default function SettingsView() {
     }));
   };
 
+  const removeUser = async (uid) => {
+    if (!window.confirm('Excluir o acesso deste usuário? Ele será removido da lista.')) return;
+    await deleteDoc(doc(db, 'users', uid));
+    await deleteDoc(doc(db, 'settings', uid));
+    setRemovedUsers((prev) => new Set(prev).add(uid));
+  };
+
+  const visibleUsers = users.filter((u) => u.uid !== user.uid && !removedUsers.has(u.uid));
+
   if (!isAdmin) {
     return (
       <div className={styles.container}>
@@ -53,7 +63,7 @@ export default function SettingsView() {
         <p className={styles.sectionDesc}>Ative ou desative o menu Ideias para cada usuário.</p>
 
         <div className={styles.userList}>
-          {users.map((u) => {
+          {visibleUsers.map((u) => {
             const s = userSettings[u.uid] || {};
             return (
               <div key={u.uid} className={styles.userRow}>
@@ -74,6 +84,33 @@ export default function SettingsView() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h3>Gerenciar Usuários</h3>
+        <p className={styles.sectionDesc}>Remova o acesso de usuários da plataforma.</p>
+
+        <div className={styles.userList}>
+          {visibleUsers.map((u) => (
+            <div key={u.uid} className={styles.userRow}>
+              <img
+                className={styles.userAvatar}
+                src={u.photoURL || 'https://via.placeholder.com/32'}
+                alt={u.displayName || u.email}
+              />
+              <span className={styles.userName}>{u.displayName || u.email}</span>
+              <button
+                className={styles.removeBtn}
+                onClick={() => removeUser(u.uid)}
+              >
+                Excluir acesso
+              </button>
+            </div>
+          ))}
+          {visibleUsers.length === 0 && (
+            <p className={styles.noAccess}>Nenhum usuário cadastrado.</p>
+          )}
         </div>
       </div>
     </div>
