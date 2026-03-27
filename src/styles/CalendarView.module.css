@@ -1,8 +1,8 @@
 .container {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px var(--shadow);
 }
 
 .container :global(.fc) {
@@ -12,14 +12,14 @@
 .container :global(.fc .fc-toolbar-title) {
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   text-transform: capitalize;
 }
 
 .container :global(.fc .fc-button) {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  color: #1a1a1a;
+  background: var(--card);
+  border: 1px solid var(--input-border);
+  color: var(--text);
   font-size: 13px;
   padding: 6px 12px;
   border-radius: 6px;
@@ -27,13 +27,13 @@
 }
 
 .container :global(.fc .fc-button:hover) {
-  background: #f5f5f5;
+  background: var(--card-hover);
 }
 
 .container :global(.fc .fc-button-active) {
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
-  border-color: #2563eb;
+  border-color: var(--accent);
 }
 
 .container :global(.fc .fc-daygrid-day) {
@@ -41,16 +41,16 @@
 }
 
 .container :global(.fc .fc-daygrid-day:hover) {
-  background: #f9f9f9;
+  background: var(--card-hover);
 }
 
 .container :global(.fc .fc-day-sat),
 .container :global(.fc .fc-day-sun) {
-  background: #f9f9f9;
+  background: var(--bg-secondary);
 }
 
 .container :global(.fc .fc-event) {
-  border: 1px solid #e8e8e8 !important;
+  border: 1px solid var(--border) !important;
   border-radius: 4px;
   margin-bottom: 3px;
   padding: 4px 8px;
@@ -58,36 +58,36 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.5;
-  color: #37352f;
+  color: var(--text);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .container :global(.fc .fc-event:hover) {
-  background: #f0f0f0 !important;
+  background: var(--card-hover) !important;
 }
 
 .container :global(.fc .fc-event .fc-event-title) {
-  color: #1a1a1a;
+  color: var(--text);
   font-weight: 700;
 }
 
 .container :global(.fc .fc-event .fc-event-main) {
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .container :global(.fc .fc-day-today) {
-  background: #fffdf4 !important;
+  background: var(--today-bg) !important;
 }
 
 .container :global(.fc .fc-daygrid-day-number) {
-  color: #a6a6a6;
+  color: var(--text-muted);
 }
 
 .container :global(.fc th) {
   font-size: 13px;
   font-weight: 500;
-  color: #888;
+  color: var(--text-muted);
   text-transform: uppercase;
   padding: 8px 0;
 }

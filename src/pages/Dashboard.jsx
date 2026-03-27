@@ -6,12 +6,14 @@ import { useChat } from '../hooks/useChat';
 import { useSettings } from '../hooks/useSettings';
 import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
+import { useTheme } from '../hooks/useTheme';
 import Header from '../components/Header';
 import CalendarView from '../components/CalendarView';
 import KanbanView from '../components/KanbanView';
 import ArchivedView from '../components/ArchivedView';
 import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
+import ThemeView from '../components/ThemeView';
 import TaskModal from '../components/TaskModal';
 import styles from '../styles/Dashboard.module.css';
 
@@ -31,6 +33,7 @@ export default function Dashboard() {
     useChat(user, isAdmin);
   const { settings } = useSettings(user.uid);
   useTaskAlarm(tasks);
+  const { theme, changeTheme } = useTheme(user.uid);
 
   const ideasEnabled = isAdmin || settings.ideasEnabled;
   const ideasTargetUid = selectedUid;
@@ -117,6 +120,9 @@ export default function Dashboard() {
           />
         )}
         {activeTab === 'settings' && isAdmin && <SettingsView />}
+        {activeTab === 'themes' && (
+          <ThemeView currentTheme={theme} onChangeTheme={changeTheme} />
+        )}
       </main>
 
       {modalOpen && (

@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,7 +10,7 @@
 }
 
 .modal {
-  background: #ffffff;
+  background: var(--modal-bg);
   border-radius: 12px;
   padding: 32px;
   max-width: 520px;
@@ -18,7 +18,7 @@
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px var(--shadow-hover);
 }
 
 .closeBtn {
@@ -28,7 +28,7 @@
   border: none;
   background: none;
   font-size: 24px;
-  color: #888;
+  color: var(--text-muted);
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -39,8 +39,8 @@
 }
 
 .closeBtn:hover {
-  background: #f0f0f0;
-  color: #1a1a1a;
+  background: var(--card-hover);
+  color: var(--text);
 }
 
 .titleInput {
@@ -48,14 +48,15 @@
   border: none;
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
+  background: transparent;
   outline: none;
   padding: 0;
   margin-bottom: 24px;
 }
 
 .titleInput::placeholder {
-  color: #ccc;
+  color: var(--text-muted);
 }
 
 .fields {
@@ -74,24 +75,24 @@
 .field label {
   font-size: 13px;
   font-weight: 500;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .field input,
 .field select {
   padding: 8px 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 14px;
-  color: #1a1a1a;
-  background: #fff;
+  color: var(--text);
+  background: var(--input-bg);
   outline: none;
   transition: border-color 0.15s;
 }
 
 .field input:focus,
 .field select:focus {
-  border-color: #2563eb;
+  border-color: var(--input-focus);
 }
 
 .statusWrapper {
@@ -120,11 +121,11 @@
   top: 100%;
   left: 0;
   margin-top: 4px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--modal-bg);
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-hover);
   z-index: 10;
 }
 
@@ -137,12 +138,13 @@
   border: none;
   background: none;
   font-size: 13px;
+  color: var(--text);
   cursor: pointer;
   border-radius: 6px;
 }
 
 .statusOption:hover {
-  background: #f5f5f5;
+  background: var(--card-hover);
 }
 
 .statusDot {
@@ -152,7 +154,7 @@
 }
 
 .commentsSection {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-light);
   padding-top: 20px;
   margin-bottom: 24px;
 }
@@ -160,7 +162,7 @@
 .commentsSection h3 {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   margin-bottom: 12px;
 }
 
@@ -192,18 +194,18 @@
 .commentAuthor {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .commentText {
   font-size: 13px;
-  color: #4a4a4a;
+  color: var(--text-secondary);
   margin: 2px 0;
 }
 
 .commentTime {
   font-size: 11px;
-  color: #aaa;
+  color: var(--text-muted);
 }
 
 .commentInput {
@@ -214,21 +216,23 @@
 .commentInput input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 13px;
+  color: var(--text);
+  background: var(--input-bg);
   outline: none;
 }
 
 .commentInput input:focus {
-  border-color: #2563eb;
+  border-color: var(--input-focus);
 }
 
 .commentInput button {
   padding: 8px 16px;
   border: none;
   border-radius: 6px;
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
   font-size: 13px;
   font-weight: 500;
@@ -236,7 +240,7 @@
 }
 
 .commentInput button:hover {
-  background: #1d4ed8;
+  background: var(--accent-hover);
 }
 
 .actions {
@@ -249,7 +253,7 @@
   padding: 10px;
   border: none;
   border-radius: 8px;
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
@@ -258,15 +262,15 @@
 }
 
 .saveBtn:hover {
-  background: #1d4ed8;
+  background: var(--accent-hover);
 }
 
 .deleteBtn {
   padding: 10px 20px;
-  border: 1px solid #ef4444;
+  border: 1px solid var(--danger);
   border-radius: 8px;
-  background: #fff;
-  color: #ef4444;
+  background: var(--card);
+  color: var(--danger);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -274,7 +278,7 @@
 }
 
 .deleteBtn:hover {
-  background: #fef2f2;
+  background: var(--danger-bg);
 }
 
 @media (max-width: 640px) {

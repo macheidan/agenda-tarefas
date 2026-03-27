@@ -1,7 +1,7 @@
 .container {
-  background: #fff;
+  background: var(--card);
   border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px var(--shadow);
   padding: 24px;
 }
 
@@ -15,14 +15,14 @@
 .header h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .newBtn {
   padding: 8px 16px;
   border: none;
   border-radius: 6px;
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
@@ -31,13 +31,12 @@
 }
 
 .newBtn:hover {
-  background: #1d4ed8;
+  background: var(--accent-hover);
 }
 
-/* Form */
 .form {
-  background: #f9fafb;
-  border: 1px solid #e8e8e8;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 20px;
@@ -49,24 +48,26 @@
 .titleInput {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 15px;
   font-weight: 500;
+  color: var(--text);
+  background: var(--input-bg);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
 }
 
 .titleInput:focus {
-  border-color: #2563eb;
+  border-color: var(--input-focus);
 }
 
 .submitBtn {
   padding: 8px 20px;
   border: none;
   border-radius: 6px;
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
@@ -76,17 +77,16 @@
 }
 
 .submitBtn:hover {
-  background: #1d4ed8;
+  background: var(--accent-hover);
 }
 
 .empty {
   text-align: center;
-  color: #888;
+  color: var(--text-muted);
   font-size: 14px;
   padding: 40px 0;
 }
 
-/* Ideas list */
 .list {
   display: flex;
   flex-direction: column;
@@ -94,26 +94,26 @@
 }
 
 .card {
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   transition: box-shadow 0.15s;
 }
 
 .card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .cardUnread {
-  border-left: 3px solid #2563eb;
-  background: #f8faff;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
 }
 
 .unreadDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--accent);
   flex-shrink: 0;
   margin-left: auto;
 }
@@ -141,13 +141,13 @@
 .authorName {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   display: block;
 }
 
 .date {
   font-size: 11px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .cardTitleRow {
@@ -160,25 +160,24 @@
 .cardTitle {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   margin: 0;
 }
 
 .commentCount {
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
-/* Card body (expanded) */
 .cardBody {
   padding: 0 16px 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-light);
 }
 
 .description {
   font-size: 14px;
-  color: #333;
+  color: var(--text-secondary);
   line-height: 1.6;
   padding: 12px 0;
 }
@@ -189,10 +188,10 @@
 
 .deleteBtn {
   padding: 4px 12px;
-  border: 1px solid #ef4444;
+  border: 1px solid var(--danger);
   border-radius: 4px;
   background: none;
-  color: #ef4444;
+  color: var(--danger);
   font-size: 12px;
   cursor: pointer;
   margin-bottom: 12px;
@@ -200,10 +199,9 @@
 }
 
 .deleteBtn:hover {
-  background: #fef2f2;
+  background: var(--danger-bg);
 }
 
-/* Comments */
 .comments {
   margin-top: 12px;
 }
@@ -211,13 +209,13 @@
 .comments h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   margin-bottom: 10px;
 }
 
 .noComments {
   font-size: 13px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .commentThread {
@@ -232,7 +230,7 @@
 
 .reply {
   margin-left: 42px;
-  border-left: 2px solid #e8e8e8;
+  border-left: 2px solid var(--border);
   padding-left: 12px;
 }
 
@@ -259,19 +257,19 @@
 .commentAuthor {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .commentDate {
   font-size: 11px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .deleteCommentBtn {
   padding: 0 4px;
   border: none;
   background: none;
-  color: #ccc;
+  color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
   line-height: 1;
@@ -280,12 +278,12 @@
 }
 
 .deleteCommentBtn:hover {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .commentText {
   font-size: 14px;
-  color: #333;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -297,7 +295,7 @@
   padding: 2px 0;
   border: none;
   background: none;
-  color: #2563eb;
+  color: var(--accent);
   font-size: 12px;
   cursor: pointer;
   margin-top: 4px;
@@ -318,7 +316,7 @@
 .commentForm {
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 8px;

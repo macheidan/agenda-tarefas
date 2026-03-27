@@ -1,7 +1,7 @@
 .container {
-  background: #fff;
+  background: var(--card);
   border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px var(--shadow);
   padding: 24px;
   max-width: 600px;
   margin: 0 auto;
@@ -10,12 +10,12 @@
 .container h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text);
   margin-bottom: 20px;
 }
 
 .noAccess {
-  color: #888;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -26,13 +26,13 @@
 .section h3 {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   margin-bottom: 4px;
 }
 
 .sectionDesc {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 16px;
 }
 
@@ -47,9 +47,9 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  background: #fafafa;
+  background: var(--bg-secondary);
 }
 
 .userAvatar {
@@ -63,7 +63,7 @@
   flex: 1;
   font-size: 14px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 /* Toggle switch */
@@ -83,7 +83,7 @@
 .slider {
   position: absolute;
   inset: 0;
-  background: #ccc;
+  background: var(--text-muted);
   border-radius: 12px;
   cursor: pointer;
   transition: background 0.2s;
@@ -102,7 +102,7 @@
 }
 
 .toggle input:checked + .slider {
-  background: #2563eb;
+  background: var(--accent);
 }
 
 .toggle input:checked + .slider::before {
@@ -111,10 +111,10 @@
 
 .removeBtn {
   padding: 6px 12px;
-  border: 1px solid #ef4444;
+  border: 1px solid var(--danger);
   border-radius: 6px;
   background: none;
-  color: #ef4444;
+  color: var(--danger);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -123,6 +123,6 @@
 }
 
 .removeBtn:hover {
-  background: #ef4444;
+  background: var(--danger);
   color: #fff;
 }
