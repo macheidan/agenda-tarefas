@@ -139,13 +139,12 @@
 
 /* Events: flat text, no card/background */
 .container :global(.fc .fc-daygrid-event-harness) {
-  margin: 0 4px;
+  margin: 0 4px 3px;
 }
 
 .container :global(.fc .fc-event) {
   border: none !important;
-  border-radius: 3px;
-  background: none !important;
+  border-radius: 4px;
   margin-bottom: 0;
   padding: 1px 6px;
   font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -157,10 +156,33 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  transition: background 0.15s;
 }
 
 .container :global(.fc .fc-event:hover) {
-  background: rgba(0, 0, 0, 0.03) !important;
+  filter: brightness(1.08);
+}
+
+/* Status-based event colors */
+.container :global(.fc .fc-event.fc-event--done) {
+  background: rgba(76, 175, 80, 0.12) !important;
+}
+.container :global(.fc .fc-event.fc-event--done:hover) {
+  background: rgba(76, 175, 80, 0.22) !important;
+}
+
+.container :global(.fc .fc-event.fc-event--in-progress) {
+  background: rgba(35, 131, 226, 0.12) !important;
+}
+.container :global(.fc .fc-event.fc-event--in-progress:hover) {
+  background: rgba(35, 131, 226, 0.22) !important;
+}
+
+.container :global(.fc .fc-event.fc-event--overdue) {
+  background: rgba(235, 87, 87, 0.12) !important;
+}
+.container :global(.fc .fc-event.fc-event--overdue:hover) {
+  background: rgba(235, 87, 87, 0.22) !important;
 }
 
 .container :global(.fc .fc-event .fc-event-title) {
@@ -179,11 +201,19 @@
   text-overflow: ellipsis;
 }
 
-/* Multi-day events */
+/* Multi-day events - border-left matches status */
 .container :global(.fc .fc-event.fc-h-event) {
-  background: rgba(35, 131, 226, 0.14) !important;
-  border-left: 3px solid rgb(35, 131, 226) !important;
+  border-left: 3px solid rgba(0, 0, 0, 0.15) !important;
   border-radius: 0;
+}
+.container :global(.fc .fc-event.fc-h-event.fc-event--done) {
+  border-left-color: rgb(76, 175, 80) !important;
+}
+.container :global(.fc .fc-event.fc-h-event.fc-event--in-progress) {
+  border-left-color: rgb(35, 131, 226) !important;
+}
+.container :global(.fc .fc-event.fc-h-event.fc-event--overdue) {
+  border-left-color: rgb(235, 87, 87) !important;
 }
 
 /* Day grid event dots for timed events */

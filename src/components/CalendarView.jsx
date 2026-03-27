@@ -9,13 +9,33 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   const events = tasks.map((task) => {
     const isOverdue =
       task.status !== 'done' && task.finishDate && task.finishDate < today;
+
+    let backgroundColor = 'transparent';
+    let textColor = undefined;
+    let classNames = [];
+
+    if (isOverdue) {
+      backgroundColor = 'rgba(235, 87, 87, 0.12)';
+      textColor = '#eb5757';
+      classNames = ['fc-event--overdue'];
+    } else if (task.status === 'done') {
+      backgroundColor = 'rgba(76, 175, 80, 0.12)';
+      textColor = '#2e7d32';
+      classNames = ['fc-event--done'];
+    } else if (task.status === 'in-progress') {
+      backgroundColor = 'rgba(35, 131, 226, 0.12)';
+      textColor = '#2383e2';
+      classNames = ['fc-event--in-progress'];
+    }
+
     const event = {
       id: task.id,
       title: task.title,
       start: task.date,
-      backgroundColor: 'transparent',
+      backgroundColor,
       borderColor: 'transparent',
-      textColor: isOverdue ? '#eb5757' : undefined,
+      textColor,
+      classNames,
       extendedProps: { task },
     };
 
