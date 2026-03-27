@@ -13,7 +13,7 @@ const STATUS_COLORS = {
   done: '#4caf50',
 };
 
-export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onClearChat, adminMessages }) {
+export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onClearChat, adminMessages, onDeleteMessage }) {
   const { isAdmin } = useAuth();
 
   const sorted = [...archivedTasks].sort((a, b) => b.date?.localeCompare(a.date));
@@ -49,7 +49,19 @@ export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onC
             {adminMessages.map((msg) => (
               <div key={msg.id} className={styles.messageCard}>
                 <p className={styles.messageText}>{msg.text}</p>
-                <span className={styles.messageDate}>{formatDate(msg.createdAt)}</span>
+                <div className={styles.messageActions}>
+                  <span className={styles.messageDate}>{formatDate(msg.createdAt)}</span>
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={() => {
+                      if (window.confirm('Excluir esta mensagem?')) {
+                        onDeleteMessage(msg.id);
+                      }
+                    }}
+                  >
+                    Excluir
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   collection,
   addDoc,
+  deleteDoc,
   onSnapshot,
   doc,
   updateDoc,
@@ -57,5 +58,9 @@ export function useAdminMessages(user) {
     );
   };
 
-  return { messages, sendMessage, markAsRead, getUnreadForUser };
+  const deleteMessage = async (messageId) => {
+    await deleteDoc(doc(db, 'adminMessages', messageId));
+  };
+
+  return { messages, sendMessage, markAsRead, getUnreadForUser, deleteMessage };
 }

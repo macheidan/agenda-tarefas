@@ -40,7 +40,7 @@ export default function Dashboard() {
     useChat(user, isAdmin);
   const { settings } = useSettings(user.uid);
   useTaskAlarm(tasks);
-  const { messages: adminMessages, sendMessage: sendAdminMessage, markAsRead: markMessageRead, getUnreadForUser } =
+  const { messages: adminMessages, sendMessage: sendAdminMessage, markAsRead: markMessageRead, getUnreadForUser, deleteMessage: deleteAdminMessage } =
     useAdminMessages(user);
   const unreadMessage = getUnreadForUser(user.uid);
 
@@ -137,6 +137,7 @@ export default function Dashboard() {
             onDelete={deleteTask}
             onClearChat={clearAllChats}
             adminMessages={adminMessages}
+            onDeleteMessage={deleteAdminMessage}
           />
         )}
         {activeTab === 'settings' && isAdmin && <SettingsView />}
