@@ -3,30 +3,22 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import styles from '../styles/CalendarView.module.css';
 
-const STATUS_BG = {
-  not_started: '#fafafa',
-  in_progress: '#eef5fd',
-  done: '#d0ffb2',
-};
-
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   const today = new Date().toISOString().split('T')[0];
 
   const events = tasks.map((task) => {
     const isOverdue =
       task.status !== 'done' && task.finishDate && task.finishDate < today;
-    const bg = isOverdue ? '#fff0f0' : (STATUS_BG[task.status] || '#e9e9e7');
     const event = {
       id: task.id,
       title: task.title,
       start: task.date,
-      backgroundColor: bg,
-      borderColor: '#e8e8e8',
+      backgroundColor: 'transparent',
+      borderColor: 'transparent',
+      textColor: isOverdue ? '#eb5757' : undefined,
       extendedProps: { task },
     };
 
-    // If there's a finishDate, make it a multi-day event
-    // FullCalendar end date is exclusive, so add 1 day
     if (task.finishDate && task.finishDate > task.date) {
       const endDate = new Date(task.finishDate + 'T12:00:00');
       endDate.setDate(endDate.getDate() + 1);
@@ -43,9 +35,9 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
         initialView="dayGridMonth"
         locale="pt-br"
         headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: '',
+          left: 'title',
+          center: '',
+          right: 'prev,next today',
         }}
         events={events}
         dateClick={(info) => onDateClick(info.dateStr)}
@@ -58,6 +50,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
         buttonText={{
           today: 'Hoje',
         }}
+        fixedWeekCount={false}
       />
     </div>
   );
