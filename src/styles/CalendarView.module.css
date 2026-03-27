@@ -172,10 +172,10 @@
 }
 
 .container :global(.fc .fc-event.fc-event--in-progress) {
-  background: none !important;
+  background: rgba(35, 131, 226, 0.14) !important;
 }
 .container :global(.fc .fc-event.fc-event--in-progress:hover) {
-  background: rgba(0, 0, 0, 0.03) !important;
+  background: rgba(35, 131, 226, 0.24) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--overdue) {
