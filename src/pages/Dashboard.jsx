@@ -44,7 +44,7 @@ export default function Dashboard() {
     useAdminMessages(user);
   const unreadMessage = getUnreadForUser(user.uid);
 
-  const { notes, addNote, updateNote, deleteNote } = useNotes(user.uid);
+  const { notes, addNote, updateNote, deleteNote } = useNotes(selectedUid);
 
   const ideasEnabled = isAdmin || settings.ideasEnabled;
   const ideasTargetUid = selectedUid;
