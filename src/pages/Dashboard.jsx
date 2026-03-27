@@ -7,7 +7,10 @@ import { useSettings } from '../hooks/useSettings';
 import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
 import { useAdminMessages } from '../hooks/useAdminMessages';
+import { useNotes } from '../hooks/useNotes';
 import Header from '../components/Header';
+import NotesView from '../components/NotesView';
+import NoteModal from '../components/NoteModal';
 import AdminMessageModal from '../components/AdminMessageModal';
 import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
@@ -28,6 +31,8 @@ export default function Dashboard() {
   const [editingTask, setEditingTask] = useState(null);
   const [initialDate, setInitialDate] = useState(null);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState(null);
 
   const { tasks, archivedTasks, addTask, updateTask, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
@@ -35,9 +40,11 @@ export default function Dashboard() {
     useChat(user, isAdmin);
   const { settings } = useSettings(user.uid);
   useTaskAlarm(tasks);
-  const { sendMessage: sendAdminMessage, markAsRead: markMessageRead, getUnreadForUser } =
+  const { messages: adminMessages, sendMessage: sendAdminMessage, markAsRead: markMessageRead, getUnreadForUser } =
     useAdminMessages(user);
   const unreadMessage = getUnreadForUser(user.uid);
+
+  const { notes, addNote, updateNote, deleteNote } = useNotes(user.uid);
 
   const ideasEnabled = isAdmin || settings.ideasEnabled;
   const ideasTargetUid = selectedUid;
@@ -116,12 +123,20 @@ export default function Dashboard() {
             markAsRead={markIdeaAsRead}
           />
         )}
+        {activeTab === 'notes' && (
+          <NotesView
+            notes={notes}
+            onNewNote={() => { setEditingNote(null); setNoteModalOpen(true); }}
+            onNoteClick={(note) => { setEditingNote(note); setNoteModalOpen(true); }}
+          />
+        )}
         {activeTab === 'archived' && isAdmin && (
           <ArchivedView
             archivedTasks={archivedTasks}
             onUnarchive={unarchiveTask}
             onDelete={deleteTask}
             onClearChat={clearAllChats}
+            adminMessages={adminMessages}
           />
         )}
         {activeTab === 'settings' && isAdmin && <SettingsView />}
@@ -135,6 +150,16 @@ export default function Dashboard() {
           onUpdate={updateTask}
           onDelete={deleteTask}
           onClose={() => setModalOpen(false)}
+        />
+      )}
+
+      {noteModalOpen && (
+        <NoteModal
+          note={editingNote}
+          onSave={addNote}
+          onUpdate={updateNote}
+          onDelete={deleteNote}
+          onClose={() => setNoteModalOpen(false)}
         />
       )}
 

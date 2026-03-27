@@ -13,10 +13,16 @@ const STATUS_COLORS = {
   done: '#4caf50',
 };
 
-export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onClearChat }) {
+export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onClearChat, adminMessages }) {
   const { isAdmin } = useAuth();
 
   const sorted = [...archivedTasks].sort((a, b) => b.date?.localeCompare(a.date));
+
+  const formatDate = (timestamp) => {
+    if (!timestamp?.seconds) return '';
+    const d = new Date(timestamp.seconds * 1000);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className={styles.container}>
@@ -35,6 +41,20 @@ export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onC
           </button>
         )}
       </div>
+
+      {isAdmin && adminMessages && adminMessages.length > 0 && (
+        <div className={styles.messagesSection}>
+          <h3 className={styles.sectionTitle}>Mensagens Enviadas</h3>
+          <div className={styles.list}>
+            {adminMessages.map((msg) => (
+              <div key={msg.id} className={styles.messageCard}>
+                <p className={styles.messageText}>{msg.text}</p>
+                <span className={styles.messageDate}>{formatDate(msg.createdAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {sorted.length === 0 ? (
         <div className={styles.empty}>

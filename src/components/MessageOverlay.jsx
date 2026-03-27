@@ -20,7 +20,7 @@ export default function MessageOverlay({ message, onDismiss }) {
               checked={checked}
               onChange={(e) => setChecked(e.target.checked)}
             />
-            Li e entendi a mensagem
+            Lido
           </label>
           <button
             className={styles.closeBtn}

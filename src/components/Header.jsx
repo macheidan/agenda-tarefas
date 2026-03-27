@@ -90,6 +90,12 @@ export default function Header({
               {ideasUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
             </button>
           )}
+          <button
+            className={`${styles.tab} ${activeTab === 'notes' ? styles.active : ''}`}
+            onClick={() => onTabChange('notes')}
+          >
+            Anotações
+          </button>
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>
           + Nova

@@ -1,0 +1,86 @@
+.container {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.newBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.newBtn:hover {
+  background: var(--accent-hover);
+}
+
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px var(--shadow);
+  border-color: var(--accent);
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.cardContent {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-height: 80px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.cardContent a {
+  color: var(--accent);
+}
+
+.cardDate {
+  font-size: 11px;
+  color: var(--text-muted);
+}
