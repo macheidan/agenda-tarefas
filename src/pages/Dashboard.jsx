@@ -6,7 +6,10 @@ import { useChat } from '../hooks/useChat';
 import { useSettings } from '../hooks/useSettings';
 import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
+import { useAdminMessages } from '../hooks/useAdminMessages';
 import Header from '../components/Header';
+import AdminMessageModal from '../components/AdminMessageModal';
+import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
 import KanbanView from '../components/KanbanView';
 import ArchivedView from '../components/ArchivedView';
@@ -24,6 +27,7 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [initialDate, setInitialDate] = useState(null);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
 
   const { tasks, archivedTasks, addTask, updateTask, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
@@ -31,6 +35,10 @@ export default function Dashboard() {
     useChat(user, isAdmin);
   const { settings } = useSettings(user.uid);
   useTaskAlarm(tasks);
+  const { sendMessage: sendAdminMessage, markAsRead: markMessageRead, getUnreadForUser } =
+    useAdminMessages(user);
+  const unreadMessage = getUnreadForUser(user.uid);
+
   const ideasEnabled = isAdmin || settings.ideasEnabled;
   const ideasTargetUid = selectedUid;
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
@@ -72,6 +80,7 @@ export default function Dashboard() {
         onSelectUser={setSelectedUid}
         ideasEnabled={ideasEnabled}
         ideasUnread={ideasUnread}
+        onOpenMessage={() => setMessageModalOpen(true)}
       />
 
       {viewingOther && viewingUser && (
@@ -128,6 +137,19 @@ export default function Dashboard() {
           onClose={() => setModalOpen(false)}
         />
       )}
+
+      {messageModalOpen && isAdmin && (
+        <AdminMessageModal
+          users={users.filter((u) => u.uid !== user.uid)}
+          onSend={sendAdminMessage}
+          onClose={() => setMessageModalOpen(false)}
+        />
+      )}
+
+      <MessageOverlay
+        message={unreadMessage}
+        onDismiss={(msgId) => markMessageRead(msgId, user.uid)}
+      />
     </div>
   );
 }

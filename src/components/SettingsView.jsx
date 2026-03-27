@@ -36,11 +36,27 @@ export default function SettingsView() {
     }));
   };
 
+  const [confirmUid, setConfirmUid] = useState(null);
+  const [confirmText, setConfirmText] = useState('');
+
   const removeUser = async (uid) => {
-    if (!window.confirm('Excluir o acesso deste usuário? Ele será removido da lista.')) return;
-    await deleteDoc(doc(db, 'users', uid));
-    await deleteDoc(doc(db, 'settings', uid));
-    setRemovedUsers((prev) => new Set(prev).add(uid));
+    if (confirmUid === uid && confirmText === 'EXCLUIR') {
+      await deleteDoc(doc(db, 'users', uid));
+      await deleteDoc(doc(db, 'settings', uid));
+      setRemovedUsers((prev) => new Set(prev).add(uid));
+      setConfirmUid(null);
+      setConfirmText('');
+    }
+  };
+
+  const startRemove = (uid) => {
+    setConfirmUid(uid);
+    setConfirmText('');
+  };
+
+  const cancelRemove = () => {
+    setConfirmUid(null);
+    setConfirmText('');
   };
 
   const visibleUsers = users.filter((u) => u.uid !== user.uid && !removedUsers.has(u.uid));
@@ -100,12 +116,43 @@ export default function SettingsView() {
                 alt={u.displayName || u.email}
               />
               <span className={styles.userName}>{u.displayName || u.email}</span>
-              <button
-                className={styles.removeBtn}
-                onClick={() => removeUser(u.uid)}
-              >
-                Excluir acesso
-              </button>
+              {confirmUid === u.uid ? (
+                <div className={styles.confirmBox}>
+                  <p className={styles.confirmText}>
+                    Digite <strong>EXCLUIR</strong> para confirmar:
+                  </p>
+                  <input
+                    className={styles.confirmInput}
+                    type="text"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="EXCLUIR"
+                    autoFocus
+                  />
+                  <div className={styles.confirmActions}>
+                    <button
+                      className={styles.removeBtn}
+                      disabled={confirmText !== 'EXCLUIR'}
+                      onClick={() => removeUser(u.uid)}
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      className={styles.cancelBtn}
+                      onClick={cancelRemove}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  className={styles.removeBtn}
+                  onClick={() => startRemove(u.uid)}
+                >
+                  Excluir acesso
+                </button>
+              )}
             </div>
           ))}
           {visibleUsers.length === 0 && (

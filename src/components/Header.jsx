@@ -10,6 +10,7 @@ export default function Header({
   onSelectUser,
   ideasEnabled,
   ideasUnread,
+  onOpenMessage,
 }) {
   const { user, logout, isAdmin } = useAuth();
 
@@ -40,6 +41,14 @@ export default function Header({
               onClick={() => onTabChange('archived')}
             >
               Arquivados
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              className={styles.archivedBtn}
+              onClick={onOpenMessage}
+            >
+              Mensagem
             </button>
           )}
           {isAdmin && (
