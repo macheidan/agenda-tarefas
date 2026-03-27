@@ -12,6 +12,13 @@ export default function SettingsView() {
   const [userSettings, setUserSettings] = useState({});
   const [removedUsers, setRemovedUsers] = useState(new Set());
 
+  const SECTIONS = [
+    { key: 'calendarEnabled', label: 'Calendário' },
+    { key: 'kanbanEnabled', label: 'Kanban' },
+    { key: 'ideasEnabled', label: 'Ideias' },
+    { key: 'notesEnabled', label: 'Anotações' },
+  ];
+
   // Admin loads settings for all users
   useEffect(() => {
     if (!isAdmin) return;
@@ -20,19 +27,19 @@ export default function SettingsView() {
       for (const u of users) {
         const ref = doc(db, 'settings', u.uid);
         const snap = await getDoc(ref);
-        map[u.uid] = snap.exists() ? snap.data() : { ideasEnabled: false };
+        map[u.uid] = snap.exists() ? snap.data() : {};
       }
       setUserSettings(map);
     };
     loadAll();
   }, [isAdmin, users]);
 
-  const toggleIdeas = async (uid, enabled) => {
+  const toggleSection = async (uid, key, enabled) => {
     const ref = doc(db, 'settings', uid);
-    await setDoc(ref, { ideasEnabled: enabled }, { merge: true });
+    await setDoc(ref, { [key]: enabled }, { merge: true });
     setUserSettings((prev) => ({
       ...prev,
-      [uid]: { ...prev[uid], ideasEnabled: enabled },
+      [uid]: { ...prev[uid], [key]: enabled },
     }));
   };
 
@@ -75,28 +82,34 @@ export default function SettingsView() {
       <h2>Configurações</h2>
 
       <div className={styles.section}>
-        <h3>Módulo "Ideias"</h3>
-        <p className={styles.sectionDesc}>Ative ou desative o menu Ideias para cada usuário.</p>
+        <h3>Visibilidade de Seções</h3>
+        <p className={styles.sectionDesc}>Escolha quais seções cada usuário pode ver.</p>
 
         <div className={styles.userList}>
           {visibleUsers.map((u) => {
             const s = userSettings[u.uid] || {};
             return (
-              <div key={u.uid} className={styles.userRow}>
-                <img
-                  className={styles.userAvatar}
-                  src={u.photoURL || 'https://via.placeholder.com/32'}
-                  alt={u.displayName || u.email}
-                />
-                <span className={styles.userName}>{u.displayName || u.email}</span>
-                <label className={styles.toggle}>
-                  <input
-                    type="checkbox"
-                    checked={!!s.ideasEnabled}
-                    onChange={(e) => toggleIdeas(u.uid, e.target.checked)}
+              <div key={u.uid} className={styles.userRowSections}>
+                <div className={styles.userInfo}>
+                  <img
+                    className={styles.userAvatar}
+                    src={u.photoURL || 'https://via.placeholder.com/32'}
+                    alt={u.displayName || u.email}
                   />
-                  <span className={styles.slider} />
-                </label>
+                  <span className={styles.userName}>{u.displayName || u.email}</span>
+                </div>
+                <div className={styles.sectionToggles}>
+                  {SECTIONS.map((sec) => (
+                    <label key={sec.key} className={styles.sectionToggle}>
+                      <input
+                        type="checkbox"
+                        checked={s[sec.key] !== false}
+                        onChange={(e) => toggleSection(u.uid, sec.key, e.target.checked)}
+                      />
+                      <span className={styles.sectionLabel}>{sec.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             );
           })}

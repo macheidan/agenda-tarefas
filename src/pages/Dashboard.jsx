@@ -46,7 +46,10 @@ export default function Dashboard() {
 
   const { notes, addNote, updateNote, deleteNote } = useNotes(selectedUid);
 
-  const ideasEnabled = isAdmin || settings.ideasEnabled;
+  const calendarEnabled = isAdmin || settings.calendarEnabled !== false;
+  const kanbanEnabled = isAdmin || settings.kanbanEnabled !== false;
+  const ideasEnabled = isAdmin || settings.ideasEnabled !== false;
+  const notesEnabled = isAdmin || settings.notesEnabled !== false;
   const ideasTargetUid = selectedUid;
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
     useIdeas(ideasTargetUid, user);
@@ -85,7 +88,10 @@ export default function Dashboard() {
         users={users}
         selectedUid={selectedUid}
         onSelectUser={setSelectedUid}
+        calendarEnabled={calendarEnabled}
+        kanbanEnabled={kanbanEnabled}
         ideasEnabled={ideasEnabled}
+        notesEnabled={notesEnabled}
         ideasUnread={ideasUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
       />
@@ -97,14 +103,14 @@ export default function Dashboard() {
       )}
 
       <main className={styles.main}>
-        {activeTab === 'calendar' && (
+        {activeTab === 'calendar' && calendarEnabled && (
           <CalendarView
             tasks={tasks}
             onDateClick={handleDateClick}
             onTaskClick={handleTaskClick}
           />
         )}
-        {activeTab === 'kanban' && (
+        {activeTab === 'kanban' && kanbanEnabled && (
           <KanbanView
             tasks={tasks}
             onUpdateStatus={handleUpdateStatus}
@@ -123,7 +129,7 @@ export default function Dashboard() {
             markAsRead={markIdeaAsRead}
           />
         )}
-        {activeTab === 'notes' && (
+        {activeTab === 'notes' && notesEnabled && (
           <NotesView
             notes={notes}
             onNewNote={() => { setEditingNote(null); setNoteModalOpen(true); }}

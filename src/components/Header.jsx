@@ -8,7 +8,10 @@ export default function Header({
   users,
   selectedUid,
   onSelectUser,
+  calendarEnabled,
+  kanbanEnabled,
   ideasEnabled,
+  notesEnabled,
   ideasUnread,
   onOpenMessage,
 }) {
@@ -69,18 +72,22 @@ export default function Header({
 
       <nav className={styles.nav}>
         <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${activeTab === 'calendar' ? styles.active : ''}`}
-            onClick={() => onTabChange('calendar')}
-          >
-            Calendário
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'kanban' ? styles.active : ''}`}
-            onClick={() => onTabChange('kanban')}
-          >
-            Kanban
-          </button>
+          {calendarEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'calendar' ? styles.active : ''}`}
+              onClick={() => onTabChange('calendar')}
+            >
+              Calendário
+            </button>
+          )}
+          {kanbanEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'kanban' ? styles.active : ''}`}
+              onClick={() => onTabChange('kanban')}
+            >
+              Kanban
+            </button>
+          )}
           {ideasEnabled && (
             <button
               className={`${styles.tab} ${activeTab === 'ideas' ? styles.active : ''}`}
@@ -90,12 +97,14 @@ export default function Header({
               {ideasUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
             </button>
           )}
-          <button
-            className={`${styles.tab} ${activeTab === 'notes' ? styles.active : ''}`}
-            onClick={() => onTabChange('notes')}
-          >
-            Anotações
-          </button>
+          {notesEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'notes' ? styles.active : ''}`}
+              onClick={() => onTabChange('notes')}
+            >
+              Anotações
+            </button>
+          )}
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>
           + Nova

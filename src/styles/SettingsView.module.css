@@ -66,6 +66,42 @@
   color: var(--text);
 }
 
+.userRowSections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sectionToggles {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-left: 42px;
+}
+
+.sectionToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.sectionLabel {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 /* Toggle switch */
 .toggle {
   position: relative;
