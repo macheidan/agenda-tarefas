@@ -28,6 +28,11 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       classNames = ['fc-event--in-progress'];
     }
 
+    if (!classNames.length && task.status === 'not_started') {
+      backgroundColor = '#f4f4f4';
+      classNames = ['fc-event--not-started'];
+    }
+
     const event = {
       id: task.id,
       title: task.title,

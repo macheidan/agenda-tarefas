@@ -164,6 +164,13 @@
 }
 
 /* Status-based event colors */
+.container :global(.fc .fc-event.fc-event--not-started) {
+  background: #f4f4f4 !important;
+}
+.container :global(.fc .fc-event.fc-event--not-started:hover) {
+  background: #eaeaea !important;
+}
+
 .container :global(.fc .fc-event.fc-event--done) {
   background: rgba(76, 175, 80, 0.12) !important;
 }
