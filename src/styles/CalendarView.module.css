@@ -139,7 +139,7 @@
 
 /* Events: flat text, no card/background */
 .container :global(.fc .fc-daygrid-event-harness) {
-  margin: 0 4px 3px;
+  margin: 0 4px !important;
 }
 
 .container :global(.fc .fc-event) {
