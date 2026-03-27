@@ -23,8 +23,8 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       textColor = '#2e7d32';
       classNames = ['fc-event--done'];
     } else if (task.status === 'in-progress') {
-      backgroundColor = 'rgba(35, 131, 226, 0.12)';
-      textColor = '#2383e2';
+      backgroundColor = 'transparent';
+      textColor = undefined;
       classNames = ['fc-event--in-progress'];
     }
 

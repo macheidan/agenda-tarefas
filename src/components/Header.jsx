@@ -52,12 +52,6 @@ export default function Header({
           )}
           <img className={styles.avatar} src={user.photoURL} alt={user.displayName} />
           <span className={styles.userName}>{user.displayName}</span>
-          <button
-            className={`${styles.archivedBtn} ${activeTab === 'themes' ? styles.archivedActive : ''}`}
-            onClick={() => onTabChange('themes')}
-          >
-            Temas
-          </button>
           <button className={styles.logoutBtn} onClick={logout}>
             Sair
           </button>
