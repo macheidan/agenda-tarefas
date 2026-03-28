@@ -140,9 +140,23 @@ export default function Dashboard() {
         )}
         {activeTab === 'shopping' && shoppingListEnabled && (
           <iframe
-            src="https://macheidan.github.io/lista_compras/insumos.html#54321"
+            src="https://macheidan.github.io/lista_compras/insumos.html"
             title="Lista de Compras"
             style={{ width: '100%', height: 'calc(100vh - 120px)', border: 'none' }}
+            onLoad={(e) => {
+              try {
+                const doc = e.target.contentDocument;
+                const input = doc.querySelector('input[type="password"], input[type="text"]');
+                const btn = doc.querySelector('button');
+                if (input && btn && !input.value) {
+                  input.value = '54321';
+                  input.dispatchEvent(new Event('input', { bubbles: true }));
+                  btn.click();
+                }
+              } catch (err) {
+                // cross-origin fallback
+              }
+            }}
           />
         )}
         {activeTab === 'archived' && isAdmin && (
