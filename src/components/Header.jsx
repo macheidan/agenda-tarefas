@@ -62,14 +62,6 @@ export default function Header({
               Configuração
             </button>
           )}
-          <a
-            className={styles.archivedBtn}
-            href="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Lista de Compras
-          </a>
           <img className={styles.avatar} src={user.photoURL} alt={user.displayName} />
           <span className={styles.userName}>{user.displayName}</span>
           <button className={styles.logoutBtn} onClick={logout}>
@@ -113,6 +105,14 @@ export default function Header({
               Anotações
             </button>
           )}
+          <a
+            className={styles.tab}
+            href="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Lista de Compras
+          </a>
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>
           + Nova
