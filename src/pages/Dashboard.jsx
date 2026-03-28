@@ -138,6 +138,13 @@ export default function Dashboard() {
             onNoteClick={(note) => { setEditingNote(note); setNoteModalOpen(true); }}
           />
         )}
+        {activeTab === 'shopping' && shoppingListEnabled && (
+          <iframe
+            src="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
+            title="Lista de Compras"
+            style={{ width: '100%', height: 'calc(100vh - 120px)', border: 'none' }}
+          />
+        )}
         {activeTab === 'archived' && isAdmin && (
           <ArchivedView
             archivedTasks={archivedTasks}

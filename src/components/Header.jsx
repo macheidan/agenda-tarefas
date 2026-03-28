@@ -107,15 +107,12 @@ export default function Header({
             </button>
           )}
           {shoppingListEnabled && (
-            <a
-              className={styles.tab}
-              href="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: 'none' }}
+            <button
+              className={`${styles.tab} ${activeTab === 'shopping' ? styles.active : ''}`}
+              onClick={() => onTabChange('shopping')}
             >
               Lista de Compras
-            </a>
+            </button>
           )}
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>
