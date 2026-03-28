@@ -17,6 +17,7 @@ export default function SettingsView() {
     { key: 'kanbanEnabled', label: 'Kanban' },
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'notesEnabled', label: 'Anotações' },
+    { key: 'shoppingListEnabled', label: 'Lista de Compras' },
   ];
 
   // Admin loads settings for all users

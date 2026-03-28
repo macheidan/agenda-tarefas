@@ -12,6 +12,7 @@ export default function Header({
   kanbanEnabled,
   ideasEnabled,
   notesEnabled,
+  shoppingListEnabled,
   ideasUnread,
   onOpenMessage,
 }) {
@@ -105,14 +106,17 @@ export default function Header({
               Anotações
             </button>
           )}
-          <a
-            className={styles.tab}
-            href="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Lista de Compras
-          </a>
+          {shoppingListEnabled && (
+            <a
+              className={styles.tab}
+              href="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'none' }}
+            >
+              Lista de Compras
+            </a>
+          )}
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>
           + Nova

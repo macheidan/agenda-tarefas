@@ -50,6 +50,7 @@ export default function Dashboard() {
   const kanbanEnabled = isAdmin || settings.kanbanEnabled !== false;
   const ideasEnabled = isAdmin || settings.ideasEnabled !== false;
   const notesEnabled = isAdmin || settings.notesEnabled !== false;
+  const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
   const ideasTargetUid = selectedUid;
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
     useIdeas(ideasTargetUid, user);
@@ -92,6 +93,7 @@ export default function Dashboard() {
         kanbanEnabled={kanbanEnabled}
         ideasEnabled={ideasEnabled}
         notesEnabled={notesEnabled}
+        shoppingListEnabled={shoppingListEnabled}
         ideasUnread={ideasUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
       />
