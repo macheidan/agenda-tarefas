@@ -140,7 +140,7 @@ export default function Dashboard() {
         )}
         {activeTab === 'shopping' && shoppingListEnabled && (
           <iframe
-            src="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
+            src="https://macheidan.github.io/lista_compras/insumos.html#54321"
             title="Lista de Compras"
             style={{ width: '100%', height: 'calc(100vh - 120px)', border: 'none' }}
           />
