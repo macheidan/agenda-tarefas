@@ -62,6 +62,14 @@ export default function Header({
               Configuração
             </button>
           )}
+          <a
+            className={styles.archivedBtn}
+            href="https://macheidan.github.io/lista_compras/insumos.html?senha=54321"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Lista de Compras
+          </a>
           <img className={styles.avatar} src={user.photoURL} alt={user.displayName} />
           <span className={styles.userName}>{user.displayName}</span>
           <button className={styles.logoutBtn} onClick={logout}>
