@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import styles from '../styles/SocialPostModal.module.css';
+import RichTextEditor from './RichTextEditor';
+import styles from '../styles/TaskModal.module.css';
+import postStyles from '../styles/SocialPostModal.module.css';
 
 const NETWORK_OPTIONS = [
   { key: 'instagram', label: 'Instagram', icon: '📷', color: '#E1306C' },
@@ -13,9 +15,10 @@ const STATUS_OPTIONS = [
   { value: 'published', label: 'Publicado' },
 ];
 
-export default function SocialPostModal({ post, profiles, initialDate, onSave, onUpdate, onDelete, onClose }) {
+export default function SocialPostModal({ post, initialDate, onSave, onUpdate, onDelete, onClose }) {
   const isEditing = !!post;
 
+  const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [networks, setNetworks] = useState([]);
   const [scheduledDate, setScheduledDate] = useState('');
@@ -25,6 +28,7 @@ export default function SocialPostModal({ post, profiles, initialDate, onSave, o
 
   useEffect(() => {
     if (post) {
+      setTitle(post.title || '');
       setText(post.text || '');
       setNetworks(post.networks || []);
       setScheduledDate(post.scheduledDate || '');
@@ -43,9 +47,10 @@ export default function SocialPostModal({ post, profiles, initialDate, onSave, o
   };
 
   const handleSave = () => {
-    if (!text.trim() || networks.length === 0 || !scheduledDate) return;
+    if (!title.trim() || !scheduledDate) return;
     const data = {
-      text: text.trim(),
+      title: title.trim(),
+      text,
       networks,
       scheduledDate,
       scheduledTime: scheduledTime || null,
@@ -67,18 +72,27 @@ export default function SocialPostModal({ post, profiles, initialDate, onSave, o
     }
   };
 
-  const availableNetworks = NETWORK_OPTIONS.filter((n) =>
-    profiles.some((p) => p.network === n.key)
-  );
+  const hasUnsavedContent = () => {
+    if (isEditing) {
+      return title !== (post.title || '') || text !== (post.text || '');
+    }
+    return title.trim() !== '' || (text.trim() !== '' && text !== '<p></p>');
+  };
 
-  const charCount = text.length;
+  const handleClose = () => {
+    if (hasUnsavedContent()) {
+      if (window.confirm('Você tem alterações não salvas. Deseja realmente fechar?')) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
 
   const convertDriveUrl = (url) => {
     if (!url) return url;
-    // drive.google.com/file/d/FILE_ID/view... → direct thumbnail
     const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
     if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-    // drive.google.com/open?id=FILE_ID
     const match2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
     if (match2) return `https://drive.google.com/thumbnail?id=${match2[1]}&sz=w1000`;
     return url;
@@ -87,107 +101,83 @@ export default function SocialPostModal({ post, profiles, initialDate, onSave, o
   const previewUrl = convertDriveUrl(imageUrl);
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={handleClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeBtn} onClick={onClose}>&times;</button>
+        <button className={styles.closeBtn} onClick={handleClose}>
+          &times;
+        </button>
 
-        <h3 className={styles.title}>
-          {isEditing ? 'Editar Agendamento' : 'Agendar Post'}
-        </h3>
+        <input
+          className={styles.titleInput}
+          type="text"
+          placeholder="Título do post"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
 
-        <div className={styles.section}>
-          <label className={styles.label}>Publicar em:</label>
-          <div className={styles.networkList}>
-            {availableNetworks.length > 0 ? (
-              availableNetworks.map((n) => (
+        <div className={styles.field} style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
+            Legenda / Descrição
+          </label>
+          <RichTextEditor value={text} onChange={setText} placeholder="Escreva a legenda do seu post..." resizable />
+        </div>
+
+        <div className={styles.fields}>
+          <div className={styles.field}>
+            <label>Publicar em</label>
+            <div className={postStyles.networkList}>
+              {NETWORK_OPTIONS.map((n) => (
                 <button
                   key={n.key}
-                  className={`${styles.networkBtn} ${networks.includes(n.key) ? styles.networkActive : ''}`}
+                  className={`${postStyles.networkBtn} ${networks.includes(n.key) ? postStyles.networkActive : ''}`}
                   style={networks.includes(n.key) ? { borderColor: n.color, background: n.color + '15' } : {}}
                   onClick={() => toggleNetwork(n.key)}
+                  type="button"
                 >
-                  <span className={styles.networkBtnIcon}>{n.icon}</span>
+                  <span className={postStyles.networkBtnIcon}>{n.icon}</span>
                   {n.label}
                 </button>
-              ))
-            ) : (
-              <p className={styles.noProfiles}>
-                Nenhum perfil conectado. Adicione perfis antes de agendar.
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.section}>
-          <label className={styles.label}>
-            Texto do post
-            <span className={styles.charCount}>{charCount}/2200</span>
-          </label>
-          <textarea
-            className={styles.textarea}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Escreva a legenda do seu post..."
-            rows={6}
-            maxLength={2200}
-          />
-        </div>
-
-        <div className={styles.section}>
-          <label className={styles.label}>URL da imagem ou vídeo (opcional)</label>
-          <input
-            className={styles.input}
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="Cole o link do Google Drive ou URL direta"
-          />
-          {imageUrl && (
-            <div className={styles.imagePreview}>
-              <img src={previewUrl} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
+              ))}
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className={styles.row}>
-          <div className={styles.section}>
-            <label className={styles.label}>Data</label>
-            <input
-              className={styles.input}
-              type="date"
-              value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
-            />
+          <div className={styles.field}>
+            <label>Data</label>
+            <input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
           </div>
-          <div className={styles.section}>
-            <label className={styles.label}>Horário</label>
-            <input
-              className={styles.input}
-              type="time"
-              value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
-            />
+
+          <div className={styles.field}>
+            <label>Horário</label>
+            <input type="time" value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} />
           </div>
-          <div className={styles.section}>
-            <label className={styles.label}>Status</label>
-            <select
-              className={styles.input}
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
+
+          <div className={styles.field}>
+            <label>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
               {STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
+
+          <div className={styles.field}>
+            <label>URL da imagem ou vídeo (opcional)</label>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="Cole o link do Google Drive ou URL direta"
+            />
+            {imageUrl && (
+              <div className={postStyles.imagePreview}>
+                <img src={previewUrl} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className={styles.actions}>
-          <button
-            className={styles.saveBtn}
-            onClick={handleSave}
-            disabled={!text.trim() || networks.length === 0 || !scheduledDate}
-          >
+          <button className={styles.saveBtn} onClick={handleSave}>
             {isEditing ? 'Salvar' : 'Agendar'}
           </button>
           {isEditing && (

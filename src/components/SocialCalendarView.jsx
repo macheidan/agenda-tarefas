@@ -30,11 +30,9 @@ const STATUS_COLORS = {
 
 export default function SocialCalendarView({
   posts,
-  profiles,
   onNewPost,
   onEditPost,
   onDeletePost,
-  onManageProfiles,
 }) {
   const [view, setView] = useState('calendar');
   const today = new Date().toISOString().split('T')[0];
@@ -44,7 +42,7 @@ export default function SocialCalendarView({
     const color = networks.length === 1 ? NETWORK_COLORS[networks[0]] : '#6366f1';
     return {
       id: post.id,
-      title: post.text ? post.text.substring(0, 40) : 'Sem texto',
+      title: post.title || 'Sem título',
       start: post.scheduledDate,
       backgroundColor: color + '22',
       borderColor: 'transparent',
@@ -89,23 +87,11 @@ export default function SocialCalendarView({
           </div>
         </div>
         <div className={styles.headerRight}>
-          <button className={styles.profilesBtn} onClick={onManageProfiles}>
-            Perfis Conectados ({profiles.length})
-          </button>
           <button className={styles.newPostBtn} onClick={() => onNewPost(null)}>
             + Agendar Post
           </button>
         </div>
       </div>
-
-      {profiles.length === 0 && (
-        <div className={styles.profileAlert}>
-          Nenhum perfil conectado.
-          <button className={styles.alertBtn} onClick={onManageProfiles}>
-            Conectar perfis
-          </button>
-        </div>
-      )}
 
       {view === 'calendar' ? (
         <div className={styles.calendarWrap}>
@@ -146,7 +132,7 @@ export default function SocialCalendarView({
                   </div>
                   <div className={styles.postInfo}>
                     <p className={styles.postText}>
-                      {post.text ? post.text.substring(0, 80) + (post.text.length > 80 ? '...' : '') : 'Sem texto'}
+                      {post.title || 'Sem título'}
                     </p>
                     <span className={styles.postDate}>
                       {formatDateTime(post.scheduledDate, post.scheduledTime)}
@@ -186,7 +172,7 @@ export default function SocialCalendarView({
                   </div>
                   <div className={styles.postInfo}>
                     <p className={styles.postText}>
-                      {post.text ? post.text.substring(0, 80) + (post.text.length > 80 ? '...' : '') : 'Sem texto'}
+                      {post.title || 'Sem título'}
                     </p>
                     <span className={styles.postDate}>
                       {formatDateTime(post.scheduledDate, post.scheduledTime)}

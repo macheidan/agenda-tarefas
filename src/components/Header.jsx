@@ -125,7 +125,7 @@ export default function Header({
           )}
         </div>
         <button className={styles.newBtn} onClick={onNewTask}>
-          + Nova
+          + Nova Tarefa
         </button>
       </nav>
     </header>

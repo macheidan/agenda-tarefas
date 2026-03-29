@@ -8,14 +8,12 @@ import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
-import { useSocialProfiles } from '../hooks/useSocialProfiles';
 import { useSocialPosts } from '../hooks/useSocialPosts';
 import Header from '../components/Header';
 import NotesView from '../components/NotesView';
 import NoteModal from '../components/NoteModal';
 import SocialCalendarView from '../components/SocialCalendarView';
 import SocialPostModal from '../components/SocialPostModal';
-import SocialProfilesModal from '../components/SocialProfilesModal';
 import AdminMessageModal from '../components/AdminMessageModal';
 import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
@@ -41,7 +39,6 @@ export default function Dashboard() {
   const [socialPostModalOpen, setSocialPostModalOpen] = useState(false);
   const [editingSocialPost, setEditingSocialPost] = useState(null);
   const [socialInitialDate, setSocialInitialDate] = useState(null);
-  const [socialProfilesOpen, setSocialProfilesOpen] = useState(false);
 
   const { tasks, archivedTasks, addTask, updateTask, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
@@ -62,8 +59,6 @@ export default function Dashboard() {
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
   const socialCalendarEnabled = isAdmin || settings.socialCalendarEnabled !== false;
 
-  const { profiles: socialProfiles, addProfile: addSocialProfile, deleteProfile: deleteSocialProfile } =
-    useSocialProfiles(user.uid);
   const { posts: socialPosts, addPost: addSocialPost, updatePost: updateSocialPost, deletePost: deleteSocialPost } =
     useSocialPosts();
   const ideasTargetUid = selectedUid;
@@ -178,7 +173,6 @@ export default function Dashboard() {
         {activeTab === 'social' && socialCalendarEnabled && (
           <SocialCalendarView
             posts={socialPosts}
-            profiles={socialProfiles}
             onNewPost={(date) => {
               setEditingSocialPost(null);
               setSocialInitialDate(date);
@@ -190,7 +184,6 @@ export default function Dashboard() {
               setSocialPostModalOpen(true);
             }}
             onDeletePost={deleteSocialPost}
-            onManageProfiles={() => setSocialProfilesOpen(true)}
           />
         )}
         {activeTab === 'archived' && isAdmin && (
@@ -230,21 +223,11 @@ export default function Dashboard() {
       {socialPostModalOpen && (
         <SocialPostModal
           post={editingSocialPost}
-          profiles={socialProfiles}
           initialDate={socialInitialDate}
           onSave={addSocialPost}
           onUpdate={updateSocialPost}
           onDelete={deleteSocialPost}
           onClose={() => setSocialPostModalOpen(false)}
-        />
-      )}
-
-      {socialProfilesOpen && (
-        <SocialProfilesModal
-          profiles={socialProfiles}
-          onAdd={addSocialProfile}
-          onDelete={deleteSocialProfile}
-          onClose={() => setSocialProfilesOpen(false)}
         />
       )}
 
