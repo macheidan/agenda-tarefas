@@ -13,7 +13,6 @@ export default function Header({
   ideasEnabled,
   notesEnabled,
   shoppingListEnabled,
-  socialCalendarEnabled,
   ideasUnread,
   onOpenMessage,
 }) {
@@ -113,14 +112,6 @@ export default function Header({
               onClick={() => onTabChange('shopping')}
             >
               Lista de Compras
-            </button>
-          )}
-          {socialCalendarEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'social' ? styles.active : ''}`}
-              onClick={() => onTabChange('social')}
-            >
-              Social Calendar
             </button>
           )}
         </div>

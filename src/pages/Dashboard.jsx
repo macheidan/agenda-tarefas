@@ -8,12 +8,9 @@ import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
-import { useSocialPosts } from '../hooks/useSocialPosts';
 import Header from '../components/Header';
 import NotesView from '../components/NotesView';
 import NoteModal from '../components/NoteModal';
-import SocialCalendarView from '../components/SocialCalendarView';
-import SocialPostModal from '../components/SocialPostModal';
 import AdminMessageModal from '../components/AdminMessageModal';
 import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
@@ -36,10 +33,6 @@ export default function Dashboard() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
-  const [socialPostModalOpen, setSocialPostModalOpen] = useState(false);
-  const [editingSocialPost, setEditingSocialPost] = useState(null);
-  const [socialInitialDate, setSocialInitialDate] = useState(null);
-
   const { tasks, archivedTasks, addTask, updateTask, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
   const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
@@ -57,10 +50,6 @@ export default function Dashboard() {
   const ideasEnabled = isAdmin || settings.ideasEnabled !== false;
   const notesEnabled = isAdmin || settings.notesEnabled !== false;
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
-  const socialCalendarEnabled = isAdmin || settings.socialCalendarEnabled !== false;
-
-  const { posts: socialPosts, addPost: addSocialPost, updatePost: updateSocialPost, deletePost: deleteSocialPost } =
-    useSocialPosts();
   const ideasTargetUid = selectedUid;
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
     useIdeas(ideasTargetUid, user);
@@ -104,7 +93,6 @@ export default function Dashboard() {
         ideasEnabled={ideasEnabled}
         notesEnabled={notesEnabled}
         shoppingListEnabled={shoppingListEnabled}
-        socialCalendarEnabled={socialCalendarEnabled}
         ideasUnread={ideasUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
       />
@@ -170,22 +158,6 @@ export default function Dashboard() {
             }}
           />
         )}
-        {activeTab === 'social' && socialCalendarEnabled && (
-          <SocialCalendarView
-            posts={socialPosts}
-            onNewPost={(date) => {
-              setEditingSocialPost(null);
-              setSocialInitialDate(date);
-              setSocialPostModalOpen(true);
-            }}
-            onEditPost={(post) => {
-              setEditingSocialPost(post);
-              setSocialInitialDate(null);
-              setSocialPostModalOpen(true);
-            }}
-            onDeletePost={deleteSocialPost}
-          />
-        )}
         {activeTab === 'archived' && isAdmin && (
           <ArchivedView
             archivedTasks={archivedTasks}
@@ -217,17 +189,6 @@ export default function Dashboard() {
           onUpdate={updateNote}
           onDelete={deleteNote}
           onClose={() => setNoteModalOpen(false)}
-        />
-      )}
-
-      {socialPostModalOpen && (
-        <SocialPostModal
-          post={editingSocialPost}
-          initialDate={socialInitialDate}
-          onSave={addSocialPost}
-          onUpdate={updateSocialPost}
-          onDelete={deleteSocialPost}
-          onClose={() => setSocialPostModalOpen(false)}
         />
       )}
 
