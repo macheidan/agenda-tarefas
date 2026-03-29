@@ -18,6 +18,7 @@ export default function SettingsView() {
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'notesEnabled', label: 'Anotações' },
     { key: 'shoppingListEnabled', label: 'Lista de Compras' },
+    { key: 'socialCalendarEnabled', label: 'Social Calendar' },
   ];
 
   // Admin loads settings for all users
