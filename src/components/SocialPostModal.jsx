@@ -73,6 +73,19 @@ export default function SocialPostModal({ post, profiles, initialDate, onSave, o
 
   const charCount = text.length;
 
+  const convertDriveUrl = (url) => {
+    if (!url) return url;
+    // drive.google.com/file/d/FILE_ID/view... → direct thumbnail
+    const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+    // drive.google.com/open?id=FILE_ID
+    const match2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+    if (match2) return `https://drive.google.com/thumbnail?id=${match2[1]}&sz=w1000`;
+    return url;
+  };
+
+  const previewUrl = convertDriveUrl(imageUrl);
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -121,17 +134,17 @@ export default function SocialPostModal({ post, profiles, initialDate, onSave, o
         </div>
 
         <div className={styles.section}>
-          <label className={styles.label}>URL da imagem (opcional)</label>
+          <label className={styles.label}>URL da imagem ou vídeo (opcional)</label>
           <input
             className={styles.input}
             type="url"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://exemplo.com/imagem.jpg"
+            placeholder="Cole o link do Google Drive ou URL direta"
           />
           {imageUrl && (
             <div className={styles.imagePreview}>
-              <img src={imageUrl} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
+              <img src={previewUrl} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
             </div>
           )}
         </div>
