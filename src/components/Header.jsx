@@ -21,7 +21,7 @@ export default function Header({
   return (
     <header className={styles.header}>
       <div className={styles.top}>
-        <h1 className={styles.logo}>Agenda de Tarefas</h1>
+        <h1 className={styles.logo}>Intranet 🍕</h1>
         <div className={styles.userArea}>
           {isAdmin && users.length > 0 && (
             <select
