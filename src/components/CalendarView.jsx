@@ -57,12 +57,12 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
     <div className={styles.container}>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
+        initialView="dayGridWeek"
         locale="pt-br"
         headerToolbar={{
           left: 'title',
           center: '',
-          right: 'prev,next today',
+          right: 'prev,dayGridMonth,next today',
         }}
         events={events}
         dateClick={(info) => onDateClick(info.dateStr)}
@@ -74,6 +74,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
         dayMaxEvents={false}
         buttonText={{
           today: 'Hoje',
+          month: 'Visualizar o mês',
         }}
         fixedWeekCount={false}
       />
