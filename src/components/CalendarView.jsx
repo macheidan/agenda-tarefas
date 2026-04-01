@@ -1,10 +1,74 @@
+import { useState, useRef, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import styles from '../styles/CalendarView.module.css';
 
+const MONTHS = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
+function formatWeekTitle(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+  e.setDate(e.getDate() - 1);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(s.getDate())}/${pad(s.getMonth() + 1)} - ${pad(e.getDate())}/${pad(e.getMonth() + 1)}`;
+}
+
+function formatMonthTitle(date) {
+  const d = new Date(date);
+  return `${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   const today = new Date().toISOString().split('T')[0];
+  const calRef = useRef(null);
+  const [currentView, setCurrentView] = useState('dayGridWeek');
+  const [title, setTitle] = useState('');
+
+  const updateTitle = useCallback((api) => {
+    const view = api.view;
+    if (view.type === 'dayGridWeek') {
+      setTitle(formatWeekTitle(view.activeStart, view.activeEnd));
+    } else {
+      setTitle(formatMonthTitle(view.currentStart));
+    }
+  }, []);
+
+  const handleDatesSet = useCallback((info) => {
+    setCurrentView(info.view.type);
+    if (info.view.type === 'dayGridWeek') {
+      setTitle(formatWeekTitle(info.view.activeStart, info.view.activeEnd));
+    } else {
+      setTitle(formatMonthTitle(info.view.currentStart));
+    }
+  }, []);
+
+  const handlePrev = () => {
+    const api = calRef.current?.getApi();
+    if (api) { api.prev(); updateTitle(api); }
+  };
+
+  const handleNext = () => {
+    const api = calRef.current?.getApi();
+    if (api) { api.next(); updateTitle(api); }
+  };
+
+  const handleToday = () => {
+    const api = calRef.current?.getApi();
+    if (api) { api.today(); updateTitle(api); }
+  };
+
+  const toggleView = () => {
+    const api = calRef.current?.getApi();
+    if (!api) return;
+    const next = currentView === 'dayGridWeek' ? 'dayGridMonth' : 'dayGridWeek';
+    api.changeView(next);
+    setCurrentView(next);
+    updateTitle(api);
+  };
 
   const events = tasks.map((task) => {
     const isOverdue =
@@ -55,15 +119,24 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
 
   return (
     <div className={styles.container}>
+      <div className={styles.toolbar}>
+        <span className={styles.titleText}>{title}</span>
+        <div className={styles.toolbarRight}>
+          <button className={styles.navBtn} onClick={handlePrev}>‹</button>
+          <button className={styles.navBtn} onClick={handleNext}>›</button>
+          <button className={styles.todayBtn} onClick={toggleView}>
+            {currentView === 'dayGridWeek' ? 'Visualizar o mês' : 'Visualizar a semana'}
+          </button>
+          <button className={styles.todayBtn} onClick={handleToday}>Hoje</button>
+        </div>
+      </div>
       <FullCalendar
+        ref={calRef}
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridWeek"
         locale="pt-br"
-        headerToolbar={{
-          left: 'title',
-          center: '',
-          right: 'prev,dayGridMonth,next today',
-        }}
+        headerToolbar={false}
+        datesSet={handleDatesSet}
         events={events}
         dateClick={(info) => onDateClick(info.dateStr)}
         eventClick={(info) => {
@@ -71,11 +144,8 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
           onTaskClick(info.event.extendedProps.task);
         }}
         height="auto"
+        contentHeight={currentView === 'dayGridWeek' ? 600 : 'auto'}
         dayMaxEvents={false}
-        buttonText={{
-          today: 'Hoje',
-          month: 'Visualizar o mês',
-        }}
         fixedWeekCount={false}
       />
     </div>
