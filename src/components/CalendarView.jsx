@@ -25,7 +25,9 @@ function formatMonthTitle(date) {
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   const today = new Date().toISOString().split('T')[0];
   const calRef = useRef(null);
-  const [currentView, setCurrentView] = useState('dayGridWeek');
+  const [currentView, setCurrentView] = useState(
+    () => localStorage.getItem('calendarView') || 'dayGridWeek'
+  );
   const [title, setTitle] = useState('');
 
   const updateTitle = useCallback((api) => {
@@ -67,6 +69,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
     const next = currentView === 'dayGridWeek' ? 'dayGridMonth' : 'dayGridWeek';
     api.changeView(next);
     setCurrentView(next);
+    localStorage.setItem('calendarView', next);
     updateTitle(api);
   };
 
@@ -133,7 +136,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       <FullCalendar
         ref={calRef}
         plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridWeek"
+        initialView={currentView}
         locale="pt-br"
         headerToolbar={false}
         datesSet={handleDatesSet}
