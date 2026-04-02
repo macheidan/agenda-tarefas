@@ -91,6 +91,11 @@
   width: auto !important;
 }
 
+/* Week view min-height */
+.container :global(.fc .fc-dayGridWeek-view .fc-scrollgrid-sync-table) {
+  min-height: 600px;
+}
+
 /* Day cells */
 .container :global(.fc .fc-daygrid-day) {
   cursor: pointer;
