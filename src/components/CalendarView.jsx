@@ -121,7 +121,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   });
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${currentView === 'dayGridWeek' ? styles.weekView : ''}`}>
       <div className={styles.toolbar}>
         <span className={styles.titleText}>{title}</span>
         <div className={styles.toolbarRight}>
