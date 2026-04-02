@@ -147,7 +147,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
           onTaskClick(info.event.extendedProps.task);
         }}
         height="auto"
-        contentHeight={currentView === 'dayGridWeek' ? 600 : 'auto'}
+        contentHeight={currentView === 'dayGridWeek' ? 1200 : 'auto'}
         dayMaxEvents={false}
         fixedWeekCount={false}
       />
