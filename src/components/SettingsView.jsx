@@ -46,6 +46,8 @@ export default function SettingsView() {
 
   const [confirmUid, setConfirmUid] = useState(null);
   const [confirmText, setConfirmText] = useState('');
+  const [editingNameUid, setEditingNameUid] = useState(null);
+  const [nameValue, setNameValue] = useState('');
 
   const removeUser = async (uid) => {
     if (confirmUid === uid && confirmText === 'EXCLUIR') {
@@ -65,6 +67,24 @@ export default function SettingsView() {
   const cancelRemove = () => {
     setConfirmUid(null);
     setConfirmText('');
+  };
+
+  const startRename = (uid) => {
+    const s = userSettings[uid] || {};
+    const u = users.find((u) => u.uid === uid);
+    setEditingNameUid(uid);
+    setNameValue(s.customName || u?.displayName || u?.email || '');
+  };
+
+  const saveRename = async (uid) => {
+    const ref = doc(db, 'settings', uid);
+    await setDoc(ref, { customName: nameValue.trim() }, { merge: true });
+    setUserSettings((prev) => ({
+      ...prev,
+      [uid]: { ...prev[uid], customName: nameValue.trim() },
+    }));
+    setEditingNameUid(null);
+    setNameValue('');
   };
 
   const visibleUsers = users.filter((u) => u.uid !== user.uid && !removedUsers.has(u.uid));
@@ -111,6 +131,52 @@ export default function SettingsView() {
                     </label>
                   ))}
                 </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h3>Renomear Usuários</h3>
+        <p className={styles.sectionDesc}>Altere o nome exibido de cada usuário (login permanece o mesmo).</p>
+
+        <div className={styles.userList}>
+          {visibleUsers.map((u) => {
+            const s = userSettings[u.uid] || {};
+            const displayName = s.customName || u.displayName || u.email;
+            return (
+              <div key={u.uid} className={styles.userRow}>
+                <img
+                  className={styles.userAvatar}
+                  src={u.photoURL || 'https://via.placeholder.com/32'}
+                  alt={displayName}
+                />
+                {editingNameUid === u.uid ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                    <input
+                      className={styles.confirmInput}
+                      type="text"
+                      value={nameValue}
+                      onChange={(e) => setNameValue(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => e.key === 'Enter' && saveRename(u.uid)}
+                    />
+                    <button className={styles.cancelBtn} style={{ background: '#4caf50', color: '#fff', border: 'none' }} onClick={() => saveRename(u.uid)}>
+                      Salvar
+                    </button>
+                    <button className={styles.cancelBtn} onClick={() => setEditingNameUid(null)}>
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className={styles.userName}>{displayName}</span>
+                    <button className={styles.removeBtn} style={{ background: 'var(--card)', color: 'var(--accent)', borderColor: 'var(--accent)' }} onClick={() => startRename(u.uid)}>
+                      Renomear
+                    </button>
+                  </>
+                )}
               </div>
             );
           })}

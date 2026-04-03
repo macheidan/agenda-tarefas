@@ -16,6 +16,8 @@ export default function Header({
   ideasUnread,
   onOpenMessage,
   completedCount,
+  customName,
+  allSettings,
 }) {
   const { user, logout, isAdmin } = useAuth();
 
@@ -35,7 +37,7 @@ export default function Header({
                 .filter((u) => u.uid !== user.uid)
                 .map((u) => (
                   <option key={u.uid} value={u.uid}>
-                    {u.displayName || u.email}
+                    {allSettings?.[u.uid]?.customName || u.displayName || u.email}
                   </option>
                 ))}
             </select>
@@ -73,7 +75,7 @@ export default function Header({
             </button>
           )}
           <img className={styles.avatar} src={user.photoURL} alt={user.displayName} />
-          <span className={styles.userName}>{user.displayName}</span>
+          <span className={styles.userName}>{customName || user.displayName}</span>
           <button className={styles.logoutBtn} onClick={logout}>
             Sair
           </button>

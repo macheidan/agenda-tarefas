@@ -9,6 +9,7 @@ import { useIdeas } from '../hooks/useIdeas';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
 import { useCompletedTasks } from '../hooks/useCompletedTasks';
+import { useAllSettings } from '../hooks/useAllSettings';
 import Header from '../components/Header';
 import NotesView from '../components/NotesView';
 import NoteModal from '../components/NoteModal';
@@ -47,6 +48,7 @@ export default function Dashboard() {
 
   const { notes, addNote, updateNote, deleteNote } = useNotes(selectedUid);
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
+  const allSettings = useAllSettings(isAdmin ? users : []);
 
   const calendarEnabled = isAdmin || settings.calendarEnabled !== false;
   const kanbanEnabled = isAdmin || settings.kanbanEnabled !== false;
@@ -99,11 +101,13 @@ export default function Dashboard() {
         ideasUnread={ideasUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
         completedCount={completedTasks.length}
+        customName={settings.customName}
+        allSettings={allSettings}
       />
 
       {viewingOther && viewingUser && (
         <div className={styles.banner}>
-          Visualizando agenda de <strong>{viewingUser.displayName || viewingUser.email}</strong>
+          Visualizando agenda de <strong>{allSettings[viewingUser.uid]?.customName || viewingUser.displayName || viewingUser.email}</strong>
         </div>
       )}
 
