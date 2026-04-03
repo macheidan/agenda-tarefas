@@ -13,7 +13,7 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [replyText, setReplyText] = useState('');
-
+  const [filterUid, setFilterUid] = useState('all');
   const handleCreateIdea = () => {
     if (!newTitle.trim()) return;
     addIdea(newTitle, newDescription, user);
@@ -72,6 +72,10 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
       .map((c, i) => ({ ...c, _index: i }))
       .filter((c) => c.parentIndex === parentIdx);
 
+  const filteredIdeas = isAdmin && filterUid !== 'all'
+    ? ideas.filter((i) => i.targetUid === filterUid)
+    : ideas;
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -80,6 +84,31 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
           {showForm ? 'Cancelar' : '+ Nova Ideia'}
         </button>
       </div>
+
+      {isAdmin && users && (
+        <div style={{ marginBottom: 16 }}>
+          <select
+            value={filterUid}
+            onChange={(e) => setFilterUid(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: 6,
+              border: '1px solid var(--input-border)',
+              fontSize: 13,
+              background: 'var(--input-bg)',
+              color: 'var(--text)',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="all">Todos</option>
+            {[user, ...users.filter((u) => u.uid !== user.uid)].map((u) => (
+              <option key={u.uid} value={u.uid}>
+                {allSettings?.[u.uid]?.customName || u.displayName || u.email}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {showForm && (
         <div className={styles.form}>
@@ -102,14 +131,14 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
         </div>
       )}
 
-      {ideas.length === 0 && !showForm && (
+      {filteredIdeas.length === 0 && !showForm && (
         <div className={styles.empty}>
           <p>Nenhuma ideia publicada ainda. Seja o primeiro!</p>
         </div>
       )}
 
       <div className={styles.list}>
-        {ideas.map((idea) => {
+        {filteredIdeas.map((idea) => {
           const isExpanded = expandedIdea === idea.id;
           const topComments = getTopLevelComments(idea.comments || []);
           const isUnread = !idea.readBy?.includes(user.uid);
