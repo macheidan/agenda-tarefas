@@ -1,4 +1,61 @@
+import { useState } from 'react';
 import styles from '../styles/ArchivedView.module.css';
+
+function TaskCard({ task, onArchive }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardMain}>
+        <div className={styles.cardInfo}>
+          <p className={styles.cardTitle}>{task.title}</p>
+          <span className={styles.cardDate} style={{ fontWeight: 600, color: '#555' }}>
+            {task.userName}
+          </span>
+          {task.description && (
+            <>
+              <div
+                className={styles.cardDescription}
+                style={!expanded ? {
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                } : undefined}
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              />
+              {!expanded && (
+                <button
+                  onClick={() => setExpanded(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2383e2',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    padding: '4px 0',
+                    fontWeight: 500,
+                  }}
+                >
+                  Expandir
+                </button>
+              )}
+            </>
+          )}
+        </div>
+        <div className={styles.cardActions}>
+          <button
+            className={styles.unarchiveBtn}
+            style={{ background: '#4caf50', color: '#fff', border: 'none' }}
+            onClick={() => onArchive(task.uid, task.id)}
+          >
+            Concluir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CompletedView({ completedTasks, onArchive }) {
   const sorted = [...completedTasks].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -16,31 +73,11 @@ export default function CompletedView({ completedTasks, onArchive }) {
       ) : (
         <div className={styles.list}>
           {sorted.map((task) => (
-            <div key={`${task.uid}-${task.id}`} className={styles.card}>
-              <div className={styles.cardMain}>
-                <div className={styles.cardInfo}>
-                  <p className={styles.cardTitle}>{task.title}</p>
-                  <span className={styles.cardDate} style={{ fontWeight: 600, color: '#555' }}>
-                    {task.userName}
-                  </span>
-                  {task.description && (
-                    <div
-                      className={styles.cardDescription}
-                      dangerouslySetInnerHTML={{ __html: task.description }}
-                    />
-                  )}
-                </div>
-                <div className={styles.cardActions}>
-                  <button
-                    className={styles.unarchiveBtn}
-                    style={{ background: '#4caf50', color: '#fff', border: 'none' }}
-                    onClick={() => onArchive(task.uid, task.id)}
-                  >
-                    Concluir
-                  </button>
-                </div>
-              </div>
-            </div>
+            <TaskCard
+              key={`${task.uid}-${task.id}`}
+              task={task}
+              onArchive={onArchive}
+            />
           ))}
         </div>
       )}
