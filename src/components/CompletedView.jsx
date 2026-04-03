@@ -1,14 +1,39 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import styles from '../styles/ArchivedView.module.css';
+
+const clampStyle = {
+  display: '-webkit-box',
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+  maxHeight: 'none',
+};
+
+const expandedStyle = {
+  display: 'block',
+  overflow: 'visible',
+  maxHeight: 'none',
+};
+
+const linkStyle = {
+  background: 'none',
+  border: 'none',
+  color: '#2383e2',
+  cursor: 'pointer',
+  fontSize: 13,
+  padding: '4px 0',
+  fontWeight: 500,
+};
 
 function TaskCard({ task, onArchive }) {
   const [expanded, setExpanded] = useState(false);
-  const [isClamped, setIsClamped] = useState(false);
+  const [needsClamp, setNeedsClamp] = useState(false);
   const descRef = useRef(null);
 
-  useEffect(() => {
-    if (descRef.current) {
-      setIsClamped(descRef.current.scrollHeight > descRef.current.clientHeight);
+  useLayoutEffect(() => {
+    const el = descRef.current;
+    if (el) {
+      setNeedsClamp(el.scrollHeight > el.clientHeight + 2);
     }
   }, [task.description]);
 
@@ -25,41 +50,16 @@ function TaskCard({ task, onArchive }) {
               <div
                 ref={descRef}
                 className={styles.cardDescription}
-                style={expanded
-                  ? { maxHeight: 'none', overflow: 'visible' }
-                  : { maxHeight: '4.5em', overflow: 'hidden' }
-                }
+                style={expanded ? expandedStyle : clampStyle}
                 dangerouslySetInnerHTML={{ __html: task.description }}
               />
-              {isClamped && !expanded && (
-                <button
-                  onClick={() => setExpanded(true)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2383e2',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    padding: '4px 0',
-                    fontWeight: 500,
-                  }}
-                >
+              {needsClamp && !expanded && (
+                <button onClick={() => setExpanded(true)} style={linkStyle}>
                   Expandir
                 </button>
               )}
               {expanded && (
-                <button
-                  onClick={() => setExpanded(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2383e2',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    padding: '4px 0',
-                    fontWeight: 500,
-                  }}
-                >
+                <button onClick={() => setExpanded(false)} style={linkStyle}>
                   Recolher
                 </button>
               )}
