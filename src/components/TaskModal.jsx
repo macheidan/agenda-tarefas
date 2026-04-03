@@ -8,6 +8,7 @@ const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Não iniciada', color: '#9e9e9e' },
   { value: 'in_progress', label: 'Em andamento', color: '#2196f3' },
   { value: 'done', label: 'Concluído', color: '#4caf50' },
+  { value: 'complete_notify', label: 'Concluir e Notificar', color: '#ff9800' },
 ];
 
 const RECURRENCE_OPTIONS = [

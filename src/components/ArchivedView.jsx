@@ -5,12 +5,14 @@ const STATUS_LABELS = {
   not_started: 'Não iniciada',
   in_progress: 'Em andamento',
   done: 'Concluído',
+  complete_notify: 'Concluído e Notificado',
 };
 
 const STATUS_COLORS = {
   not_started: '#9e9e9e',
   in_progress: '#2196f3',
   done: '#4caf50',
+  complete_notify: '#ff9800',
 };
 
 export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onClearChat, adminMessages, onDeleteMessage }) {

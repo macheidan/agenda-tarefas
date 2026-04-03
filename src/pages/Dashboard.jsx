@@ -8,6 +8,7 @@ import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
+import { useCompletedTasks } from '../hooks/useCompletedTasks';
 import Header from '../components/Header';
 import NotesView from '../components/NotesView';
 import NoteModal from '../components/NoteModal';
@@ -16,6 +17,7 @@ import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
 import KanbanView from '../components/KanbanView';
 import ArchivedView from '../components/ArchivedView';
+import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
 import TaskModal from '../components/TaskModal';
@@ -44,6 +46,7 @@ export default function Dashboard() {
   const unreadMessage = getUnreadForUser(user.uid);
 
   const { notes, addNote, updateNote, deleteNote } = useNotes(selectedUid);
+  const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
 
   const calendarEnabled = isAdmin || settings.calendarEnabled !== false;
   const kanbanEnabled = isAdmin || settings.kanbanEnabled !== false;
@@ -95,6 +98,7 @@ export default function Dashboard() {
         shoppingListEnabled={shoppingListEnabled}
         ideasUnread={ideasUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
+        completedCount={completedTasks.length}
       />
 
       {viewingOther && viewingUser && (
@@ -156,6 +160,12 @@ export default function Dashboard() {
                 // cross-origin fallback
               }
             }}
+          />
+        )}
+        {activeTab === 'completed' && isAdmin && (
+          <CompletedView
+            completedTasks={completedTasks}
+            onArchive={archiveCompletedTask}
           />
         )}
         {activeTab === 'archived' && isAdmin && (

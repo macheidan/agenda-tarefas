@@ -93,6 +93,10 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       backgroundColor = 'rgba(35, 131, 226, 0.14)';
       textColor = '#2383e2';
       classNames = ['fc-event--in-progress'];
+    } else if (task.status === 'complete_notify') {
+      backgroundColor = 'rgba(255, 152, 0, 0.14)';
+      textColor = '#e68900';
+      classNames = ['fc-event--complete-notify'];
     }
 
     if (!classNames.length && task.status === 'not_started') {

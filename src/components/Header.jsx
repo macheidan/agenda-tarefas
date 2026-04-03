@@ -15,6 +15,7 @@ export default function Header({
   shoppingListEnabled,
   ideasUnread,
   onOpenMessage,
+  completedCount,
 }) {
   const { user, logout, isAdmin } = useAuth();
 
@@ -38,6 +39,14 @@ export default function Header({
                   </option>
                 ))}
             </select>
+          )}
+          {isAdmin && (
+            <button
+              className={`${styles.archivedBtn} ${activeTab === 'completed' ? styles.archivedActive : ''}`}
+              onClick={() => onTabChange('completed')}
+            >
+              Concluídos{completedCount > 0 ? ` (${completedCount})` : ''}
+            </button>
           )}
           {isAdmin && (
             <button
