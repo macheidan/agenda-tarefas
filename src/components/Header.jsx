@@ -42,7 +42,7 @@ export default function Header({
           )}
           {isAdmin && (
             <button
-              className={`${styles.archivedBtn} ${activeTab === 'completed' ? styles.archivedActive : ''}`}
+              className={`${styles.completedBtn} ${activeTab === 'completed' ? styles.completedActive : ''}`}
               onClick={() => onTabChange('completed')}
             >
               Concluídos{completedCount > 0 ? ` (${completedCount})` : ''}

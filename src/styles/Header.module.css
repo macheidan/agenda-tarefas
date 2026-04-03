@@ -58,6 +58,27 @@
   color: var(--warning-text);
 }
 
+.completedBtn {
+  padding: 6px 12px;
+  border: 1px solid #ff9800;
+  border-radius: 6px;
+  background: rgba(255, 152, 0, 0.14);
+  color: #e68900;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.completedBtn:hover {
+  background: rgba(255, 152, 0, 0.24);
+}
+
+.completedActive {
+  background: #ff9800;
+  color: #fff;
+}
+
 .avatar {
   width: 32px;
   height: 32px;
