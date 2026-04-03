@@ -13,22 +13,25 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export function useIdeas(targetUid, currentUser) {
+export function useIdeas(targetUid, currentUser, fetchAll = false) {
   const [ideas, setIdeas] = useState([]);
 
   useEffect(() => {
-    if (!targetUid) return;
+    if (!fetchAll && !targetUid) return;
 
     const ideasRef = collection(db, 'ideas');
-    const q = query(ideasRef, where('targetUid', '==', targetUid), orderBy('createdAt', 'desc'));
+    const q = fetchAll
+      ? query(ideasRef, orderBy('createdAt', 'desc'))
+      : query(ideasRef, where('targetUid', '==', targetUid), orderBy('createdAt', 'desc'));
 
     const unsub = onSnapshot(q, (snapshot) => {
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       setIdeas(items);
     }, (error) => {
       console.error('Firestore ideas query error:', error);
-      // Fallback: query without orderBy if composite index is missing
-      const fallbackQ = query(ideasRef, where('targetUid', '==', targetUid));
+      const fallbackQ = fetchAll
+        ? query(ideasRef)
+        : query(ideasRef, where('targetUid', '==', targetUid));
       onSnapshot(fallbackQ, (snapshot) => {
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         items.sort((a, b) => {
@@ -43,8 +46,9 @@ export function useIdeas(targetUid, currentUser) {
     return unsub;
   }, [targetUid]);
 
-  const addIdea = useCallback(async (title, description, author) => {
-    if (!targetUid) return;
+  const addIdea = useCallback(async (title, description, author, overrideTargetUid) => {
+    const uid = overrideTargetUid || targetUid;
+    if (!uid) return;
     const ideasRef = collection(db, 'ideas');
     await addDoc(ideasRef, {
       title: title.trim(),
@@ -52,7 +56,7 @@ export function useIdeas(targetUid, currentUser) {
       authorUid: author.uid,
       authorName: author.displayName || author.email,
       authorPhoto: author.photoURL || '',
-      targetUid,
+      targetUid: uid,
       createdAt: Timestamp.now(),
       comments: [],
       readBy: [author.uid],

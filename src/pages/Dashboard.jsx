@@ -55,9 +55,8 @@ export default function Dashboard() {
   const ideasEnabled = isAdmin || settings.ideasEnabled !== false;
   const notesEnabled = isAdmin || settings.notesEnabled !== false;
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
-  const ideasTargetUid = selectedUid;
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
-    useIdeas(ideasTargetUid, user);
+    useIdeas(isAdmin ? null : user.uid, user, isAdmin);
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
   const viewingUser = users.find((u) => u.uid === selectedUid);
@@ -136,6 +135,8 @@ export default function Dashboard() {
             deleteComment={deleteComment}
             deleteIdea={deleteIdea}
             markAsRead={markIdeaAsRead}
+            users={users}
+            allSettings={allSettings}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (

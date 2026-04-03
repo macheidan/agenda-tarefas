@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
 import styles from '../styles/IdeasView.module.css';
 
-export default function IdeasView({ ideas, addIdea, addComment, deleteComment, deleteIdea, markAsRead }) {
+export default function IdeasView({ ideas, addIdea, addComment, deleteComment, deleteIdea, markAsRead, users, allSettings }) {
   const { user, isAdmin } = useAuth();
 
   const [showForm, setShowForm] = useState(false);
@@ -52,6 +52,14 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const getUserName = (uid) => {
+    if (!users) return '';
+    const s = allSettings?.[uid];
+    if (s?.customName) return s.customName;
+    const u = users.find((u) => u.uid === uid);
+    return u?.displayName || u?.email || '';
   };
 
   const getTopLevelComments = (comments) =>
@@ -122,7 +130,14 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
                   {isUnread && <span className={styles.unreadDot} />}
                 </div>
                 <div className={styles.cardTitleRow}>
-                  <h3 className={styles.cardTitle}>{idea.title}</h3>
+                  <h3 className={styles.cardTitle}>
+                    {isAdmin && idea.targetUid && (
+                      <span style={{ color: '#ff9800', fontWeight: 600, fontSize: 12, marginRight: 8 }}>
+                        {getUserName(idea.targetUid)}
+                      </span>
+                    )}
+                    {idea.title}
+                  </h3>
                   <span className={styles.commentCount}>
                     {(idea.comments || []).length} comentário{(idea.comments || []).length !== 1 ? 's' : ''}
                   </span>
