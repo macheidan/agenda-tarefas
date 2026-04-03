@@ -118,6 +118,16 @@ export function useTasks(uid) {
     return updateDoc(taskRef, updates);
   };
 
+  const updateTaskGroup = async (recurrenceGroup, updates) => {
+    const groupTasks = allTasks.filter((t) => t.recurrenceGroup === recurrenceGroup);
+    return Promise.all(
+      groupTasks.map((t) => {
+        const taskRef = doc(db, 'tasks', uid, 'items', t.id);
+        return updateDoc(taskRef, updates);
+      })
+    );
+  };
+
   const deleteTask = async (taskId) => {
     const taskRef = doc(db, 'tasks', uid, 'items', taskId);
     return deleteDoc(taskRef);
@@ -133,5 +143,5 @@ export function useTasks(uid) {
     return updateDoc(taskRef, { archived: false });
   };
 
-  return { tasks, archivedTasks, loading, addTask, updateTask, deleteTask, archiveTask, unarchiveTask };
+  return { tasks, archivedTasks, loading, addTask, updateTask, updateTaskGroup, deleteTask, archiveTask, unarchiveTask };
 }

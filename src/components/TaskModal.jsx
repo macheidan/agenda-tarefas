@@ -18,7 +18,7 @@ const RECURRENCE_OPTIONS = [
   { value: 'monthly', label: 'Mensal' },
 ];
 
-export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelete, onClose }) {
+export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdateGroup, onDelete, onClose }) {
   const { user } = useAuth();
   const isEditing = !!task;
 
@@ -53,7 +53,11 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
     if (!title.trim() || !date) return;
 
     if (isEditing) {
-      onUpdate(task.id, {
+      const titleChanged = title.trim() !== (task.title || '');
+      const descChanged = description !== (task.description || '');
+      const hasGroup = task.recurrenceGroup && (titleChanged || descChanged);
+
+      const updates = {
         title: title.trim(),
         description,
         date,
@@ -62,7 +66,25 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onDelet
         recurrence,
         status,
         comments,
-      });
+      };
+
+      if (hasGroup && onUpdateGroup) {
+        const applyAll = window.confirm(
+          'Esta tarefa faz parte de uma recorrência.\n\nDeseja aplicar as alterações de título e descrição em todas as tarefas da recorrência?\n\nOK = Alterar todas\nCancelar = Alterar só esta'
+        );
+        if (applyAll) {
+          const groupUpdates = {};
+          if (titleChanged) groupUpdates.title = title.trim();
+          if (descChanged) groupUpdates.description = description;
+          onUpdateGroup(task.recurrenceGroup, groupUpdates);
+          // Also update other fields on this specific task
+          onUpdate(task.id, updates);
+        } else {
+          onUpdate(task.id, updates);
+        }
+      } else {
+        onUpdate(task.id, updates);
+      }
     } else {
       onSave({
         title: title.trim(),

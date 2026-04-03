@@ -36,7 +36,7 @@ export default function Dashboard() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
-  const { tasks, archivedTasks, addTask, updateTask, deleteTask, archiveTask, unarchiveTask } =
+  const { tasks, archivedTasks, addTask, updateTask, updateTaskGroup, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
   const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
     useChat(user, isAdmin);
@@ -192,6 +192,7 @@ export default function Dashboard() {
           initialDate={initialDate}
           onSave={(data) => addTask(data, user)}
           onUpdate={updateTask}
+          onUpdateGroup={updateTaskGroup}
           onDelete={deleteTask}
           onClose={() => setModalOpen(false)}
         />
