@@ -27,7 +27,7 @@ export function useCompletedTasks(users) {
 
   const archiveTask = async (uid, taskId) => {
     const taskRef = doc(db, 'tasks', uid, 'items', taskId);
-    return updateDoc(taskRef, { archived: true, status: 'done' });
+    return updateDoc(taskRef, { status: 'done' });
   };
 
   return { completedTasks: tasks, archiveCompletedTask: archiveTask };
