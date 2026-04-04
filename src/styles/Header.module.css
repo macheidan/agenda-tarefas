@@ -79,6 +79,35 @@
   color: #fff;
 }
 
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--card);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.iconBtn:hover {
+  background: var(--card-hover);
+}
+
+.iconBtn:hover svg {
+  stroke: var(--text);
+}
+
+.iconBtnActive {
+  background: var(--card-hover);
+}
+
+.iconBtnActive svg {
+  stroke: var(--text);
+}
+
 .avatar {
   width: 32px;
   height: 32px;

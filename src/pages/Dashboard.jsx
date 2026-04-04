@@ -183,7 +183,7 @@ export default function Dashboard() {
             onDeleteMessage={deleteAdminMessage}
           />
         )}
-        {activeTab === 'settings' && isAdmin && <SettingsView />}
+        {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} />}
       </main>
 
       {modalOpen && (

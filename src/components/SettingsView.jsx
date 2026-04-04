@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import styles from '../styles/SettingsView.module.css';
 
-export default function SettingsView() {
+export default function SettingsView({ onNavigate }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
   const [userSettings, setUserSettings] = useState({});
@@ -101,6 +101,16 @@ export default function SettingsView() {
   return (
     <div className={styles.container}>
       <h2>Configurações</h2>
+
+      <div className={styles.section}>
+        <button
+          className={styles.removeBtn}
+          style={{ background: 'var(--card)', color: 'var(--text-secondary)', borderColor: 'var(--input-border)', padding: '8px 16px', fontSize: 13 }}
+          onClick={() => onNavigate && onNavigate('archived')}
+        >
+          Arquivados
+        </button>
+      </div>
 
       <div className={styles.section}>
         <h3>Visibilidade de Seções</h3>
