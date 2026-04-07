@@ -101,6 +101,24 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
 
       {showForm && (
         <div className={styles.form}>
+          {users && (
+            <select
+              value={targetUid}
+              onChange={(e) => setTargetUid(e.target.value)}
+              style={{
+                padding: '6px 10px', borderRadius: 6, border: '1px solid var(--input-border)',
+                fontSize: 13, background: 'var(--input-bg)', color: 'var(--text)', cursor: 'pointer',
+                marginBottom: 8, width: '100%',
+              }}
+            >
+              <option value="">Selecione o destinatário</option>
+              {[user, ...users.filter((u) => u.uid !== user.uid)].map((u) => (
+                <option key={u.uid} value={u.uid}>
+                  {allSettings?.[u.uid]?.customName || u.displayName || u.email}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             className={styles.titleInput}
             type="text"
@@ -132,17 +150,17 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
                   <img className={styles.authorAvatar} src={review.authorPhoto || 'https://via.placeholder.com/32'} alt={review.authorName} />
                   <div>
                     <span className={styles.authorName}>{review.authorName}</span>
+                    {review.targetUid && (
+                      <span style={{ color: '#ff9800', fontSize: 12, marginLeft: 6 }}>
+                        → {getUserName(review.targetUid)}
+                      </span>
+                    )}
                     <span className={styles.date}>{formatDate(review.createdAt)}</span>
                   </div>
                   {isUnread && <span className={styles.unreadDot} />}
                 </div>
                 <div className={styles.cardTitleRow}>
                   <h3 className={styles.cardTitle}>
-                    {review.targetUid && (
-                      <span style={{ color: '#ff9800', fontWeight: 600, fontSize: 12, marginRight: 8 }}>
-                        {getUserName(review.targetUid)}
-                      </span>
-                    )}
                     {review.title}
                   </h3>
                   <span className={styles.commentCount}>
