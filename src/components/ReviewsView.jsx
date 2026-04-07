@@ -101,24 +101,6 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
 
       {showForm && (
         <div className={styles.form}>
-          {users && (
-            <select
-              value={targetUid}
-              onChange={(e) => setTargetUid(e.target.value)}
-              style={{
-                padding: '6px 10px', borderRadius: 6, border: '1px solid var(--input-border)',
-                fontSize: 13, background: 'var(--input-bg)', color: 'var(--text)', cursor: 'pointer',
-                marginBottom: 8,
-              }}
-            >
-              <option value="">Avaliar: eu mesmo</option>
-              {users.filter((u) => u.uid !== user.uid).map((u) => (
-                <option key={u.uid} value={u.uid}>
-                  Avaliar: {allSettings?.[u.uid]?.customName || u.displayName || u.email}
-                </option>
-              ))}
-            </select>
-          )}
           <input
             className={styles.titleInput}
             type="text"
