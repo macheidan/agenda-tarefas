@@ -50,7 +50,7 @@ export default function Dashboard() {
 
   const { notes, addNote, updateNote, deleteNote } = useNotes(selectedUid);
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
-  const allSettings = useAllSettings(isAdmin ? users : []);
+  const allSettings = useAllSettings(users);
 
   const calendarEnabled = isAdmin || settings.calendarEnabled !== false;
   const kanbanEnabled = isAdmin || settings.kanbanEnabled !== false;
