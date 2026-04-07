@@ -47,7 +47,7 @@ export function useReviews(targetUid, currentUser, fetchAll = false) {
   }, [targetUid, fetchAll]);
 
   const addReview = useCallback(async (title, description, author, overrideTargetUid) => {
-    const uid = overrideTargetUid || targetUid;
+    const uid = overrideTargetUid || targetUid || author.uid;
     if (!uid) return;
     const ref = collection(db, 'reviews');
     await addDoc(ref, {

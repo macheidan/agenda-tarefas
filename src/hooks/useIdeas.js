@@ -47,7 +47,7 @@ export function useIdeas(targetUid, currentUser, fetchAll = false) {
   }, [targetUid]);
 
   const addIdea = useCallback(async (title, description, author, overrideTargetUid) => {
-    const uid = overrideTargetUid || targetUid;
+    const uid = overrideTargetUid || targetUid || author.uid;
     if (!uid) return;
     const ideasRef = collection(db, 'ideas');
     await addDoc(ideasRef, {
