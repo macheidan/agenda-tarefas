@@ -13,7 +13,9 @@ export default function Header({
   ideasEnabled,
   notesEnabled,
   shoppingListEnabled,
+  reviewsEnabled,
   ideasUnread,
+  reviewsUnread,
   onOpenMessage,
   completedCount,
   customName,
@@ -124,6 +126,15 @@ export default function Header({
               onClick={() => onTabChange('shopping')}
             >
               Lista de Compras
+            </button>
+          )}
+          {reviewsEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'reviews' ? styles.active : ''}`}
+              onClick={() => onTabChange('reviews')}
+            >
+              Avaliações
+              {reviewsUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
             </button>
           )}
         </div>

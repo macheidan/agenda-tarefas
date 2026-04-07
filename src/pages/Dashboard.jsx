@@ -8,6 +8,7 @@ import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
+import { useReviews } from '../hooks/useReviews';
 import { useCompletedTasks } from '../hooks/useCompletedTasks';
 import { useAllSettings } from '../hooks/useAllSettings';
 import Header from '../components/Header';
@@ -21,6 +22,7 @@ import ArchivedView from '../components/ArchivedView';
 import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
+import ReviewsView from '../components/ReviewsView';
 import TaskModal from '../components/TaskModal';
 import styles from '../styles/Dashboard.module.css';
 
@@ -55,8 +57,11 @@ export default function Dashboard() {
   const ideasEnabled = isAdmin || settings.ideasEnabled !== false;
   const notesEnabled = isAdmin || settings.notesEnabled !== false;
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
+  const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
+  const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, markAsRead: markReviewAsRead } =
+    useReviews(isAdmin ? null : user.uid, user, isAdmin);
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
   const viewingUser = users.find((u) => u.uid === selectedUid);
@@ -97,7 +102,9 @@ export default function Dashboard() {
         ideasEnabled={ideasEnabled}
         notesEnabled={notesEnabled}
         shoppingListEnabled={shoppingListEnabled}
+        reviewsEnabled={reviewsEnabled}
         ideasUnread={ideasUnread}
+        reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
         completedCount={completedTasks.length}
         customName={settings.customName}
@@ -165,6 +172,18 @@ export default function Dashboard() {
                 // cross-origin fallback
               }
             }}
+          />
+        )}
+        {activeTab === 'reviews' && reviewsEnabled && (
+          <ReviewsView
+            reviews={reviews}
+            addReview={addReview}
+            addComment={addReviewComment}
+            deleteComment={deleteReviewComment}
+            deleteReview={deleteReview}
+            markAsRead={markReviewAsRead}
+            users={users}
+            allSettings={allSettings}
           />
         )}
         {activeTab === 'completed' && isAdmin && (

@@ -18,6 +18,7 @@ export default function SettingsView({ onNavigate }) {
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'notesEnabled', label: 'Anotações' },
     { key: 'shoppingListEnabled', label: 'Lista de Compras' },
+    { key: 'reviewsEnabled', label: 'Avaliações' },
   ];
 
   // Admin loads settings for all users
