@@ -25,7 +25,7 @@ export function useIdeas(targetUid, currentUser, fetchAll = false) {
       : query(ideasRef, where('targetUid', '==', targetUid), orderBy('createdAt', 'desc'));
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })).filter((i) => !i.archived);
       setIdeas(items);
     }, (error) => {
       console.error('Firestore ideas query error:', error);
@@ -94,6 +94,11 @@ export function useIdeas(targetUid, currentUser, fetchAll = false) {
     await deleteDoc(doc(db, 'ideas', ideaId));
   }, []);
 
+  const archiveIdea = useCallback(async (ideaId) => {
+    const ideaRef = doc(db, 'ideas', ideaId);
+    await updateDoc(ideaRef, { archived: true });
+  }, []);
+
   const markAsRead = useCallback(async (ideaId) => {
     if (!currentUser) return;
     const idea = ideas.find((i) => i.id === ideaId);
@@ -107,5 +112,5 @@ export function useIdeas(targetUid, currentUser, fetchAll = false) {
     ? ideas.filter((i) => !i.readBy?.includes(currentUser.uid)).length
     : 0;
 
-  return { ideas, unreadCount, addIdea, addComment, deleteComment, deleteIdea, markAsRead };
+  return { ideas, unreadCount, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead };
 }

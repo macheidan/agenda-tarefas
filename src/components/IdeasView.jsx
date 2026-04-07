@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
 import styles from '../styles/IdeasView.module.css';
 
-export default function IdeasView({ ideas, addIdea, addComment, deleteComment, deleteIdea, markAsRead, users, allSettings }) {
+export default function IdeasView({ ideas, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead, users, allSettings }) {
   const { user, isAdmin } = useAuth();
 
   const [showForm, setShowForm] = useState(false);
@@ -183,17 +183,29 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
                   )}
 
                   {isAdmin && (
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => {
-                        if (window.confirm('Excluir esta ideia?')) {
-                          deleteIdea(idea.id);
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <button
+                        className={styles.deleteBtn}
+                        style={{ background: 'var(--card)', color: 'var(--accent)', border: '1px solid var(--accent)' }}
+                        onClick={() => {
+                          archiveIdea(idea.id);
                           setExpandedIdea(null);
-                        }
-                      }}
-                    >
-                      Excluir ideia
-                    </button>
+                        }}
+                      >
+                        Arquivar
+                      </button>
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => {
+                          if (window.confirm('Excluir esta ideia?')) {
+                            deleteIdea(idea.id);
+                            setExpandedIdea(null);
+                          }
+                        }}
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   )}
 
                   <div className={styles.comments}>

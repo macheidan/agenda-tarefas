@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
 import styles from '../styles/IdeasView.module.css';
 
-export default function ReviewsView({ reviews, addReview, addComment, deleteComment, deleteReview, markAsRead, users, allSettings }) {
+export default function ReviewsView({ reviews, addReview, addComment, deleteComment, deleteReview, archiveReview, markAsRead, users, allSettings }) {
   const { user, isAdmin } = useAuth();
 
   const [showForm, setShowForm] = useState(false);
@@ -155,11 +155,20 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
                   )}
 
                   {isAdmin && (
-                    <button className={styles.deleteBtn} onClick={() => {
-                      if (window.confirm('Excluir esta avaliação?')) { deleteReview(review.id); setExpandedReview(null); }
-                    }}>
-                      Excluir avaliação
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <button
+                        className={styles.deleteBtn}
+                        style={{ background: 'var(--card)', color: 'var(--accent)', border: '1px solid var(--accent)' }}
+                        onClick={() => { archiveReview(review.id); setExpandedReview(null); }}
+                      >
+                        Arquivar
+                      </button>
+                      <button className={styles.deleteBtn} onClick={() => {
+                        if (window.confirm('Excluir esta avaliação?')) { deleteReview(review.id); setExpandedReview(null); }
+                      }}>
+                        Excluir
+                      </button>
+                    </div>
                   )}
 
                   <div className={styles.comments}>

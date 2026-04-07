@@ -25,7 +25,7 @@ export function useReviews(targetUid, currentUser, fetchAll = false) {
       : query(ref, where('targetUid', '==', targetUid), orderBy('createdAt', 'desc'));
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })).filter((r) => !r.archived);
       setReviews(items);
     }, (error) => {
       console.error('Firestore reviews query error:', error);
@@ -93,6 +93,11 @@ export function useReviews(targetUid, currentUser, fetchAll = false) {
     await deleteDoc(doc(db, 'reviews', reviewId));
   }, []);
 
+  const archiveReview = useCallback(async (reviewId) => {
+    const ref = doc(db, 'reviews', reviewId);
+    await updateDoc(ref, { archived: true });
+  }, []);
+
   const markAsRead = useCallback(async (reviewId) => {
     if (!currentUser) return;
     const review = reviews.find((r) => r.id === reviewId);
@@ -106,5 +111,5 @@ export function useReviews(targetUid, currentUser, fetchAll = false) {
     ? reviews.filter((r) => !r.readBy?.includes(currentUser.uid)).length
     : 0;
 
-  return { reviews, unreadCount, addReview, addComment, deleteComment, deleteReview, markAsRead };
+  return { reviews, unreadCount, addReview, addComment, deleteComment, deleteReview, archiveReview, markAsRead };
 }

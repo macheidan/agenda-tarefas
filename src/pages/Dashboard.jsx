@@ -58,9 +58,9 @@ export default function Dashboard() {
   const notesEnabled = isAdmin || settings.notesEnabled !== false;
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
   const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
-  const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, markAsRead: markIdeaAsRead } =
+  const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
-  const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, markAsRead: markReviewAsRead } =
+  const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
     useReviews(isAdmin ? null : user.uid, user, isAdmin);
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
@@ -141,6 +141,7 @@ export default function Dashboard() {
             addComment={addComment}
             deleteComment={deleteComment}
             deleteIdea={deleteIdea}
+            archiveIdea={archiveIdea}
             markAsRead={markIdeaAsRead}
             users={users}
             allSettings={allSettings}
@@ -181,6 +182,7 @@ export default function Dashboard() {
             addComment={addReviewComment}
             deleteComment={deleteReviewComment}
             deleteReview={deleteReview}
+            archiveReview={archiveReview}
             markAsRead={markReviewAsRead}
             users={users}
             allSettings={allSettings}
