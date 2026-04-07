@@ -79,7 +79,7 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
         </button>
       </div>
 
-      {users && (
+      {isAdmin && users && (
         <div style={{ marginBottom: 16 }}>
           <select
             value={filterUid}
