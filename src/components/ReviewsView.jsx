@@ -14,12 +14,15 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
   const [replyTo, setReplyTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [filterUid, setFilterUid] = useState('all');
+  const [targetUid, setTargetUid] = useState('');
 
   const handleCreate = () => {
     if (!newTitle.trim()) return;
-    addReview(newTitle, newDescription, user);
+    const target = targetUid || user.uid;
+    addReview(newTitle, newDescription, user, target);
     setNewTitle('');
     setNewDescription('');
+    setTargetUid('');
     setShowForm(false);
   };
 
@@ -63,7 +66,7 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
   const getReplies = (comments, parentIdx) =>
     comments.map((c, i) => ({ ...c, _index: i })).filter((c) => c.parentIndex === parentIdx);
 
-  const filtered = isAdmin && filterUid !== 'all'
+  const filtered = filterUid !== 'all'
     ? reviews.filter((r) => r.targetUid === filterUid)
     : reviews;
 
@@ -76,7 +79,7 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
         </button>
       </div>
 
-      {isAdmin && users && (
+      {users && (
         <div style={{ marginBottom: 16 }}>
           <select
             value={filterUid}
@@ -98,6 +101,24 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
 
       {showForm && (
         <div className={styles.form}>
+          {users && (
+            <select
+              value={targetUid}
+              onChange={(e) => setTargetUid(e.target.value)}
+              style={{
+                padding: '6px 10px', borderRadius: 6, border: '1px solid var(--input-border)',
+                fontSize: 13, background: 'var(--input-bg)', color: 'var(--text)', cursor: 'pointer',
+                marginBottom: 8,
+              }}
+            >
+              <option value="">Avaliar: eu mesmo</option>
+              {users.filter((u) => u.uid !== user.uid).map((u) => (
+                <option key={u.uid} value={u.uid}>
+                  Avaliar: {allSettings?.[u.uid]?.customName || u.displayName || u.email}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             className={styles.titleInput}
             type="text"
@@ -135,7 +156,7 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
                 </div>
                 <div className={styles.cardTitleRow}>
                   <h3 className={styles.cardTitle}>
-                    {isAdmin && review.targetUid && (
+                    {review.targetUid && (
                       <span style={{ color: '#ff9800', fontWeight: 600, fontSize: 12, marginRight: 8 }}>
                         {getUserName(review.targetUid)}
                       </span>
