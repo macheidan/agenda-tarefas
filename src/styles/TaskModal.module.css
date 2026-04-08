@@ -77,7 +77,7 @@
 
 .statusPriorityRow {
   display: flex;
-  gap: 16px;
+  gap: 48px;
   align-items: flex-end;
 }
 

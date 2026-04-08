@@ -31,6 +31,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
   const [status, setStatus] = useState('not_started');
   const [priority, setPriority] = useState(5);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
 
   useEffect(() => {
     if (task) {
@@ -226,11 +227,36 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
             </div>
             <div className={styles.field}>
               <label>Prioridade</label>
-              <select value={priority} onChange={(e) => setPriority(parseInt(e.target.value))}>
-                {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
+              <div className={styles.statusWrapper}>
+                <button
+                  className={styles.statusBadge}
+                  style={{ background: priority >= 8 ? '#e53935' : priority >= 5 ? '#ff9800' : '#4caf50' }}
+                  onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
+                >
+                  {priority}
+                </button>
+                {showPriorityDropdown && (
+                  <div className={styles.statusDropdown}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => (
+                      <button
+                        key={n}
+                        className={styles.statusOption}
+                        style={{ color: n >= 8 ? '#e53935' : n >= 5 ? '#ff9800' : '#4caf50' }}
+                        onClick={() => {
+                          setPriority(n);
+                          setShowPriorityDropdown(false);
+                          if (isEditing) {
+                            onUpdate(task.id, { priority: n });
+                          }
+                        }}
+                      >
+                        <span className={styles.statusDot} style={{ background: n >= 8 ? '#e53935' : n >= 5 ? '#ff9800' : '#4caf50' }} />
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
