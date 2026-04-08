@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
 import styles from '../styles/TaskModal.module.css';
@@ -30,9 +29,8 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
   const [recurrence, setRecurrence] = useState('once');
   const [recurrenceCount, setRecurrenceCount] = useState('');
   const [status, setStatus] = useState('not_started');
+  const [priority, setPriority] = useState(5);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
     if (task) {
@@ -43,7 +41,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
       setEndDate(task.endDate || '');
       setRecurrence(task.recurrence || 'once');
       setStatus(task.status || 'not_started');
-      setComments(task.comments || []);
+      setPriority(task.priority ?? 5);
     } else if (initialDate) {
       setDate(initialDate);
     }
@@ -65,7 +63,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
         endDate: endDate || null,
         recurrence,
         status,
-        comments,
+        priority,
       };
 
       if (hasGroup && onUpdateGroup) {
@@ -77,7 +75,6 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
           if (titleChanged) groupUpdates.title = title.trim();
           if (descChanged) groupUpdates.description = description;
           onUpdateGroup(task.recurrenceGroup, groupUpdates);
-          // Also update other fields on this specific task
           onUpdate(task.id, updates);
         } else {
           onUpdate(task.id, updates);
@@ -93,6 +90,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
         finishDate: finishDate || null,
         endDate: endDate || null,
         recurrence,
+        priority,
         recurrenceCount: recurrence !== 'once' ? (recurrenceCount || 2) : 1,
       });
     }
@@ -103,23 +101,6 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
     if (task) {
       onDelete(task.id);
       onClose();
-    }
-  };
-
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    const comment = {
-      text: newComment.trim(),
-      authorName: user.displayName,
-      authorPhoto: user.photoURL,
-      authorUid: user.uid,
-      timestamp: Timestamp.now(),
-    };
-    const updated = [...comments, comment];
-    setComments(updated);
-    setNewComment('');
-    if (isEditing) {
-      onUpdate(task.id, { comments: updated });
     }
   };
 
@@ -168,14 +149,15 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
         </div>
 
         <div className={styles.fields}>
-          <div className={styles.field}>
-            <label>Data de início</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
-
-          <div className={styles.field}>
-            <label>Data de término (opcional)</label>
-            <input type="date" value={finishDate} onChange={(e) => setFinishDate(e.target.value)} />
+          <div className={styles.dateRow}>
+            <div className={styles.field}>
+              <label>Data de início</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+            <div className={styles.field}>
+              <label>Data de término (opcional)</label>
+              <input type="date" value={finishDate} onChange={(e) => setFinishDate(e.target.value)} />
+            </div>
           </div>
 
           <div className={styles.field}>
@@ -208,76 +190,50 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
             </div>
           )}
 
-          <div className={styles.field}>
-            <label>Status</label>
-            <div className={styles.statusWrapper}>
-              <button
-                className={styles.statusBadge}
-                style={{ background: currentStatus.color }}
-                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-              >
-                {currentStatus.label}
-              </button>
-              {showStatusDropdown && (
-                <div className={styles.statusDropdown}>
-                  {STATUS_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      className={styles.statusOption}
-                      style={{ color: opt.color }}
-                      onClick={() => {
-                        setStatus(opt.value);
-                        setShowStatusDropdown(false);
-                        if (isEditing) {
-                          onUpdate(task.id, { status: opt.value });
-                        }
-                      }}
-                    >
-                      <span className={styles.statusDot} style={{ background: opt.color }} />
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+          <div className={styles.statusPriorityRow}>
+            <div className={styles.field}>
+              <label>Status</label>
+              <div className={styles.statusWrapper}>
+                <button
+                  className={styles.statusBadge}
+                  style={{ background: currentStatus.color }}
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                >
+                  {currentStatus.label}
+                </button>
+                {showStatusDropdown && (
+                  <div className={styles.statusDropdown}>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        className={styles.statusOption}
+                        style={{ color: opt.color }}
+                        onClick={() => {
+                          setStatus(opt.value);
+                          setShowStatusDropdown(false);
+                          if (isEditing) {
+                            onUpdate(task.id, { status: opt.value });
+                          }
+                        }}
+                      >
+                        <span className={styles.statusDot} style={{ background: opt.color }} />
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className={styles.field}>
+              <label>Prioridade</label>
+              <select value={priority} onChange={(e) => setPriority(parseInt(e.target.value))}>
+                {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
-
-        {isEditing && (
-          <div className={styles.commentsSection}>
-            <h3>Comentários</h3>
-            <div className={styles.commentsList}>
-              {comments.map((c, i) => (
-                <div key={i} className={styles.comment}>
-                  <img
-                    className={styles.commentAvatar}
-                    src={c.authorPhoto || 'https://via.placeholder.com/32'}
-                    alt={c.authorName}
-                  />
-                  <div className={styles.commentBody}>
-                    <span className={styles.commentAuthor}>{c.authorName}</span>
-                    <p className={styles.commentText}>{c.text}</p>
-                    <span className={styles.commentTime}>
-                      {c.timestamp?.toDate
-                        ? c.timestamp.toDate().toLocaleString('pt-BR')
-                        : ''}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className={styles.commentInput}>
-              <input
-                type="text"
-                placeholder="Adicionar comentário..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-              />
-              <button onClick={handleAddComment}>Enviar</button>
-            </div>
-          </div>
-        )}
 
         <div className={styles.actions}>
           <button className={styles.saveBtn} onClick={handleSave}>

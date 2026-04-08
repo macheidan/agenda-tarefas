@@ -124,6 +124,12 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
     return event;
   });
 
+  events.sort((a, b) => {
+    const pa = a.extendedProps.task.priority ?? 5;
+    const pb = b.extendedProps.task.priority ?? 5;
+    return pb - pa;
+  });
+
   return (
     <div className={`${styles.container} ${currentView === 'dayGridWeek' ? styles.weekView : ''}`}>
       <div className={styles.toolbar}>
@@ -145,6 +151,11 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
         headerToolbar={false}
         datesSet={handleDatesSet}
         events={events}
+        eventOrder={(a, b) => {
+          const pa = a.extendedProps?.task?.priority ?? 5;
+          const pb = b.extendedProps?.task?.priority ?? 5;
+          return pb - pa;
+        }}
         dateClick={(info) => onDateClick(info.dateStr)}
         eventClick={(info) => {
           info.jsEvent.preventDefault();

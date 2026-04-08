@@ -66,6 +66,21 @@
   margin-bottom: 24px;
 }
 
+.dateRow {
+  display: flex;
+  gap: 16px;
+}
+
+.dateRow .field {
+  flex: 1;
+}
+
+.statusPriorityRow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
 .field {
   display: flex;
   flex-direction: column;
