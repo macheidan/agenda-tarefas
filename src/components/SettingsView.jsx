@@ -88,7 +88,8 @@ export default function SettingsView({ onNavigate }) {
     setNameValue('');
   };
 
-  const visibleUsers = users.filter((u) => u.uid !== user.uid && !removedUsers.has(u.uid));
+  const allVisibleUsers = users.filter((u) => !removedUsers.has(u.uid));
+  const otherUsers = allVisibleUsers.filter((u) => u.uid !== user.uid);
 
   if (!isAdmin) {
     return (
@@ -118,7 +119,7 @@ export default function SettingsView({ onNavigate }) {
         <p className={styles.sectionDesc}>Escolha quais seções cada usuário pode ver.</p>
 
         <div className={styles.userList}>
-          {visibleUsers.map((u) => {
+          {allVisibleUsers.map((u) => {
             const s = userSettings[u.uid] || {};
             return (
               <div key={u.uid} className={styles.userRowSections}>
@@ -128,7 +129,9 @@ export default function SettingsView({ onNavigate }) {
                     src={u.photoURL || 'https://via.placeholder.com/32'}
                     alt={u.displayName || u.email}
                   />
-                  <span className={styles.userName}>{u.displayName || u.email}</span>
+                  <span className={styles.userName}>
+                    {u.uid === user.uid ? `${u.displayName || u.email} (você)` : u.displayName || u.email}
+                  </span>
                 </div>
                 <div className={styles.sectionToggles}>
                   {SECTIONS.map((sec) => (
@@ -153,7 +156,7 @@ export default function SettingsView({ onNavigate }) {
         <p className={styles.sectionDesc}>Altere o nome exibido de cada usuário (login permanece o mesmo).</p>
 
         <div className={styles.userList}>
-          {visibleUsers.map((u) => {
+          {otherUsers.map((u) => {
             const s = userSettings[u.uid] || {};
             const displayName = s.customName || u.displayName || u.email;
             return (
@@ -199,7 +202,7 @@ export default function SettingsView({ onNavigate }) {
         <p className={styles.sectionDesc}>Remova o acesso de usuários da plataforma.</p>
 
         <div className={styles.userList}>
-          {visibleUsers.map((u) => (
+          {otherUsers.map((u) => (
             <div key={u.uid} className={styles.userRow}>
               <img
                 className={styles.userAvatar}
@@ -246,7 +249,7 @@ export default function SettingsView({ onNavigate }) {
               )}
             </div>
           ))}
-          {visibleUsers.length === 0 && (
+          {otherUsers.length === 0 && (
             <p className={styles.noAccess}>Nenhum usuário cadastrado.</p>
           )}
         </div>
