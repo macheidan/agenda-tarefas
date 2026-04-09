@@ -44,6 +44,33 @@
   color: var(--text);
 }
 
+.viewBtn {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.viewBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.viewBtnActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.viewBtnActive:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
 .todayBtn {
   background: none;
   border: none;
@@ -98,6 +125,15 @@
 
 .weekView :global(.fc .fc-daygrid-day) {
   min-height: 580px !important;
+}
+
+/* Day view min-height */
+.dayView :global(.fc .fc-scrollgrid-sync-table) {
+  min-height: 400px !important;
+}
+
+.dayView :global(.fc .fc-daygrid-day) {
+  min-height: 380px !important;
 }
 
 /* Day cells */
@@ -284,9 +320,23 @@
     justify-content: flex-end;
   }
 
+  .viewBtn {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
   .todayBtn {
     font-size: 11px;
     padding: 4px 6px;
+  }
+
+  /* Reduce day view height on mobile */
+  .dayView :global(.fc .fc-scrollgrid-sync-table) {
+    min-height: 250px !important;
+  }
+
+  .dayView :global(.fc .fc-daygrid-day) {
+    min-height: 230px !important;
   }
 
   .navBtn {

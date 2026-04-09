@@ -22,6 +22,13 @@ function formatMonthTitle(date) {
   return `${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
 }
 
+function formatDayTitle(date) {
+  const d = new Date(date);
+  const pad = (n) => String(n).padStart(2, '0');
+  const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  return `${WEEKDAYS[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
 export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   const today = new Date().toISOString().split('T')[0];
   const calRef = useRef(null);
@@ -32,7 +39,9 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
 
   const updateTitle = useCallback((api) => {
     const view = api.view;
-    if (view.type === 'dayGridWeek') {
+    if (view.type === 'dayGridDay') {
+      setTitle(formatDayTitle(view.activeStart));
+    } else if (view.type === 'dayGridWeek') {
       setTitle(formatWeekTitle(view.activeStart, view.activeEnd));
     } else {
       setTitle(formatMonthTitle(view.currentStart));
@@ -41,7 +50,9 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
 
   const handleDatesSet = useCallback((info) => {
     setCurrentView(info.view.type);
-    if (info.view.type === 'dayGridWeek') {
+    if (info.view.type === 'dayGridDay') {
+      setTitle(formatDayTitle(info.view.activeStart));
+    } else if (info.view.type === 'dayGridWeek') {
       setTitle(formatWeekTitle(info.view.activeStart, info.view.activeEnd));
     } else {
       setTitle(formatMonthTitle(info.view.currentStart));
@@ -63,10 +74,9 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
     if (api) { api.today(); updateTitle(api); }
   };
 
-  const toggleView = () => {
+  const changeView = (next) => {
     const api = calRef.current?.getApi();
-    if (!api) return;
-    const next = currentView === 'dayGridWeek' ? 'dayGridMonth' : 'dayGridWeek';
+    if (!api || currentView === next) return;
     api.changeView(next);
     setCurrentView(next);
     localStorage.setItem('calendarView', next);
@@ -131,14 +141,29 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
   });
 
   return (
-    <div className={`${styles.container} ${currentView === 'dayGridWeek' ? styles.weekView : ''}`}>
+    <div className={`${styles.container} ${currentView === 'dayGridWeek' ? styles.weekView : ''} ${currentView === 'dayGridDay' ? styles.dayView : ''}`}>
       <div className={styles.toolbar}>
         <span className={styles.titleText}>{title}</span>
         <div className={styles.toolbarRight}>
           <button className={styles.navBtn} onClick={handlePrev}>‹</button>
           <button className={styles.navBtn} onClick={handleNext}>›</button>
-          <button className={styles.todayBtn} onClick={toggleView}>
-            {currentView === 'dayGridWeek' ? 'Visualizar o mês' : 'Visualizar a semana'}
+          <button
+            className={`${styles.viewBtn} ${currentView === 'dayGridDay' ? styles.viewBtnActive : ''}`}
+            onClick={() => changeView('dayGridDay')}
+          >
+            Dia
+          </button>
+          <button
+            className={`${styles.viewBtn} ${currentView === 'dayGridWeek' ? styles.viewBtnActive : ''}`}
+            onClick={() => changeView('dayGridWeek')}
+          >
+            Semana
+          </button>
+          <button
+            className={`${styles.viewBtn} ${currentView === 'dayGridMonth' ? styles.viewBtnActive : ''}`}
+            onClick={() => changeView('dayGridMonth')}
+          >
+            Mês
           </button>
           <button className={styles.todayBtn} onClick={handleToday}>Hoje</button>
         </div>
