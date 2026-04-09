@@ -151,3 +151,36 @@
 .colorSwatch:hover {
   transform: scale(1.2);
 }
+
+@media (max-width: 480px) {
+  .toolbar {
+    gap: 1px;
+    padding: 4px 6px;
+  }
+
+  .toolBtn {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .fontSelect,
+  .headingSelect {
+    font-size: 11px;
+    padding: 3px 4px;
+  }
+
+  .editor {
+    min-height: 120px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .resizable {
+    min-height: 120px;
+  }
+
+  .colorDropdown {
+    width: 120px;
+  }
+}

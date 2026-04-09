@@ -305,3 +305,68 @@
     font-size: 18px;
   }
 }
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 8px;
+  }
+
+  .modal {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .closeBtn {
+    top: 12px;
+    right: 12px;
+  }
+
+  .titleInput {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .fields {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .dateRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .statusPriorityRow {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .field input,
+  .field select {
+    font-size: 13px;
+    padding: 7px 10px;
+  }
+
+  .actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .saveBtn,
+  .deleteBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .statusDropdown {
+    max-width: calc(100vw - 60px);
+  }
+
+  .commentInput {
+    flex-direction: column;
+  }
+
+  .commentInput button {
+    align-self: flex-end;
+  }
+}

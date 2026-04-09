@@ -331,3 +331,101 @@
     margin-left: 20px;
   }
 }
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .header h2 {
+    font-size: 16px;
+  }
+
+  .newBtn {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
+  .form {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .titleInput {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .submitBtn {
+    font-size: 13px;
+    padding: 7px 16px;
+  }
+
+  .cardHeader {
+    padding: 12px;
+  }
+
+  .authorRow {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .authorAvatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .authorName {
+    font-size: 12px;
+  }
+
+  .cardTitle {
+    font-size: 14px;
+  }
+
+  .cardBody {
+    padding: 0 12px 12px;
+  }
+
+  .description {
+    font-size: 13px;
+  }
+
+  .reply {
+    margin-left: 16px;
+    padding-left: 10px;
+  }
+
+  .replyForm {
+    margin-left: 16px;
+  }
+
+  .comment {
+    gap: 8px;
+  }
+
+  .commentAvatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .commentAuthor {
+    font-size: 12px;
+  }
+
+  .commentText {
+    font-size: 13px;
+  }
+
+  .deleteBtn {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+}

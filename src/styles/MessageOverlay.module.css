@@ -76,3 +76,34 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 8px;
+  }
+
+  .modal {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .content {
+    font-size: 14px;
+    padding: 12px;
+    max-height: 250px;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .closeBtn {
+    width: 100%;
+    text-align: center;
+  }
+}

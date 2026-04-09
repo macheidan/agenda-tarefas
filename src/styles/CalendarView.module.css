@@ -263,3 +263,80 @@
 .container :global(.fc .fc-day-other .fc-event) {
   opacity: 0.5;
 }
+
+@media (max-width: 480px) {
+  .container {
+    padding: 8px 6px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .titleText {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .toolbarRight {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .todayBtn {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  .navBtn {
+    font-size: 16px;
+    padding: 4px 6px;
+  }
+
+  /* Reduce week view height on mobile */
+  .weekView :global(.fc .fc-scrollgrid-sync-table) {
+    min-height: 350px !important;
+  }
+
+  .weekView :global(.fc .fc-daygrid-day) {
+    min-height: 330px !important;
+  }
+
+  .container :global(.fc .fc-daygrid-day) {
+    min-height: 60px;
+  }
+
+  .container :global(.fc th) {
+    font-size: 10px;
+    padding-right: 4px;
+  }
+
+  .container :global(.fc .fc-event) {
+    font-size: 11px;
+    line-height: 18px;
+    padding: 1px 4px;
+  }
+
+  .container :global(.fc .fc-event .fc-event-title) {
+    font-size: 11px;
+  }
+
+  .container :global(.fc .fc-daygrid-day-number) {
+    font-size: 11px;
+  }
+
+  .container :global(.fc .fc-daygrid-day-top) {
+    padding: 1px 4px;
+  }
+
+  .container :global(.fc .fc-daygrid-event-harness) {
+    margin: 0 2px 2px;
+  }
+
+  .container :global(.fc .fc-day-today .fc-daygrid-day-number) {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+}

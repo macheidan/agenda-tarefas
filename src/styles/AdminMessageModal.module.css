@@ -123,3 +123,37 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 8px;
+  }
+
+  .modal {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .userList {
+    max-height: 160px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .cancelBtn,
+  .sendBtn {
+    width: 100%;
+    text-align: center;
+  }
+}

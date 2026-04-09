@@ -190,3 +190,69 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .header h2 {
+    font-size: 16px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .cardMain {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cardTitle {
+    font-size: 14px;
+  }
+
+  .cardDescription {
+    font-size: 12px;
+    max-height: 50px;
+  }
+
+  .cardActions {
+    align-self: flex-end;
+  }
+
+  .unarchiveBtn,
+  .deleteBtn {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .messageCard {
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .messageText {
+    font-size: 13px;
+  }
+
+  .messageActions {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .clearChatBtn {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}

@@ -217,3 +217,79 @@
     font-size: 13px;
   }
 }
+
+@media (max-width: 480px) {
+  .top {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .logo {
+    font-size: 17px;
+  }
+
+  .userArea {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .userSelect {
+    font-size: 12px;
+    padding: 5px 8px;
+    max-width: 130px;
+  }
+
+  .archivedBtn,
+  .completedBtn,
+  .logoutBtn {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+
+  .iconBtn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .iconBtn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav {
+    padding: 0 8px;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    padding: 8px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .newBtn {
+    padding: 7px 14px;
+    font-size: 13px;
+    align-self: flex-end;
+  }
+}

@@ -211,3 +211,68 @@
 .cancelBtn:hover {
   background: var(--card-hover);
 }
+
+@media (max-width: 480px) {
+  .container {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .container h2 {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .section {
+    margin-bottom: 18px;
+  }
+
+  .section h3 {
+    font-size: 14px;
+  }
+
+  .userRow {
+    padding: 8px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .userRowSections {
+    padding: 10px;
+  }
+
+  .sectionToggles {
+    padding-left: 0;
+    gap: 10px;
+  }
+
+  .sectionLabel {
+    font-size: 12px;
+  }
+
+  .userName {
+    font-size: 13px;
+  }
+
+  .userAvatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .confirmInput {
+    width: 100%;
+  }
+
+  .confirmBox {
+    width: 100%;
+  }
+
+  .confirmActions {
+    justify-content: flex-end;
+  }
+
+  .removeBtn {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+}

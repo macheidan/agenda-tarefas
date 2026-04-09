@@ -23,3 +23,14 @@
     padding: 16px;
   }
 }
+
+@media (max-width: 480px) {
+  .main {
+    padding: 10px;
+  }
+
+  .banner {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}

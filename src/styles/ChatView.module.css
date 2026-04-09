@@ -249,3 +249,66 @@
     max-width: 85%;
   }
 }
+
+@media (max-width: 480px) {
+  .container {
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 200px;
+  }
+
+  .sidebarTitle {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .userItem {
+    padding: 10px 12px;
+  }
+
+  .chatPanel {
+    min-height: 350px;
+  }
+
+  .chatHeader {
+    padding: 12px;
+  }
+
+  .messagesList {
+    padding: 12px;
+    min-height: 200px;
+  }
+
+  .message {
+    max-width: 90%;
+  }
+
+  .msgBubble {
+    padding: 7px 12px;
+  }
+
+  .msgText {
+    font-size: 13px;
+  }
+
+  .inputArea {
+    padding: 10px 12px;
+  }
+
+  .inputArea input {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .inputArea button {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
