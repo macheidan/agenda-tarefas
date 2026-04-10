@@ -78,12 +78,6 @@ export default function Dashboard() {
     setModalOpen(true);
   };
 
-  const handleNewTask = () => {
-    setEditingTask(null);
-    setInitialDate(new Date().toISOString().split('T')[0]);
-    setModalOpen(true);
-  };
-
   const handleUpdateStatus = (taskId, newStatus) => {
     updateTask(taskId, { status: newStatus });
   };
@@ -93,7 +87,6 @@ export default function Dashboard() {
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onNewTask={handleNewTask}
         users={users}
         selectedUid={selectedUid}
         onSelectUser={setSelectedUid}
