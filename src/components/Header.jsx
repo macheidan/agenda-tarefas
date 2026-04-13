@@ -14,6 +14,7 @@ export default function Header({
   notesEnabled,
   shoppingListEnabled,
   reviewsEnabled,
+  knowledgeEnabled,
   ideasUnread,
   reviewsUnread,
   onOpenMessage,
@@ -162,6 +163,14 @@ export default function Header({
             >
               Avaliações
               {reviewsUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
+            </button>
+          )}
+          {knowledgeEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'knowledge' ? styles.active : ''}`}
+              onClick={() => onTabChange('knowledge')}
+            >
+              Conhecimento
             </button>
           )}
         </div>

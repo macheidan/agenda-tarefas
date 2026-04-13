@@ -23,6 +23,8 @@ import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
 import ReviewsView from '../components/ReviewsView';
+import KnowledgeView from '../components/KnowledgeView';
+import { useKnowledge } from '../hooks/useKnowledge';
 import TaskModal from '../components/TaskModal';
 import styles from '../styles/Dashboard.module.css';
 
@@ -58,6 +60,8 @@ export default function Dashboard() {
   const notesEnabled = isAdmin || settings.notesEnabled !== false;
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
   const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
+  const knowledgeEnabled = isAdmin || settings.knowledgeEnabled !== false;
+  const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, ready: kbReady } = useKnowledge();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
@@ -96,6 +100,7 @@ export default function Dashboard() {
         notesEnabled={notesEnabled}
         shoppingListEnabled={shoppingListEnabled}
         reviewsEnabled={reviewsEnabled}
+        knowledgeEnabled={knowledgeEnabled}
         ideasUnread={ideasUnread}
         reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
@@ -179,6 +184,16 @@ export default function Dashboard() {
             markAsRead={markReviewAsRead}
             users={users}
             allSettings={allSettings}
+          />
+        )}
+        {activeTab === 'knowledge' && knowledgeEnabled && (
+          <KnowledgeView
+            messages={kbMessages}
+            loading={kbLoading}
+            sendMessage={sendKbMessage}
+            knowledgeBase={knowledgeBase}
+            updateKnowledgeBase={updateKnowledgeBase}
+            ready={kbReady}
           />
         )}
         {activeTab === 'completed' && isAdmin && (
