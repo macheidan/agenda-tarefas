@@ -208,6 +208,12 @@
   color: var(--text-muted);
 }
 
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
 .kbTextarea {
   flex: 1;
   padding: 12px;
