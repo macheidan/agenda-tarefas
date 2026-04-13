@@ -79,6 +79,26 @@ export function useKnowledge() {
     return null;
   };
 
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  const trySendWithRetry = async (chatSession, text, retries) => {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const result = await chatSession.sendMessage(text);
+        return result.response.text();
+      } catch (err) {
+        const is503 = err?.message?.includes('503') || err?.message?.includes('high demand');
+        const is429 = err?.message?.includes('429') || err?.message?.includes('quota');
+        if ((is503 || is429) && i < retries) {
+          console.log(`[Knowledge] Retry ${i + 1}/${retries} em ${(i + 1) * 3}s...`);
+          await wait((i + 1) * 3000);
+        } else {
+          throw err;
+        }
+      }
+    }
+  };
+
   const sendMessage = async (text) => {
     if (!chat || !text.trim()) return;
 
@@ -87,19 +107,17 @@ export function useKnowledge() {
     setLoading(true);
 
     try {
-      const result = await chat.sendMessage(text.trim());
-      const response = await result.response.text();
+      const response = await trySendWithRetry(chat, text.trim(), 3);
       const aiMsg = { role: 'ai', text: response, timestamp: Date.now() };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
-      console.warn(`[Knowledge] Modelo primário falhou, tentando fallback...`);
+      console.warn(`[Knowledge] Retries esgotados, tentando fallback...`);
       const fallbackResponse = await tryFallbackModels(text.trim(), 1);
       if (fallbackResponse) {
         const aiMsg = { role: 'ai', text: fallbackResponse, timestamp: Date.now() };
         setMessages((prev) => [...prev, aiMsg]);
       } else {
-        const detail = err?.message || String(err);
-        const errorMsg = { role: 'ai', text: `Erro: ${detail}`, timestamp: Date.now() };
+        const errorMsg = { role: 'ai', text: 'Todos os modelos estão sobrecarregados. Tente novamente em alguns minutos.', timestamp: Date.now() };
         setMessages((prev) => [...prev, errorMsg]);
       }
     } finally {
