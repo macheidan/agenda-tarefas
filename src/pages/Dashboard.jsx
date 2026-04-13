@@ -52,12 +52,12 @@ export default function Dashboard() {
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
   const allSettings = useAllSettings(users);
 
-  const calendarEnabled = isAdmin || settings.calendarEnabled !== false;
-  const kanbanEnabled = isAdmin || settings.kanbanEnabled !== false;
-  const ideasEnabled = isAdmin || settings.ideasEnabled !== false;
-  const notesEnabled = isAdmin || settings.notesEnabled !== false;
-  const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
-  const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
+  const calendarEnabled = settings.calendarEnabled !== false;
+  const kanbanEnabled = settings.kanbanEnabled !== false;
+  const ideasEnabled = settings.ideasEnabled !== false;
+  const notesEnabled = settings.notesEnabled !== false;
+  const shoppingListEnabled = settings.shoppingListEnabled !== false;
+  const reviewsEnabled = settings.reviewsEnabled !== false;
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
