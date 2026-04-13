@@ -198,8 +198,6 @@ export default function Dashboard() {
             sendMessage={sendKbMessage}
             knowledgeBase={knowledgeBase}
             updateKnowledgeBase={updateKnowledgeBase}
-            updateGeminiKey={updateGeminiKey}
-            geminiKey={kbGeminiKey}
             ready={kbReady}
             error={kbError}
           />
@@ -228,7 +226,7 @@ export default function Dashboard() {
             onDeleteMessage={deleteAdminMessage}
           />
         )}
-        {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} />}
+        {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} geminiKey={kbGeminiKey} updateGeminiKey={updateGeminiKey} />}
       </main>
 
       {modalOpen && (

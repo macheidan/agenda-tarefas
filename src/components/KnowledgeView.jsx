@@ -2,12 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/KnowledgeView.module.css';
 
-export default function KnowledgeView({ messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey, ready, error }) {
+export default function KnowledgeView({ messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, ready, error }) {
   const { isAdmin } = useAuth();
   const [input, setInput] = useState('');
   const [showAdmin, setShowAdmin] = useState(false);
   const [kbText, setKbText] = useState('');
-  const [keyText, setKeyText] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -16,11 +15,8 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
   }, [messages, loading]);
 
   useEffect(() => {
-    if (showAdmin) {
-      setKbText(knowledgeBase);
-      setKeyText(geminiKey);
-    }
-  }, [showAdmin, knowledgeBase, geminiKey]);
+    if (showAdmin) setKbText(knowledgeBase);
+  }, [showAdmin, knowledgeBase]);
 
   const handleSend = () => {
     if (!input.trim() || loading) return;
@@ -41,9 +37,8 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
 
   const handleSaveKb = async () => {
     setSaveStatus('Salvando...');
-    const keyOk = await updateGeminiKey(keyText.trim());
     const baseOk = await updateKnowledgeBase(kbText);
-    if (keyOk && baseOk) {
+    if (baseOk) {
       setSaveStatus('Salvo com sucesso!');
       setTimeout(() => { setSaveStatus(''); setShowAdmin(false); }, 1500);
     } else {
@@ -65,19 +60,8 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
       {showAdmin ? (
         <div className={styles.adminPanel}>
           <p className={styles.adminDesc}>
-            Configure a chave API do Gemini e a base de conhecimento.
+            Cole ou envie o texto da base de conhecimento. O Gemini usará esse conteúdo para responder as perguntas.
           </p>
-          <div className={styles.uploadRow}>
-            <label className={styles.fieldLabel}>Chave API do Gemini:</label>
-          </div>
-          <input
-            className={styles.chatInput}
-            type="password"
-            value={keyText}
-            onChange={(e) => setKeyText(e.target.value)}
-            placeholder="Cole aqui a chave API do Google AI Studio..."
-            style={{ marginBottom: 16 }}
-          />
           <div className={styles.uploadRow}>
             <label className={styles.uploadBtn}>
               Enviar arquivo .txt

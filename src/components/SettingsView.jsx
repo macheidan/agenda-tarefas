@@ -6,11 +6,13 @@ import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import styles from '../styles/SettingsView.module.css';
 
-export default function SettingsView({ onNavigate }) {
+export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
   const [userSettings, setUserSettings] = useState({});
   const [removedUsers, setRemovedUsers] = useState(new Set());
+  const [apiKeyValue, setApiKeyValue] = useState('');
+  const [apiKeyStatus, setApiKeyStatus] = useState('');
 
   const SECTIONS = [
     { key: 'calendarEnabled', label: 'Calendário' },
@@ -90,6 +92,17 @@ export default function SettingsView({ onNavigate }) {
     setNameValue('');
   };
 
+  useEffect(() => {
+    if (geminiKey !== undefined) setApiKeyValue(geminiKey);
+  }, [geminiKey]);
+
+  const handleSaveApiKey = async () => {
+    setApiKeyStatus('Salvando...');
+    const ok = await updateGeminiKey(apiKeyValue.trim());
+    setApiKeyStatus(ok ? 'Salvo!' : 'Erro ao salvar.');
+    setTimeout(() => setApiKeyStatus(''), 2000);
+  };
+
   const allVisibleUsers = users.filter((u) => !removedUsers.has(u.uid));
   const otherUsers = allVisibleUsers.filter((u) => u.uid !== user.uid);
 
@@ -114,6 +127,29 @@ export default function SettingsView({ onNavigate }) {
         >
           Arquivados
         </button>
+      </div>
+
+      <div className={styles.section}>
+        <h3>Chave API do Gemini</h3>
+        <p className={styles.sectionDesc}>Chave do Google AI Studio para a seção Conhecimento.</p>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            className={styles.confirmInput}
+            type="password"
+            value={apiKeyValue}
+            onChange={(e) => setApiKeyValue(e.target.value)}
+            placeholder="Cole a chave API..."
+            style={{ width: 220, fontSize: 12 }}
+          />
+          <button
+            className={styles.cancelBtn}
+            style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}
+            onClick={handleSaveApiKey}
+          >
+            Salvar
+          </button>
+          {apiKeyStatus && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{apiKeyStatus}</span>}
+        </div>
       </div>
 
       <div className={styles.section}>
