@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/KnowledgeView.module.css';
 
-export default function KnowledgeView({ messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, ready }) {
+export default function KnowledgeView({ messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, ready, error }) {
   const { isAdmin } = useAuth();
   const [input, setInput] = useState('');
   const [showAdmin, setShowAdmin] = useState(false);
   const [kbText, setKbText] = useState('');
+  const [saveStatus, setSaveStatus] = useState('');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -34,9 +35,15 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
     e.target.value = '';
   };
 
-  const handleSaveKb = () => {
-    updateKnowledgeBase(kbText);
-    setShowAdmin(false);
+  const handleSaveKb = async () => {
+    setSaveStatus('Salvando...');
+    const ok = await updateKnowledgeBase(kbText);
+    if (ok) {
+      setSaveStatus('Salvo com sucesso!');
+      setTimeout(() => { setSaveStatus(''); setShowAdmin(false); }, 1500);
+    } else {
+      setSaveStatus('Erro ao salvar. Verifique as regras do Firestore.');
+    }
   };
 
   return (
@@ -71,18 +78,23 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
             placeholder="Cole aqui o conteúdo da base de conhecimento..."
             rows={16}
           />
-          <button className={styles.saveBtn} onClick={handleSaveKb}>
-            Salvar Base de Conhecimento
-          </button>
+          <div className={styles.uploadRow}>
+            <button className={styles.saveBtn} onClick={handleSaveKb}>
+              Salvar Base de Conhecimento
+            </button>
+            {saveStatus && <span className={styles.uploadHint}>{saveStatus}</span>}
+          </div>
         </div>
       ) : (
         <>
           <div className={styles.chatArea}>
             {messages.length === 0 && !loading && (
               <div className={styles.empty}>
-                {ready
-                  ? 'Faça uma pergunta sobre os processos e procedimentos da empresa.'
-                  : 'Base de conhecimento ainda não configurada. Peça ao administrador para carregar.'}
+                {error
+                  ? error
+                  : ready
+                    ? 'Faça uma pergunta sobre os processos e procedimentos da empresa.'
+                    : 'Base de conhecimento ainda não configurada. Peça ao administrador para carregar.'}
               </div>
             )}
             {messages.map((msg, i) => (

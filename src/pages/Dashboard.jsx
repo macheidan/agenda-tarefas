@@ -61,7 +61,7 @@ export default function Dashboard() {
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
   const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
   const knowledgeEnabled = isAdmin || settings.knowledgeEnabled !== false;
-  const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, ready: kbReady } = useKnowledge();
+  const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, ready: kbReady, error: kbError } = useKnowledge();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
@@ -194,6 +194,7 @@ export default function Dashboard() {
             knowledgeBase={knowledgeBase}
             updateKnowledgeBase={updateKnowledgeBase}
             ready={kbReady}
+            error={kbError}
           />
         )}
         {activeTab === 'completed' && isAdmin && (

@@ -10,14 +10,20 @@ export function useKnowledge() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [chat, setChat] = useState(null);
+  const [error, setError] = useState('');
 
   // Load knowledge base from Firestore
   useEffect(() => {
     const load = async () => {
-      const ref = doc(db, 'knowledge', 'base');
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        setKnowledgeBase(snap.data().content || '');
+      try {
+        const ref = doc(db, 'knowledge', 'base');
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          setKnowledgeBase(snap.data().content || '');
+        }
+      } catch (err) {
+        console.error('[Knowledge] Erro ao carregar base:', err);
+        setError('Erro ao carregar base de conhecimento: ' + err.message);
       }
     };
     load();
@@ -25,7 +31,12 @@ export function useKnowledge() {
 
   // Initialize chat session when knowledge base loads
   useEffect(() => {
-    if (!apiKey || !knowledgeBase) return;
+    if (!knowledgeBase) return;
+    if (!apiKey) {
+      console.error('[Knowledge] VITE_GEMINI_API_KEY não configurada');
+      setError('Chave API do Gemini não configurada.');
+      return;
+    }
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
@@ -34,8 +45,10 @@ export function useKnowledge() {
       });
       const chatSession = model.startChat({ history: [] });
       setChat(chatSession);
+      setError('');
     } catch (err) {
-      console.error('Erro ao inicializar Gemini:', err);
+      console.error('[Knowledge] Erro ao inicializar Gemini:', err);
+      setError('Erro ao inicializar Gemini: ' + err.message);
     }
   }, [knowledgeBase]);
 
@@ -52,7 +65,7 @@ export function useKnowledge() {
       const aiMsg = { role: 'ai', text: response, timestamp: Date.now() };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
-      console.error('Erro Gemini:', err);
+      console.error('[Knowledge] Erro Gemini:', err);
       const errorMsg = { role: 'ai', text: 'Erro ao processar a pergunta. Tente novamente.', timestamp: Date.now() };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -61,13 +74,20 @@ export function useKnowledge() {
   };
 
   const updateKnowledgeBase = async (content) => {
-    const ref = doc(db, 'knowledge', 'base');
-    await setDoc(ref, { content, updatedAt: new Date() });
-    setKnowledgeBase(content);
-    // Reset chat with new knowledge
-    setMessages([]);
-    setChat(null);
+    try {
+      const ref = doc(db, 'knowledge', 'base');
+      await setDoc(ref, { content, updatedAt: new Date() });
+      setKnowledgeBase(content);
+      setMessages([]);
+      setChat(null);
+      setError('');
+      return true;
+    } catch (err) {
+      console.error('[Knowledge] Erro ao salvar base:', err);
+      setError('Erro ao salvar: ' + err.message);
+      return false;
+    }
   };
 
-  return { messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, ready: !!chat };
+  return { messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, ready: !!chat, error };
 }
