@@ -3,7 +3,12 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+const MODELS = [
+  'gemini-3.0-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+];
 const SYSTEM_PROMPT = (content) =>
   `Você é um assistente de conhecimento interno de uma rede de pizzarias. Responda APENAS com base no conhecimento fornecido abaixo. Se a pergunta não puder ser respondida com o conhecimento disponível, diga que não tem essa informação na base de conhecimento.\n\n--- BASE DE CONHECIMENTO ---\n${content}\n--- FIM DA BASE ---`;
 
