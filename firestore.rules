@@ -1,18 +1,66 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return request.auth.token.email == "machadofabio@gmail.com";
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    // Usuários: qualquer logado lê, cada um escreve o seu, admin escreve todos
     match /users/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == uid
-        || request.auth.token.email == "ADMIN_EMAIL_PLACEHOLDER";
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid) || isAdmin();
     }
+
+    // Tarefas: dono lê/escreve as suas, admin lê/escreve todas
     match /tasks/{uid}/items/{taskId} {
-      allow read, write: if request.auth.uid == uid
-        || request.auth.token.email == "ADMIN_EMAIL_PLACEHOLDER";
+      allow read, write: if isOwner(uid) || isAdmin();
     }
+
+    // Chat: dono da sala lê/escreve, admin lê/escreve todas
     match /chats/{roomId}/messages/{messageId} {
-      allow read, write: if request.auth.uid == roomId
-        || request.auth.token.email == "ADMIN_EMAIL_PLACEHOLDER";
+      allow read, write: if isOwner(roomId) || isAdmin();
+    }
+
+    // Notas: dono lê/escreve as suas, admin lê/escreve todas
+    match /notes/{noteId} {
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn();
+      allow update, delete: if resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    // Ideias: qualquer logado lê e cria, admin pode tudo
+    match /ideas/{ideaId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Avaliações: qualquer logado lê e cria, admin pode tudo
+    match /reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Mensagens admin: qualquer logado lê, admin cria/edita/deleta
+    match /adminMessages/{msgId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Configurações: dono lê as suas, admin lê/escreve todas
+    match /settings/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
     }
   }
 }
