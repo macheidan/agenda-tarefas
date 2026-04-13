@@ -61,7 +61,8 @@ export function useKnowledge() {
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error('[Knowledge] Erro Gemini:', err);
-      const errorMsg = { role: 'ai', text: 'Erro ao processar a pergunta. Tente novamente.', timestamp: Date.now() };
+      const detail = err?.message || err?.statusText || String(err);
+      const errorMsg = { role: 'ai', text: `Erro: ${detail}`, timestamp: Date.now() };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setLoading(false);
