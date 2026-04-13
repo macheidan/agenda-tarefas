@@ -3,8 +3,6 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
 export function useKnowledge() {
   const [knowledgeBase, setKnowledgeBase] = useState('');
   const [messages, setMessages] = useState([]);
@@ -14,13 +12,9 @@ export function useKnowledge() {
 
   const initChat = useCallback((content) => {
     if (!content) return;
-    if (!apiKey) {
-      console.error('[Knowledge] VITE_GEMINI_API_KEY não configurada. Valor:', typeof apiKey, apiKey ? 'presente' : 'vazia');
-      setError('Chave API do Gemini não configurada.');
-      return;
-    }
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const key = import.meta.env.VITE_GEMINI_API_KEY;
+      const genAI = new GoogleGenerativeAI(key);
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.0-flash',
         systemInstruction: `Você é um assistente de conhecimento interno de uma rede de pizzarias. Responda APENAS com base no conhecimento fornecido abaixo. Se a pergunta não puder ser respondida com o conhecimento disponível, diga que não tem essa informação na base de conhecimento.\n\n--- BASE DE CONHECIMENTO ---\n${content}\n--- FIM DA BASE ---`,
