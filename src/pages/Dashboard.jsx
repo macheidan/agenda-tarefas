@@ -64,7 +64,7 @@ export default function Dashboard() {
   const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
   const knowledgeEnabled = isAdmin || settings.knowledgeEnabled !== false;
   const contentPlansEnabled = isAdmin || settings.contentPlansEnabled !== false;
-  const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, ready: kbReady, error: kbError } = useKnowledge();
+  const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
   const { plans, loading: plansLoading, uploadPlan, deletePlan } = useContentPlans();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
@@ -198,6 +198,7 @@ export default function Dashboard() {
             sendMessage={sendKbMessage}
             knowledgeBase={knowledgeBase}
             updateKnowledgeBase={updateKnowledgeBase}
+            persona={kbPersona}
             ready={kbReady}
             error={kbError}
           />

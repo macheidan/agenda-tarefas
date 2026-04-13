@@ -9,13 +9,17 @@ const MODELS = [
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
 ];
-const SYSTEM_PROMPT = (content) =>
-  `Você é a Bia, assistente virtual da Dáme Pizza & Lov Pizza — simpática, prestativa e com um jeitinho descontraído. Fale de forma natural, como uma colega de trabalho que manja de tudo na empresa. Use linguagem informal mas profissional, seja objetiva e, quando fizer sentido, adicione um toque de bom humor.
+
+const DEFAULT_NAME = 'Assistente';
+const DEFAULT_PERSONALITY = 'Simpática, prestativa e profissional. Responde de forma clara e objetiva em português brasileiro.';
+
+const buildSystemPrompt = (content, name, personality) =>
+  `Você é ${name || DEFAULT_NAME}. ${personality || DEFAULT_PERSONALITY}
 
 Regras:
 - Use a base de conhecimento abaixo para responder.
-- Se a informação não estiver na base, diga algo como "Hmm, isso não tá na minha base ainda! Melhor confirmar com o gestor."
-- Quando a pergunta envolver procedimentos, dê respostas práticas e diretas, como se estivesse explicando para um colega.
+- Se a informação não estiver na base, avise que não encontrou essa informação e sugira confirmar com o gestor.
+- Quando a pergunta envolver procedimentos, dê respostas práticas e diretas.
 - Pode sugerir próximos passos quando fizer sentido.
 - Responda sempre em português brasileiro.
 
@@ -26,22 +30,26 @@ ${content}
 export function useKnowledge() {
   const [knowledgeBase, setKnowledgeBase] = useState('');
   const [geminiKey, setGeminiKey] = useState('');
+  const [persona, setPersona] = useState({ name: '', personality: '' });
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [chat, setChat] = useState(null);
   const [error, setError] = useState('');
   const genAIRef = useRef(null);
   const kbRef = useRef('');
+  const personaRef = useRef({ name: '', personality: '' });
 
-  const initChat = useCallback((content, apiKey) => {
+  const initChat = useCallback((content, apiKey, p) => {
     if (!content || !apiKey) return;
+    const pData = p || personaRef.current;
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       genAIRef.current = genAI;
       kbRef.current = content;
+      personaRef.current = pData;
       const model = genAI.getGenerativeModel({
         model: MODELS[0],
-        systemInstruction: SYSTEM_PROMPT(content),
+        systemInstruction: buildSystemPrompt(content, pData.name, pData.personality),
       });
       const chatSession = model.startChat({ history: [] });
       setChat(chatSession);
@@ -60,13 +68,17 @@ export function useKnowledge() {
           getDoc(doc(db, 'knowledge', 'config')),
         ]);
         const content = baseSnap.exists() ? baseSnap.data().content || '' : '';
-        const apiKey = configSnap.exists() ? configSnap.data().geminiKey || '' : '';
+        const config = configSnap.exists() ? configSnap.data() : {};
+        const apiKey = config.geminiKey || '';
+        const p = { name: config.assistantName || '', personality: config.assistantPersonality || '' };
         setKnowledgeBase(content);
         setGeminiKey(apiKey);
+        setPersona(p);
+        personaRef.current = p;
         if (content && apiKey) {
-          initChat(content, apiKey);
+          initChat(content, apiKey, p);
         } else if (!apiKey) {
-          setError('Chave API do Gemini não configurada. O admin deve configurar em Gerenciar Base.');
+          setError('Chave API do Gemini não configurada. Configure nas Configurações.');
         }
       } catch (err) {
         console.error('[Knowledge] Erro ao carregar:', err);
@@ -79,12 +91,13 @@ export function useKnowledge() {
   const tryFallbackModels = async (text, startIndex) => {
     const genAI = genAIRef.current;
     if (!genAI) return null;
+    const p = personaRef.current;
     for (let i = startIndex; i < MODELS.length; i++) {
       try {
         console.log(`[Knowledge] Tentando modelo: ${MODELS[i]}`);
         const model = genAI.getGenerativeModel({
           model: MODELS[i],
-          systemInstruction: SYSTEM_PROMPT(kbRef.current),
+          systemInstruction: buildSystemPrompt(kbRef.current, p.name, p.personality),
         });
         const result = await model.generateContent(text);
         return result.response.text();
@@ -141,13 +154,22 @@ export function useKnowledge() {
     }
   };
 
-  const updateKnowledgeBase = async (content) => {
+  const updateKnowledgeBase = async (content, newPersona) => {
     try {
       const ref = doc(db, 'knowledge', 'base');
       await setDoc(ref, { content, updatedAt: new Date() });
+      if (newPersona) {
+        const configRef = doc(db, 'knowledge', 'config');
+        await setDoc(configRef, {
+          assistantName: newPersona.name,
+          assistantPersonality: newPersona.personality,
+        }, { merge: true });
+        setPersona(newPersona);
+        personaRef.current = newPersona;
+      }
       setKnowledgeBase(content);
       setMessages([]);
-      initChat(content, geminiKey);
+      initChat(content, geminiKey, newPersona || persona);
       return true;
     } catch (err) {
       console.error('[Knowledge] Erro ao salvar base:', err);
@@ -159,7 +181,7 @@ export function useKnowledge() {
   const updateGeminiKey = async (key) => {
     try {
       const ref = doc(db, 'knowledge', 'config');
-      await setDoc(ref, { geminiKey: key, updatedAt: new Date() });
+      await setDoc(ref, { geminiKey: key, updatedAt: new Date() }, { merge: true });
       setGeminiKey(key);
       setMessages([]);
       if (knowledgeBase && key) {
@@ -173,5 +195,5 @@ export function useKnowledge() {
     }
   };
 
-  return { messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey, ready: !!chat, error };
+  return { messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey, persona, ready: !!chat, error };
 }

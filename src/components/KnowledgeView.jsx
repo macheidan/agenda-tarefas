@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/KnowledgeView.module.css';
 
-export default function KnowledgeView({ messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, ready, error }) {
+export default function KnowledgeView({ messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, persona, ready, error }) {
   const { isAdmin } = useAuth();
   const [input, setInput] = useState('');
   const [showAdmin, setShowAdmin] = useState(false);
   const [kbText, setKbText] = useState('');
+  const [nameText, setNameText] = useState('');
+  const [personalityText, setPersonalityText] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -15,8 +17,12 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
   }, [messages, loading]);
 
   useEffect(() => {
-    if (showAdmin) setKbText(knowledgeBase);
-  }, [showAdmin, knowledgeBase]);
+    if (showAdmin) {
+      setKbText(knowledgeBase);
+      setNameText(persona?.name || '');
+      setPersonalityText(persona?.personality || '');
+    }
+  }, [showAdmin, knowledgeBase, persona]);
 
   const handleSend = () => {
     if (!input.trim() || loading) return;
@@ -37,7 +43,10 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
 
   const handleSaveKb = async () => {
     setSaveStatus('Salvando...');
-    const baseOk = await updateKnowledgeBase(kbText);
+    const baseOk = await updateKnowledgeBase(kbText, {
+      name: nameText.trim(),
+      personality: personalityText.trim(),
+    });
     if (baseOk) {
       setSaveStatus('Salvo com sucesso!');
       setTimeout(() => { setSaveStatus(''); setShowAdmin(false); }, 1500);
@@ -59,9 +68,29 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
 
       {showAdmin ? (
         <div className={styles.adminPanel}>
-          <p className={styles.adminDesc}>
-            Cole ou envie o texto da base de conhecimento. O Gemini usará esse conteúdo para responder as perguntas.
-          </p>
+          <div className={styles.personaSection}>
+            <div className={styles.personaField}>
+              <label className={styles.fieldLabel}>Nome da assistente</label>
+              <input
+                className={styles.personaInput}
+                type="text"
+                value={nameText}
+                onChange={(e) => setNameText(e.target.value)}
+                placeholder="Ex: Bia, Luna, Sara..."
+              />
+            </div>
+            <div className={styles.personaField}>
+              <label className={styles.fieldLabel}>Personalidade</label>
+              <textarea
+                className={styles.personaTextarea}
+                value={personalityText}
+                onChange={(e) => setPersonalityText(e.target.value)}
+                placeholder="Ex: Simpática e descontraída, fala de forma informal como uma colega de trabalho. Usa emojis e gírias leves."
+                rows={3}
+              />
+            </div>
+          </div>
+
           <div className={styles.uploadRow}>
             <label className={styles.uploadBtn}>
               Enviar arquivo .txt
@@ -76,11 +105,11 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
             value={kbText}
             onChange={(e) => setKbText(e.target.value)}
             placeholder="Cole aqui o conteúdo da base de conhecimento..."
-            rows={16}
+            rows={12}
           />
           <div className={styles.uploadRow}>
             <button className={styles.saveBtn} onClick={handleSaveKb}>
-              Salvar Base de Conhecimento
+              Salvar
             </button>
             {saveStatus && <span className={styles.uploadHint}>{saveStatus}</span>}
           </div>

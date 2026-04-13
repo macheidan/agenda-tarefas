@@ -214,6 +214,55 @@
   color: var(--text);
 }
 
+.personaSection {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.personaField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.personaField:first-child {
+  flex: 0 0 160px;
+}
+
+.personaField:last-child {
+  flex: 1;
+}
+
+.personaInput {
+  padding: 8px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+.personaInput:focus {
+  border-color: var(--accent);
+}
+
+.personaTextarea {
+  padding: 8px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  resize: none;
+}
+
+.personaTextarea:focus {
+  border-color: var(--accent);
+}
+
 .kbTextarea {
   flex: 1;
   padding: 12px;
@@ -274,5 +323,14 @@
 
   .kbTextarea {
     font-size: 12px;
+  }
+
+  .personaSection {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .personaField:first-child {
+    flex: none;
   }
 }
