@@ -8,6 +8,8 @@ export function useUsers() {
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
       setUsers(snapshot.docs.map((d) => ({ uid: d.id, ...d.data() })));
+    }, (err) => {
+      console.error('[useUsers] Erro ao carregar usuários:', err);
     });
     return unsubscribe;
   }, []);
