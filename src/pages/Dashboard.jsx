@@ -56,14 +56,14 @@ export default function Dashboard() {
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
   const allSettings = useAllSettings(users);
 
-  const calendarEnabled = isAdmin || settings.calendarEnabled !== false;
-  const kanbanEnabled = isAdmin || settings.kanbanEnabled !== false;
-  const ideasEnabled = isAdmin || settings.ideasEnabled !== false;
-  const notesEnabled = isAdmin || settings.notesEnabled !== false;
-  const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
-  const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
-  const knowledgeEnabled = isAdmin || settings.knowledgeEnabled !== false;
-  const contentPlansEnabled = isAdmin || settings.contentPlansEnabled !== false;
+  const calendarEnabled = settings.calendarEnabled !== false;
+  const kanbanEnabled = settings.kanbanEnabled !== false;
+  const ideasEnabled = settings.ideasEnabled !== false;
+  const notesEnabled = settings.notesEnabled !== false;
+  const shoppingListEnabled = settings.shoppingListEnabled !== false;
+  const reviewsEnabled = settings.reviewsEnabled !== false;
+  const knowledgeEnabled = settings.knowledgeEnabled !== false;
+  const contentPlansEnabled = settings.contentPlansEnabled !== false;
   const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
   const { plans, loading: plansLoading, uploadPlan, deletePlan } = useContentPlans();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
