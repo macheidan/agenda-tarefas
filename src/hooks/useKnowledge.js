@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -12,28 +12,10 @@ export function useKnowledge() {
   const [chat, setChat] = useState(null);
   const [error, setError] = useState('');
 
-  // Load knowledge base from Firestore
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const ref = doc(db, 'knowledge', 'base');
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          setKnowledgeBase(snap.data().content || '');
-        }
-      } catch (err) {
-        console.error('[Knowledge] Erro ao carregar base:', err);
-        setError('Erro ao carregar base de conhecimento: ' + err.message);
-      }
-    };
-    load();
-  }, []);
-
-  // Initialize chat session when knowledge base loads
-  useEffect(() => {
-    if (!knowledgeBase) return;
+  const initChat = useCallback((content) => {
+    if (!content) return;
     if (!apiKey) {
-      console.error('[Knowledge] VITE_GEMINI_API_KEY não configurada');
+      console.error('[Knowledge] VITE_GEMINI_API_KEY não configurada. Valor:', typeof apiKey, apiKey ? 'presente' : 'vazia');
       setError('Chave API do Gemini não configurada.');
       return;
     }
@@ -41,7 +23,7 @@ export function useKnowledge() {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.0-flash',
-        systemInstruction: `Você é um assistente de conhecimento interno de uma rede de pizzarias. Responda APENAS com base no conhecimento fornecido abaixo. Se a pergunta não puder ser respondida com o conhecimento disponível, diga que não tem essa informação na base de conhecimento.\n\n--- BASE DE CONHECIMENTO ---\n${knowledgeBase}\n--- FIM DA BASE ---`,
+        systemInstruction: `Você é um assistente de conhecimento interno de uma rede de pizzarias. Responda APENAS com base no conhecimento fornecido abaixo. Se a pergunta não puder ser respondida com o conhecimento disponível, diga que não tem essa informação na base de conhecimento.\n\n--- BASE DE CONHECIMENTO ---\n${content}\n--- FIM DA BASE ---`,
       });
       const chatSession = model.startChat({ history: [] });
       setChat(chatSession);
@@ -50,7 +32,26 @@ export function useKnowledge() {
       console.error('[Knowledge] Erro ao inicializar Gemini:', err);
       setError('Erro ao inicializar Gemini: ' + err.message);
     }
-  }, [knowledgeBase]);
+  }, []);
+
+  // Load knowledge base from Firestore
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const ref = doc(db, 'knowledge', 'base');
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const content = snap.data().content || '';
+          setKnowledgeBase(content);
+          initChat(content);
+        }
+      } catch (err) {
+        console.error('[Knowledge] Erro ao carregar base:', err);
+        setError('Erro ao carregar base de conhecimento: ' + err.message);
+      }
+    };
+    load();
+  }, [initChat]);
 
   const sendMessage = async (text) => {
     if (!chat || !text.trim()) return;
@@ -79,8 +80,7 @@ export function useKnowledge() {
       await setDoc(ref, { content, updatedAt: new Date() });
       setKnowledgeBase(content);
       setMessages([]);
-      setChat(null);
-      setError('');
+      initChat(content);
       return true;
     } catch (err) {
       console.error('[Knowledge] Erro ao salvar base:', err);
