@@ -15,6 +15,7 @@ export default function Header({
   shoppingListEnabled,
   reviewsEnabled,
   knowledgeEnabled,
+  contentPlansEnabled,
   ideasUnread,
   reviewsUnread,
   onOpenMessage,
@@ -171,6 +172,14 @@ export default function Header({
               onClick={() => onTabChange('knowledge')}
             >
               Conhecimento
+            </button>
+          )}
+          {contentPlansEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'contentPlans' ? styles.active : ''}`}
+              onClick={() => onTabChange('contentPlans')}
+            >
+              Planejamento
             </button>
           )}
         </div>

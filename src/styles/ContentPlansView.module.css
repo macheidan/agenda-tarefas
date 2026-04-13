@@ -1,0 +1,149 @@
+.container {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.uploadBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.uploadBtn:hover {
+  background: var(--accent-hover);
+}
+
+.brandTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.brandTab {
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.brandTab:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.brandTabActive {
+  composes: brandTab;
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.brandTabActive:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.iframe {
+  width: 100%;
+  height: calc(100vh - 260px);
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.deleteBtn {
+  padding: 4px 10px;
+  border: 1px solid #e53935;
+  border-radius: 4px;
+  background: transparent;
+  color: #e53935;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 12px;
+  transition: all 0.15s;
+}
+
+.deleteBtn:hover {
+  background: #e53935;
+  color: #fff;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .header {
+    margin-bottom: 14px;
+  }
+
+  .header h2 {
+    font-size: 16px;
+  }
+
+  .uploadBtn {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
+  .brandTabs {
+    gap: 6px;
+  }
+
+  .brandTab,
+  .brandTabActive {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .iframe {
+    height: calc(100vh - 220px);
+  }
+}

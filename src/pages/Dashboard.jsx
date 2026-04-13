@@ -25,6 +25,8 @@ import IdeasView from '../components/IdeasView';
 import ReviewsView from '../components/ReviewsView';
 import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
+import { useContentPlans } from '../hooks/useContentPlans';
+import ContentPlansView from '../components/ContentPlansView';
 import TaskModal from '../components/TaskModal';
 import styles from '../styles/Dashboard.module.css';
 
@@ -61,7 +63,9 @@ export default function Dashboard() {
   const shoppingListEnabled = isAdmin || settings.shoppingListEnabled !== false;
   const reviewsEnabled = isAdmin || settings.reviewsEnabled !== false;
   const knowledgeEnabled = isAdmin || settings.knowledgeEnabled !== false;
+  const contentPlansEnabled = isAdmin || settings.contentPlansEnabled !== false;
   const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, ready: kbReady, error: kbError } = useKnowledge();
+  const { plans, loading: plansLoading, uploadPlan, deletePlan } = useContentPlans();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
@@ -101,6 +105,7 @@ export default function Dashboard() {
         shoppingListEnabled={shoppingListEnabled}
         reviewsEnabled={reviewsEnabled}
         knowledgeEnabled={knowledgeEnabled}
+        contentPlansEnabled={contentPlansEnabled}
         ideasUnread={ideasUnread}
         reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
@@ -195,6 +200,14 @@ export default function Dashboard() {
             updateKnowledgeBase={updateKnowledgeBase}
             ready={kbReady}
             error={kbError}
+          />
+        )}
+        {activeTab === 'contentPlans' && contentPlansEnabled && (
+          <ContentPlansView
+            plans={plans}
+            loading={plansLoading}
+            uploadPlan={uploadPlan}
+            deletePlan={deletePlan}
           />
         )}
         {activeTab === 'completed' && isAdmin && (

@@ -62,5 +62,17 @@ service cloud.firestore {
       allow read: if isOwner(uid) || isAdmin();
       allow write: if isAdmin();
     }
+
+    // Base de conhecimento: qualquer logado lê, admin escreve
+    match /knowledge/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Planejamento de conteúdo: qualquer logado lê, admin escreve
+    match /contentPlans/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
   }
 }
