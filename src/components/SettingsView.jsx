@@ -16,6 +16,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey })
 
   const SECTIONS = [
     { key: 'calendarEnabled', label: 'Calendário' },
+    { key: 'contentPlanEnabled', label: 'Content Plan' },
     { key: 'kanbanEnabled', label: 'Kanban' },
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'notesEnabled', label: 'Anotações' },

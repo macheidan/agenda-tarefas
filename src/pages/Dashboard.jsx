@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../hooks/useTasks';
+import { useContentPlanTasks } from '../hooks/useContentPlanTasks';
 import { useUsers } from '../hooks/useUsers';
 import { useChat } from '../hooks/useChat';
 import { useSettings } from '../hooks/useSettings';
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const [selectedUid, setSelectedUid] = useState(user.uid);
   const [activeTab, setActiveTab] = useState('calendar');
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalScope, setModalScope] = useState('tasks');
   const [editingTask, setEditingTask] = useState(null);
   const [initialDate, setInitialDate] = useState(null);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
@@ -44,6 +46,13 @@ export default function Dashboard() {
   const [editingNote, setEditingNote] = useState(null);
   const { tasks, archivedTasks, addTask, updateTask, updateTaskGroup, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
+  const {
+    tasks: contentPlanTasks,
+    addTask: addContentPlanTask,
+    updateTask: updateContentPlanTask,
+    updateTaskGroup: updateContentPlanTaskGroup,
+    deleteTask: deleteContentPlanTask,
+  } = useContentPlanTasks(selectedUid);
   const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
     useChat(user, isAdmin);
   const { settings } = useSettings(user.uid);
@@ -57,6 +66,7 @@ export default function Dashboard() {
   const allSettings = useAllSettings(users);
 
   const calendarEnabled = settings.calendarEnabled !== false;
+  const contentPlanEnabled = settings.contentPlanEnabled !== false;
   const kanbanEnabled = settings.kanbanEnabled !== false;
   const ideasEnabled = settings.ideasEnabled !== false;
   const notesEnabled = settings.notesEnabled !== false;
@@ -75,12 +85,28 @@ export default function Dashboard() {
   const viewingUser = users.find((u) => u.uid === selectedUid);
 
   const handleDateClick = (dateStr) => {
+    setModalScope('tasks');
     setEditingTask(null);
     setInitialDate(dateStr);
     setModalOpen(true);
   };
 
   const handleTaskClick = (task) => {
+    setModalScope('tasks');
+    setEditingTask(task);
+    setInitialDate(null);
+    setModalOpen(true);
+  };
+
+  const handleContentPlanDateClick = (dateStr) => {
+    setModalScope('contentPlan');
+    setEditingTask(null);
+    setInitialDate(dateStr);
+    setModalOpen(true);
+  };
+
+  const handleContentPlanTaskClick = (task) => {
+    setModalScope('contentPlan');
     setEditingTask(task);
     setInitialDate(null);
     setModalOpen(true);
@@ -99,6 +125,7 @@ export default function Dashboard() {
         selectedUid={selectedUid}
         onSelectUser={setSelectedUid}
         calendarEnabled={calendarEnabled}
+        contentPlanEnabled={contentPlanEnabled}
         kanbanEnabled={kanbanEnabled}
         ideasEnabled={ideasEnabled}
         notesEnabled={notesEnabled}
@@ -126,6 +153,13 @@ export default function Dashboard() {
             tasks={tasks}
             onDateClick={handleDateClick}
             onTaskClick={handleTaskClick}
+          />
+        )}
+        {activeTab === 'contentPlan' && contentPlanEnabled && (
+          <CalendarView
+            tasks={contentPlanTasks}
+            onDateClick={handleContentPlanDateClick}
+            onTaskClick={handleContentPlanTaskClick}
           />
         )}
         {activeTab === 'kanban' && kanbanEnabled && (
@@ -234,10 +268,16 @@ export default function Dashboard() {
         <TaskModal
           task={editingTask}
           initialDate={initialDate}
-          onSave={(data) => addTask(data, user)}
-          onUpdate={updateTask}
-          onUpdateGroup={updateTaskGroup}
-          onDelete={deleteTask}
+          onSave={(data) =>
+            modalScope === 'contentPlan'
+              ? addContentPlanTask(data, user)
+              : addTask(data, user)
+          }
+          onUpdate={modalScope === 'contentPlan' ? updateContentPlanTask : updateTask}
+          onUpdateGroup={
+            modalScope === 'contentPlan' ? updateContentPlanTaskGroup : updateTaskGroup
+          }
+          onDelete={modalScope === 'contentPlan' ? deleteContentPlanTask : deleteTask}
           onClose={() => setModalOpen(false)}
         />
       )}
