@@ -9,7 +9,6 @@ export default function Header({
   selectedUid,
   onSelectUser,
   calendarEnabled,
-  contentPlanEnabled,
   kanbanEnabled,
   ideasEnabled,
   notesEnabled,
@@ -123,14 +122,6 @@ export default function Header({
               onClick={() => onTabChange('calendar')}
             >
               Calendário
-            </button>
-          )}
-          {contentPlanEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'contentPlan' ? styles.active : ''}`}
-              onClick={() => onTabChange('contentPlan')}
-            >
-              Content Plan
             </button>
           )}
           {kanbanEnabled && (

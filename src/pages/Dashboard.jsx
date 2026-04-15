@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../hooks/useTasks';
-import { useContentPlanTasks } from '../hooks/useContentPlanTasks';
 import { useUsers } from '../hooks/useUsers';
 import { useChat } from '../hooks/useChat';
 import { useSettings } from '../hooks/useSettings';
@@ -28,8 +27,6 @@ import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
 import { useContentPlans } from '../hooks/useContentPlans';
 import ContentPlansView from '../components/ContentPlansView';
-import ContentPlanView from '../components/ContentPlanView';
-import ContentPlanModal from '../components/ContentPlanModal';
 import TaskModal from '../components/TaskModal';
 import styles from '../styles/Dashboard.module.css';
 
@@ -45,17 +42,8 @@ export default function Dashboard() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
-  const [contentPlanModalOpen, setContentPlanModalOpen] = useState(false);
-  const [editingPost, setEditingPost] = useState(null);
-  const [newPostDate, setNewPostDate] = useState(null);
   const { tasks, archivedTasks, addTask, updateTask, updateTaskGroup, deleteTask, archiveTask, unarchiveTask } =
     useTasks(selectedUid);
-  const {
-    posts: contentPlanPosts,
-    addPost: addContentPlanPost,
-    updatePost: updateContentPlanPost,
-    deletePost: deleteContentPlanPost,
-  } = useContentPlanTasks(selectedUid);
   const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
     useChat(user, isAdmin);
   const { settings } = useSettings(user.uid);
@@ -69,7 +57,6 @@ export default function Dashboard() {
   const allSettings = useAllSettings(users);
 
   const calendarEnabled = settings.calendarEnabled !== false;
-  const contentPlanEnabled = settings.contentPlanEnabled !== false;
   const kanbanEnabled = settings.kanbanEnabled !== false;
   const ideasEnabled = settings.ideasEnabled !== false;
   const notesEnabled = settings.notesEnabled !== false;
@@ -99,18 +86,6 @@ export default function Dashboard() {
     setModalOpen(true);
   };
 
-  const handleAddContentPost = () => {
-    setEditingPost(null);
-    setNewPostDate(new Date().toISOString().split('T')[0]);
-    setContentPlanModalOpen(true);
-  };
-
-  const handleContentPostClick = (post) => {
-    setEditingPost(post);
-    setNewPostDate(null);
-    setContentPlanModalOpen(true);
-  };
-
   const handleUpdateStatus = (taskId, newStatus) => {
     updateTask(taskId, { status: newStatus });
   };
@@ -124,7 +99,6 @@ export default function Dashboard() {
         selectedUid={selectedUid}
         onSelectUser={setSelectedUid}
         calendarEnabled={calendarEnabled}
-        contentPlanEnabled={contentPlanEnabled}
         kanbanEnabled={kanbanEnabled}
         ideasEnabled={ideasEnabled}
         notesEnabled={notesEnabled}
@@ -152,13 +126,6 @@ export default function Dashboard() {
             tasks={tasks}
             onDateClick={handleDateClick}
             onTaskClick={handleTaskClick}
-          />
-        )}
-        {activeTab === 'contentPlan' && contentPlanEnabled && (
-          <ContentPlanView
-            posts={contentPlanPosts}
-            onAddPost={handleAddContentPost}
-            onPostClick={handleContentPostClick}
           />
         )}
         {activeTab === 'kanban' && kanbanEnabled && (
@@ -272,17 +239,6 @@ export default function Dashboard() {
           onUpdateGroup={updateTaskGroup}
           onDelete={deleteTask}
           onClose={() => setModalOpen(false)}
-        />
-      )}
-
-      {contentPlanModalOpen && (
-        <ContentPlanModal
-          post={editingPost}
-          initialDate={newPostDate}
-          onSave={(data) => addContentPlanPost(data, user)}
-          onUpdate={updateContentPlanPost}
-          onDelete={deleteContentPlanPost}
-          onClose={() => setContentPlanModalOpen(false)}
         />
       )}
 

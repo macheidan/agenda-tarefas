@@ -25,11 +25,6 @@ service cloud.firestore {
       allow read, write: if isOwner(uid) || isAdmin();
     }
 
-    // Content Plan: dono lê/escreve as suas, admin lê/escreve todas
-    match /contentPlanTasks/{uid}/items/{taskId} {
-      allow read, write: if isOwner(uid) || isAdmin();
-    }
-
     // Chat: dono da sala lê/escreve, admin lê/escreve todas
     match /chats/{roomId}/messages/{messageId} {
       allow read, write: if isOwner(roomId) || isAdmin();
