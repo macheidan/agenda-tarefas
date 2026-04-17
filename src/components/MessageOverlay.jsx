@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import RichContent from './RichContent';
 import styles from '../styles/MessageOverlay.module.css';
 
 export default function MessageOverlay({ message, onDismiss }) {
@@ -10,9 +11,7 @@ export default function MessageOverlay({ message, onDismiss }) {
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <h3 className={styles.title}>Mensagem do Administrador</h3>
-        <div className={styles.content}>
-          {message.text}
-        </div>
+        <RichContent className={styles.content} html={message.text} />
         <div className={styles.footer}>
           <label className={styles.checkLabel}>
             <input

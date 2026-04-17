@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import RichContent from './RichContent';
 import styles from '../styles/ChatView.module.css';
 
 export default function ChatView({ users, conversations, onSendMessage, onMarkAsRead }) {
@@ -51,7 +52,7 @@ export default function ChatView({ users, conversations, onSendMessage, onMarkAs
                   <img className={styles.msgAvatar} src={msg.senderPhoto || 'https://via.placeholder.com/28'} alt="" />
                 )}
                 <div className={styles.msgBubble}>
-                  <p className={styles.msgText}>{msg.text}</p>
+                  <RichContent className={styles.msgText} html={msg.text} />
                   <span className={styles.msgTime}>
                     {msg.timestamp?.toDate
                       ? msg.timestamp.toDate().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -131,7 +132,7 @@ export default function ChatView({ users, conversations, onSendMessage, onMarkAs
                     <img className={styles.msgAvatar} src={msg.senderPhoto || 'https://via.placeholder.com/28'} alt="" />
                   )}
                   <div className={styles.msgBubble}>
-                    <p className={styles.msgText}>{msg.text}</p>
+                    <RichContent className={styles.msgText} html={msg.text} />
                     <span className={styles.msgTime}>
                       {msg.timestamp?.toDate
                         ? msg.timestamp.toDate().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })

@@ -51,7 +51,7 @@ export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onC
           <div className={styles.list}>
             {adminMessages.map((msg) => (
               <div key={msg.id} className={styles.messageCard}>
-                <p className={styles.messageText}>{msg.text}</p>
+                <RichContent className={styles.messageText} html={msg.text} />
                 <div className={styles.messageActions}>
                   <span className={styles.messageDate}>{formatDate(msg.createdAt)}</span>
                   <button

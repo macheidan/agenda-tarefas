@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import RichContent from './RichContent';
 import styles from '../styles/KnowledgeView.module.css';
 
 export default function KnowledgeView({ messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, persona, ready, error }) {
@@ -129,9 +130,7 @@ export default function KnowledgeView({ messages, loading, sendMessage, knowledg
             {messages.map((msg, i) => (
               <div key={i} className={`${styles.message} ${msg.role === 'user' ? styles.userMsg : styles.aiMsg}`}>
                 <div className={styles.msgBubble}>
-                  {msg.text.split('\n').map((line, j) => (
-                    <p key={j}>{line}</p>
-                  ))}
+                  <RichContent html={msg.text.replace(/\n/g, '<br>')} />
                 </div>
               </div>
             ))}
