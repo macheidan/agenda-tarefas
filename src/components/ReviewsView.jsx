@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
+import RichContent from './RichContent';
 import styles from '../styles/IdeasView.module.css';
 
 export default function ReviewsView({ reviews, addReview, addComment, deleteComment, deleteReview, archiveReview, markAsRead, users, allSettings }) {
@@ -172,7 +173,7 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
               {isExpanded && (
                 <div className={styles.cardBody}>
                   {review.description && (
-                    <div className={styles.description} dangerouslySetInnerHTML={{ __html: review.description }} />
+                    <RichContent className={styles.description} html={review.description} />
                   )}
 
                   {isAdmin && (
@@ -212,7 +213,7 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
                                   }}>✕</button>
                                 )}
                               </div>
-                              <div className={styles.commentText} dangerouslySetInnerHTML={{ __html: comment.text }} />
+                              <RichContent className={styles.commentText} html={comment.text} />
                               <button className={styles.replyBtn} onClick={() => setReplyTo(replyTo === `${review.id}-${comment._index}` ? null : `${review.id}-${comment._index}`)}>
                                 Responder
                               </button>
@@ -232,7 +233,7 @@ export default function ReviewsView({ reviews, addReview, addComment, deleteComm
                                     }}>✕</button>
                                   )}
                                 </div>
-                                <div className={styles.commentText} dangerouslySetInnerHTML={{ __html: reply.text }} />
+                                <RichContent className={styles.commentText} html={reply.text} />
                               </div>
                             </div>
                           ))}

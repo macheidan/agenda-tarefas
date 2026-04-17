@@ -1,4 +1,5 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useMemo } from 'react';
+import { processLinks } from '../utils/processLinks';
 import styles from '../styles/ArchivedView.module.css';
 
 const clampStyle = {
@@ -29,6 +30,7 @@ function TaskCard({ task, onArchive }) {
   const [expanded, setExpanded] = useState(false);
   const [needsClamp, setNeedsClamp] = useState(false);
   const descRef = useRef(null);
+  const processedDescription = useMemo(() => processLinks(task.description), [task.description]);
 
   useLayoutEffect(() => {
     const el = descRef.current;
@@ -51,7 +53,7 @@ function TaskCard({ task, onArchive }) {
                 ref={descRef}
                 className={styles.cardDescription}
                 style={expanded ? expandedStyle : clampStyle}
-                dangerouslySetInnerHTML={{ __html: task.description }}
+                dangerouslySetInnerHTML={{ __html: processedDescription }}
               />
               {needsClamp && !expanded && (
                 <button onClick={() => setExpanded(true)} style={linkStyle}>

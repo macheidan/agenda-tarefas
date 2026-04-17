@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
+import RichContent from './RichContent';
 import styles from '../styles/IdeasView.module.css';
 
 export default function IdeasView({ ideas, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead, users, allSettings }) {
@@ -176,10 +177,7 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
               {isExpanded && (
                 <div className={styles.cardBody}>
                   {idea.description && (
-                    <div
-                      className={styles.description}
-                      dangerouslySetInnerHTML={{ __html: idea.description }}
-                    />
+                    <RichContent className={styles.description} html={idea.description} />
                   )}
 
                   {isAdmin && (
@@ -242,10 +240,7 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
                                   </button>
                                 )}
                               </div>
-                              <div
-                                className={styles.commentText}
-                                dangerouslySetInnerHTML={{ __html: comment.text }}
-                              />
+                              <RichContent className={styles.commentText} html={comment.text} />
                               <button
                                 className={styles.replyBtn}
                                 onClick={() => setReplyTo(replyTo === `${idea.id}-${comment._index}` ? null : `${idea.id}-${comment._index}`)}
@@ -279,10 +274,7 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
                                     </button>
                                   )}
                                 </div>
-                                <div
-                                  className={styles.commentText}
-                                  dangerouslySetInnerHTML={{ __html: reply.text }}
-                                />
+                                <RichContent className={styles.commentText} html={reply.text} />
                               </div>
                             </div>
                           ))}

@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
+import RichContent from './RichContent';
 import styles from '../styles/ArchivedView.module.css';
 
 const STATUS_LABELS = {
@@ -82,10 +83,7 @@ export default function ArchivedView({ archivedTasks, onUnarchive, onDelete, onC
                 <div className={styles.cardInfo}>
                   <p className={styles.cardTitle}>{task.title}</p>
                   {task.description && (
-                    <div
-                      className={styles.cardDescription}
-                      dangerouslySetInnerHTML={{ __html: task.description }}
-                    />
+                    <RichContent className={styles.cardDescription} html={task.description} />
                   )}
                   <div className={styles.cardMeta}>
                     <span className={styles.cardDate}>{task.date}</span>

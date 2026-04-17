@@ -1,3 +1,4 @@
+import RichContent from './RichContent';
 import styles from '../styles/NotesView.module.css';
 
 export default function NotesView({ notes, onNewNote, onNoteClick }) {
@@ -30,10 +31,7 @@ export default function NotesView({ notes, onNewNote, onNoteClick }) {
             >
               <h3 className={styles.cardTitle}>{note.title}</h3>
               {note.content && (
-                <div
-                  className={styles.cardContent}
-                  dangerouslySetInnerHTML={{ __html: note.content }}
-                />
+                <RichContent className={styles.cardContent} html={note.content} />
               )}
               <span className={styles.cardDate}>{formatDate(note.createdAt)}</span>
             </div>
