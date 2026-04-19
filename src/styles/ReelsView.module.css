@@ -62,13 +62,13 @@
   padding: 12px;
   margin-bottom: 20px;
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
 }
 
 .titleInput {
-  flex: 1;
-  padding: 9px 14px;
+  width: 100%;
+  padding: 10px 14px;
   border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 14px;
@@ -78,6 +78,9 @@
   transition: border-color 0.15s;
   box-sizing: border-box;
   font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
 }
 
 .titleInput:focus {
@@ -85,7 +88,7 @@
 }
 
 .submitBtn {
-  padding: 9px 16px;
+  padding: 8px 20px;
   border: none;
   border-radius: 6px;
   background: var(--accent);
@@ -95,6 +98,7 @@
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
+  align-self: flex-end;
 }
 
 .submitBtn:hover {

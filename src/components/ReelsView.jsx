@@ -20,17 +20,25 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
 
   const parseInput = (raw) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const urls = raw.match(urlRegex) || [];
-    const link = urls[0] || '';
-    const description = raw.replace(urlRegex, '').trim();
-    return { link, description };
+    const matches = [...raw.matchAll(urlRegex)];
+    const entries = [];
+    for (let i = 0; i < matches.length; i++) {
+      const link = matches[i][0];
+      const start = matches[i].index + link.length;
+      const end = i + 1 < matches.length ? matches[i + 1].index : raw.length;
+      const description = raw.slice(start, end).replace(/^[\s\-–—:|]+/, '').trim();
+      entries.push({ link, description });
+    }
+    return entries;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { link, description } = parseInput(text);
-    if (!link) return;
-    await addReel(link, description, user);
+    const entries = parseInput(text);
+    if (entries.length === 0) return;
+    for (const { link, description } of entries) {
+      await addReel(link, description, user);
+    }
     setText('');
     setShowForm(false);
   };
@@ -106,16 +114,16 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
 
       {showForm && (
         <form className={styles.form} onSubmit={handleSubmit}>
-          <input
+          <textarea
             className={styles.titleInput}
-            type="text"
-            placeholder="Cole o link e um comentário (opcional)..."
+            placeholder="Cole um ou mais links (um por linha, com descrição opcional após '-')..."
             value={text}
             onChange={(e) => setText(e.target.value)}
+            rows={4}
             autoFocus
           />
-          <button type="submit" className={styles.submitBtn} disabled={!parseInput(text).link}>
-            Enviar
+          <button type="submit" className={styles.submitBtn} disabled={parseInput(text).length === 0}>
+            Enviar ({parseInput(text).length || 0})
           </button>
         </form>
       )}
