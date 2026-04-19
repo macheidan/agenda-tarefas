@@ -59,17 +59,16 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
+  padding: 12px;
+  margin-bottom: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  align-items: center;
 }
 
-.titleInput,
-.descInput {
-  width: 100%;
-  padding: 10px 14px;
+.titleInput {
+  flex: 1;
+  padding: 9px 14px;
   border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 14px;
@@ -81,27 +80,21 @@
   font-family: inherit;
 }
 
-.descInput {
-  resize: vertical;
-  min-height: 60px;
-}
-
-.titleInput:focus,
-.descInput:focus {
+.titleInput:focus {
   border-color: var(--input-focus);
 }
 
 .submitBtn {
-  padding: 8px 20px;
+  padding: 9px 16px;
   border: none;
   border-radius: 6px;
   background: var(--accent);
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  align-self: flex-end;
   transition: background 0.15s;
+  white-space: nowrap;
 }
 
 .submitBtn:hover {
@@ -118,10 +111,10 @@
 }
 
 .sectionTitle {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -136,6 +129,147 @@
   border: 1px dashed var(--border);
 }
 
+/* Pending: compact single-line rows */
+.pendingList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pendingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+  min-height: 36px;
+}
+
+.pendingRow:last-child {
+  border-bottom: none;
+}
+
+.pendingRow:hover {
+  background: var(--bg-secondary);
+}
+
+.pendingDate {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pendingAuthor {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pendingLink {
+  color: var(--accent);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pendingLink:hover {
+  text-decoration: underline;
+}
+
+.pendingDesc {
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.pendingActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.approveBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #4caf50;
+  border-radius: 4px;
+  background: #4caf50;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.approveBtn:hover {
+  opacity: 0.85;
+}
+
+.archiveBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.archiveBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.deleteBtnSmall {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+  background: none;
+  color: var(--danger);
+  font-size: 16px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.deleteBtnSmall:hover {
+  background: var(--danger-bg);
+}
+
+/* Archived view cards */
 .list {
   display: flex;
   flex-direction: column;
@@ -219,41 +353,6 @@
   flex-shrink: 0;
 }
 
-.approveBtn {
-  padding: 5px 12px;
-  border: 1px solid #4caf50;
-  border-radius: 4px;
-  background: #4caf50;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  white-space: nowrap;
-}
-
-.approveBtn:hover {
-  opacity: 0.85;
-}
-
-.archiveBtn,
-.archiveBtnSmall {
-  padding: 5px 12px;
-  border: 1px solid var(--input-border);
-  border-radius: 4px;
-  background: var(--card);
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.archiveBtn:hover,
-.archiveBtnSmall:hover {
-  background: var(--bg-secondary);
-}
-
 .unarchiveBtn {
   padding: 5px 12px;
   border: 1px solid var(--accent);
@@ -270,8 +369,7 @@
   background: var(--accent-light);
 }
 
-.deleteBtn,
-.deleteBtnSmall {
+.deleteBtn {
   padding: 5px 12px;
   border: 1px solid var(--danger);
   border-radius: 4px;
@@ -283,9 +381,25 @@
   white-space: nowrap;
 }
 
-.deleteBtn:hover,
-.deleteBtnSmall:hover {
+.deleteBtn:hover {
   background: var(--danger-bg);
+}
+
+/* Approved table */
+.archiveBtnSmall {
+  padding: 4px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.archiveBtnSmall:hover {
+  background: var(--bg-secondary);
 }
 
 .tableWrap {
@@ -319,7 +433,7 @@
   padding: 10px 12px;
   border-bottom: 1px solid var(--border-light);
   color: var(--text);
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .table tbody tr:last-child td {
@@ -350,6 +464,11 @@
 @media (max-width: 640px) {
   .container {
     padding: 16px;
+  }
+
+  .pendingRow {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .card {
@@ -386,31 +505,34 @@
   }
 
   .form {
-    padding: 12px;
-    gap: 10px;
+    padding: 10px;
+    gap: 6px;
+    flex-direction: column;
   }
 
-  .titleInput,
-  .descInput {
+  .titleInput {
     font-size: 13px;
     padding: 8px 12px;
   }
 
   .submitBtn {
     font-size: 13px;
-    padding: 7px 16px;
+    padding: 8px 16px;
+    align-self: flex-end;
+  }
+
+  .pendingRow {
+    padding: 8px 10px;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .pendingLink {
+    font-size: 12px;
   }
 
   .card {
     padding: 12px;
-  }
-
-  .link {
-    font-size: 12px;
-  }
-
-  .description {
-    font-size: 12px;
   }
 
   .table th,

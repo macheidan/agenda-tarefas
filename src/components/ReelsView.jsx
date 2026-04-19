@@ -6,8 +6,7 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
   const { user, isAdmin } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-  const [link, setLink] = useState('');
-  const [description, setDescription] = useState('');
+  const [text, setText] = useState('');
 
   const pending = reels.filter((r) => r.status === 'pending' || !r.status);
   const approved = reels.filter((r) => r.status === 'approved');
@@ -19,12 +18,20 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
     return d.toLocaleDateString('pt-BR');
   };
 
+  const parseInput = (raw) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = raw.match(urlRegex) || [];
+    const link = urls[0] || '';
+    const description = raw.replace(urlRegex, '').trim();
+    return { link, description };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!link.trim()) return;
+    const { link, description } = parseInput(text);
+    if (!link) return;
     await addReel(link, description, user);
-    setLink('');
-    setDescription('');
+    setText('');
     setShowForm(false);
   };
 
@@ -101,21 +108,13 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
         <form className={styles.form} onSubmit={handleSubmit}>
           <input
             className={styles.titleInput}
-            type="url"
-            placeholder="Cole o link do reel..."
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            required
+            type="text"
+            placeholder="Cole o link e um comentário (opcional)..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
             autoFocus
           />
-          <textarea
-            className={styles.descInput}
-            placeholder="Descrição breve (opcional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-          />
-          <button type="submit" className={styles.submitBtn} disabled={!link.trim()}>
+          <button type="submit" className={styles.submitBtn} disabled={!parseInput(text).link}>
             Enviar
           </button>
         </form>
@@ -126,37 +125,28 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
         {pending.length === 0 ? (
           <div className={styles.empty}>Nenhum reel pendente.</div>
         ) : (
-          <div className={styles.list}>
+          <div className={styles.pendingList}>
             {pending.map((reel) => (
-              <div key={reel.id} className={styles.card}>
-                <div className={styles.cardMain}>
-                  <div className={styles.authorRow}>
-                    {reel.authorPhoto && (
-                      <img className={styles.authorAvatar} src={reel.authorPhoto} alt={reel.authorName} />
-                    )}
-                    <div className={styles.authorInfo}>
-                      <span className={styles.authorName}>{reel.authorName}</span>
-                      <span className={styles.date}>{formatDate(reel.createdAt)}</span>
-                    </div>
-                  </div>
-                  <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
-                    {reel.link}
-                  </a>
-                  {reel.description && <p className={styles.description}>{reel.description}</p>}
-                </div>
-                <div className={styles.cardActions}>
+              <div key={reel.id} className={styles.pendingRow}>
+                <span className={styles.pendingDate}>{formatDate(reel.createdAt)}</span>
+                <span className={styles.pendingAuthor}>{reel.authorName}</span>
+                <a className={styles.pendingLink} href={reel.link} target="_blank" rel="noopener noreferrer">
+                  {reel.link}
+                </a>
+                {reel.description && <span className={styles.pendingDesc}>{reel.description}</span>}
+                <div className={styles.pendingActions}>
                   {isAdmin && (
                     <>
                       <button className={styles.approveBtn} onClick={() => approveReel(reel.id)} title="Aprovar">
-                        ✓ Aprovar
+                        ✓
                       </button>
                       <button className={styles.archiveBtn} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                        Arquivar
+                        ✗
                       </button>
                     </>
                   )}
-                  <button className={styles.deleteBtn} onClick={() => handleDelete(reel.id)} title="Excluir">
-                    Excluir
+                  <button className={styles.deleteBtnSmall} onClick={() => handleDelete(reel.id)} title="Excluir">
+                    ×
                   </button>
                 </div>
               </div>
