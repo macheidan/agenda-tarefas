@@ -71,7 +71,7 @@ export default function Dashboard() {
   const { plans, loading: plansLoading, uploadPlan, deletePlan } = useContentPlans();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
-  const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel } = useReels();
+  const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
     useReviews(null, user, true);
 
@@ -163,6 +163,7 @@ export default function Dashboard() {
             archiveReel={archiveReelItem}
             unarchiveReel={unarchiveReel}
             deleteReel={deleteReel}
+            updateDescription={updateReelDescription}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (

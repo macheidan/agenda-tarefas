@@ -459,6 +459,51 @@
   color: var(--text-secondary);
 }
 
+.descClickable {
+  cursor: pointer;
+  display: block;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px dashed transparent;
+  min-height: 20px;
+}
+
+.descClickable:hover {
+  background: var(--bg-secondary);
+  border-color: var(--input-border);
+}
+
+.descEdit {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--input-focus);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--input-bg);
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.saveBtn {
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.saveBtn:hover {
+  background: var(--accent-hover);
+}
+
 .cellActions {
   display: flex;
   gap: 6px;

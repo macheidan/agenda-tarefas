@@ -70,5 +70,10 @@ export function useReels() {
     await deleteDoc(doc(db, 'reels', reelId));
   }, []);
 
-  return { reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel };
+  const updateDescription = useCallback(async (reelId, description) => {
+    const reelRef = doc(db, 'reels', reelId);
+    await updateDoc(reelRef, { description: description?.trim() || '' });
+  }, []);
+
+  return { reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription };
 }

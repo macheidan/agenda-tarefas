@@ -2,11 +2,29 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/ReelsView.module.css';
 
-export default function ReelsView({ reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel }) {
+export default function ReelsView({ reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription }) {
   const { user, isAdmin } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [text, setText] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editDescText, setEditDescText] = useState('');
+
+  const startEditDesc = (reel) => {
+    setEditingId(reel.id);
+    setEditDescText(reel.description || '');
+  };
+
+  const saveEditDesc = async (reelId) => {
+    await updateDescription(reelId, editDescText);
+    setEditingId(null);
+    setEditDescText('');
+  };
+
+  const cancelEditDesc = () => {
+    setEditingId(null);
+    setEditDescText('');
+  };
 
   const pending = reels.filter((r) => r.status === 'pending' || !r.status);
   const approved = reels.filter((r) => r.status === 'approved');
@@ -184,13 +202,46 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
                         {reel.link}
                       </a>
                     </td>
-                    <td className={styles.cellDesc}>{reel.description || '—'}</td>
+                    <td className={styles.cellDesc}>
+                      {editingId === reel.id ? (
+                        <textarea
+                          className={styles.descEdit}
+                          value={editDescText}
+                          onChange={(e) => setEditDescText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEditDesc(reel.id);
+                            if (e.key === 'Escape') cancelEditDesc();
+                          }}
+                          rows={2}
+                          autoFocus
+                        />
+                      ) : (
+                        <span
+                          className={isAdmin ? styles.descClickable : ''}
+                          onClick={() => isAdmin && startEditDesc(reel)}
+                          title={isAdmin ? 'Clique para editar' : ''}
+                        >
+                          {reel.description || '—'}
+                        </span>
+                      )}
+                    </td>
                     <td>
                       {isAdmin && (
                         <div className={styles.cellActions}>
-                          <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                            Arquivar
-                          </button>
+                          {editingId === reel.id ? (
+                            <>
+                              <button className={styles.saveBtn} onClick={() => saveEditDesc(reel.id)} title="Salvar">
+                                Salvar
+                              </button>
+                              <button className={styles.archiveBtnSmall} onClick={cancelEditDesc} title="Cancelar">
+                                Cancelar
+                              </button>
+                            </>
+                          ) : (
+                            <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                              Arquivar
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>
