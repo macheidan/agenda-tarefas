@@ -11,6 +11,7 @@ export default function Header({
   calendarEnabled,
   kanbanEnabled,
   ideasEnabled,
+  reelsEnabled,
   notesEnabled,
   shoppingListEnabled,
   reviewsEnabled,
@@ -139,6 +140,14 @@ export default function Header({
             >
               Ideias
               {ideasUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
+            </button>
+          )}
+          {reelsEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'reels' ? styles.active : ''}`}
+              onClick={() => onTabChange('reels')}
+            >
+              📱 Reels
             </button>
           )}
           {notesEnabled && (

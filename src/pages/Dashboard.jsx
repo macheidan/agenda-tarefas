@@ -6,6 +6,7 @@ import { useChat } from '../hooks/useChat';
 import { useSettings } from '../hooks/useSettings';
 import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
+import { useReels } from '../hooks/useReels';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
 import { useReviews } from '../hooks/useReviews';
@@ -22,6 +23,7 @@ import ArchivedView from '../components/ArchivedView';
 import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
+import ReelsView from '../components/ReelsView';
 import ReviewsView from '../components/ReviewsView';
 import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
@@ -59,6 +61,7 @@ export default function Dashboard() {
   const calendarEnabled = settings.calendarEnabled !== false;
   const kanbanEnabled = settings.kanbanEnabled !== false;
   const ideasEnabled = settings.ideasEnabled !== false;
+  const reelsEnabled = settings.reelsEnabled !== false;
   const notesEnabled = settings.notesEnabled !== false;
   const shoppingListEnabled = settings.shoppingListEnabled !== false;
   const reviewsEnabled = settings.reviewsEnabled !== false;
@@ -68,6 +71,7 @@ export default function Dashboard() {
   const { plans, loading: plansLoading, uploadPlan, deletePlan } = useContentPlans();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
+  const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel } = useReels();
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
     useReviews(null, user, true);
 
@@ -101,6 +105,7 @@ export default function Dashboard() {
         calendarEnabled={calendarEnabled}
         kanbanEnabled={kanbanEnabled}
         ideasEnabled={ideasEnabled}
+        reelsEnabled={reelsEnabled}
         notesEnabled={notesEnabled}
         shoppingListEnabled={shoppingListEnabled}
         reviewsEnabled={reviewsEnabled}
@@ -148,6 +153,16 @@ export default function Dashboard() {
             markAsRead={markIdeaAsRead}
             users={users}
             allSettings={allSettings}
+          />
+        )}
+        {activeTab === 'reels' && reelsEnabled && (
+          <ReelsView
+            reels={reels}
+            addReel={addReel}
+            approveReel={approveReel}
+            archiveReel={archiveReelItem}
+            unarchiveReel={unarchiveReel}
+            deleteReel={deleteReel}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (

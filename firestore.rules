@@ -44,6 +44,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Reels: qualquer logado lê, cria e deleta; apenas admin aprova/arquiva
+    match /reels/{reelId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow delete: if isSignedIn();
+      allow update: if isAdmin();
+    }
+
     // Avaliações: qualquer logado lê e cria, admin pode tudo
     match /reviews/{reviewId} {
       allow read: if isSignedIn();

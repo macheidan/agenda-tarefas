@@ -1,0 +1,421 @@
+.container {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px var(--shadow);
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.newBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.newBtn:hover {
+  background: var(--accent-hover);
+}
+
+.archivedBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.archivedBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.form {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.titleInput,
+.descInput {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--input-bg);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.descInput {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.titleInput:focus,
+.descInput:focus {
+  border-color: var(--input-focus);
+}
+
+.submitBtn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background 0.15s;
+}
+
+.submitBtn:hover {
+  background: var(--accent-hover);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.section {
+  margin-top: 24px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 20px 0;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  transition: box-shadow 0.15s;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.cardMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.authorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.authorAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.authorInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.authorName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.link {
+  display: inline-block;
+  color: var(--accent);
+  font-size: 13px;
+  word-break: break-all;
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+.cardActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.approveBtn {
+  padding: 5px 12px;
+  border: 1px solid #4caf50;
+  border-radius: 4px;
+  background: #4caf50;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.approveBtn:hover {
+  opacity: 0.85;
+}
+
+.archiveBtn,
+.archiveBtnSmall {
+  padding: 5px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.archiveBtn:hover,
+.archiveBtnSmall:hover {
+  background: var(--bg-secondary);
+}
+
+.unarchiveBtn {
+  padding: 5px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.unarchiveBtn:hover {
+  background: var(--accent-light);
+}
+
+.deleteBtn,
+.deleteBtnSmall {
+  padding: 5px 12px;
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+  background: none;
+  color: var(--danger);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.deleteBtn:hover,
+.deleteBtnSmall:hover {
+  background: var(--danger-bg);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background: var(--bg-secondary);
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text);
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+.cellDate {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.cellDesc {
+  max-width: 280px;
+  color: var(--text-secondary);
+}
+
+.cellActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 16px;
+  }
+
+  .card {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cardActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .header h2 {
+    font-size: 16px;
+  }
+
+  .newBtn,
+  .archivedBtn {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .form {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .titleInput,
+  .descInput {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .submitBtn {
+    font-size: 13px;
+    padding: 7px 16px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .link {
+    font-size: 12px;
+  }
+
+  .description {
+    font-size: 12px;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
