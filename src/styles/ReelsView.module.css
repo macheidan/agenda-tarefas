@@ -473,6 +473,11 @@
   border-color: var(--input-border);
 }
 
+.descEdited {
+  font-weight: 700;
+  color: var(--text);
+}
+
 .descEdit {
   width: 100%;
   padding: 6px 8px;

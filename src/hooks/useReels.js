@@ -72,7 +72,7 @@ export function useReels() {
 
   const updateDescription = useCallback(async (reelId, description) => {
     const reelRef = doc(db, 'reels', reelId);
-    await updateDoc(reelRef, { description: description?.trim() || '' });
+    await updateDoc(reelRef, { description: description?.trim() || '', descriptionEdited: true });
   }, []);
 
   return { reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription };

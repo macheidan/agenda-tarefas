@@ -217,7 +217,7 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
                         />
                       ) : (
                         <span
-                          className={isAdmin ? styles.descClickable : ''}
+                          className={`${isAdmin ? styles.descClickable : ''} ${reel.descriptionEdited ? styles.descEdited : ''}`}
                           onClick={() => isAdmin && startEditDesc(reel)}
                           title={isAdmin ? 'Clique para editar' : ''}
                         >
