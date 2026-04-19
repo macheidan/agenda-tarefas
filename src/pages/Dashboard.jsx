@@ -18,7 +18,6 @@ import NoteModal from '../components/NoteModal';
 import AdminMessageModal from '../components/AdminMessageModal';
 import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
-import KanbanView from '../components/KanbanView';
 import ArchivedView from '../components/ArchivedView';
 import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
@@ -27,8 +26,6 @@ import ReelsView from '../components/ReelsView';
 import ReviewsView from '../components/ReviewsView';
 import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
-import { useContentPlans } from '../hooks/useContentPlans';
-import ContentPlansView from '../components/ContentPlansView';
 import TaskModal from '../components/TaskModal';
 import styles from '../styles/Dashboard.module.css';
 
@@ -59,16 +56,13 @@ export default function Dashboard() {
   const allSettings = useAllSettings(users);
 
   const calendarEnabled = settings.calendarEnabled !== false;
-  const kanbanEnabled = settings.kanbanEnabled !== false;
   const ideasEnabled = settings.ideasEnabled !== false;
   const reelsEnabled = settings.reelsEnabled !== false;
   const notesEnabled = settings.notesEnabled !== false;
   const shoppingListEnabled = settings.shoppingListEnabled !== false;
   const reviewsEnabled = settings.reviewsEnabled !== false;
   const knowledgeEnabled = settings.knowledgeEnabled !== false;
-  const contentPlansEnabled = settings.contentPlansEnabled !== false;
   const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
-  const { plans, loading: plansLoading, uploadPlan, deletePlan } = useContentPlans();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
@@ -90,10 +84,6 @@ export default function Dashboard() {
     setModalOpen(true);
   };
 
-  const handleUpdateStatus = (taskId, newStatus) => {
-    updateTask(taskId, { status: newStatus });
-  };
-
   return (
     <div className={styles.container}>
       <Header
@@ -103,14 +93,12 @@ export default function Dashboard() {
         selectedUid={selectedUid}
         onSelectUser={setSelectedUid}
         calendarEnabled={calendarEnabled}
-        kanbanEnabled={kanbanEnabled}
         ideasEnabled={ideasEnabled}
         reelsEnabled={reelsEnabled}
         notesEnabled={notesEnabled}
         shoppingListEnabled={shoppingListEnabled}
         reviewsEnabled={reviewsEnabled}
         knowledgeEnabled={knowledgeEnabled}
-        contentPlansEnabled={contentPlansEnabled}
         ideasUnread={ideasUnread}
         reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
@@ -131,15 +119,6 @@ export default function Dashboard() {
             tasks={tasks}
             onDateClick={handleDateClick}
             onTaskClick={handleTaskClick}
-          />
-        )}
-        {activeTab === 'kanban' && kanbanEnabled && (
-          <KanbanView
-            tasks={tasks}
-            onUpdateStatus={handleUpdateStatus}
-            onTaskClick={handleTaskClick}
-            onArchive={archiveTask}
-            onDelete={deleteTask}
           />
         )}
         {activeTab === 'ideas' && ideasEnabled && (
@@ -217,14 +196,6 @@ export default function Dashboard() {
             persona={kbPersona}
             ready={kbReady}
             error={kbError}
-          />
-        )}
-        {activeTab === 'contentPlans' && contentPlansEnabled && (
-          <ContentPlansView
-            plans={plans}
-            loading={plansLoading}
-            uploadPlan={uploadPlan}
-            deletePlan={deletePlan}
           />
         )}
         {activeTab === 'completed' && isAdmin && (

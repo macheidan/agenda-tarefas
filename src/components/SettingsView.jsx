@@ -16,14 +16,12 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey })
 
   const SECTIONS = [
     { key: 'calendarEnabled', label: 'Calendário' },
-    { key: 'kanbanEnabled', label: 'Kanban' },
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'reelsEnabled', label: 'Reels' },
     { key: 'notesEnabled', label: 'Anotações' },
     { key: 'shoppingListEnabled', label: 'Lista de Compras' },
     { key: 'reviewsEnabled', label: 'Avaliações' },
     { key: 'knowledgeEnabled', label: 'Conhecimento' },
-    { key: 'contentPlansEnabled', label: 'Planejamento' },
   ];
 
   // Admin loads settings for all users

@@ -9,14 +9,12 @@ export default function Header({
   selectedUid,
   onSelectUser,
   calendarEnabled,
-  kanbanEnabled,
   ideasEnabled,
   reelsEnabled,
   notesEnabled,
   shoppingListEnabled,
   reviewsEnabled,
   knowledgeEnabled,
-  contentPlansEnabled,
   ideasUnread,
   reviewsUnread,
   onOpenMessage,
@@ -125,14 +123,6 @@ export default function Header({
               Calendário
             </button>
           )}
-          {kanbanEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'kanban' ? styles.active : ''}`}
-              onClick={() => onTabChange('kanban')}
-            >
-              Kanban
-            </button>
-          )}
           {ideasEnabled && (
             <button
               className={`${styles.tab} ${activeTab === 'ideas' ? styles.active : ''}`}
@@ -181,14 +171,6 @@ export default function Header({
               onClick={() => onTabChange('knowledge')}
             >
               Conhecimento
-            </button>
-          )}
-          {contentPlansEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'contentPlans' ? styles.active : ''}`}
-              onClick={() => onTabChange('contentPlans')}
-            >
-              Planejamento
             </button>
           )}
         </div>
