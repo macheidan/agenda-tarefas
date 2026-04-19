@@ -134,21 +134,16 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
                   {reel.link}
                 </a>
                 {reel.description && <span className={styles.pendingDesc}>{reel.description}</span>}
-                <div className={styles.pendingActions}>
-                  {isAdmin && (
-                    <>
-                      <button className={styles.approveBtn} onClick={() => approveReel(reel.id)} title="Aprovar">
-                        ✓
-                      </button>
-                      <button className={styles.archiveBtn} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                        ✗
-                      </button>
-                    </>
-                  )}
-                  <button className={styles.deleteBtnSmall} onClick={() => handleDelete(reel.id)} title="Excluir">
-                    ×
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className={styles.pendingActions}>
+                    <button className={styles.approveBtn} onClick={() => approveReel(reel.id)} title="Aprovar">
+                      ✓
+                    </button>
+                    <button className={styles.archiveBtn} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                      ✗
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -183,16 +178,13 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
                     </td>
                     <td className={styles.cellDesc}>{reel.description || '—'}</td>
                     <td>
-                      <div className={styles.cellActions}>
-                        {isAdmin && (
+                      {isAdmin && (
+                        <div className={styles.cellActions}>
                           <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
                             Arquivar
                           </button>
-                        )}
-                        <button className={styles.deleteBtnSmall} onClick={() => handleDelete(reel.id)} title="Excluir">
-                          Excluir
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
