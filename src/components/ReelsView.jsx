@@ -8,7 +8,7 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
   const [showArchived, setShowArchived] = useState(false);
   const [showStories, setShowStories] = useState(false);
   const [text, setText] = useState('');
-  const [itemType, setItemType] = useState('reel');
+  const [itemType, setItemType] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editDescText, setEditDescText] = useState('');
 
@@ -41,19 +41,11 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
     return d.toLocaleDateString('pt-BR');
   };
 
-  const parseInput = (raw) => {
+  const parseReelInput = (raw) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const matches = [...raw.matchAll(urlRegex)];
-    if (matches.length === 0) {
-      const trimmed = raw.trim();
-      if (!trimmed) return [];
-      return [{ link: '', description: trimmed }];
-    }
+    if (matches.length === 0) return [];
     const entries = [];
-    const beforeFirst = raw.slice(0, matches[0].index).replace(/^[\s\-–—:|]+/, '').trim();
-    if (beforeFirst) {
-      entries.push({ link: '', description: beforeFirst });
-    }
     for (let i = 0; i < matches.length; i++) {
       const link = matches[i][0];
       const start = matches[i].index + link.length;
@@ -64,14 +56,44 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
     return entries;
   };
 
+  const parseStoryInput = (raw) => {
+    return raw
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
+        if (urlMatch) {
+          const link = urlMatch[0];
+          const description = line.replace(link, '').replace(/^[\s\-–—:|]+/, '').trim();
+          return { link, description };
+        }
+        return { link: '', description: line };
+      });
+  };
+
+  const getEntries = () => {
+    if (!itemType || !text.trim()) return [];
+    return itemType === 'reel' ? parseReelInput(text) : parseStoryInput(text);
+  };
+
+  const canSubmit = () => {
+    if (!itemType || !text.trim()) return false;
+    const entries = getEntries();
+    if (entries.length === 0) return false;
+    if (itemType === 'reel') return entries.every((e) => e.link);
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const entries = parseInput(text);
-    if (entries.length === 0) return;
+    if (!canSubmit()) return;
+    const entries = getEntries();
     for (const { link, description } of entries) {
       await addReel(link, description, user, itemType);
     }
     setText('');
+    setItemType(null);
     setShowForm(false);
   };
 
@@ -285,39 +307,33 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
         <form className={styles.form} onSubmit={handleSubmit}>
           <textarea
             className={styles.titleInput}
-            placeholder="Cole links e/ou texto (um por linha, descrição opcional após '-')..."
+            placeholder={itemType === 'story'
+              ? 'Um story por linha (link e/ou texto)...'
+              : 'Cole links dos reels (um por linha, descrição opcional após \'-\')...'}
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={4}
             autoFocus
           />
           <div className={styles.formFooter}>
-            <div className={styles.typeSelector}>
-              <label className={`${styles.typeOption} ${itemType === 'reel' ? styles.typeOptionActiveReel : ''}`}>
-                <input
-                  type="radio"
-                  name="itemType"
-                  value="reel"
-                  checked={itemType === 'reel'}
-                  onChange={() => setItemType('reel')}
-                  hidden
-                />
-                Reel
-              </label>
-              <label className={`${styles.typeOption} ${itemType === 'story' ? styles.typeOptionActiveStory : ''}`}>
-                <input
-                  type="radio"
-                  name="itemType"
-                  value="story"
-                  checked={itemType === 'story'}
-                  onChange={() => setItemType('story')}
-                  hidden
-                />
-                Story
-              </label>
-            </div>
-            <button type="submit" className={styles.submitBtn} disabled={!text.trim()}>
-              Enviar ({parseInput(text).length || 0})
+            <label className={styles.checkOption}>
+              <input
+                type="checkbox"
+                checked={itemType === 'reel'}
+                onChange={() => setItemType(itemType === 'reel' ? null : 'reel')}
+              />
+              Reel
+            </label>
+            <label className={styles.checkOption}>
+              <input
+                type="checkbox"
+                checked={itemType === 'story'}
+                onChange={() => setItemType(itemType === 'story' ? null : 'story')}
+              />
+              Story
+            </label>
+            <button type="submit" className={styles.submitBtn} disabled={!canSubmit()}>
+              Enviar ({getEntries().length})
             </button>
           </div>
         </form>

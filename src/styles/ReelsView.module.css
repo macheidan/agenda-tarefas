@@ -126,42 +126,26 @@
 .formFooter {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 14px;
 }
 
-.typeSelector {
+.checkOption {
   display: flex;
-  gap: 0;
-  border: 1px solid var(--input-border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.typeOption {
-  padding: 7px 14px;
+  align-items: center;
+  gap: 5px;
   font-size: 13px;
   font-weight: 500;
+  color: var(--text-secondary);
   cursor: pointer;
-  background: var(--card);
-  color: var(--text-muted);
-  transition: all 0.15s;
   user-select: none;
-  border-right: 1px solid var(--input-border);
 }
 
-.typeOption:last-child {
-  border-right: none;
-}
-
-.typeOptionActiveReel {
-  background: var(--accent);
-  color: #fff;
-}
-
-.typeOptionActiveStory {
-  background: #ff9800;
-  color: #fff;
+.checkOption input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
 }
 
 .submitBtn {
