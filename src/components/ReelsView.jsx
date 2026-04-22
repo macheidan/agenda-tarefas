@@ -182,7 +182,7 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h2>📱 Reels / Stories — Arquivados</h2>
+          <h2>📱 Instagram — Arquivados</h2>
           <button className={styles.newBtn} onClick={() => setShowArchived(false)}>
             ← Voltar
           </button>
@@ -289,7 +289,7 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>📱 Reels / Stories</h2>
+        <h2>📱 Instagram</h2>
         <div className={styles.headerActions}>
           <button className={styles.storyBtn} onClick={() => setShowStories(true)}>
             Stories ({approvedStories.length + pendingStories.length})
