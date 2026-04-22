@@ -55,6 +55,42 @@
   background: var(--bg-secondary);
 }
 
+.storyBtn {
+  padding: 8px 14px;
+  border: 2px solid #ff9800;
+  border-radius: 6px;
+  background: var(--card);
+  color: #ff9800;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.storyBtn:hover {
+  background: rgba(255, 152, 0, 0.08);
+}
+
+.typeBadgeReel {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  margin-left: auto;
+}
+
+.typeBadgeStory {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #ff9800;
+  color: #fff;
+  margin-left: auto;
+}
+
 .form {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -87,6 +123,47 @@
   border-color: var(--input-focus);
 }
 
+.formFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.typeSelector {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.typeOption {
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--text-muted);
+  transition: all 0.15s;
+  user-select: none;
+  border-right: 1px solid var(--input-border);
+}
+
+.typeOption:last-child {
+  border-right: none;
+}
+
+.typeOptionActiveReel {
+  background: var(--accent);
+  color: #fff;
+}
+
+.typeOptionActiveStory {
+  background: #ff9800;
+  color: #fff;
+}
+
 .submitBtn {
   padding: 8px 20px;
   border: none;
@@ -98,7 +175,6 @@
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
-  align-self: flex-end;
 }
 
 .submitBtn:hover {
@@ -553,7 +629,8 @@
   }
 
   .newBtn,
-  .archivedBtn {
+  .archivedBtn,
+  .storyBtn {
     padding: 7px 12px;
     font-size: 12px;
   }

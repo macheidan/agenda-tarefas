@@ -38,11 +38,12 @@ export function useReels() {
     return unsub;
   }, []);
 
-  const addReel = useCallback(async (link, description, author) => {
+  const addReel = useCallback(async (link, description, author, type) => {
     const reelsRef = collection(db, 'reels');
     await addDoc(reelsRef, {
-      link: link.trim(),
+      link: link?.trim() || '',
       description: description?.trim() || '',
+      type: type || 'reel',
       status: 'pending',
       authorUid: author.uid,
       authorName: author.displayName || author.email,

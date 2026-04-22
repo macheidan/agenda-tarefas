@@ -137,7 +137,7 @@ export default function Header({
               className={`${styles.tab} ${activeTab === 'reels' ? styles.active : ''}`}
               onClick={() => onTabChange('reels')}
             >
-              📱 Reels
+              📱 Reels / Stories
             </button>
           )}
           {notesEnabled && (
