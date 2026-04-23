@@ -1,4 +1,5 @@
 # Agenda de Tarefas
+> **2nd Brain Vault:** `G:\Meu Drive\01 AI\Vault\` | Contexto master: `00-meta/AGENT-START-HERE.md` | GitHub: github.com/macheidan/2ndbrain
 
 Aplicativo de gerenciamento de tarefas com visualização em calendário e kanban, autenticação via Google e sincronização em tempo real com Firebase.
 
