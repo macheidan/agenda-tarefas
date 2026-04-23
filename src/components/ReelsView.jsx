@@ -4,6 +4,8 @@ import styles from '../styles/ReelsView.module.css';
 
 const SCRIPT_STATUSES = ['draft', 'approved', 'recorded', 'published'];
 const STATUS_LABELS = { draft: 'Rascunho', approved: 'Aprovado', recorded: 'Gravado', published: 'Publicado' };
+const STATUS_SHORT = { draft: 'R', approved: 'A', recorded: 'G', published: 'P' };
+const STATUS_CLASS = { draft: 'statusDraft', approved: 'statusApproved', recorded: 'statusRecorded', published: 'statusPublished' };
 
 export default function ReelsView({
   reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription,
@@ -722,6 +724,7 @@ export default function ReelsView({
                   <th>Data</th>
                   <th>Autor</th>
                   <th className={styles.thDesc}>Roteiro</th>
+                  <th>Loja</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -734,19 +737,25 @@ export default function ReelsView({
                       <td className={styles.cellAuthor}>{s.authorName}</td>
                       <td className={styles.cellDesc}>
                         <span className={styles.scriptTitleText}>{s.title}</span>
+                      </td>
+                      <td>
                         {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
                       </td>
                       <td>
                         <div className={styles.scriptActions}>
-                          {SCRIPT_STATUSES.map((st) => (
-                            <button
-                              key={st}
-                              className={`${styles.statusBtn} ${(s.status || 'draft') === st ? styles.statusBtnActive : ''} ${st === 'published' ? styles.statusBtnPublished : ''}`}
-                              onClick={() => setScriptStatus(s, st)}
-                            >
-                              {STATUS_LABELS[st]}
-                            </button>
-                          ))}
+                          {SCRIPT_STATUSES.map((st) => {
+                            const isActive = (s.status || 'draft') === st;
+                            return (
+                              <button
+                                key={st}
+                                className={`${styles.statusBtnMini} ${styles[STATUS_CLASS[st]]} ${isActive ? styles.statusActive : ''}`}
+                                onClick={() => setScriptStatus(s, st)}
+                                title={STATUS_LABELS[st]}
+                              >
+                                {STATUS_SHORT[st]}
+                              </button>
+                            );
+                          })}
                           <button
                             className={styles.expandBtn}
                             onClick={() => setExpandedScript(isExpanded ? null : s.id)}

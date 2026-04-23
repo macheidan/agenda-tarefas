@@ -879,6 +879,64 @@
   flex-wrap: nowrap;
 }
 
+.statusBtnMini {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1.5px solid;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.45;
+}
+
+.statusBtnMini:hover {
+  opacity: 1;
+}
+
+.statusActive {
+  opacity: 1;
+  color: #fff !important;
+}
+
+.statusDraft {
+  border-color: #9e9e9e;
+  color: #9e9e9e;
+}
+.statusDraft.statusActive {
+  background: #9e9e9e;
+}
+
+.statusApproved {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+.statusApproved.statusActive {
+  background: #4caf50;
+}
+
+.statusRecorded {
+  border-color: #e53935;
+  color: #e53935;
+}
+.statusRecorded.statusActive {
+  background: #e53935;
+}
+
+.statusPublished {
+  border-color: #ff9800;
+  color: #ff9800;
+}
+.statusPublished.statusActive {
+  background: #ff9800;
+}
+
 .statusBtn {
   padding: 4px 10px;
   border: 1px solid var(--input-border);
