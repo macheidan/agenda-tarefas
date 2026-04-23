@@ -184,7 +184,7 @@ export default function ReelsView({
       references: scriptRefs,
     };
     if (editingScript) {
-      await updateScript(editingScript.id, {
+      const updates = {
         title: data.title.trim(),
         store: data.store,
         type: data.type,
@@ -194,7 +194,11 @@ export default function ReelsView({
         dialogues: data.dialogues.trim(),
         camera: data.camera.trim(),
         references: data.references.trim(),
-      });
+      };
+      if (editingScript.status === 'published') {
+        updates.editedAfterPublished = true;
+      }
+      await updateScript(editingScript.id, updates);
     } else {
       await addScript(data, user);
     }
@@ -208,7 +212,13 @@ export default function ReelsView({
   };
 
   const setScriptStatus = async (script, status) => {
-    await updateScript(script.id, { status });
+    const updates = { status };
+    if (status === 'published') updates.editedAfterPublished = false;
+    await updateScript(script.id, updates);
+  };
+
+  const clearEditedFlag = async (script) => {
+    await updateScript(script.id, { editedAfterPublished: false });
   };
 
   const buildScriptText = (s) => {
@@ -780,14 +790,29 @@ export default function ReelsView({
                         </td>
                         <td>
                           <div className={styles.storeCell}>
-                            {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
-                            <button
-                              className={styles.copyBtn}
-                              onClick={() => copyScriptToClipboard(s)}
-                              title="Copiar roteiro em formato WhatsApp"
-                            >
-                              {copiedScriptId === s.id ? '✓ Copiado' : 'Copiar'}
-                            </button>
+                            {s.store && (
+                              <button type="button" className={styles.storeBtn} disabled>
+                                {s.store === 'lov' ? 'Lov' : 'Dame'}
+                              </button>
+                            )}
+                            <div className={styles.storeCellRight}>
+                              {s.status === 'published' && s.editedAfterPublished && (
+                                <button
+                                  className={styles.editedBtn}
+                                  onClick={() => clearEditedFlag(s)}
+                                  title="Marcar como atualizado (limpar aviso)"
+                                >
+                                  Editado
+                                </button>
+                              )}
+                              <button
+                                className={styles.copyBtn}
+                                onClick={() => copyScriptToClipboard(s)}
+                                title="Copiar roteiro em formato WhatsApp"
+                              >
+                                {copiedScriptId === s.id ? '✓ Copiado' : 'Copiar'}
+                              </button>
+                            </div>
                           </div>
                         </td>
                         <td>
