@@ -285,16 +285,87 @@ export default function ReelsView({
     </div>
   );
 
+  const activeSection = showArchived
+    ? 'archived'
+    : showStories
+      ? 'stories'
+      : showScripts
+        ? 'scripts'
+        : 'reels';
+
+  const goToSection = (section) => {
+    setShowArchived(section === 'archived');
+    setShowStories(section === 'stories');
+    setShowScripts(section === 'scripts');
+    setShowForm(false);
+    setShowStoryForm(false);
+    if (section !== 'scripts') closeScriptForm();
+  };
+
+  const handleNewClick = () => {
+    if (activeSection === 'reels') setShowForm((v) => !v);
+    else if (activeSection === 'stories') setShowStoryForm((v) => !v);
+    else if (activeSection === 'scripts') {
+      if (scriptForm) closeScriptForm();
+      else openScriptForm(null);
+    }
+  };
+
+  const newBtnLabel = () => {
+    if (activeSection === 'reels') return showForm ? 'Cancelar' : '+ Novo';
+    if (activeSection === 'stories') return showStoryForm ? 'Cancelar' : '+ Novo';
+    if (activeSection === 'scripts') return scriptForm ? 'Cancelar' : '+ Novo Roteiro';
+    return '+ Novo';
+  };
+
+  const newBtnClass = () => {
+    if (activeSection === 'stories') return `${styles.newBtn} ${styles.newBtnStories}`;
+    if (activeSection === 'scripts') return `${styles.newBtn} ${styles.newBtnScripts}`;
+    return styles.newBtn;
+  };
+
+  const sectionHeader = (
+    <div className={styles.header}>
+      <h2>📱 Instagram</h2>
+      <div className={styles.headerActions}>
+        <button
+          className={`${styles.reelsBtn} ${activeSection === 'reels' ? styles.reelsBtnActive : ''}`}
+          onClick={() => goToSection('reels')}
+        >
+          Reels ({pending.length + approved.length})
+        </button>
+        <button
+          className={`${styles.storyBtn} ${activeSection === 'stories' ? styles.storyBtnActive : ''}`}
+          onClick={() => goToSection('stories')}
+        >
+          Stories ({approvedStories.length + pendingStories.length})
+        </button>
+        <button
+          className={`${styles.scriptBtn} ${activeSection === 'scripts' ? styles.scriptBtnActive : ''}`}
+          onClick={() => goToSection('scripts')}
+        >
+          Roteiros ({scripts.filter((s) => !s.archived).length})
+        </button>
+        <button
+          className={`${styles.archivedBtn} ${activeSection === 'archived' ? styles.archivedBtnActive : ''}`}
+          onClick={() => goToSection('archived')}
+        >
+          Arquivados ({archived.length + archivedScripts.length})
+        </button>
+        {activeSection !== 'archived' && (
+          <button className={newBtnClass()} onClick={handleNewClick}>
+            {newBtnLabel()}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   // Archived sub-view
   if (showArchived) {
     return (
       <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>📱 Instagram — Arquivados</h2>
-          <button className={styles.newBtn} onClick={() => setShowArchived(false)}>
-            ← Voltar
-          </button>
-        </div>
+        {sectionHeader}
         {archived.length === 0 && archivedScripts.length === 0 ? (
           <div className={styles.empty}>Nenhum item arquivado.</div>
         ) : (
@@ -384,17 +455,7 @@ export default function ReelsView({
   if (showStories) {
     return (
       <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>📱 Stories</h2>
-          <div className={styles.headerActions}>
-            <button className={styles.newBtn} onClick={() => setShowStories(false)}>
-              ← Voltar
-            </button>
-            <button className={styles.newBtn} onClick={() => setShowStoryForm((v) => !v)}>
-              {showStoryForm ? 'Cancelar' : '+ Novo'}
-            </button>
-          </div>
-        </div>
+        {sectionHeader}
 
         {showStoryForm && (
           <form className={styles.form} onSubmit={handleStorySubmit}>
@@ -521,19 +582,7 @@ export default function ReelsView({
   if (showScripts) {
     return (
       <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>📱 Roteiros</h2>
-          <div className={styles.headerActions}>
-            <button className={styles.newBtn} onClick={() => setShowScripts(false)}>
-              ← Voltar
-            </button>
-            {!scriptForm && (
-              <button className={styles.newBtn} onClick={() => openScriptForm(null)}>
-                + Novo Roteiro
-              </button>
-            )}
-          </div>
-        </div>
+        {sectionHeader}
 
         {scriptForm && (
           <form className={styles.scriptForm} onSubmit={handleScriptSubmit}>
@@ -788,26 +837,7 @@ export default function ReelsView({
   // Main view
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h2>📱 Reels</h2>
-        <div className={styles.headerActions}>
-          <button className={styles.reelsBtn}>
-            Reels ({pending.length + approved.length})
-          </button>
-          <button className={styles.storyBtn} onClick={() => setShowStories(true)}>
-            Stories ({approvedStories.length + pendingStories.length})
-          </button>
-          <button className={styles.scriptBtn} onClick={() => setShowScripts(true)}>
-            Roteiros ({scripts.filter((s) => !s.archived).length})
-          </button>
-          <button className={styles.archivedBtn} onClick={() => setShowArchived(true)}>
-            Arquivados ({archived.length + archivedScripts.length})
-          </button>
-          <button className={styles.newBtn} onClick={() => setShowForm((v) => !v)}>
-            {showForm ? 'Cancelar' : '+ Novo'}
-          </button>
-        </div>
-      </div>
+      {sectionHeader}
 
       {showForm && (
         <form className={styles.form} onSubmit={handleReelSubmit}>

@@ -26,33 +26,66 @@
 
 .newBtn {
   padding: 8px 16px;
-  border: none;
+  border: 2px solid var(--accent);
   border-radius: 6px;
   background: var(--accent);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .newBtn:hover {
   background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.newBtnStories {
+  background: #ff9800;
+  border-color: #ff9800;
+}
+
+.newBtnStories:hover {
+  background: #f57c00;
+  border-color: #f57c00;
+}
+
+.newBtnScripts {
+  background: #9c27b0;
+  border-color: #9c27b0;
+}
+
+.newBtnScripts:hover {
+  background: #7b1fa2;
+  border-color: #7b1fa2;
 }
 
 .archivedBtn {
   padding: 8px 14px;
-  border: 1px solid var(--input-border);
+  border: 2px solid var(--input-border);
   border-radius: 6px;
   background: var(--card);
   color: var(--text-secondary);
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .archivedBtn:hover {
   background: var(--bg-secondary);
+}
+
+.archivedBtnActive {
+  background: var(--text-secondary);
+  color: var(--card);
+  border-color: var(--text-secondary);
+}
+
+.archivedBtnActive:hover {
+  background: var(--text);
+  border-color: var(--text);
 }
 
 .storyBtn {
@@ -64,11 +97,20 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .storyBtn:hover {
   background: rgba(255, 152, 0, 0.08);
+}
+
+.storyBtnActive {
+  background: #ff9800;
+  color: #fff;
+}
+
+.storyBtnActive:hover {
+  background: #f57c00;
 }
 
 .typeBadgeReel {
@@ -607,23 +649,45 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .scriptBtn:hover {
   background: rgba(156, 39, 176, 0.08);
 }
 
+.scriptBtnActive {
+  background: #9c27b0;
+  color: #fff;
+}
+
+.scriptBtnActive:hover {
+  background: #7b1fa2;
+}
+
 .reelsBtn {
   padding: 8px 14px;
   border: 2px solid var(--accent);
   border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--card);
+  color: var(--accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
+}
+
+.reelsBtn:hover {
+  background: var(--accent-light);
+}
+
+.reelsBtnActive {
+  background: var(--accent);
+  color: #fff;
+}
+
+.reelsBtnActive:hover {
+  background: var(--accent-hover);
 }
 
 /* Script form */
