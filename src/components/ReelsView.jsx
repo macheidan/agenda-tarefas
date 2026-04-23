@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/ReelsView.module.css';
 
-const STATUS_LABELS = { draft: 'Rascunho', ready: 'Pronto', recorded: 'Gravado' };
-const STATUS_COLORS = { draft: '#9e9e9e', ready: '#2196f3', recorded: '#4caf50' };
+const SCRIPT_STATUSES = ['draft', 'approved', 'recorded', 'published'];
+const STATUS_LABELS = { draft: 'Rascunho', approved: 'Aprovado', recorded: 'Gravado', published: 'Publicado' };
 
 export default function ReelsView({
   reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription,
@@ -204,11 +204,8 @@ export default function ReelsView({
     }
   };
 
-  const cycleScriptStatus = async (script) => {
-    const order = ['draft', 'ready', 'recorded'];
-    const idx = order.indexOf(script.status || 'draft');
-    const next = order[(idx + 1) % order.length];
-    await updateScript(script.id, { status: next });
+  const setScriptStatus = async (script, status) => {
+    await updateScript(script.id, { status });
   };
 
   const extractLinks = (text) => {
@@ -669,90 +666,119 @@ export default function ReelsView({
         {scripts.filter((s) => !s.archived).length === 0 && !scriptForm ? (
           <div className={styles.empty}>Nenhum roteiro criado.</div>
         ) : (
-          <div className={styles.scriptList}>
-            {scripts.filter((s) => !s.archived).map((s) => {
-              const links = extractLinks(s.script);
-              const isExpanded = expandedScript === s.id;
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Autor</th>
+                  <th className={styles.thDesc}>Roteiro</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scripts.filter((s) => !s.archived).map((s) => {
+                  const isExpanded = expandedScript === s.id;
+                  return (
+                    <tr key={s.id} className={isExpanded ? styles.scriptRowExpanded : undefined}>
+                      <td className={styles.cellDate}>{formatDate(s.createdAt)}</td>
+                      <td className={styles.cellAuthor}>{s.authorName}</td>
+                      <td className={styles.cellDesc}>
+                        <span className={styles.scriptTitleText}>{s.title}</span>
+                        {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
+                      </td>
+                      <td>
+                        <div className={styles.scriptActions}>
+                          {SCRIPT_STATUSES.map((st) => (
+                            <button
+                              key={st}
+                              className={`${styles.statusBtn} ${(s.status || 'draft') === st ? styles.statusBtnActive : ''} ${st === 'published' ? styles.statusBtnPublished : ''}`}
+                              onClick={() => setScriptStatus(s, st)}
+                            >
+                              {STATUS_LABELS[st]}
+                            </button>
+                          ))}
+                          <button
+                            className={styles.expandBtn}
+                            onClick={() => setExpandedScript(isExpanded ? null : s.id)}
+                            title={isExpanded ? 'Recolher' : 'Expandir'}
+                          >
+                            {isExpanded ? '▲' : '▼'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {expandedScript && (() => {
+              const s = scripts.find((sc) => sc.id === expandedScript && !sc.archived);
+              if (!s) return null;
               return (
-                <div key={s.id} className={styles.scriptCard}>
-                  <div className={styles.scriptHeader} onClick={() => setExpandedScript(isExpanded ? null : s.id)}>
-                    <div className={styles.scriptMeta}>
+                <div className={styles.scriptBody}>
+                  {s.callText && (
+                    <div className={styles.scriptBlock}>
+                      <span className={styles.scriptBlockLabel}>Legenda / Chamada</span>
+                      <pre className={styles.scriptPre}>{s.callText}</pre>
+                    </div>
+                  )}
+                  <div className={styles.scriptBlock}>
+                    <span className={styles.scriptBlockLabel}>O que acontece</span>
+                    <pre className={styles.scriptPre}>{s.script}</pre>
+                  </div>
+                  {s.dialogues && (
+                    <div className={styles.scriptBlock}>
+                      <span className={styles.scriptBlockLabel}>Falas</span>
+                      <pre className={styles.scriptPre}>{s.dialogues}</pre>
+                    </div>
+                  )}
+                  {s.camera && (
+                    <div className={styles.scriptBlock}>
+                      <span className={styles.scriptBlockLabel}>Câmera / Ângulo</span>
+                      <pre className={styles.scriptPre}>{s.camera}</pre>
+                    </div>
+                  )}
+                  {s.references && (
+                    <div className={styles.scriptBlock}>
+                      <span className={styles.scriptBlockLabel}>Referências</span>
+                      <pre className={styles.scriptPre}>{s.references}</pre>
+                      {extractLinks(s.references).length > 0 && (
+                        <div className={styles.scriptLinks}>
+                          {extractLinks(s.references).map((l, i) => (
+                            <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
+                              {l}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {s.music && (
+                    <div className={styles.scriptBlock}>
+                      <span className={styles.scriptBlockLabel}>Música / Som</span>
+                      <pre className={styles.scriptPre}>{s.music}</pre>
+                    </div>
+                  )}
+                  <div className={styles.scriptFooter}>
+                    <span className={styles.scriptAuthor}>
                       <span className={s.type === 'story' ? styles.typeBadgeStory : styles.typeBadgeReel}>
                         {s.type === 'story' ? 'Story' : 'Reel'}
                       </span>
-                      {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
-                      <span className={styles.scriptTitleText}>{s.title}</span>
-                      {s.music && <span className={styles.scriptMusicTag}>{s.music}</span>}
-                    </div>
-                    <div className={styles.scriptMetaRight}>
-                      <button
-                        className={styles.statusBadge}
-                        style={{ background: STATUS_COLORS[s.status || 'draft'] }}
-                        onClick={(e) => { e.stopPropagation(); isAdmin && cycleScriptStatus(s); }}
-                        title={isAdmin ? 'Clique para avançar status' : ''}
-                      >
-                        {STATUS_LABELS[s.status || 'draft']}
+                    </span>
+                    <div className={styles.cellActions}>
+                      <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
+                        Editar
                       </button>
-                      <span className={styles.scriptDateSmall}>{formatDate(s.createdAt)}</span>
-                      <span className={styles.expandArrow}>{isExpanded ? '▲' : '▼'}</span>
+                      <button className={styles.archiveBtnSmall} onClick={() => archiveScript(s.id)}>
+                        Arquivar
+                      </button>
                     </div>
                   </div>
-
-                  {isExpanded && (
-                    <div className={styles.scriptBody}>
-                      {s.callText && (
-                        <div className={styles.scriptBlock}>
-                          <span className={styles.scriptBlockLabel}>Legenda / Chamada</span>
-                          <pre className={styles.scriptPre}>{s.callText}</pre>
-                        </div>
-                      )}
-                      <div className={styles.scriptBlock}>
-                        <span className={styles.scriptBlockLabel}>O que acontece</span>
-                        <pre className={styles.scriptPre}>{s.script}</pre>
-                      </div>
-                      {s.dialogues && (
-                        <div className={styles.scriptBlock}>
-                          <span className={styles.scriptBlockLabel}>Falas</span>
-                          <pre className={styles.scriptPre}>{s.dialogues}</pre>
-                        </div>
-                      )}
-                      {s.camera && (
-                        <div className={styles.scriptBlock}>
-                          <span className={styles.scriptBlockLabel}>Câmera / Ângulo</span>
-                          <pre className={styles.scriptPre}>{s.camera}</pre>
-                        </div>
-                      )}
-                      {s.references && (
-                        <div className={styles.scriptBlock}>
-                          <span className={styles.scriptBlockLabel}>Referências</span>
-                          <pre className={styles.scriptPre}>{s.references}</pre>
-                          {extractLinks(s.references).length > 0 && (
-                            <div className={styles.scriptLinks}>
-                              {extractLinks(s.references).map((l, i) => (
-                                <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
-                                  {l}
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div className={styles.scriptFooter}>
-                        <span className={styles.scriptAuthor}>{s.authorName}</span>
-                        <div className={styles.cellActions}>
-                          <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
-                            Editar
-                          </button>
-                          <button className={styles.archiveBtnSmall} onClick={() => archiveScript(s.id)}>
-                            Arquivar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
-            })}
+            })()}
           </div>
         )}
       </div>

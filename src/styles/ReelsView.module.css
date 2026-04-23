@@ -800,6 +800,73 @@
   opacity: 0.85;
 }
 
+.scriptActions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.statusBtn {
+  padding: 4px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.statusBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.statusBtnActive {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.statusBtnActive:hover {
+  background: var(--accent-hover);
+}
+
+.statusBtnPublished.statusBtnActive {
+  background: #ff9800;
+  border-color: #ff9800;
+}
+
+.statusBtnPublished.statusBtnActive:hover {
+  background: #f57c00;
+}
+
+.expandBtn {
+  padding: 4px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-left: 4px;
+}
+
+.expandBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.scriptRowExpanded td {
+  background: var(--bg-secondary);
+}
+
+.cellAuthor {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
 .scriptDateSmall {
   font-size: 11px;
   color: var(--text-muted);
