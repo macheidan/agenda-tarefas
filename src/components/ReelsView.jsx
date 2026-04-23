@@ -724,11 +724,11 @@ export default function ReelsView({
           <button className={styles.reelsBtn}>
             Reels ({pending.length + approved.length})
           </button>
-          <button className={styles.scriptBtn} onClick={() => setShowScripts(true)}>
-            Roteiros ({scripts.filter((s) => !s.archived).length})
-          </button>
           <button className={styles.storyBtn} onClick={() => setShowStories(true)}>
             Stories ({approvedStories.length + pendingStories.length})
+          </button>
+          <button className={styles.scriptBtn} onClick={() => setShowScripts(true)}>
+            Roteiros ({scripts.filter((s) => !s.archived).length})
           </button>
           <button className={styles.archivedBtn} onClick={() => setShowArchived(true)}>
             Arquivados ({archived.length + archivedScripts.length})
