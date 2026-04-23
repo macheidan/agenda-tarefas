@@ -7,6 +7,7 @@ import { useSettings } from '../hooks/useSettings';
 import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
 import { useReels } from '../hooks/useReels';
+import { useScripts } from '../hooks/useScripts';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
 import { useReviews } from '../hooks/useReviews';
@@ -66,6 +67,7 @@ export default function Dashboard() {
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
+  const { scripts, addScript, updateScript, deleteScript } = useScripts();
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
     useReviews(null, user, true);
 
@@ -143,6 +145,10 @@ export default function Dashboard() {
             unarchiveReel={unarchiveReel}
             deleteReel={deleteReel}
             updateDescription={updateReelDescription}
+            scripts={scripts}
+            addScript={addScript}
+            updateScript={updateScript}
+            deleteScript={deleteScript}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (

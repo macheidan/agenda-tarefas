@@ -44,6 +44,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Roteiros: qualquer logado lê, admin cria/edita/deleta
+    match /scripts/{scriptId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     // Reels: qualquer logado lê, cria e deleta; apenas admin aprova/arquiva
     match /reels/{reelId} {
       allow read: if isSignedIn();

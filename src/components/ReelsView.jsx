@@ -2,15 +2,31 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/ReelsView.module.css';
 
-export default function ReelsView({ reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription }) {
+const STATUS_LABELS = { draft: 'Rascunho', ready: 'Pronto', recorded: 'Gravado' };
+const STATUS_COLORS = { draft: '#9e9e9e', ready: '#2196f3', recorded: '#4caf50' };
+
+export default function ReelsView({
+  reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription,
+  scripts, addScript, updateScript, deleteScript,
+}) {
   const { user, isAdmin } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [showStories, setShowStories] = useState(false);
+  const [showScripts, setShowScripts] = useState(false);
   const [text, setText] = useState('');
   const [itemType, setItemType] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editDescText, setEditDescText] = useState('');
+
+  // Script form
+  const [scriptForm, setScriptForm] = useState(false);
+  const [scriptTitle, setScriptTitle] = useState('');
+  const [scriptType, setScriptType] = useState('reel');
+  const [scriptMusic, setScriptMusic] = useState('');
+  const [scriptBody, setScriptBody] = useState('');
+  const [editingScript, setEditingScript] = useState(null);
+  const [expandedScript, setExpandedScript] = useState(null);
 
   const startEditDesc = (reel) => {
     setEditingId(reel.id);
@@ -103,6 +119,67 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
     }
   };
 
+  // Script handlers
+  const openScriptForm = (script) => {
+    if (script) {
+      setEditingScript(script);
+      setScriptTitle(script.title);
+      setScriptType(script.type || 'reel');
+      setScriptMusic(script.music || '');
+      setScriptBody(script.script || '');
+    } else {
+      setEditingScript(null);
+      setScriptTitle('');
+      setScriptType('reel');
+      setScriptMusic('');
+      setScriptBody('');
+    }
+    setScriptForm(true);
+  };
+
+  const closeScriptForm = () => {
+    setScriptForm(false);
+    setEditingScript(null);
+    setScriptTitle('');
+    setScriptType('reel');
+    setScriptMusic('');
+    setScriptBody('');
+  };
+
+  const handleScriptSubmit = async (e) => {
+    e.preventDefault();
+    if (!scriptTitle.trim() || !scriptBody.trim()) return;
+    if (editingScript) {
+      await updateScript(editingScript.id, {
+        title: scriptTitle.trim(),
+        type: scriptType,
+        music: scriptMusic.trim(),
+        script: scriptBody.trim(),
+      });
+    } else {
+      await addScript({ title: scriptTitle, type: scriptType, music: scriptMusic, script: scriptBody }, user);
+    }
+    closeScriptForm();
+  };
+
+  const handleScriptDelete = async (id) => {
+    if (window.confirm('Excluir este roteiro?')) {
+      await deleteScript(id);
+    }
+  };
+
+  const cycleScriptStatus = async (script) => {
+    const order = ['draft', 'ready', 'recorded'];
+    const idx = order.indexOf(script.status || 'draft');
+    const next = order[(idx + 1) % order.length];
+    await updateScript(script.id, { status: next });
+  };
+
+  const extractLinks = (text) => {
+    const matches = text.match(/(https?:\/\/[^\s]+)/g);
+    return matches || [];
+  };
+
   const renderTable = (items) => (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
@@ -187,7 +264,6 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
             ← Voltar
           </button>
         </div>
-
         {archived.length === 0 ? (
           <div className={styles.empty}>Nenhum item arquivado.</div>
         ) : (
@@ -242,7 +318,6 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
             ← Voltar
           </button>
         </div>
-
         {pendingStories.length > 0 && (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Pendentes ({pendingStories.length})</h3>
@@ -272,7 +347,6 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
             </div>
           </div>
         )}
-
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Aprovados ({approvedStories.length})</h3>
           {approvedStories.length === 0 ? (
@@ -285,12 +359,156 @@ export default function ReelsView({ reels, addReel, approveReel, archiveReel, un
     );
   }
 
+  // Scripts sub-view
+  if (showScripts) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h2>📱 Roteiros</h2>
+          <div className={styles.headerActions}>
+            <button className={styles.newBtn} onClick={() => setShowScripts(false)}>
+              ← Voltar
+            </button>
+            {isAdmin && (
+              <button className={styles.newBtn} onClick={() => openScriptForm(null)}>
+                {scriptForm ? 'Cancelar' : '+ Novo Roteiro'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {scriptForm && (
+          <form className={styles.scriptForm} onSubmit={handleScriptSubmit}>
+            <input
+              className={styles.scriptInput}
+              type="text"
+              placeholder="Título do roteiro..."
+              value={scriptTitle}
+              onChange={(e) => setScriptTitle(e.target.value)}
+              required
+              autoFocus
+            />
+            <div className={styles.scriptRow}>
+              <div className={styles.scriptFieldSmall}>
+                <label className={styles.scriptLabel}>Tipo</label>
+                <select
+                  className={styles.scriptSelect}
+                  value={scriptType}
+                  onChange={(e) => setScriptType(e.target.value)}
+                >
+                  <option value="reel">Reel</option>
+                  <option value="story">Story</option>
+                </select>
+              </div>
+              <div className={styles.scriptFieldFlex}>
+                <label className={styles.scriptLabel}>Música / Som</label>
+                <input
+                  className={styles.scriptInput}
+                  type="text"
+                  placeholder="Nome da música, link do áudio..."
+                  value={scriptMusic}
+                  onChange={(e) => setScriptMusic(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={styles.scriptLabel}>Roteiro</label>
+              <textarea
+                className={styles.scriptTextarea}
+                placeholder="Chamada, falas, direção de câmera, ângulos, instruções..."
+                value={scriptBody}
+                onChange={(e) => setScriptBody(e.target.value)}
+                rows={10}
+                required
+              />
+            </div>
+            <div className={styles.formFooter}>
+              <button type="button" className={styles.archivedBtn} onClick={closeScriptForm}>
+                Cancelar
+              </button>
+              <button type="submit" className={styles.submitBtn} disabled={!scriptTitle.trim() || !scriptBody.trim()}>
+                {editingScript ? 'Salvar' : 'Criar Roteiro'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {scripts.length === 0 && !scriptForm ? (
+          <div className={styles.empty}>Nenhum roteiro criado.</div>
+        ) : (
+          <div className={styles.scriptList}>
+            {scripts.map((s) => {
+              const links = extractLinks(s.script);
+              const isExpanded = expandedScript === s.id;
+              return (
+                <div key={s.id} className={styles.scriptCard}>
+                  <div className={styles.scriptHeader} onClick={() => setExpandedScript(isExpanded ? null : s.id)}>
+                    <div className={styles.scriptMeta}>
+                      <span className={s.type === 'story' ? styles.typeBadgeStory : styles.typeBadgeReel}>
+                        {s.type === 'story' ? 'Story' : 'Reel'}
+                      </span>
+                      <span className={styles.scriptTitleText}>{s.title}</span>
+                      {s.music && <span className={styles.scriptMusicTag}>{s.music}</span>}
+                    </div>
+                    <div className={styles.scriptMetaRight}>
+                      <button
+                        className={styles.statusBadge}
+                        style={{ background: STATUS_COLORS[s.status || 'draft'] }}
+                        onClick={(e) => { e.stopPropagation(); isAdmin && cycleScriptStatus(s); }}
+                        title={isAdmin ? 'Clique para avançar status' : ''}
+                      >
+                        {STATUS_LABELS[s.status || 'draft']}
+                      </button>
+                      <span className={styles.scriptDateSmall}>{formatDate(s.createdAt)}</span>
+                      <span className={styles.expandArrow}>{isExpanded ? '▲' : '▼'}</span>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className={styles.scriptBody}>
+                      <pre className={styles.scriptPre}>{s.script}</pre>
+                      {links.length > 0 && (
+                        <div className={styles.scriptLinks}>
+                          {links.map((l, i) => (
+                            <a key={i} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
+                              {l}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      <div className={styles.scriptFooter}>
+                        <span className={styles.scriptAuthor}>{s.authorName}</span>
+                        {isAdmin && (
+                          <div className={styles.cellActions}>
+                            <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
+                              Editar
+                            </button>
+                            <button className={styles.deleteBtn} onClick={() => handleScriptDelete(s.id)}>
+                              Excluir
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Main view
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h2>📱 Instagram</h2>
         <div className={styles.headerActions}>
+          <button className={styles.scriptBtn} onClick={() => setShowScripts(true)}>
+            Roteiros ({scripts.length})
+          </button>
           <button className={styles.storyBtn} onClick={() => setShowStories(true)}>
             Stories ({approvedStories.length + pendingStories.length})
           </button>
