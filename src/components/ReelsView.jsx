@@ -14,8 +14,9 @@ export default function ReelsView({
   const [showArchived, setShowArchived] = useState(false);
   const [showStories, setShowStories] = useState(false);
   const [showScripts, setShowScripts] = useState(false);
+  const [showStoryForm, setShowStoryForm] = useState(false);
+  const [storyText, setStoryText] = useState('');
   const [text, setText] = useState('');
-  const [itemType, setItemType] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editDescText, setEditDescText] = useState('');
 
@@ -95,29 +96,26 @@ export default function ReelsView({
       });
   };
 
-  const getEntries = () => {
-    if (!itemType || !text.trim()) return [];
-    return itemType === 'reel' ? parseReelInput(text) : parseStoryInput(text);
-  };
-
-  const canSubmit = () => {
-    if (!itemType || !text.trim()) return false;
-    const entries = getEntries();
-    if (entries.length === 0) return false;
-    if (itemType === 'reel') return entries.every((e) => e.link);
-    return true;
-  };
-
-  const handleSubmit = async (e) => {
+  const handleReelSubmit = async (e) => {
     e.preventDefault();
-    if (!canSubmit()) return;
-    const entries = getEntries();
+    const entries = parseReelInput(text);
+    if (entries.length === 0) return;
     for (const { link, description } of entries) {
-      await addReel(link, description, user, itemType);
+      await addReel(link, description, user, 'reel');
     }
     setText('');
-    setItemType(null);
     setShowForm(false);
+  };
+
+  const handleStorySubmit = async (e) => {
+    e.preventDefault();
+    const entries = parseStoryInput(storyText);
+    if (entries.length === 0) return;
+    for (const { link, description } of entries) {
+      await addReel(link, description, user, 'story');
+    }
+    setStoryText('');
+    setShowStoryForm(false);
   };
 
   const handleDelete = (reelId) => {
@@ -391,10 +389,34 @@ export default function ReelsView({
       <div className={styles.container}>
         <div className={styles.header}>
           <h2>📱 Stories</h2>
-          <button className={styles.newBtn} onClick={() => setShowStories(false)}>
-            ← Voltar
-          </button>
+          <div className={styles.headerActions}>
+            <button className={styles.newBtn} onClick={() => setShowStories(false)}>
+              ← Voltar
+            </button>
+            <button className={styles.newBtn} onClick={() => setShowStoryForm((v) => !v)}>
+              {showStoryForm ? 'Cancelar' : '+ Novo'}
+            </button>
+          </div>
         </div>
+
+        {showStoryForm && (
+          <form className={styles.form} onSubmit={handleStorySubmit}>
+            <textarea
+              className={styles.titleInput}
+              placeholder="Um story por linha (link e/ou texto)..."
+              value={storyText}
+              onChange={(e) => setStoryText(e.target.value)}
+              rows={4}
+              autoFocus
+            />
+            <div className={styles.formFooter}>
+              <button type="submit" className={styles.submitBtn} disabled={!storyText.trim()}>
+                Enviar ({parseStoryInput(storyText).length})
+              </button>
+            </div>
+          </form>
+        )}
+
         {pendingStories.length > 0 && (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Pendentes ({pendingStories.length})</h3>
@@ -762,36 +784,18 @@ export default function ReelsView({
       </div>
 
       {showForm && (
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleReelSubmit}>
           <textarea
             className={styles.titleInput}
-            placeholder={itemType === 'story'
-              ? 'Um story por linha (link e/ou texto)...'
-              : 'Cole links dos reels (um por linha, descrição opcional após \'-\')...'}
+            placeholder="Cole links dos reels (um por linha, descrição opcional após '-')..."
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={4}
             autoFocus
           />
           <div className={styles.formFooter}>
-            <label className={styles.checkOption}>
-              <input
-                type="checkbox"
-                checked={itemType === 'reel'}
-                onChange={() => setItemType(itemType === 'reel' ? null : 'reel')}
-              />
-              Reel
-            </label>
-            <label className={styles.checkOption}>
-              <input
-                type="checkbox"
-                checked={itemType === 'story'}
-                onChange={() => setItemType(itemType === 'story' ? null : 'story')}
-              />
-              Story
-            </label>
-            <button type="submit" className={styles.submitBtn} disabled={!canSubmit()}>
-              Enviar ({getEntries().length})
+            <button type="submit" className={styles.submitBtn} disabled={!text.trim() || parseReelInput(text).length === 0}>
+              Enviar ({parseReelInput(text).length})
             </button>
           </div>
         </form>
