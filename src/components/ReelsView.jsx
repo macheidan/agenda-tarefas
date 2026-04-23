@@ -316,7 +316,7 @@ export default function ReelsView({
   const newBtnLabel = () => {
     if (activeSection === 'reels') return showForm ? 'Cancelar' : '+ Novo';
     if (activeSection === 'stories') return showStoryForm ? 'Cancelar' : '+ Novo';
-    if (activeSection === 'scripts') return scriptForm ? 'Cancelar' : '+ Novo Roteiro';
+    if (activeSection === 'scripts') return scriptForm ? 'Cancelar' : '+ Novo';
     return '+ Novo';
   };
 
