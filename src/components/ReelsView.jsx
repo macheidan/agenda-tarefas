@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/ReelsView.module.css';
 
@@ -732,111 +732,122 @@ export default function ReelsView({
                 {scripts.filter((s) => !s.archived).map((s) => {
                   const isExpanded = expandedScript === s.id;
                   return (
-                    <tr key={s.id} className={isExpanded ? styles.scriptRowExpanded : undefined}>
-                      <td className={styles.cellDate}>{formatDate(s.createdAt)}</td>
-                      <td className={styles.cellAuthor}>{s.authorName}</td>
-                      <td className={styles.cellDesc}>
-                        <span className={styles.scriptTitleText}>{s.title}</span>
-                      </td>
-                      <td>
-                        {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
-                      </td>
-                      <td>
-                        <div className={styles.scriptActions}>
-                          {SCRIPT_STATUSES.map((st) => {
-                            const isActive = (s.status || 'draft') === st;
-                            return (
-                              <button
-                                key={st}
-                                className={`${styles.statusBtnMini} ${styles[STATUS_CLASS[st]]} ${isActive ? styles.statusActive : ''}`}
-                                onClick={() => setScriptStatus(s, st)}
-                                title={STATUS_LABELS[st]}
-                              >
-                                {STATUS_SHORT[st]}
-                              </button>
-                            );
-                          })}
-                          <button
-                            className={styles.expandBtn}
-                            onClick={() => setExpandedScript(isExpanded ? null : s.id)}
-                            title={isExpanded ? 'Recolher' : 'Expandir'}
-                          >
-                            {isExpanded ? '▲' : '▼'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <Fragment key={s.id}>
+                      <tr className={isExpanded ? styles.scriptRowExpanded : undefined}>
+                        <td className={styles.cellDate}>{formatDate(s.createdAt)}</td>
+                        <td className={styles.cellAuthor}>{s.authorName}</td>
+                        <td className={styles.cellDesc}>
+                          <span className={styles.scriptTitleText}>{s.title}</span>
+                        </td>
+                        <td>
+                          {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
+                        </td>
+                        <td>
+                          <div className={styles.scriptActions}>
+                            {SCRIPT_STATUSES.map((st) => {
+                              const isActive = (s.status || 'draft') === st;
+                              return (
+                                <button
+                                  key={st}
+                                  className={`${styles.statusBtnMini} ${styles[STATUS_CLASS[st]]} ${isActive ? styles.statusActive : ''}`}
+                                  onClick={() => setScriptStatus(s, st)}
+                                  title={STATUS_LABELS[st]}
+                                >
+                                  {STATUS_SHORT[st]}
+                                </button>
+                              );
+                            })}
+                            <button
+                              className={styles.expandBtn}
+                              onClick={() => setExpandedScript(isExpanded ? null : s.id)}
+                              title={isExpanded ? 'Recolher' : 'Expandir'}
+                            >
+                              {isExpanded ? '▲' : '▼'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr className={styles.scriptBodyRow}>
+                          <td colSpan={5} className={styles.scriptBodyCell}>
+                            <div className={styles.scriptBody}>
+                              <div className={styles.scriptBlock}>
+                                <span className={styles.scriptBlockLabel}>Nome do vídeo</span>
+                                <pre className={styles.scriptPre}>{s.title}</pre>
+                              </div>
+                              <div className={styles.scriptBlock}>
+                                <span className={styles.scriptBlockLabel}>Loja</span>
+                                <pre className={styles.scriptPre}>{s.store === 'lov' ? 'Lov' : s.store === 'dame' ? 'Dame' : '—'}</pre>
+                              </div>
+                              <div className={styles.scriptBlock}>
+                                <span className={styles.scriptBlockLabel}>Formato</span>
+                                <pre className={styles.scriptPre}>{s.type === 'story' ? 'Story' : 'Reel'}</pre>
+                              </div>
+                              {s.music && (
+                                <div className={styles.scriptBlock}>
+                                  <span className={styles.scriptBlockLabel}>Música / Som</span>
+                                  <pre className={styles.scriptPre}>{s.music}</pre>
+                                </div>
+                              )}
+                              {s.callText && (
+                                <div className={styles.scriptBlock}>
+                                  <span className={styles.scriptBlockLabel}>Legenda / Chamada</span>
+                                  <pre className={styles.scriptPre}>{s.callText}</pre>
+                                </div>
+                              )}
+                              <div className={styles.scriptBlock}>
+                                <span className={styles.scriptBlockLabel}>O que acontece</span>
+                                <pre className={styles.scriptPre}>{s.script}</pre>
+                              </div>
+                              {s.dialogues && (
+                                <div className={styles.scriptBlock}>
+                                  <span className={styles.scriptBlockLabel}>Falas</span>
+                                  <pre className={styles.scriptPre}>{s.dialogues}</pre>
+                                </div>
+                              )}
+                              {s.camera && (
+                                <div className={styles.scriptBlock}>
+                                  <span className={styles.scriptBlockLabel}>Câmera / Ângulo</span>
+                                  <pre className={styles.scriptPre}>{s.camera}</pre>
+                                </div>
+                              )}
+                              {s.references && (
+                                <div className={styles.scriptBlock}>
+                                  <span className={styles.scriptBlockLabel}>Referências</span>
+                                  <pre className={styles.scriptPre}>{s.references}</pre>
+                                  {extractLinks(s.references).length > 0 && (
+                                    <div className={styles.scriptLinks}>
+                                      {extractLinks(s.references).map((l, i) => (
+                                        <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
+                                          {l}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              <div className={styles.scriptFooter}>
+                                <span className={styles.scriptAuthor}>
+                                  {s.authorName} • {formatDate(s.createdAt)}
+                                </span>
+                                <div className={styles.cellActions}>
+                                  <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
+                                    Editar
+                                  </button>
+                                  <button className={styles.archiveBtnSmall} onClick={() => archiveScript(s.id)}>
+                                    Arquivar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
               </tbody>
             </table>
-
-            {expandedScript && (() => {
-              const s = scripts.find((sc) => sc.id === expandedScript && !sc.archived);
-              if (!s) return null;
-              return (
-                <div className={styles.scriptBody}>
-                  {s.callText && (
-                    <div className={styles.scriptBlock}>
-                      <span className={styles.scriptBlockLabel}>Legenda / Chamada</span>
-                      <pre className={styles.scriptPre}>{s.callText}</pre>
-                    </div>
-                  )}
-                  <div className={styles.scriptBlock}>
-                    <span className={styles.scriptBlockLabel}>O que acontece</span>
-                    <pre className={styles.scriptPre}>{s.script}</pre>
-                  </div>
-                  {s.dialogues && (
-                    <div className={styles.scriptBlock}>
-                      <span className={styles.scriptBlockLabel}>Falas</span>
-                      <pre className={styles.scriptPre}>{s.dialogues}</pre>
-                    </div>
-                  )}
-                  {s.camera && (
-                    <div className={styles.scriptBlock}>
-                      <span className={styles.scriptBlockLabel}>Câmera / Ângulo</span>
-                      <pre className={styles.scriptPre}>{s.camera}</pre>
-                    </div>
-                  )}
-                  {s.references && (
-                    <div className={styles.scriptBlock}>
-                      <span className={styles.scriptBlockLabel}>Referências</span>
-                      <pre className={styles.scriptPre}>{s.references}</pre>
-                      {extractLinks(s.references).length > 0 && (
-                        <div className={styles.scriptLinks}>
-                          {extractLinks(s.references).map((l, i) => (
-                            <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
-                              {l}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {s.music && (
-                    <div className={styles.scriptBlock}>
-                      <span className={styles.scriptBlockLabel}>Música / Som</span>
-                      <pre className={styles.scriptPre}>{s.music}</pre>
-                    </div>
-                  )}
-                  <div className={styles.scriptFooter}>
-                    <span className={styles.scriptAuthor}>
-                      <span className={s.type === 'story' ? styles.typeBadgeStory : styles.typeBadgeReel}>
-                        {s.type === 'story' ? 'Story' : 'Reel'}
-                      </span>
-                    </span>
-                    <div className={styles.cellActions}>
-                      <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
-                        Editar
-                      </button>
-                      <button className={styles.archiveBtnSmall} onClick={() => archiveScript(s.id)}>
-                        Arquivar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         )}
       </div>
