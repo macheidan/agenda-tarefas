@@ -741,7 +741,7 @@ export default function ReelsView({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>📱 Instagram</h2>
+        <h2>📱 Reels</h2>
         <div className={styles.headerActions}>
           <button className={styles.reelsBtn}>
             Reels ({pending.length + approved.length})
