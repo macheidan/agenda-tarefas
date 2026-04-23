@@ -7,7 +7,7 @@ const STATUS_COLORS = { draft: '#9e9e9e', ready: '#2196f3', recorded: '#4caf50' 
 
 export default function ReelsView({
   reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription,
-  scripts, addScript, updateScript, deleteScript,
+  scripts, addScript, updateScript, archiveScript, unarchiveScript, deleteScript,
 }) {
   const { user, isAdmin } = useAuth();
   const [showForm, setShowForm] = useState(false);
@@ -51,6 +51,8 @@ export default function ReelsView({
   const pending = reels.filter((r) => (r.status === 'pending' || !r.status) && (r.type || 'reel') === 'reel');
   const approved = reels.filter((r) => r.status === 'approved' && (r.type || 'reel') === 'reel');
   const archived = reels.filter((r) => r.status === 'archived');
+
+  const archivedScripts = scripts.filter((s) => s.archived);
 
   const pendingStories = reels.filter((r) => (r.status === 'pending' || !r.status) && r.type === 'story');
   const approvedStories = reels.filter((r) => r.status === 'approved' && r.type === 'story');
@@ -258,24 +260,22 @@ export default function ReelsView({
                 )}
               </td>
               <td>
-                {isAdmin && (
-                  <div className={styles.cellActions}>
-                    {editingId === reel.id ? (
-                      <>
-                        <button className={styles.saveBtn} onClick={() => saveEditDesc(reel.id)} title="Salvar">
-                          Salvar
-                        </button>
-                        <button className={styles.archiveBtnSmall} onClick={cancelEditDesc} title="Cancelar">
-                          Cancelar
-                        </button>
-                      </>
-                    ) : (
-                      <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                        Arquivar
+                <div className={styles.cellActions}>
+                  {editingId === reel.id ? (
+                    <>
+                      <button className={styles.saveBtn} onClick={() => saveEditDesc(reel.id)} title="Salvar">
+                        Salvar
                       </button>
-                    )}
-                  </div>
-                )}
+                      <button className={styles.archiveBtnSmall} onClick={cancelEditDesc} title="Cancelar">
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                      Arquivar
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
@@ -294,45 +294,86 @@ export default function ReelsView({
             ← Voltar
           </button>
         </div>
-        {archived.length === 0 ? (
+        {archived.length === 0 && archivedScripts.length === 0 ? (
           <div className={styles.empty}>Nenhum item arquivado.</div>
         ) : (
-          <div className={styles.list}>
-            {archived.map((reel) => (
-              <div key={reel.id} className={styles.card}>
-                <div className={styles.cardMain}>
-                  <div className={styles.authorRow}>
-                    {reel.authorPhoto && (
-                      <img className={styles.authorAvatar} src={reel.authorPhoto} alt={reel.authorName} />
-                    )}
-                    <div className={styles.authorInfo}>
-                      <span className={styles.authorName}>{reel.authorName}</span>
-                      <span className={styles.date}>{formatDate(reel.createdAt)}</span>
+          <>
+            {archived.length > 0 && (
+              <div className={styles.list}>
+                {archived.map((reel) => (
+                  <div key={reel.id} className={styles.card}>
+                    <div className={styles.cardMain}>
+                      <div className={styles.authorRow}>
+                        {reel.authorPhoto && (
+                          <img className={styles.authorAvatar} src={reel.authorPhoto} alt={reel.authorName} />
+                        )}
+                        <div className={styles.authorInfo}>
+                          <span className={styles.authorName}>{reel.authorName}</span>
+                          <span className={styles.date}>{formatDate(reel.createdAt)}</span>
+                        </div>
+                        <span className={reel.type === 'story' ? styles.typeBadgeStory : styles.typeBadgeReel}>
+                          {reel.type === 'story' ? 'Story' : 'Reel'}
+                        </span>
+                      </div>
+                      {reel.link && (
+                        <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
+                          {reel.link}
+                        </a>
+                      )}
+                      {reel.description && <p className={styles.description}>{reel.description}</p>}
                     </div>
-                    <span className={reel.type === 'story' ? styles.typeBadgeStory : styles.typeBadgeReel}>
-                      {reel.type === 'story' ? 'Story' : 'Reel'}
-                    </span>
+                    <div className={styles.cardActions}>
+                      {isAdmin && (
+                        <>
+                          <button className={styles.unarchiveBtn} onClick={() => unarchiveReel(reel.id)} title="Restaurar">
+                            ↩ Restaurar
+                          </button>
+                          <button className={styles.deleteBtn} onClick={() => handleDelete(reel.id)} title="Excluir">
+                            Excluir
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  {reel.link && (
-                    <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
-                      {reel.link}
-                    </a>
-                  )}
-                  {reel.description && <p className={styles.description}>{reel.description}</p>}
-                </div>
-                <div className={styles.cardActions}>
-                  {isAdmin && (
-                    <button className={styles.unarchiveBtn} onClick={() => unarchiveReel(reel.id)} title="Restaurar">
-                      ↩ Restaurar
-                    </button>
-                  )}
-                  <button className={styles.deleteBtn} onClick={() => handleDelete(reel.id)} title="Excluir">
-                    Excluir
-                  </button>
+                ))}
+              </div>
+            )}
+            {archivedScripts.length > 0 && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Roteiros Arquivados ({archivedScripts.length})</h3>
+                <div className={styles.list}>
+                  {archivedScripts.map((s) => (
+                    <div key={s.id} className={styles.card}>
+                      <div className={styles.cardMain}>
+                        <div className={styles.authorRow}>
+                          <div className={styles.authorInfo}>
+                            <span className={styles.authorName}>{s.title}</span>
+                            <span className={styles.date}>{formatDate(s.createdAt)}</span>
+                          </div>
+                          <span className={s.type === 'story' ? styles.typeBadgeStory : styles.typeBadgeReel}>
+                            {s.type === 'story' ? 'Story' : 'Reel'}
+                          </span>
+                        </div>
+                        <p className={styles.description}>{s.authorName}</p>
+                      </div>
+                      <div className={styles.cardActions}>
+                        {isAdmin && (
+                          <>
+                            <button className={styles.unarchiveBtn} onClick={() => unarchiveScript(s.id)} title="Restaurar">
+                              ↩ Restaurar
+                            </button>
+                            <button className={styles.deleteBtn} onClick={() => handleScriptDelete(s.id)} title="Excluir">
+                              Excluir
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -362,16 +403,16 @@ export default function ReelsView({
                     </a>
                   )}
                   {reel.description && <span className={styles.pendingDesc}>{reel.description}</span>}
-                  {isAdmin && (
-                    <div className={styles.pendingActions}>
+                  <div className={styles.pendingActions}>
+                    {isAdmin && (
                       <button className={styles.approveBtn} onClick={() => approveReel(reel.id)} title="Aprovar">
                         ✓
                       </button>
-                      <button className={styles.archiveBtn} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                        ✗
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    <button className={styles.archiveBtn} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                      ✗
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -520,11 +561,11 @@ export default function ReelsView({
           </form>
         )}
 
-        {scripts.length === 0 && !scriptForm ? (
+        {scripts.filter((s) => !s.archived).length === 0 && !scriptForm ? (
           <div className={styles.empty}>Nenhum roteiro criado.</div>
         ) : (
           <div className={styles.scriptList}>
-            {scripts.map((s) => {
+            {scripts.filter((s) => !s.archived).map((s) => {
               const links = extractLinks(s.script);
               const isExpanded = expandedScript === s.id;
               return (
@@ -575,35 +616,33 @@ export default function ReelsView({
                           <pre className={styles.scriptPre}>{s.camera}</pre>
                         </div>
                       )}
-                      {(links.length > 0 || s.references) && (
+                      {s.references && (
                         <div className={styles.scriptBlock}>
                           <span className={styles.scriptBlockLabel}>Referências</span>
-                          <div className={styles.scriptLinks}>
-                            {s.references && extractLinks(s.references).map((l, i) => (
-                              <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
-                                {l}
-                              </a>
-                            ))}
-                            {links.map((l, i) => (
-                              <a key={`body-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
-                                {l}
-                              </a>
-                            ))}
-                          </div>
+                          <pre className={styles.scriptPre}>{s.references}</pre>
+                          {extractLinks(s.references).length > 0 && (
+                            <div className={styles.scriptLinks}>
+                              {extractLinks(s.references).map((l, i) => (
+                                <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
+                                  {l}
+                                </a>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className={styles.scriptFooter}>
                         <span className={styles.scriptAuthor}>{s.authorName}</span>
-                        {isAdmin && (
-                          <div className={styles.cellActions}>
+                        <div className={styles.cellActions}>
+                          {isAdmin && (
                             <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
                               Editar
                             </button>
-                            <button className={styles.deleteBtn} onClick={() => handleScriptDelete(s.id)}>
-                              Excluir
-                            </button>
-                          </div>
-                        )}
+                          )}
+                          <button className={styles.archiveBtnSmall} onClick={() => archiveScript(s.id)}>
+                            Arquivar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -623,13 +662,13 @@ export default function ReelsView({
         <h2>📱 Instagram</h2>
         <div className={styles.headerActions}>
           <button className={styles.scriptBtn} onClick={() => setShowScripts(true)}>
-            Roteiros ({scripts.length})
+            Roteiros ({scripts.filter((s) => !s.archived).length})
           </button>
           <button className={styles.storyBtn} onClick={() => setShowStories(true)}>
             Stories ({approvedStories.length + pendingStories.length})
           </button>
           <button className={styles.archivedBtn} onClick={() => setShowArchived(true)}>
-            Arquivados ({archived.length})
+            Arquivados ({archived.length + archivedScripts.length})
           </button>
           <button className={styles.newBtn} onClick={() => setShowForm((v) => !v)}>
             {showForm ? 'Cancelar' : '+ Novo'}
@@ -689,16 +728,16 @@ export default function ReelsView({
                   </a>
                 )}
                 {reel.description && <span className={styles.pendingDesc}>{reel.description}</span>}
-                {isAdmin && (
-                  <div className={styles.pendingActions}>
+                <div className={styles.pendingActions}>
+                  {isAdmin && (
                     <button className={styles.approveBtn} onClick={() => approveReel(reel.id)} title="Aprovar">
                       ✓
                     </button>
-                    <button className={styles.archiveBtn} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                      ✗
-                    </button>
-                  </div>
-                )}
+                  )}
+                  <button className={styles.archiveBtn} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                    ✗
+                  </button>
+                </div>
               </div>
             ))}
           </div>

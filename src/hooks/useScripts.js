@@ -53,9 +53,17 @@ export function useScripts() {
     await updateDoc(doc(db, 'scripts', id), data);
   }, []);
 
+  const archiveScript = useCallback(async (id) => {
+    await updateDoc(doc(db, 'scripts', id), { archived: true });
+  }, []);
+
+  const unarchiveScript = useCallback(async (id) => {
+    await updateDoc(doc(db, 'scripts', id), { archived: false });
+  }, []);
+
   const deleteScript = useCallback(async (id) => {
     await deleteDoc(doc(db, 'scripts', id));
   }, []);
 
-  return { scripts, addScript, updateScript, deleteScript };
+  return { scripts, addScript, updateScript, archiveScript, unarchiveScript, deleteScript };
 }

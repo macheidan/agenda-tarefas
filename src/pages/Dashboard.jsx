@@ -67,7 +67,7 @@ export default function Dashboard() {
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
-  const { scripts, addScript, updateScript, deleteScript } = useScripts();
+  const { scripts, addScript, updateScript, archiveScript, unarchiveScript, deleteScript } = useScripts();
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
     useReviews(null, user, true);
 
@@ -148,6 +148,8 @@ export default function Dashboard() {
             scripts={scripts}
             addScript={addScript}
             updateScript={updateScript}
+            archiveScript={archiveScript}
+            unarchiveScript={unarchiveScript}
             deleteScript={deleteScript}
           />
         )}
