@@ -150,6 +150,30 @@
   color: #fff;
 }
 
+.storeCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copyBtn {
+  padding: 3px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.copyBtn:hover {
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
 .form {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
