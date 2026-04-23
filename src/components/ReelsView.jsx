@@ -251,9 +251,9 @@ export default function ReelsView({
                   />
                 ) : (
                   <span
-                    className={`${isAdmin ? styles.descClickable : ''} ${reel.descriptionEdited ? styles.descEdited : ''}`}
-                    onClick={() => isAdmin && startEditDesc(reel)}
-                    title={isAdmin ? 'Clique para editar' : ''}
+                    className={`${styles.descClickable} ${reel.descriptionEdited ? styles.descEdited : ''}`}
+                    onClick={() => startEditDesc(reel)}
+                    title="Clique para editar"
                   >
                     {reel.description || '—'}
                   </span>
@@ -440,9 +440,9 @@ export default function ReelsView({
             <button className={styles.newBtn} onClick={() => setShowScripts(false)}>
               ← Voltar
             </button>
-            {isAdmin && (
+            {!scriptForm && (
               <button className={styles.newBtn} onClick={() => openScriptForm(null)}>
-                {scriptForm ? 'Cancelar' : '+ Novo Roteiro'}
+                + Novo Roteiro
               </button>
             )}
           </div>
@@ -634,11 +634,9 @@ export default function ReelsView({
                       <div className={styles.scriptFooter}>
                         <span className={styles.scriptAuthor}>{s.authorName}</span>
                         <div className={styles.cellActions}>
-                          {isAdmin && (
-                            <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
-                              Editar
-                            </button>
-                          )}
+                          <button className={styles.saveBtn} onClick={() => openScriptForm(s)}>
+                            Editar
+                          </button>
                           <button className={styles.archiveBtnSmall} onClick={() => archiveScript(s.id)}>
                             Arquivar
                           </button>
@@ -661,6 +659,9 @@ export default function ReelsView({
       <div className={styles.header}>
         <h2>📱 Instagram</h2>
         <div className={styles.headerActions}>
+          <button className={styles.reelsBtn}>
+            Reels ({pending.length + approved.length})
+          </button>
           <button className={styles.scriptBtn} onClick={() => setShowScripts(true)}>
             Roteiros ({scripts.filter((s) => !s.archived).length})
           </button>

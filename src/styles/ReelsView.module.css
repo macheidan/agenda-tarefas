@@ -592,6 +592,18 @@
   background: rgba(156, 39, 176, 0.08);
 }
 
+.reelsBtn {
+  padding: 8px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
 /* Script form */
 .scriptForm {
   background: var(--bg-secondary);
@@ -887,7 +899,8 @@
   .newBtn,
   .archivedBtn,
   .storyBtn,
-  .scriptBtn {
+  .scriptBtn,
+  .reelsBtn {
     padding: 7px 12px;
     font-size: 12px;
   }
