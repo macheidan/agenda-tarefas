@@ -24,7 +24,11 @@ export default function ReelsView({
   const [scriptTitle, setScriptTitle] = useState('');
   const [scriptType, setScriptType] = useState('reel');
   const [scriptMusic, setScriptMusic] = useState('');
+  const [scriptCallText, setScriptCallText] = useState('');
   const [scriptBody, setScriptBody] = useState('');
+  const [scriptDialogues, setScriptDialogues] = useState('');
+  const [scriptCamera, setScriptCamera] = useState('');
+  const [scriptRefs, setScriptRefs] = useState('');
   const [editingScript, setEditingScript] = useState(null);
   const [expandedScript, setExpandedScript] = useState(null);
 
@@ -126,13 +130,21 @@ export default function ReelsView({
       setScriptTitle(script.title);
       setScriptType(script.type || 'reel');
       setScriptMusic(script.music || '');
+      setScriptCallText(script.callText || '');
       setScriptBody(script.script || '');
+      setScriptDialogues(script.dialogues || '');
+      setScriptCamera(script.camera || '');
+      setScriptRefs(script.references || '');
     } else {
       setEditingScript(null);
       setScriptTitle('');
       setScriptType('reel');
       setScriptMusic('');
+      setScriptCallText('');
       setScriptBody('');
+      setScriptDialogues('');
+      setScriptCamera('');
+      setScriptRefs('');
     }
     setScriptForm(true);
   };
@@ -143,21 +155,39 @@ export default function ReelsView({
     setScriptTitle('');
     setScriptType('reel');
     setScriptMusic('');
+    setScriptCallText('');
     setScriptBody('');
+    setScriptDialogues('');
+    setScriptCamera('');
+    setScriptRefs('');
   };
 
   const handleScriptSubmit = async (e) => {
     e.preventDefault();
     if (!scriptTitle.trim() || !scriptBody.trim()) return;
+    const data = {
+      title: scriptTitle,
+      type: scriptType,
+      music: scriptMusic,
+      callText: scriptCallText,
+      script: scriptBody,
+      dialogues: scriptDialogues,
+      camera: scriptCamera,
+      references: scriptRefs,
+    };
     if (editingScript) {
       await updateScript(editingScript.id, {
-        title: scriptTitle.trim(),
-        type: scriptType,
-        music: scriptMusic.trim(),
-        script: scriptBody.trim(),
+        title: data.title.trim(),
+        type: data.type,
+        music: data.music.trim(),
+        callText: data.callText.trim(),
+        script: data.script.trim(),
+        dialogues: data.dialogues.trim(),
+        camera: data.camera.trim(),
+        references: data.references.trim(),
       });
     } else {
-      await addScript({ title: scriptTitle, type: scriptType, music: scriptMusic, script: scriptBody }, user);
+      await addScript(data, user);
     }
     closeScriptForm();
   };
@@ -379,18 +409,23 @@ export default function ReelsView({
 
         {scriptForm && (
           <form className={styles.scriptForm} onSubmit={handleScriptSubmit}>
-            <input
-              className={styles.scriptInput}
-              type="text"
-              placeholder="Título do roteiro..."
-              value={scriptTitle}
-              onChange={(e) => setScriptTitle(e.target.value)}
-              required
-              autoFocus
-            />
+            <div className={styles.scriptSection}>
+              <label className={styles.scriptLabel}>Nome do vídeo *</label>
+              <span className={styles.scriptHint}>Um nome curto pra identificar. Ex: "Trena com mensagem", "Se fosse crime"</span>
+              <input
+                className={styles.scriptInput}
+                type="text"
+                placeholder="Ex: Dado surpresa da noite"
+                value={scriptTitle}
+                onChange={(e) => setScriptTitle(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+
             <div className={styles.scriptRow}>
-              <div className={styles.scriptFieldSmall}>
-                <label className={styles.scriptLabel}>Tipo</label>
+              <div className={styles.scriptSection} style={{ width: 130, flexShrink: 0 }}>
+                <label className={styles.scriptLabel}>Formato</label>
                 <select
                   className={styles.scriptSelect}
                   value={scriptType}
@@ -400,28 +435,80 @@ export default function ReelsView({
                   <option value="story">Story</option>
                 </select>
               </div>
-              <div className={styles.scriptFieldFlex}>
+              <div className={styles.scriptSection} style={{ flex: 1 }}>
                 <label className={styles.scriptLabel}>Música / Som</label>
+                <span className={styles.scriptHint}>Nome da música ou link do áudio do Instagram</span>
                 <input
                   className={styles.scriptInput}
                   type="text"
-                  placeholder="Nome da música, link do áudio..."
+                  placeholder='Ex: Áudio "Se fosse crime" do reels'
                   value={scriptMusic}
                   onChange={(e) => setScriptMusic(e.target.value)}
                 />
               </div>
             </div>
-            <div>
-              <label className={styles.scriptLabel}>Roteiro</label>
+
+            <div className={styles.scriptSection}>
+              <label className={styles.scriptLabel}>Legenda / Chamada</label>
+              <span className={styles.scriptHint}>O texto que aparece na legenda do post ou na tela do vídeo</span>
+              <textarea
+                className={styles.scriptTextareaSmall}
+                placeholder='Ex: "Se amar pizza fosse crime"&#10;Ex: "Surpresa da noite: Par = 10% / Ímpar = Coquinha"'
+                value={scriptCallText}
+                onChange={(e) => setScriptCallText(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className={styles.scriptSection}>
+              <label className={styles.scriptLabel}>O que acontece no vídeo *</label>
+              <span className={styles.scriptHint}>Descreva passo a passo o que deve ser gravado. Quem faz o quê, onde, como.</span>
               <textarea
                 className={styles.scriptTextarea}
-                placeholder="Chamada, falas, direção de câmera, ângulos, instruções..."
+                placeholder={'Ex: Grava a mão escrita, segura o dado na outra mão.\nTroca de mão, estica o braço e vai andando pela pizzaria.\nCutuca a Cíntia no ombro, ela vira, abre a mão com o dado.\nEla joga na bancada. Mostra a palma da mão e grava a reação.'}
                 value={scriptBody}
                 onChange={(e) => setScriptBody(e.target.value)}
-                rows={10}
+                rows={8}
                 required
               />
             </div>
+
+            <div className={styles.scriptSection}>
+              <label className={styles.scriptLabel}>Falas / Diálogos</label>
+              <span className={styles.scriptHint}>O que cada pessoa fala. Deixe em branco se ninguém fala.</span>
+              <textarea
+                className={styles.scriptTextareaSmall}
+                placeholder={'Ex:\n- E aí Leandro, qual tua pizza preferida?\n- (resposta)\n- E tu Fabi?\n- (resposta)\n- E vcs, oq acham??'}
+                value={scriptDialogues}
+                onChange={(e) => setScriptDialogues(e.target.value)}
+                rows={5}
+              />
+            </div>
+
+            <div className={styles.scriptSection}>
+              <label className={styles.scriptLabel}>Câmera / Ângulo</label>
+              <span className={styles.scriptHint}>Dicas de como filmar: ângulo, cortes, posição.</span>
+              <textarea
+                className={styles.scriptTextareaSmall}
+                placeholder={'Ex: Sem corte, braço esticado com câmera fixa.\nOu: Mãos pra cima virando, corta pra imagens em sequência.'}
+                value={scriptCamera}
+                onChange={(e) => setScriptCamera(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className={styles.scriptSection}>
+              <label className={styles.scriptLabel}>Links de referência</label>
+              <span className={styles.scriptHint}>Reels ou vídeos de exemplo que inspiraram essa ideia</span>
+              <textarea
+                className={styles.scriptTextareaSmall}
+                placeholder="Cole links de reels de exemplo, um por linha"
+                value={scriptRefs}
+                onChange={(e) => setScriptRefs(e.target.value)}
+                rows={2}
+              />
+            </div>
+
             <div className={styles.formFooter}>
               <button type="button" className={styles.archivedBtn} onClick={closeScriptForm}>
                 Cancelar
@@ -466,14 +553,43 @@ export default function ReelsView({
 
                   {isExpanded && (
                     <div className={styles.scriptBody}>
-                      <pre className={styles.scriptPre}>{s.script}</pre>
-                      {links.length > 0 && (
-                        <div className={styles.scriptLinks}>
-                          {links.map((l, i) => (
-                            <a key={i} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
-                              {l}
-                            </a>
-                          ))}
+                      {s.callText && (
+                        <div className={styles.scriptBlock}>
+                          <span className={styles.scriptBlockLabel}>Legenda / Chamada</span>
+                          <pre className={styles.scriptPre}>{s.callText}</pre>
+                        </div>
+                      )}
+                      <div className={styles.scriptBlock}>
+                        <span className={styles.scriptBlockLabel}>O que acontece</span>
+                        <pre className={styles.scriptPre}>{s.script}</pre>
+                      </div>
+                      {s.dialogues && (
+                        <div className={styles.scriptBlock}>
+                          <span className={styles.scriptBlockLabel}>Falas</span>
+                          <pre className={styles.scriptPre}>{s.dialogues}</pre>
+                        </div>
+                      )}
+                      {s.camera && (
+                        <div className={styles.scriptBlock}>
+                          <span className={styles.scriptBlockLabel}>Câmera / Ângulo</span>
+                          <pre className={styles.scriptPre}>{s.camera}</pre>
+                        </div>
+                      )}
+                      {(links.length > 0 || s.references) && (
+                        <div className={styles.scriptBlock}>
+                          <span className={styles.scriptBlockLabel}>Referências</span>
+                          <div className={styles.scriptLinks}>
+                            {s.references && extractLinks(s.references).map((l, i) => (
+                              <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
+                                {l}
+                              </a>
+                            ))}
+                            {links.map((l, i) => (
+                              <a key={`body-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
+                                {l}
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       )}
                       <div className={styles.scriptFooter}>
