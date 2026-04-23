@@ -423,7 +423,69 @@ export default function ReelsView({
           {approvedStories.length === 0 ? (
             <div className={styles.empty}>Nenhum story aprovado.</div>
           ) : (
-            renderTable(approvedStories)
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Link</th>
+                    <th className={styles.thDesc}>Descrição</th>
+                    <th className={styles.thActions}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvedStories.map((reel) => (
+                    <tr key={reel.id}>
+                      <td>
+                        {reel.link ? (
+                          <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
+                            {reel.link}
+                          </a>
+                        ) : '—'}
+                      </td>
+                      <td className={styles.cellDesc}>
+                        {editingId === reel.id ? (
+                          <textarea
+                            className={styles.descEdit}
+                            value={editDescText}
+                            onChange={(e) => setEditDescText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEditDesc(reel.id);
+                              if (e.key === 'Escape') cancelEditDesc();
+                            }}
+                            rows={2}
+                            autoFocus
+                          />
+                        ) : (
+                          <span
+                            className={`${styles.descClickable} ${reel.descriptionEdited ? styles.descEdited : ''}`}
+                            onClick={() => startEditDesc(reel)}
+                            title="Clique para editar"
+                          >
+                            {reel.description || '—'}
+                          </span>
+                        )}
+                      </td>
+                      <td className={styles.cellActionsRight}>
+                        {editingId === reel.id ? (
+                          <div className={styles.cellActions}>
+                            <button className={styles.saveBtn} onClick={() => saveEditDesc(reel.id)} title="Salvar">
+                              Salvar
+                            </button>
+                            <button className={styles.archiveBtnSmall} onClick={cancelEditDesc} title="Cancelar">
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                            Arquivar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

@@ -515,7 +515,6 @@
 }
 
 .cellDesc {
-  max-width: 280px;
   color: var(--text-secondary);
 }
 
@@ -573,6 +572,20 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.cellActionsRight {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.thDesc {
+  width: 100%;
+}
+
+.thActions {
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* Script button */
