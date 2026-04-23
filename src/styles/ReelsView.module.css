@@ -990,6 +990,16 @@
 
 .scriptRowExpanded td {
   background: var(--bg-secondary);
+  border-bottom: none;
+}
+
+.scriptBodyRow td {
+  background: var(--bg-secondary);
+}
+
+.scriptBodyCell {
+  padding: 0 !important;
+  background: var(--bg-secondary);
 }
 
 .cellAuthor {
@@ -1009,8 +1019,7 @@
 }
 
 .scriptBody {
-  padding: 0 16px 16px;
-  border-top: 1px solid var(--border-light);
+  padding: 4px 16px 16px;
 }
 
 .scriptBlock {
