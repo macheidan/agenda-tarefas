@@ -35,6 +35,7 @@ export default function ReelsView({
   const [scriptRefs, setScriptRefs] = useState('');
   const [editingScript, setEditingScript] = useState(null);
   const [expandedScript, setExpandedScript] = useState(null);
+  const [copiedScriptId, setCopiedScriptId] = useState(null);
 
   const startEditDesc = (reel) => {
     setEditingId(reel.id);
@@ -208,6 +209,44 @@ export default function ReelsView({
 
   const setScriptStatus = async (script, status) => {
     await updateScript(script.id, { status });
+  };
+
+  const buildScriptText = (s) => {
+    const lines = [];
+    const push = (label, value) => {
+      if (!value) return;
+      lines.push(`*${label}*`);
+      lines.push(value);
+      lines.push('');
+    };
+    push('Nome do vídeo', s.title);
+    push('Loja', s.store === 'lov' ? 'Lov' : s.store === 'dame' ? 'Dame' : null);
+    push('Formato', s.type === 'story' ? 'Story' : 'Reel');
+    push('Música / Som', s.music);
+    push('Legenda / Chamada', s.callText);
+    push('O que acontece', s.script);
+    push('Falas', s.dialogues);
+    push('Câmera / Ângulo', s.camera);
+    push('Referências', s.references);
+    return lines.join('\n').trim();
+  };
+
+  const copyScriptToClipboard = async (s) => {
+    const text = buildScriptText(s);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopiedScriptId(s.id);
+    setTimeout(() => setCopiedScriptId((id) => (id === s.id ? null : id)), 1500);
   };
 
   const extractLinks = (text) => {
@@ -740,7 +779,16 @@ export default function ReelsView({
                           <span className={styles.scriptTitleText}>{s.title}</span>
                         </td>
                         <td>
-                          {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
+                          <div className={styles.storeCell}>
+                            {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
+                            <button
+                              className={styles.copyBtn}
+                              onClick={() => copyScriptToClipboard(s)}
+                              title="Copiar roteiro em formato WhatsApp"
+                            >
+                              {copiedScriptId === s.id ? '✓ Copiado' : 'Copiar'}
+                            </button>
+                          </div>
                         </td>
                         <td>
                           <div className={styles.scriptActions}>
