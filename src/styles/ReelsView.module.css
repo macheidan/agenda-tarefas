@@ -91,6 +91,15 @@
   margin-left: auto;
 }
 
+.storeBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #607d8b;
+  color: #fff;
+}
+
 .form {
   background: var(--bg-secondary);
   border: 1px solid var(--border);

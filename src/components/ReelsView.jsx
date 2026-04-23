@@ -22,6 +22,7 @@ export default function ReelsView({
   // Script form
   const [scriptForm, setScriptForm] = useState(false);
   const [scriptTitle, setScriptTitle] = useState('');
+  const [scriptStore, setScriptStore] = useState('');
   const [scriptType, setScriptType] = useState('reel');
   const [scriptMusic, setScriptMusic] = useState('');
   const [scriptCallText, setScriptCallText] = useState('');
@@ -130,6 +131,7 @@ export default function ReelsView({
     if (script) {
       setEditingScript(script);
       setScriptTitle(script.title);
+      setScriptStore(script.store || '');
       setScriptType(script.type || 'reel');
       setScriptMusic(script.music || '');
       setScriptCallText(script.callText || '');
@@ -140,6 +142,7 @@ export default function ReelsView({
     } else {
       setEditingScript(null);
       setScriptTitle('');
+      setScriptStore('');
       setScriptType('reel');
       setScriptMusic('');
       setScriptCallText('');
@@ -155,6 +158,7 @@ export default function ReelsView({
     setScriptForm(false);
     setEditingScript(null);
     setScriptTitle('');
+    setScriptStore('');
     setScriptType('reel');
     setScriptMusic('');
     setScriptCallText('');
@@ -166,9 +170,10 @@ export default function ReelsView({
 
   const handleScriptSubmit = async (e) => {
     e.preventDefault();
-    if (!scriptTitle.trim() || !scriptBody.trim()) return;
+    if (!scriptTitle.trim() || !scriptBody.trim() || !scriptStore) return;
     const data = {
       title: scriptTitle,
+      store: scriptStore,
       type: scriptType,
       music: scriptMusic,
       callText: scriptCallText,
@@ -180,6 +185,7 @@ export default function ReelsView({
     if (editingScript) {
       await updateScript(editingScript.id, {
         title: data.title.trim(),
+        store: data.store,
         type: data.type,
         music: data.music.trim(),
         callText: data.callText.trim(),
@@ -512,21 +518,37 @@ export default function ReelsView({
 
         {scriptForm && (
           <form className={styles.scriptForm} onSubmit={handleScriptSubmit}>
-            <div className={styles.scriptSection}>
-              <label className={styles.scriptLabel}>Nome do vídeo *</label>
-              <span className={styles.scriptHint}>Um nome curto pra identificar. Ex: "Trena com mensagem", "Se fosse crime"</span>
-              <input
-                className={styles.scriptInput}
-                type="text"
-                placeholder="Ex: Dado surpresa da noite"
-                value={scriptTitle}
-                onChange={(e) => setScriptTitle(e.target.value)}
-                required
-                autoFocus
-              />
+            <div className={styles.scriptRow}>
+              <div className={styles.scriptSection} style={{ flex: 1 }}>
+                <label className={styles.scriptLabel}>Nome do vídeo *</label>
+                <span className={styles.scriptHint}>Ex: "Trena com mensagem", "Se fosse crime"</span>
+                <input
+                  className={styles.scriptInput}
+                  type="text"
+                  placeholder="Ex: Dado surpresa da noite"
+                  value={scriptTitle}
+                  onChange={(e) => setScriptTitle(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className={styles.scriptSection} style={{ width: 130, flexShrink: 0 }}>
+                <label className={styles.scriptLabel}>Loja *</label>
+                <span className={styles.scriptHint}>&nbsp;</span>
+                <select
+                  className={styles.scriptSelect}
+                  value={scriptStore}
+                  onChange={(e) => setScriptStore(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>Selecione</option>
+                  <option value="dame">Dame</option>
+                  <option value="lov">Lov</option>
+                </select>
+              </div>
             </div>
 
-            <div className={styles.scriptRow}>
+            <div className={styles.scriptRow} style={{ alignItems: 'flex-end' }}>
               <div className={styles.scriptSection} style={{ width: 130, flexShrink: 0 }}>
                 <label className={styles.scriptLabel}>Formato</label>
                 <select
@@ -540,7 +562,6 @@ export default function ReelsView({
               </div>
               <div className={styles.scriptSection} style={{ flex: 1 }}>
                 <label className={styles.scriptLabel}>Música / Som</label>
-                <span className={styles.scriptHint}>Nome da música ou link do áudio do Instagram</span>
                 <input
                   className={styles.scriptInput}
                   type="text"
@@ -616,7 +637,7 @@ export default function ReelsView({
               <button type="button" className={styles.archivedBtn} onClick={closeScriptForm}>
                 Cancelar
               </button>
-              <button type="submit" className={styles.submitBtn} disabled={!scriptTitle.trim() || !scriptBody.trim()}>
+              <button type="submit" className={styles.submitBtn} disabled={!scriptTitle.trim() || !scriptStore || !scriptBody.trim()}>
                 {editingScript ? 'Salvar' : 'Criar Roteiro'}
               </button>
             </div>
@@ -637,6 +658,7 @@ export default function ReelsView({
                       <span className={s.type === 'story' ? styles.typeBadgeStory : styles.typeBadgeReel}>
                         {s.type === 'story' ? 'Story' : 'Reel'}
                       </span>
+                      {s.store && <span className={styles.storeBadge}>{s.store === 'lov' ? 'Lov' : 'Dame'}</span>}
                       <span className={styles.scriptTitleText}>{s.title}</span>
                       {s.music && <span className={styles.scriptMusicTag}>{s.music}</span>}
                     </div>

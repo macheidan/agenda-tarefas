@@ -35,6 +35,7 @@ export function useScripts() {
   const addScript = useCallback(async (data, author) => {
     await addDoc(collection(db, 'scripts'), {
       title: data.title.trim(),
+      store: data.store || '',
       type: data.type || 'reel',
       music: data.music?.trim() || '',
       callText: data.callText?.trim() || '',
