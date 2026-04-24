@@ -2,10 +2,10 @@ import { Fragment, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/ReelsView.module.css';
 
-const SCRIPT_STATUSES = ['draft', 'approved', 'recorded', 'published'];
-const STATUS_LABELS = { draft: 'Rascunho', approved: 'Aprovado', recorded: 'Gravado', published: 'Publicado' };
-const STATUS_SHORT = { draft: 'R', approved: 'A', recorded: 'G', published: 'P' };
-const STATUS_CLASS = { draft: 'statusDraft', approved: 'statusApproved', recorded: 'statusRecorded', published: 'statusPublished' };
+const SCRIPT_STATUSES = ['draft', 'approved', 'recorded', 'ready', 'published'];
+const STATUS_LABELS = { draft: 'Rascunho', approved: 'Aprovado', recorded: 'Gravado', ready: 'Aprovado', published: 'Publicado' };
+const STATUS_SHORT = { draft: 'R', approved: 'A', recorded: 'G', ready: 'A', published: 'P' };
+const STATUS_CLASS = { draft: 'statusDraft', approved: 'statusApproved', recorded: 'statusRecorded', ready: 'statusReady', published: 'statusPublished' };
 
 export default function ReelsView({
   reels, addReel, approveReel, archiveReel, unarchiveReel, deleteReel, updateDescription,
