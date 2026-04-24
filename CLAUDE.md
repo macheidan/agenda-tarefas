@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+> **2nd Brain Vault:** `G:\Meu Drive AI\Vault\` | Contexto master: `00-meta/AGENT-START-HERE.md` | GitHub: github.com/macheidan/2ndbrain
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
