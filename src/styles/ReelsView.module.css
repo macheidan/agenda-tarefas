@@ -166,6 +166,7 @@
 
 .storeBtn {
   padding: 3px 10px;
+  min-width: 52px;
   border: 1px solid var(--input-border);
   border-radius: 4px;
   background: var(--card);
@@ -175,6 +176,7 @@
   cursor: default;
   white-space: nowrap;
   opacity: 1;
+  text-align: center;
 }
 
 .storeBtn:disabled {
@@ -994,6 +996,14 @@
 }
 .statusRecorded.statusActive {
   background: #e53935;
+}
+
+.statusReady {
+  border-color: #009688;
+  color: #009688;
+}
+.statusReady.statusActive {
+  background: #009688;
 }
 
 .statusPublished {
