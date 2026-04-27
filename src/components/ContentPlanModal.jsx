@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import styles from '../styles/ContentPlanModal.module.css';
 
-const STORE_LABEL = { lov: 'LOV', dame: 'DAME' };
-const TYPE_LABEL = { story: 'Story', reel: 'Reels' };
 const STATUS_LABEL = {
   pending: 'Em análise',
   changes_requested: 'Alteração pedida',
@@ -16,11 +14,13 @@ const formatDateBR = (dateKey) => {
 };
 
 export default function ContentPlanModal({ editing, isAdmin, onSave, onClose, onDelete }) {
+  const [store, setStore] = useState(editing.store || 'lov');
+  const [type, setType] = useState(editing.type || 'story');
   const [content, setContent] = useState(editing.content || '');
   const [status, setStatus] = useState(editing.status || 'pending');
 
   const submit = (newStatus) => {
-    onSave({ content, status: newStatus || status });
+    onSave({ store, type, content, status: newStatus || status });
   };
 
   const handleEditByAuthor = () => {
@@ -34,12 +34,25 @@ export default function ContentPlanModal({ editing, isAdmin, onSave, onClose, on
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
-          <div className={styles.title}>
-            <span className={`${styles.storeBadge} ${styles[`store_${editing.store}`]}`}>{STORE_LABEL[editing.store]}</span>
-            <span className={styles.typeBadge}>{TYPE_LABEL[editing.type]}</span>
-            <span className={styles.date}>{formatDateBR(editing.dateKey)}</span>
-          </div>
+          <span className={styles.date}>{formatDateBR(editing.dateKey)}</span>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
+        </div>
+
+        <div className={styles.selectors}>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Loja</span>
+            <select className={styles.select} value={store} onChange={(e) => setStore(e.target.value)}>
+              <option value="lov">LOV</option>
+              <option value="dame">DAME</option>
+            </select>
+          </label>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Tipo</span>
+            <select className={styles.select} value={type} onChange={(e) => setType(e.target.value)}>
+              <option value="story">Story</option>
+              <option value="reel">Reels</option>
+            </select>
+          </label>
         </div>
 
         <textarea

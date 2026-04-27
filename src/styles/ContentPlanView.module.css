@@ -1,78 +1,96 @@
 .container {
   background: var(--card);
-  border-radius: 10px;
-  box-shadow: 0 1px 4px var(--shadow);
-  padding: 24px;
+  padding: 12px 20px;
 }
 
-.header {
+.container :global(.fc) {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* Toolbar */
+.toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  gap: 12px;
-  flex-wrap: wrap;
+  margin-bottom: 8px;
+  padding: 0 2px;
 }
 
-.header h2 {
-  font-size: 18px;
-  font-weight: 700;
+.titleText {
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text);
 }
 
-.nav {
+.toolbarRight {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .navBtn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--input-border);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--text);
+  background: none;
+  border: none;
+  color: var(--text-muted);
   font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 4px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   line-height: 1;
 }
 
 .navBtn:hover {
-  background: var(--bg-secondary);
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.viewBtn {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.viewBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.viewBtnActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.viewBtnActive:hover {
+  background: var(--accent-hover);
+  color: #fff;
 }
 
 .todayBtn {
-  padding: 6px 14px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 600;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
 .todayBtn:hover {
-  background: var(--accent-light);
-}
-
-.monthLabel {
-  font-size: 14px;
-  font-weight: 600;
+  background: var(--card-hover);
   color: var(--text);
-  min-width: 140px;
-  text-align: center;
-  text-transform: capitalize;
 }
 
+/* Legend */
 .legend {
   display: flex;
   gap: 16px;
-  margin-bottom: 14px;
+  padding: 6px 2px 12px;
   font-size: 12px;
   color: var(--text-secondary);
   flex-wrap: wrap;
@@ -88,183 +106,251 @@
   width: 12px;
   height: 12px;
   border-radius: 3px;
-  border: 1px solid var(--border);
   display: inline-block;
 }
 
-.tableWrap {
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
+.statusPending { background: #fff8d6; }
+.statusChanges { background: #ffd5cc; }
+.statusRevised { background: #d6e4ff; }
+.statusApproved { background: #cfe9c8; }
 
-.table {
+/* Table structure (same as CalendarView) */
+.container :global(.fc table) {
   border-collapse: collapse;
-  width: 100%;
-  font-size: 12px;
-  table-layout: fixed;
 }
 
-.cornerCell {
-  width: 60px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-}
-
-.rowLabel {
-  width: 70px;
-  background: var(--bg-secondary);
+.container :global(.fc th) {
   font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 6px 10px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border-light);
-  text-align: left;
-  white-space: nowrap;
-  position: sticky;
-  left: 60px;
-  z-index: 1;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: lowercase;
+  padding: 4px 0;
+  border: none;
+  text-align: right;
+  padding-right: 8px;
 }
 
-.dayHeader {
-  width: 130px;
-  min-width: 130px;
-  padding: 6px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  border-right: 1px solid var(--border-light);
-  text-align: center;
-  white-space: nowrap;
+.container :global(.fc td) {
+  border: 1px solid var(--border-light);
 }
 
-.dayHeaderToday {
-  color: var(--accent);
-  background: var(--accent-light);
+.container :global(.fc .fc-scrollgrid) {
+  border: none !important;
 }
 
-.storeCell {
-  width: 60px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text);
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  border-top: 1px solid var(--border);
-  text-align: center;
-  vertical-align: middle;
-  letter-spacing: 1px;
-  position: sticky;
-  left: 0;
-  z-index: 2;
+.container :global(.fc .fc-scrollgrid td:last-of-type) {
+  border-right: none;
 }
 
-.store_lov {
-  background: rgba(255, 152, 0, 0.08);
-  color: #e68900;
+.container :global(.fc colgroup col) {
+  width: auto !important;
 }
 
-.store_dame {
-  background: rgba(63, 81, 181, 0.08);
-  color: #3949ab;
+.weekView :global(.fc .fc-scrollgrid-sync-table) {
+  min-height: 600px !important;
 }
 
-.dataRow {
-  border-top: 1px solid var(--border);
+.weekView :global(.fc .fc-daygrid-day) {
+  min-height: 580px !important;
 }
 
-.cell {
-  padding: 6px 8px;
-  border-right: 1px solid var(--border-light);
-  border-bottom: 1px solid var(--border-light);
+.dayView :global(.fc .fc-scrollgrid-sync-table) {
+  min-height: 400px !important;
+}
+
+.dayView :global(.fc .fc-daygrid-day) {
+  min-height: 380px !important;
+}
+
+.container :global(.fc .fc-daygrid-day) {
   cursor: pointer;
-  vertical-align: top;
-  height: 84px;
-  background: var(--card);
-  transition: background 0.1s;
-  position: relative;
+  min-height: 90px;
 }
 
-.cell:hover {
-  background: var(--bg-secondary);
+.container :global(.fc .fc-daygrid-day:hover) {
+  background: rgba(0, 0, 0, 0.01);
 }
 
-.cellContent {
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
+.container :global(.fc .fc-daygrid-day-frame) {
+  padding: 2px 0;
+}
+
+.container :global(.fc .fc-daygrid-day-top) {
+  flex-direction: row;
+  justify-content: flex-end;
+  padding: 2px 6px;
+}
+
+.container :global(.fc .fc-daygrid-day-number) {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  padding: 2px 4px;
+  text-decoration: none;
+}
+
+.container :global(.fc .fc-day-sat),
+.container :global(.fc .fc-day-sun) {
+  background: transparent;
+}
+
+.container :global(.fc .fc-day-today) {
+  background: transparent !important;
+}
+
+.container :global(.fc .fc-day-today .fc-daygrid-day-number) {
+  background: rgb(235, 87, 87);
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  box-sizing: content-box;
+}
+
+/* Events */
+.container :global(.fc .fc-daygrid-event-harness) {
+  margin: 0 4px 3px;
+}
+
+.container :global(.fc .fc-event) {
+  border: none !important;
+  border-radius: 4px;
+  margin: 0 0 3px !important;
+  padding: 1px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: background 0.15s;
+  border-left: 3px solid transparent !important;
+}
+
+.container :global(.fc .fc-event:hover) {
+  filter: brightness(1.05);
+}
+
+.container :global(.fc .fc-event .fc-event-title) {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11px;
-  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.container :global(.fc .fc-event .fc-event-main) {
   color: var(--text);
-  white-space: pre-wrap;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.cellToday {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+/* Status backgrounds */
+.container :global(.fc .fc-event.fc-event--cp-pending) {
+  background: #fff8d6 !important;
+}
+.container :global(.fc .fc-event.fc-event--cp-pending:hover) {
+  background: #fff2b3 !important;
 }
 
-/* Status colors */
-.status_pending {
-  background: #fff8d6;
+.container :global(.fc .fc-event.fc-event--cp-changes_requested) {
+  background: #ffd5cc !important;
 }
-.status_pending:hover {
-  background: #fff2b3;
-}
-
-.status_changes_requested {
-  background: #ffd5cc;
-}
-.status_changes_requested:hover {
-  background: #ffb8a8;
+.container :global(.fc .fc-event.fc-event--cp-changes_requested:hover) {
+  background: #ffb8a8 !important;
 }
 
-.status_revised {
-  background: #d6e4ff;
+.container :global(.fc .fc-event.fc-event--cp-revised) {
+  background: #d6e4ff !important;
 }
-.status_revised:hover {
-  background: #b8cdff;
-}
-
-.status_approved {
-  background: #cfe9c8;
-}
-.status_approved:hover {
-  background: #b8dba9;
+.container :global(.fc .fc-event.fc-event--cp-revised:hover) {
+  background: #b8cdff !important;
 }
 
-/* Legend dots */
-.statusPending {
-  background: #fff8d6;
+.container :global(.fc .fc-event.fc-event--cp-approved) {
+  background: #cfe9c8 !important;
 }
-.statusChanges {
-  background: #ffd5cc;
-}
-.statusRevised {
-  background: #d6e4ff;
-}
-.statusApproved {
-  background: #cfe9c8;
+.container :global(.fc .fc-event.fc-event--cp-approved:hover) {
+  background: #b8dba9 !important;
 }
 
-@media (max-width: 640px) {
+/* Store left border for quick visual ID */
+.container :global(.fc .fc-event.fc-event--cp-store-lov) {
+  border-left-color: #ff9800 !important;
+}
+
+.container :global(.fc .fc-event.fc-event--cp-store-dame) {
+  border-left-color: #3949ab !important;
+}
+
+.container :global(.fc .fc-daygrid-event-dot) {
+  display: none;
+}
+
+.container :global(.fc .fc-col-header) {
+  border: none;
+}
+
+.container :global(.fc .fc-col-header-cell) {
+  border: none;
+}
+
+.container :global(.fc .fc-day-other .fc-daygrid-day-number) {
+  opacity: 0.4;
+}
+
+.container :global(.fc .fc-day-other .fc-event) {
+  opacity: 0.5;
+}
+
+@media (max-width: 480px) {
   .container {
-    padding: 14px;
+    padding: 8px 6px;
   }
-  .dayHeader {
-    width: 110px;
-    min-width: 110px;
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .cell {
-    height: 76px;
+
+  .titleText {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .toolbarRight {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .viewBtn {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .todayBtn {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  .navBtn {
+    font-size: 16px;
+    padding: 4px 6px;
+  }
+
+  .container :global(.fc .fc-event) {
+    font-size: 11px;
+    line-height: 16px;
   }
 }
