@@ -113,16 +113,17 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
     });
   };
 
-  const handleSave = async ({ store, type, content, status }) => {
+  const handleSave = async ({ store, type, content, status, dateKey }) => {
     const trimmed = content.trim();
+    const finalDateKey = dateKey || editing.dateKey;
     if (editing.id) {
       if (!trimmed) {
         await deleteItem(editing.id);
       } else {
-        await updateItem(editing.id, { store, type, content: trimmed, status });
+        await updateItem(editing.id, { store, type, content: trimmed, status, dateKey: finalDateKey });
       }
     } else if (trimmed) {
-      await addItem({ dateKey: editing.dateKey, store, type, content: trimmed, status }, user);
+      await addItem({ dateKey: finalDateKey, store, type, content: trimmed, status }, user);
     }
     setEditing(null);
   };
