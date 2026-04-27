@@ -110,8 +110,9 @@
 }
 
 .statusPending { background: #fff8d6; }
-.statusChanges { background: #ffd5cc; }
+.statusChanges { background: #ffe5c2; }
 .statusRevised { background: #d6e4ff; }
+.statusChanges2 { background: #ffd5cc; }
 .statusApproved { background: #cfe9c8; }
 
 /* Table structure (same as CalendarView) */
@@ -265,10 +266,10 @@
 }
 
 .container :global(.fc .fc-event.fc-event--cp-changes_requested) {
-  background: #ffd5cc !important;
+  background: #ffe5c2 !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-changes_requested:hover) {
-  background: #ffb8a8 !important;
+  background: #ffd29c !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-revised) {
@@ -276,6 +277,13 @@
 }
 .container :global(.fc .fc-event.fc-event--cp-revised:hover) {
   background: #b8cdff !important;
+}
+
+.container :global(.fc .fc-event.fc-event--cp-changes_2) {
+  background: #ffd5cc !important;
+}
+.container :global(.fc .fc-event.fc-event--cp-changes_2:hover) {
+  background: #ffb8a8 !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-approved) {
