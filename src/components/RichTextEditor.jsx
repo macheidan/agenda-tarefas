@@ -1,13 +1,13 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import styles from '../styles/RichTextEditor.module.css';
 
-export default function RichTextEditor({ value, onChange, placeholder, resizable }) {
+export default function RichTextEditor({ value, onChange, onBlur, placeholder, resizable }) {
   const editorRef = useRef(null);
-  const internalValue = useRef(value || '');
+  const internalValue = useRef('');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
 
-  // Only set innerHTML when value changes externally (not from user input)
+  // Sync innerHTML with value prop when it changes externally (initial mount included)
   useEffect(() => {
     if (editorRef.current && value !== internalValue.current) {
       internalValue.current = value || '';
@@ -166,6 +166,7 @@ export default function RichTextEditor({ value, onChange, placeholder, resizable
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
+        onBlur={onBlur}
         onClick={() => { setShowColorPicker(false); setShowHighlightPicker(false); }}
         data-placeholder={placeholder || 'Descreva a tarefa...'}
       />

@@ -73,13 +73,22 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
   };
 
   const handleClose = () => {
-    if (isEditing && hasUnsaved()) {
-      if (window.confirm('Você tem alterações não salvas. Deseja realmente fechar?')) onClose();
-    } else if (!isEditing && hasContent) {
-      if (window.confirm('Você tem alterações não salvas. Deseja realmente fechar?')) onClose();
-    } else {
+    // Editing existing item: auto-save any unsaved changes silently
+    if (isEditing && onUpdate && hasUnsaved()) {
+      onUpdate(editing.id, {
+        title: title.trim(),
+        content,
+        dateKey: date,
+      });
       onClose();
+      return;
     }
+    // Creating new item with content: ask before discarding
+    if (!isEditing && hasContent) {
+      if (window.confirm('Descartar este novo post?')) onClose();
+      return;
+    }
+    onClose();
   };
 
   // Auto-save pill changes when editing
@@ -113,15 +122,17 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
           <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
             Descrição
           </label>
-          <div
+          <RichTextEditor
+            value={content}
+            onChange={setContent}
             onBlur={() => {
-              if (isEditing && onUpdate && (content !== (editing.content || ''))) {
+              if (isEditing && onUpdate && content !== (editing.content || '')) {
                 onUpdate(editing.id, { content });
               }
             }}
-          >
-            <RichTextEditor value={content} onChange={setContent} placeholder="Descreva o post..." resizable />
-          </div>
+            placeholder="Descreva o post..."
+            resizable
+          />
         </div>
 
         <div className={styles.fields}>
