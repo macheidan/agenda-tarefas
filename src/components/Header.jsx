@@ -124,15 +124,6 @@ export default function Header({
               Calendário
             </button>
           )}
-          {ideasEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'ideas' ? styles.active : ''}`}
-              onClick={() => onTabChange('ideas')}
-            >
-              Ideias
-              {ideasUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
-            </button>
-          )}
           {reelsEnabled && (
             <button
               className={`${styles.tab} ${activeTab === 'reels' ? styles.active : ''}`}
@@ -165,13 +156,22 @@ export default function Header({
               Lista de Compras
             </button>
           )}
+          {ideasEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'ideas' ? styles.active : ''}`}
+              onClick={() => onTabChange('ideas')}
+            >
+              Ideias
+              {ideasUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
+            </button>
+          )}
           {reviewsEnabled && (
             <button
               className={`${styles.tab} ${activeTab === 'reviews' ? styles.active : ''}`}
               onClick={() => onTabChange('reviews')}
             >
               Avaliações
-              {reviewsUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
+              {reviewsUnread > 0 && <span className={styles.sirenBadge}>🚨</span>}
             </button>
           )}
           {knowledgeEnabled && (
