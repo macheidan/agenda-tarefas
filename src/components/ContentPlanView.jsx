@@ -1,119 +1,143 @@
-import { Fragment, useMemo, useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { useAuth } from '../contexts/AuthContext';
 import ContentPlanModal from './ContentPlanModal';
 import styles from '../styles/ContentPlanView.module.css';
-
-const ROWS = [
-  { store: 'lov', type: 'story', label: 'Story' },
-  { store: 'lov', type: 'reel', label: 'Reels' },
-  { store: 'dame', type: 'story', label: 'Story' },
-  { store: 'dame', type: 'reel', label: 'Reels' },
-];
-
-const STORE_LABEL = { lov: 'LOV', dame: 'DAME' };
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
-const formatDateKey = (year, month, day) => {
-  const m = String(month + 1).padStart(2, '0');
-  const d = String(day).padStart(2, '0');
-  return `${year}-${m}-${d}`;
-};
+const STORE_LABEL = { lov: 'LOV', dame: 'DAME' };
+const TYPE_LABEL = { story: 'Story', reel: 'Reels' };
 
-const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+function formatWeekTitle(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+  e.setDate(e.getDate() - 1);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(s.getDate())}/${pad(s.getMonth() + 1)} - ${pad(e.getDate())}/${pad(e.getMonth() + 1)}`;
+}
+
+function formatMonthTitle(date) {
+  const d = new Date(date);
+  return `${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+function formatDayTitle(date) {
+  const d = new Date(date);
+  const pad = (n) => String(n).padStart(2, '0');
+  const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  return `${WEEKDAYS[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
 
 export default function ContentPlanView({ items, addItem, updateItem, deleteItem }) {
   const { user, isAdmin } = useAuth();
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  const calRef = useRef(null);
+  const [currentView, setCurrentView] = useState(
+    () => localStorage.getItem('contentPlanView') || 'dayGridMonth'
+  );
+  const [title, setTitle] = useState('');
   const [editing, setEditing] = useState(null);
 
-  const days = useMemo(() => {
-    const total = daysInMonth(year, month);
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }, [year, month]);
+  const updateTitle = useCallback((api) => {
+    const view = api.view;
+    if (view.type === 'dayGridDay') setTitle(formatDayTitle(view.activeStart));
+    else if (view.type === 'dayGridWeek') setTitle(formatWeekTitle(view.activeStart, view.activeEnd));
+    else setTitle(formatMonthTitle(view.currentStart));
+  }, []);
 
-  const itemsByCell = useMemo(() => {
-    const map = {};
-    for (const it of items) {
-      const k = `${it.dateKey}|${it.store}|${it.type}`;
-      map[k] = it;
-    }
-    return map;
-  }, [items]);
+  const handleDatesSet = useCallback((info) => {
+    setCurrentView(info.view.type);
+    if (info.view.type === 'dayGridDay') setTitle(formatDayTitle(info.view.activeStart));
+    else if (info.view.type === 'dayGridWeek') setTitle(formatWeekTitle(info.view.activeStart, info.view.activeEnd));
+    else setTitle(formatMonthTitle(info.view.currentStart));
+  }, []);
 
-  const goPrev = () => {
-    if (month === 0) {
-      setMonth(11);
-      setYear((y) => y - 1);
-    } else {
-      setMonth((m) => m - 1);
-    }
+  const handlePrev = () => {
+    const api = calRef.current?.getApi();
+    if (api) { api.prev(); updateTitle(api); }
   };
 
-  const goNext = () => {
-    if (month === 11) {
-      setMonth(0);
-      setYear((y) => y + 1);
-    } else {
-      setMonth((m) => m + 1);
-    }
+  const handleNext = () => {
+    const api = calRef.current?.getApi();
+    if (api) { api.next(); updateTitle(api); }
   };
 
-  const goToday = () => {
-    const now = new Date();
-    setYear(now.getFullYear());
-    setMonth(now.getMonth());
+  const handleToday = () => {
+    const api = calRef.current?.getApi();
+    if (api) { api.today(); updateTitle(api); }
   };
 
-  const openCell = (store, type, day, existing) => {
-    const dateKey = formatDateKey(year, month, day);
+  const changeView = (next) => {
+    const api = calRef.current?.getApi();
+    if (!api || currentView === next) return;
+    api.changeView(next);
+    setCurrentView(next);
+    localStorage.setItem('contentPlanView', next);
+    updateTitle(api);
+  };
+
+  const events = items.map((it) => ({
+    id: it.id,
+    title: `${STORE_LABEL[it.store] || it.store} ▪ ${TYPE_LABEL[it.type] || it.type} — ${it.content || ''}`,
+    start: it.dateKey,
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    classNames: [`fc-event--cp-${it.status || 'pending'}`, `fc-event--cp-store-${it.store}`],
+    extendedProps: { item: it },
+  }));
+
+  const openCellNew = (dateStr) => {
     setEditing({
-      id: existing?.id || null,
-      dateKey,
-      store,
-      type,
-      content: existing?.content || '',
-      status: existing?.status || 'pending',
-      authorName: existing?.authorName,
-      updatedAt: existing?.updatedAt,
+      id: null,
+      dateKey: dateStr,
+      store: 'lov',
+      type: 'story',
+      content: '',
+      status: 'pending',
     });
   };
 
-  const handleSave = async ({ content, status }) => {
+  const openEdit = (item) => {
+    setEditing({
+      id: item.id,
+      dateKey: item.dateKey,
+      store: item.store,
+      type: item.type,
+      content: item.content || '',
+      status: item.status || 'pending',
+    });
+  };
+
+  const handleSave = async ({ store, type, content, status }) => {
     const trimmed = content.trim();
     if (editing.id) {
       if (!trimmed) {
         await deleteItem(editing.id);
       } else {
-        await updateItem(editing.id, { content: trimmed, status });
+        await updateItem(editing.id, { store, type, content: trimmed, status });
       }
     } else if (trimmed) {
-      await addItem({ dateKey: editing.dateKey, store: editing.store, type: editing.type, content: trimmed, status }, user);
+      await addItem({ dateKey: editing.dateKey, store, type, content: trimmed, status }, user);
     }
     setEditing(null);
   };
 
-  const handleClose = () => setEditing(null);
-
-  const isToday = (day) => {
-    const t = new Date();
-    return t.getFullYear() === year && t.getMonth() === month && t.getDate() === day;
-  };
-
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2>📅 Content Plan</h2>
-        <div className={styles.nav}>
-          <button className={styles.navBtn} onClick={goPrev} title="Mês anterior">‹</button>
-          <button className={styles.todayBtn} onClick={goToday}>Hoje</button>
-          <span className={styles.monthLabel}>{MONTHS[month]} {year}</span>
-          <button className={styles.navBtn} onClick={goNext} title="Próximo mês">›</button>
+    <div className={`${styles.container} ${currentView === 'dayGridWeek' ? styles.weekView : ''} ${currentView === 'dayGridDay' ? styles.dayView : ''}`}>
+      <div className={styles.toolbar}>
+        <span className={styles.titleText}>{title}</span>
+        <div className={styles.toolbarRight}>
+          <button className={styles.navBtn} onClick={handlePrev}>‹</button>
+          <button className={styles.navBtn} onClick={handleNext}>›</button>
+          <button className={`${styles.viewBtn} ${currentView === 'dayGridDay' ? styles.viewBtnActive : ''}`} onClick={() => changeView('dayGridDay')}>Dia</button>
+          <button className={`${styles.viewBtn} ${currentView === 'dayGridWeek' ? styles.viewBtnActive : ''}`} onClick={() => changeView('dayGridWeek')}>Semana</button>
+          <button className={`${styles.viewBtn} ${currentView === 'dayGridMonth' ? styles.viewBtnActive : ''}`} onClick={() => changeView('dayGridMonth')}>Mês</button>
+          <button className={styles.todayBtn} onClick={handleToday}>Hoje</button>
         </div>
       </div>
 
@@ -124,56 +148,32 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
         <span><span className={`${styles.legendDot} ${styles.statusApproved}`} /> Aprovado</span>
       </div>
 
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.cornerCell} />
-              <th className={styles.rowLabel} />
-              {days.map((d) => (
-                <th key={d} className={`${styles.dayHeader} ${isToday(d) ? styles.dayHeaderToday : ''}`}>
-                  {String(d).padStart(2, '0')}/{String(month + 1).padStart(2, '0')}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map((row, idx) => {
-              const isFirstOfStore = idx === 0 || ROWS[idx - 1].store !== row.store;
-              const storeRowSpan = ROWS.filter((r) => r.store === row.store).length;
-              return (
-                <tr key={`${row.store}-${row.type}`} className={styles.dataRow}>
-                  {isFirstOfStore && (
-                    <th className={`${styles.storeCell} ${styles[`store_${row.store}`]}`} rowSpan={storeRowSpan}>
-                      {STORE_LABEL[row.store]}
-                    </th>
-                  )}
-                  <th className={styles.rowLabel}>{row.label}</th>
-                  {days.map((d) => {
-                    const dateKey = formatDateKey(year, month, d);
-                    const it = itemsByCell[`${dateKey}|${row.store}|${row.type}`];
-                    const status = it?.status;
-                    const cellClass = `${styles.cell} ${status ? styles[`status_${status}`] : ''} ${isToday(d) ? styles.cellToday : ''}`;
-                    return (
-                      <td key={d} className={cellClass} onClick={() => openCell(row.store, row.type, d, it)}>
-                        {it?.content && <span className={styles.cellContent}>{it.content}</span>}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <FullCalendar
+        ref={calRef}
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView={currentView}
+        locale="pt-br"
+        headerToolbar={false}
+        datesSet={handleDatesSet}
+        events={events}
+        dateClick={(info) => openCellNew(info.dateStr)}
+        eventClick={(info) => {
+          info.jsEvent.preventDefault();
+          openEdit(info.event.extendedProps.item);
+        }}
+        height="auto"
+        contentHeight="auto"
+        dayMaxEvents={false}
+        fixedWeekCount={false}
+      />
 
       {editing && (
         <ContentPlanModal
           editing={editing}
           isAdmin={isAdmin}
           onSave={handleSave}
-          onClose={handleClose}
-          onDelete={editing.id ? () => { deleteItem(editing.id); handleClose(); } : null}
+          onClose={() => setEditing(null)}
+          onDelete={editing.id ? () => { deleteItem(editing.id); setEditing(null); } : null}
         />
       )}
     </div>
