@@ -31,7 +31,6 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
   const [status, setStatus] = useState(editing.status || 'pending');
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   useEffect(() => {
     setTitle(editing.title || '');
@@ -44,7 +43,6 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
 
   const currentStore = STORE_OPTIONS.find((o) => o.value === store) || STORE_OPTIONS[0];
   const currentType = TYPE_OPTIONS.find((o) => o.value === type) || TYPE_OPTIONS[0];
-  const currentStatus = STATUS_OPTIONS.find((o) => o.value === status) || STATUS_OPTIONS[0];
 
   const stripHtml = (html) => (html || '').replace(/<[^>]+>/g, '').trim();
   const hasContent = !!(title.trim() || stripHtml(content));
@@ -124,7 +122,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
                 <button
                   className={styles.statusBadge}
                   style={{ background: currentStore.color }}
-                  onClick={() => { setShowStoreDropdown((v) => !v); setShowTypeDropdown(false); setShowStatusDropdown(false); }}
+                  onClick={() => { setShowStoreDropdown((v) => !v); setShowTypeDropdown(false); }}
                 >
                   {currentStore.label}
                 </button>
@@ -152,7 +150,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
                 <button
                   className={styles.statusBadge}
                   style={{ background: currentType.color }}
-                  onClick={() => { setShowTypeDropdown((v) => !v); setShowStoreDropdown(false); setShowStatusDropdown(false); }}
+                  onClick={() => { setShowTypeDropdown((v) => !v); setShowStoreDropdown(false); }}
                 >
                   {currentType.label}
                 </button>
@@ -176,29 +174,20 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
 
             <div className={styles.field}>
               <label>Status</label>
-              <div className={styles.statusWrapper}>
-                <button
-                  className={styles.statusBadge}
-                  style={{ background: currentStatus.color }}
-                  onClick={() => { setShowStatusDropdown((v) => !v); setShowStoreDropdown(false); setShowTypeDropdown(false); }}
-                >
-                  {currentStatus.label}
-                </button>
-                {showStatusDropdown && (
-                  <div className={styles.statusDropdown}>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        className={styles.statusOption}
-                        style={{ color: opt.color }}
-                        onClick={() => { updatePill('status', opt.value); setShowStatusDropdown(false); }}
-                      >
-                        <span className={styles.statusDot} style={{ background: opt.color }} />
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className={styles.statusInlineRow}>
+                {STATUS_OPTIONS.map((opt) => {
+                  const active = status === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      className={styles.statusInlineBtn}
+                      style={active ? { background: opt.color, borderColor: opt.color, color: '#fff' } : undefined}
+                      onClick={() => updatePill('status', opt.value)}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
