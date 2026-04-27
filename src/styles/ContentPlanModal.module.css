@@ -116,6 +116,30 @@
   position: relative;
 }
 
+.statusInlineRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.statusInlineBtn {
+  padding: 6px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.statusInlineBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
 .statusBadge {
   display: inline-flex;
   align-items: center;
