@@ -98,20 +98,42 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
           placeholder="Título do post"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onBlur={() => {
+            if (isEditing && onUpdate && (title.trim() !== (editing.title || ''))) {
+              onUpdate(editing.id, { title: title.trim() });
+            }
+          }}
         />
 
         <div className={styles.field} style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
             Descrição
           </label>
-          <RichTextEditor value={content} onChange={setContent} placeholder="Descreva o post..." resizable />
+          <div
+            onBlur={() => {
+              if (isEditing && onUpdate && (content !== (editing.content || ''))) {
+                onUpdate(editing.id, { content });
+              }
+            }}
+          >
+            <RichTextEditor value={content} onChange={setContent} placeholder="Descreva o post..." resizable />
+          </div>
         </div>
 
         <div className={styles.fields}>
           <div className={styles.dateRow}>
             <div className={styles.field}>
               <label>Data</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                onBlur={() => {
+                  if (isEditing && onUpdate && date && date !== (editing.dateKey || '')) {
+                    onUpdate(editing.id, { dateKey: date });
+                  }
+                }}
+              />
             </div>
           </div>
 
