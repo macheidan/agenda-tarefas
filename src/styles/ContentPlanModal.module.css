@@ -140,34 +140,6 @@
   color: var(--text);
 }
 
-.hotToggle {
-  padding: 8px 14px;
-  border: 1px solid var(--input-border);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  white-space: nowrap;
-}
-
-.hotToggle:hover {
-  background: var(--card-hover);
-  color: var(--text);
-}
-
-.hotActive {
-  background: rgba(229, 57, 53, 0.12);
-  color: #c62828;
-  border-color: #e53935;
-}
-
-.hotActive:hover {
-  background: rgba(229, 57, 53, 0.2);
-}
-
 .statusBadge {
   display: inline-flex;
   align-items: center;

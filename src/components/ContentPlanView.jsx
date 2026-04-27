@@ -4,6 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useAuth } from '../contexts/AuthContext';
 import ContentPlanModal from './ContentPlanModal';
+import { getHotDates } from '../utils/holidays';
 import styles from '../styles/ContentPlanView.module.css';
 
 const MONTHS = [
@@ -100,12 +101,10 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
   }));
 
   const hotDates = useMemo(() => {
-    const set = new Set();
-    for (const it of items) {
-      if (it.hot) set.add(it.dateKey);
-    }
-    return set;
-  }, [items]);
+    const now = new Date();
+    const y = now.getFullYear();
+    return getHotDates([y - 1, y, y + 1, y + 2]);
+  }, []);
 
   const localDateKey = (d) => {
     const y = d.getFullYear();
@@ -123,7 +122,6 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       title: '',
       content: '',
       status: 'pending',
-      hot: hotDates.has(dateStr),
     });
   };
 
@@ -136,11 +134,10 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       title: item.title || '',
       content: item.content || '',
       status: item.status || 'pending',
-      hot: !!item.hot,
     });
   };
 
-  const handleSave = async ({ title, store, type, content, status, dateKey, hot }) => {
+  const handleSave = async ({ title, store, type, content, status, dateKey }) => {
     const trimmed = (content || '').trim();
     const trimmedTitle = (title || '').trim();
     const hasContent = trimmedTitle || stripHtml(trimmed);
@@ -149,10 +146,10 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       if (!hasContent) {
         await deleteItem(editing.id);
       } else {
-        await updateItem(editing.id, { title: trimmedTitle, store, type, content: trimmed, status, dateKey: finalDateKey, hot: !!hot });
+        await updateItem(editing.id, { title: trimmedTitle, store, type, content: trimmed, status, dateKey: finalDateKey });
       }
     } else if (hasContent) {
-      await addItem({ dateKey: finalDateKey, store, type, title: trimmedTitle, content: trimmed, status, hot: !!hot }, user);
+      await addItem({ dateKey: finalDateKey, store, type, title: trimmedTitle, content: trimmed, status }, user);
     }
     setEditing(null);
   };
