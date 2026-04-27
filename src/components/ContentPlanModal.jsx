@@ -29,7 +29,6 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
   const [store, setStore] = useState(editing.store || 'lov');
   const [type, setType] = useState(editing.type || 'story');
   const [status, setStatus] = useState(editing.status || 'pending');
-  const [hot, setHot] = useState(!!editing.hot);
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
@@ -40,7 +39,6 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
     setStore(editing.store || 'lov');
     setType(editing.type || 'story');
     setStatus(editing.status || 'pending');
-    setHot(!!editing.hot);
   }, [editing]);
 
   const currentStore = STORE_OPTIONS.find((o) => o.value === store) || STORE_OPTIONS[0];
@@ -58,7 +56,6 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
       store,
       type,
       status,
-      hot,
     });
   };
 
@@ -96,7 +93,6 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
     if (field === 'store') setStore(value);
     if (field === 'type') setType(value);
     if (field === 'status') setStatus(value);
-    if (field === 'hot') setHot(value);
     if (isEditing && onUpdate) onUpdate(editing.id, { [field]: value });
   };
 
@@ -149,17 +145,6 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
                   }
                 }}
               />
-            </div>
-            <div className={styles.field}>
-              <label>Hot</label>
-              <button
-                type="button"
-                className={`${styles.hotToggle} ${hot ? styles.hotActive : ''}`}
-                onClick={() => updatePill('hot', !hot)}
-                title="Marcar como dia quente em vendas"
-              >
-                🔥 {hot ? 'Sim' : 'Não'}
-              </button>
             </div>
           </div>
 
