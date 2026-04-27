@@ -155,9 +155,10 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       </div>
 
       <div className={styles.legend}>
-        <span><span className={`${styles.legendDot} ${styles.statusPending}`} /> Em análise</span>
-        <span><span className={`${styles.legendDot} ${styles.statusChanges}`} /> Alteração pedida</span>
+        <span><span className={`${styles.legendDot} ${styles.statusPending}`} /> Aguardando</span>
+        <span><span className={`${styles.legendDot} ${styles.statusChanges}`} /> Alteração 1</span>
         <span><span className={`${styles.legendDot} ${styles.statusRevised}`} /> Revisado</span>
+        <span><span className={`${styles.legendDot} ${styles.statusChanges2}`} /> Alteração 2</span>
         <span><span className={`${styles.legendDot} ${styles.statusApproved}`} /> Aprovado</span>
       </div>
 
