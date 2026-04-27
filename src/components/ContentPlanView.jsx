@@ -34,8 +34,16 @@ function formatDayTitle(date) {
   return `${WEEKDAYS[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
+const stripHtml = (html) => (html || '').replace(/<[^>]+>/g, '').trim();
+
+const eventTitleFor = (it) => {
+  const prefix = `${STORE_LABEL[it.store] || it.store} ▪ ${TYPE_LABEL[it.type] || it.type}`;
+  const headline = it.title?.trim() || stripHtml(it.content) || '(sem conteúdo)';
+  return `${prefix} — ${headline}`;
+};
+
 export default function ContentPlanView({ items, addItem, updateItem, deleteItem }) {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const calRef = useRef(null);
   const [currentView, setCurrentView] = useState(
     () => localStorage.getItem('contentPlanView') || 'dayGridMonth'
@@ -83,7 +91,7 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
 
   const events = items.map((it) => ({
     id: it.id,
-    title: `${STORE_LABEL[it.store] || it.store} ▪ ${TYPE_LABEL[it.type] || it.type} — ${it.content || ''}`,
+    title: eventTitleFor(it),
     start: it.dateKey,
     backgroundColor: 'transparent',
     borderColor: 'transparent',
@@ -97,6 +105,7 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       dateKey: dateStr,
       store: 'lov',
       type: 'story',
+      title: '',
       content: '',
       status: 'pending',
     });
@@ -108,22 +117,25 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       dateKey: item.dateKey,
       store: item.store,
       type: item.type,
+      title: item.title || '',
       content: item.content || '',
       status: item.status || 'pending',
     });
   };
 
-  const handleSave = async ({ store, type, content, status, dateKey }) => {
-    const trimmed = content.trim();
+  const handleSave = async ({ title, store, type, content, status, dateKey }) => {
+    const trimmed = (content || '').trim();
+    const trimmedTitle = (title || '').trim();
+    const hasContent = trimmedTitle || stripHtml(trimmed);
     const finalDateKey = dateKey || editing.dateKey;
     if (editing.id) {
-      if (!trimmed) {
+      if (!hasContent) {
         await deleteItem(editing.id);
       } else {
-        await updateItem(editing.id, { store, type, content: trimmed, status, dateKey: finalDateKey });
+        await updateItem(editing.id, { title: trimmedTitle, store, type, content: trimmed, status, dateKey: finalDateKey });
       }
-    } else if (trimmed) {
-      await addItem({ dateKey: finalDateKey, store, type, content: trimmed, status }, user);
+    } else if (hasContent) {
+      await addItem({ dateKey: finalDateKey, store, type, title: trimmedTitle, content: trimmed, status }, user);
     }
     setEditing(null);
   };
@@ -171,8 +183,8 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       {editing && (
         <ContentPlanModal
           editing={editing}
-          isAdmin={isAdmin}
           onSave={handleSave}
+          onUpdate={updateItem}
           onClose={() => setEditing(null)}
           onDelete={editing.id ? () => { deleteItem(editing.id); setEditing(null); } : null}
         />
