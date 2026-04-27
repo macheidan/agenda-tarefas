@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -99,6 +99,21 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
     extendedProps: { item: it },
   }));
 
+  const hotDates = useMemo(() => {
+    const set = new Set();
+    for (const it of items) {
+      if (it.hot) set.add(it.dateKey);
+    }
+    return set;
+  }, [items]);
+
+  const localDateKey = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const openCellNew = (dateStr) => {
     setEditing({
       id: null,
@@ -108,6 +123,7 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       title: '',
       content: '',
       status: 'pending',
+      hot: hotDates.has(dateStr),
     });
   };
 
@@ -120,10 +136,11 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       title: item.title || '',
       content: item.content || '',
       status: item.status || 'pending',
+      hot: !!item.hot,
     });
   };
 
-  const handleSave = async ({ title, store, type, content, status, dateKey }) => {
+  const handleSave = async ({ title, store, type, content, status, dateKey, hot }) => {
     const trimmed = (content || '').trim();
     const trimmedTitle = (title || '').trim();
     const hasContent = trimmedTitle || stripHtml(trimmed);
@@ -132,10 +149,10 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       if (!hasContent) {
         await deleteItem(editing.id);
       } else {
-        await updateItem(editing.id, { title: trimmedTitle, store, type, content: trimmed, status, dateKey: finalDateKey });
+        await updateItem(editing.id, { title: trimmedTitle, store, type, content: trimmed, status, dateKey: finalDateKey, hot: !!hot });
       }
     } else if (hasContent) {
-      await addItem({ dateKey: finalDateKey, store, type, title: trimmedTitle, content: trimmed, status }, user);
+      await addItem({ dateKey: finalDateKey, store, type, title: trimmedTitle, content: trimmed, status, hot: !!hot }, user);
     }
     setEditing(null);
   };
@@ -170,6 +187,7 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
         headerToolbar={false}
         datesSet={handleDatesSet}
         events={events}
+        dayCellClassNames={(arg) => (hotDates.has(localDateKey(arg.date)) ? ['cp-hot-day'] : [])}
         dateClick={(info) => openCellNew(info.dateStr)}
         eventClick={(info) => {
           info.jsEvent.preventDefault();

@@ -322,6 +322,15 @@
   opacity: 0.5;
 }
 
+/* Hot day: fire icon next to day number */
+.container :global(.fc .cp-hot-day .fc-daygrid-day-top)::before {
+  content: '🔥';
+  margin-right: auto;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
 @media (max-width: 480px) {
   .container {
     padding: 8px 6px;
