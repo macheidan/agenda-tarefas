@@ -1,0 +1,270 @@
+.container {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px var(--shadow);
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.navBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.todayBtn {
+  padding: 6px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.todayBtn:hover {
+  background: var(--accent-light);
+}
+
+.monthLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 140px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+  table-layout: fixed;
+}
+
+.cornerCell {
+  width: 60px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.rowLabel {
+  width: 70px;
+  background: var(--bg-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-light);
+  text-align: left;
+  white-space: nowrap;
+  position: sticky;
+  left: 60px;
+  z-index: 1;
+}
+
+.dayHeader {
+  width: 130px;
+  min-width: 130px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border-light);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.dayHeaderToday {
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.storeCell {
+  width: 60px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  text-align: center;
+  vertical-align: middle;
+  letter-spacing: 1px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.store_lov {
+  background: rgba(255, 152, 0, 0.08);
+  color: #e68900;
+}
+
+.store_dame {
+  background: rgba(63, 81, 181, 0.08);
+  color: #3949ab;
+}
+
+.dataRow {
+  border-top: 1px solid var(--border);
+}
+
+.cell {
+  padding: 6px 8px;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  vertical-align: top;
+  height: 84px;
+  background: var(--card);
+  transition: background 0.1s;
+  position: relative;
+}
+
+.cell:hover {
+  background: var(--bg-secondary);
+}
+
+.cellContent {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.cellToday {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Status colors */
+.status_pending {
+  background: #fff8d6;
+}
+.status_pending:hover {
+  background: #fff2b3;
+}
+
+.status_changes_requested {
+  background: #ffd5cc;
+}
+.status_changes_requested:hover {
+  background: #ffb8a8;
+}
+
+.status_revised {
+  background: #d6e4ff;
+}
+.status_revised:hover {
+  background: #b8cdff;
+}
+
+.status_approved {
+  background: #cfe9c8;
+}
+.status_approved:hover {
+  background: #b8dba9;
+}
+
+/* Legend dots */
+.statusPending {
+  background: #fff8d6;
+}
+.statusChanges {
+  background: #ffd5cc;
+}
+.statusRevised {
+  background: #d6e4ff;
+}
+.statusApproved {
+  background: #cfe9c8;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 14px;
+  }
+  .dayHeader {
+    width: 110px;
+    min-width: 110px;
+  }
+  .cell {
+    height: 76px;
+  }
+}
