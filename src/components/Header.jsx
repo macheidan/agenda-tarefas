@@ -129,7 +129,7 @@ export default function Header({
               className={`${styles.tab} ${activeTab === 'reels' ? styles.active : ''}`}
               onClick={() => onTabChange('reels')}
             >
-              📱 Instagram
+              Instagram
             </button>
           )}
           {contentPlanEnabled && (
@@ -137,7 +137,7 @@ export default function Header({
               className={`${styles.tab} ${activeTab === 'contentPlan' ? styles.active : ''}`}
               onClick={() => onTabChange('contentPlan')}
             >
-              📅 Content Plan
+              Content Plan
             </button>
           )}
           {notesEnabled && (
