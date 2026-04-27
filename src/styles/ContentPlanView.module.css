@@ -322,13 +322,12 @@
   opacity: 0.5;
 }
 
-/* Hot day: fire icon next to day number */
-.container :global(.fc .cp-hot-day .fc-daygrid-day-top)::before {
+/* Hot day: fire icon next to day number (right side) */
+.container :global(.fc .cp-hot-day .fc-daygrid-day-top)::after {
   content: '🔥';
-  margin-right: auto;
   font-size: 14px;
   line-height: 1;
-  padding: 2px 4px;
+  padding: 2px 0 2px 4px;
 }
 
 @media (max-width: 480px) {
