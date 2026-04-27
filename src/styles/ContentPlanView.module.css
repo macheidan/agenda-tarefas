@@ -109,7 +109,7 @@
   display: inline-block;
 }
 
-.statusPending { background: #fff8d6; }
+.statusPending { background: #f4f4f4; }
 .statusChanges { background: #ffe5c2; }
 .statusRevised { background: #d6e4ff; }
 .statusChanges2 { background: #ffd5cc; }
@@ -259,10 +259,10 @@
 
 /* Status backgrounds */
 .container :global(.fc .fc-event.fc-event--cp-pending) {
-  background: #fff8d6 !important;
+  background: #f4f4f4 !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-pending:hover) {
-  background: #fff2b3 !important;
+  background: #eaeaea !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-changes_requested) {

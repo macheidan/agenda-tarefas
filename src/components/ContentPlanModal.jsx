@@ -13,7 +13,7 @@ const TYPE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Aguardando', color: '#e6b400' },
+  { value: 'pending', label: 'Aguardando', color: '#9e9e9e' },
   { value: 'changes_requested', label: 'Alteração 1', color: '#ff9800' },
   { value: 'revised', label: 'Revisado', color: '#3b82f6' },
   { value: 'changes_2', label: 'Alteração 2', color: '#e53935' },
