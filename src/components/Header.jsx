@@ -11,6 +11,7 @@ export default function Header({
   calendarEnabled,
   ideasEnabled,
   reelsEnabled,
+  contentPlanEnabled,
   notesEnabled,
   shoppingListEnabled,
   reviewsEnabled,
@@ -138,6 +139,14 @@ export default function Header({
               onClick={() => onTabChange('reels')}
             >
               📱 Instagram
+            </button>
+          )}
+          {contentPlanEnabled && (
+            <button
+              className={`${styles.tab} ${activeTab === 'contentPlan' ? styles.active : ''}`}
+              onClick={() => onTabChange('contentPlan')}
+            >
+              📅 Content Plan
             </button>
           )}
           {notesEnabled && (

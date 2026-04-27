@@ -1,0 +1,201 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px var(--shadow-hover);
+  padding: 20px;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.storeBadge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+.store_lov {
+  background: rgba(255, 152, 0, 0.15);
+  color: #e68900;
+}
+
+.store_dame {
+  background: rgba(63, 81, 181, 0.15);
+  color: #3949ab;
+}
+
+.typeBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.date {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-left: auto;
+  font-weight: 500;
+}
+
+.closeBtn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn:hover {
+  color: var(--text);
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--input-bg);
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  border-color: var(--input-focus);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.statusLabel {
+  color: var(--text-secondary);
+}
+
+.statusBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.status_pending { background: #fff8d6; color: #856200; border-color: #f0d77a; }
+.status_changes_requested { background: #ffd5cc; color: #b1391f; border-color: #f0a698; }
+.status_revised { background: #d6e4ff; color: #1f4ab1; border-color: #98b1f0; }
+.status_approved { background: #cfe9c8; color: #2e6b1f; border-color: #98c887; }
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.actionsRight {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.deleteBtn {
+  padding: 7px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  background: none;
+  color: var(--danger);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.deleteBtn:hover {
+  background: var(--danger-bg);
+}
+
+.changesBtn {
+  padding: 7px 14px;
+  border: 1px solid #e53935;
+  border-radius: 6px;
+  background: var(--card);
+  color: #e53935;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.changesBtn:hover {
+  background: rgba(229, 57, 53, 0.08);
+}
+
+.changesBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.approveBtn {
+  padding: 7px 14px;
+  border: 1px solid #4caf50;
+  border-radius: 6px;
+  background: #4caf50;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.approveBtn:hover {
+  background: #43a047;
+}
+
+.approveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

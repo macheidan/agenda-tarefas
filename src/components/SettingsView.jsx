@@ -18,6 +18,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey })
     { key: 'calendarEnabled', label: 'Calendário' },
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'reelsEnabled', label: 'Reels' },
+    { key: 'contentPlanEnabled', label: 'Content Plan' },
     { key: 'notesEnabled', label: 'Anotações' },
     { key: 'shoppingListEnabled', label: 'Lista de Compras' },
     { key: 'reviewsEnabled', label: 'Avaliações' },

@@ -8,6 +8,7 @@ import { useTaskAlarm } from '../hooks/useTaskAlarm';
 import { useIdeas } from '../hooks/useIdeas';
 import { useReels } from '../hooks/useReels';
 import { useScripts } from '../hooks/useScripts';
+import { useContentPlan } from '../hooks/useContentPlan';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
 import { useReviews } from '../hooks/useReviews';
@@ -24,6 +25,7 @@ import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
 import ReelsView from '../components/ReelsView';
+import ContentPlanView from '../components/ContentPlanView';
 import ReviewsView from '../components/ReviewsView';
 import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
@@ -59,6 +61,7 @@ export default function Dashboard() {
   const calendarEnabled = settings.calendarEnabled !== false;
   const ideasEnabled = settings.ideasEnabled !== false;
   const reelsEnabled = settings.reelsEnabled !== false;
+  const contentPlanEnabled = settings.contentPlanEnabled !== false;
   const notesEnabled = settings.notesEnabled !== false;
   const shoppingListEnabled = settings.shoppingListEnabled !== false;
   const reviewsEnabled = settings.reviewsEnabled !== false;
@@ -68,6 +71,7 @@ export default function Dashboard() {
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
   const { scripts, addScript, updateScript, archiveScript, unarchiveScript, deleteScript } = useScripts();
+  const { items: contentPlanItems, addItem: addContentPlanItem, updateItem: updateContentPlanItem, deleteItem: deleteContentPlanItem } = useContentPlan();
   const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
     useReviews(null, user, true);
 
@@ -97,6 +101,7 @@ export default function Dashboard() {
         calendarEnabled={calendarEnabled}
         ideasEnabled={ideasEnabled}
         reelsEnabled={reelsEnabled}
+        contentPlanEnabled={contentPlanEnabled}
         notesEnabled={notesEnabled}
         shoppingListEnabled={shoppingListEnabled}
         reviewsEnabled={reviewsEnabled}
@@ -151,6 +156,14 @@ export default function Dashboard() {
             archiveScript={archiveScript}
             unarchiveScript={unarchiveScript}
             deleteScript={deleteScript}
+          />
+        )}
+        {activeTab === 'contentPlan' && contentPlanEnabled && (
+          <ContentPlanView
+            items={contentPlanItems}
+            addItem={addContentPlanItem}
+            updateItem={updateContentPlanItem}
+            deleteItem={deleteContentPlanItem}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (
