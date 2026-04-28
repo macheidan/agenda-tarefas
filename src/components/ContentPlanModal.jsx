@@ -10,6 +10,7 @@ const STORE_OPTIONS = [
 const TYPE_OPTIONS = [
   { value: 'story', label: 'Story', color: '#9e9e9e' },
   { value: 'reel', label: 'Reels', color: '#9c27b0' },
+  { value: 'influencer', label: 'Influencer', color: '#e91e63' },
 ];
 
 const STATUS_OPTIONS = [
@@ -80,9 +81,9 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
       onClose();
       return;
     }
-    // Creating new item with content: ask before discarding
+    // Creating new item with content: confirm before discarding (igual TaskModal)
     if (!isEditing && hasContent) {
-      if (window.confirm('Descartar este novo post?')) onClose();
+      if (window.confirm('Você tem alterações não salvas. Deseja realmente fechar?')) onClose();
       return;
     }
     onClose();
