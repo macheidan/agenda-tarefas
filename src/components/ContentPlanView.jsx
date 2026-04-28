@@ -13,7 +13,7 @@ const MONTHS = [
 ];
 
 const STORE_LABEL = { lov: 'LOV', dame: 'DAME' };
-const TYPE_LABEL = { story: 'Story', reel: 'Reels' };
+const TYPE_LABEL = { story: 'Story', reel: 'Reels', influencer: 'Influencer' };
 
 function formatWeekTitle(start, end) {
   const s = new Date(start);
