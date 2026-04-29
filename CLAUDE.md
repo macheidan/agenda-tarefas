@@ -10,10 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev       # Vite dev server
 npm run build     # production build to dist/
 npm run lint      # ESLint
-npm run deploy    # runs build + publishes dist/ to gh-pages branch (GitHub Pages)
+npm run deploy    # legado: publica dist/ no gh-pages (não usar — produção é Vercel)
 ```
 
-**Após mudanças em código que afetem a UI, rodar `npm run deploy` automaticamente** sem pedir confirmação — o usuário autorizou deploys automáticos. O site é servido a partir da branch `gh-pages`; alterações em `main`/feature branches não aparecem online até `deploy` rodar. Depois de deploy, o usuário pode precisar de hard-refresh para driblar cache do browser/CDN.
+**Produção:** https://agenda-tarefas-eight.vercel.app/ — deploy automático via Vercel quando a branch padrão recebe commits. Após mudanças em UI, **mergear o PR direto** (sem pedir confirmação — usuário autorizou) pra atualizar produção. PR preview do Vercel sai automaticamente em cada push da branch. **Não** rodar `npm run deploy` (gh-pages está deprecado).
 
 ## Environment
 

@@ -37,6 +37,26 @@
   cursor: pointer;
 }
 
+/* Theme toggle (light/dark) */
+.themeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.themeBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
 /* Bell icon button (Concluídos) */
 .bellBtn {
   position: relative;
@@ -272,11 +292,13 @@
     max-width: 130px;
   }
 
+  .themeBtn,
   .bellBtn {
     width: 30px;
     height: 30px;
   }
 
+  .themeBtn svg,
   .bellBtn svg {
     width: 16px;
     height: 16px;
