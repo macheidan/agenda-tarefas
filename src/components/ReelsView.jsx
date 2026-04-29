@@ -536,7 +536,7 @@ export default function ReelsView({
                   <span className={styles.pendingAuthor}>{reel.authorName}</span>
                   {reel.link && (
                     <a className={styles.pendingLink} href={reel.link} target="_blank" rel="noopener noreferrer">
-                      {reel.link}
+                      link
                     </a>
                   )}
                   {reel.description && <span className={styles.pendingDesc}>{reel.description}</span>}
@@ -575,7 +575,7 @@ export default function ReelsView({
                       <td>
                         {reel.link ? (
                           <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
-                            {reel.link}
+                            link
                           </a>
                         ) : '—'}
                       </td>
