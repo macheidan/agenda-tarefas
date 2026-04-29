@@ -219,10 +219,10 @@
 
 /* Status-based event colors */
 .container :global(.fc .fc-event.fc-event--not-started) {
-  background: #f4f4f4 !important;
+  background: var(--event-not-started-bg) !important;
 }
 .container :global(.fc .fc-event.fc-event--not-started:hover) {
-  background: #eaeaea !important;
+  background: var(--event-not-started-bg-hover) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--done) {
@@ -264,7 +264,7 @@
 
 /* Multi-day events - border-left matches status */
 .container :global(.fc .fc-event.fc-h-event) {
-  border-left: 3px solid rgba(0, 0, 0, 0.15) !important;
+  border-left: 3px solid var(--event-multiday-border) !important;
   border-radius: 0;
 }
 .container :global(.fc .fc-event.fc-h-event.fc-event--done) {

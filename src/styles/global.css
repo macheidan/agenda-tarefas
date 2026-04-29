@@ -55,6 +55,11 @@
   --toolbar-border: #e4e7ec;
   --scrollbar-thumb: #d0d5dd;
 
+  /* Calendar event chips */
+  --event-not-started-bg: rgba(16, 24, 40, 0.05);
+  --event-not-started-bg-hover: rgba(16, 24, 40, 0.09);
+  --event-multiday-border: rgba(16, 24, 40, 0.15);
+
   /* Tipografia (TailAdmin) */
   --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --text-xs: 12px;
@@ -124,6 +129,10 @@
   --toolbar-bg: #1a2231;
   --toolbar-border: #344054;
   --scrollbar-thumb: #475467;
+
+  --event-not-started-bg: rgba(255, 255, 255, 0.06);
+  --event-not-started-bg-hover: rgba(255, 255, 255, 0.12);
+  --event-multiday-border: rgba(255, 255, 255, 0.2);
 
   --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.35), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
