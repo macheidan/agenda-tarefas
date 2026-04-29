@@ -1,6 +1,7 @@
 .container {
   background: var(--card);
   padding: 12px 20px;
+  overflow: hidden;
 }
 
 .container :global(.fc) {
@@ -282,13 +283,25 @@
   display: none;
 }
 
-/* Remove header borders */
+/* Header row (week/day view) */
 .container :global(.fc .fc-col-header) {
   border: none;
+  background: var(--card);
 }
 
 .container :global(.fc .fc-col-header-cell) {
   border: none;
+  background: var(--card);
+}
+
+.container :global(.fc .fc-col-header-cell-cushion) {
+  color: var(--text-muted);
+}
+
+/* Prevent multi-day events from rendering outside the grid */
+.container :global(.fc .fc-daygrid-body),
+.container :global(.fc .fc-scrollgrid-sync-table) {
+  overflow: hidden;
 }
 
 /* Other month days */
