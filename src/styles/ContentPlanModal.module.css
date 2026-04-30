@@ -202,13 +202,13 @@
 .actions {
   display: flex;
   gap: 10px;
+  justify-content: flex-end;
 }
 
 .saveBtn {
-  flex: 1;
-  padding: 10px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--accent);
   color: #fff;
   font-size: 14px;
@@ -227,19 +227,19 @@
 }
 
 .changesBtn {
-  padding: 10px 20px;
-  border: 1px solid #e53935;
-  border-radius: 8px;
-  background: var(--card);
-  color: #e53935;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #e53935;
+  color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: opacity 0.15s, background 0.15s;
 }
 
 .changesBtn:hover {
-  background: rgba(229, 57, 53, 0.08);
+  background: #c62828;
 }
 
 .changesBtn:disabled {
@@ -248,19 +248,19 @@
 }
 
 .deleteBtn {
-  padding: 10px 20px;
-  border: 1px solid var(--danger);
-  border-radius: 8px;
-  background: var(--card);
-  color: var(--danger);
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--danger);
+  color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: opacity 0.15s, background 0.15s;
 }
 
 .deleteBtn:hover {
-  background: var(--danger-bg);
+  opacity: 0.85;
 }
 
 @media (max-width: 640px) {
