@@ -21,6 +21,19 @@ const STATUS_OPTIONS = [
   { value: 'approved', label: 'Aprovado', color: '#4caf50' },
 ];
 
+// Conversão automática do path do Drive: caminho do dono ("Meu Drive")
+// vira o caminho do shortcut compartilhado, que é o que o auxiliar usa.
+const PERSONAL_DRIVE_PREFIX = 'G:\\Meu Drive\\02 Pizzarias\\03 Marketing\\01 Comunicação\\';
+const SHORTCUT_DRIVE_PREFIX = 'G:\\.shortcut-targets-by-id\\0BxvfiuINnUmqNExSenh4SndCZnc\\01 Comunicação\\';
+
+function convertFolderPath(input) {
+  if (typeof input !== 'string') return input;
+  if (input.startsWith(PERSONAL_DRIVE_PREFIX)) {
+    return SHORTCUT_DRIVE_PREFIX + input.slice(PERSONAL_DRIVE_PREFIX.length);
+  }
+  return input;
+}
+
 export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, onDelete }) {
   const isEditing = !!editing.id;
 
@@ -144,13 +157,13 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
           <input
             type="text"
             value={folder}
-            onChange={(e) => setFolder(e.target.value)}
+            onChange={(e) => setFolder(convertFolderPath(e.target.value))}
             onBlur={() => {
               if (isEditing && onUpdate && folder.trim() !== (editing.folder || '')) {
                 onUpdate(editing.id, { folder: folder.trim() });
               }
             }}
-            placeholder={'C:\\01 Comunicação\\...'}
+            placeholder={'Cole o caminho do "Meu Drive" — converte automático'}
             style={{
               width: '100%',
               padding: '8px 12px',
