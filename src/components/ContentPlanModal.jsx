@@ -14,12 +14,12 @@ const TYPE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Aguardando ▶', color: '#9e9e9e', adminOnly: false },
-  { value: 'alteracao', label: 'Alteração ▶', color: '#e53935', adminOnly: true },
-  { value: 'revisado', label: 'Revisado ▶', color: '#3b82f6', adminOnly: false },
-  { value: 'aprovado_gravar', label: 'Aprovado gravar ▶', color: '#009688', adminOnly: true },
-  { value: 'pronto', label: 'Pronto ▶', color: '#ff9800', adminOnly: false },
-  { value: 'publicar', label: 'Publicar', color: '#4caf50', adminOnly: true },
+  { value: 'pending', label: 'Aguardando', color: '#9e9e9e', adminOnly: false, hasNext: true },
+  { value: 'alteracao', label: 'Alteração', color: '#e53935', adminOnly: true, hasNext: true },
+  { value: 'revisado', label: 'Revisado', color: '#3b82f6', adminOnly: false, hasNext: true },
+  { value: 'aprovado_gravar', label: 'Aprovado gravar', color: '#009688', adminOnly: true, hasNext: true },
+  { value: 'pronto', label: 'Pronto', color: '#ff9800', adminOnly: false, hasNext: true },
+  { value: 'publicar', label: 'Publicar', color: '#4caf50', adminOnly: true, hasNext: false },
 ];
 
 // Legacy values: items criados antes do redesign do fluxo de status
@@ -329,6 +329,7 @@ export default function ContentPlanModal({ editing, isAdmin, onSave, onUpdate, o
                     title={blocked ? 'Apenas admin pode marcar' : opt.label}
                   >
                     {opt.label}
+                    {opt.hasNext && <span className={styles.statusArrow}>▶</span>}
                   </button>
                 );
               })}

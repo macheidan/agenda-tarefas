@@ -140,6 +140,16 @@
   color: var(--text);
 }
 
+.statusArrow {
+  font-size: 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+  opacity: 0.65;
+  display: inline-block;
+  position: relative;
+  top: -1px;
+}
+
 .statusBadge {
   display: inline-flex;
   align-items: center;
