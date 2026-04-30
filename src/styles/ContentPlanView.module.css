@@ -110,10 +110,11 @@
 }
 
 .statusPending { background: #f4f4f4; }
-.statusChanges { background: #ffe5c2; }
-.statusRevised { background: #d6e4ff; }
-.statusChanges2 { background: #ffd5cc; }
-.statusApproved { background: #cfe9c8; }
+.statusAlteracao { background: #ffd5cc; }
+.statusRevisado { background: #d6e4ff; }
+.statusAprovadoGravar { background: #c8e6e3; }
+.statusPronto { background: #ffe5c2; }
+.statusPublicar { background: #cfe9c8; }
 
 /* Table structure (same as CalendarView) */
 .container :global(.fc table) {
@@ -265,31 +266,38 @@
   background: #eaeaea !important;
 }
 
-.container :global(.fc .fc-event.fc-event--cp-changes_requested) {
-  background: #ffe5c2 !important;
-}
-.container :global(.fc .fc-event.fc-event--cp-changes_requested:hover) {
-  background: #ffd29c !important;
-}
-
-.container :global(.fc .fc-event.fc-event--cp-revised) {
-  background: #d6e4ff !important;
-}
-.container :global(.fc .fc-event.fc-event--cp-revised:hover) {
-  background: #b8cdff !important;
-}
-
-.container :global(.fc .fc-event.fc-event--cp-changes_2) {
+.container :global(.fc .fc-event.fc-event--cp-alteracao) {
   background: #ffd5cc !important;
 }
-.container :global(.fc .fc-event.fc-event--cp-changes_2:hover) {
+.container :global(.fc .fc-event.fc-event--cp-alteracao:hover) {
   background: #ffb8a8 !important;
 }
 
-.container :global(.fc .fc-event.fc-event--cp-approved) {
+.container :global(.fc .fc-event.fc-event--cp-revisado) {
+  background: #d6e4ff !important;
+}
+.container :global(.fc .fc-event.fc-event--cp-revisado:hover) {
+  background: #b8cdff !important;
+}
+
+.container :global(.fc .fc-event.fc-event--cp-aprovado_gravar) {
+  background: #c8e6e3 !important;
+}
+.container :global(.fc .fc-event.fc-event--cp-aprovado_gravar:hover) {
+  background: #a5d4cf !important;
+}
+
+.container :global(.fc .fc-event.fc-event--cp-pronto) {
+  background: #ffe5c2 !important;
+}
+.container :global(.fc .fc-event.fc-event--cp-pronto:hover) {
+  background: #ffd29c !important;
+}
+
+.container :global(.fc .fc-event.fc-event--cp-publicar) {
   background: #cfe9c8 !important;
 }
-.container :global(.fc .fc-event.fc-event--cp-approved:hover) {
+.container :global(.fc .fc-event.fc-event--cp-publicar:hover) {
   background: #b8dba9 !important;
 }
 
