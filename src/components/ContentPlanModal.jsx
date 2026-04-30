@@ -26,6 +26,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
 
   const [title, setTitle] = useState(editing.title || '');
   const [content, setContent] = useState(editing.content || '');
+  const [folder, setFolder] = useState(editing.folder || '');
   const [date, setDate] = useState(editing.dateKey || '');
   const [store, setStore] = useState(editing.store || 'lov');
   const [type, setType] = useState(editing.type || 'story');
@@ -36,6 +37,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
   useEffect(() => {
     setTitle(editing.title || '');
     setContent(editing.content || '');
+    setFolder(editing.folder || '');
     setDate(editing.dateKey || '');
     setStore(editing.store || 'lov');
     setType(editing.type || 'story');
@@ -49,10 +51,11 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
   const hasContent = !!(title.trim() || stripHtml(content));
 
   const handleSave = () => {
-    if (!hasContent || !date) return;
+    if (!hasContent || !date || !folder.trim()) return;
     onSave({
       title: title.trim(),
       content,
+      folder: folder.trim(),
       dateKey: date,
       store,
       type,
@@ -67,6 +70,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
   const hasUnsaved = () => {
     return title !== (editing.title || '') ||
       content !== (editing.content || '') ||
+      folder !== (editing.folder || '') ||
       date !== (editing.dateKey || '');
   };
 
@@ -76,6 +80,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
       onUpdate(editing.id, {
         title: title.trim(),
         content,
+        folder: folder.trim(),
         dateKey: date,
       });
       onClose();
@@ -129,6 +134,35 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
             }}
             placeholder="Descreva o post..."
             resizable
+          />
+        </div>
+
+        <div className={styles.field} style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
+            * Pasta
+          </label>
+          <input
+            type="text"
+            value={folder}
+            onChange={(e) => setFolder(e.target.value)}
+            onBlur={() => {
+              if (isEditing && onUpdate && folder.trim() !== (editing.folder || '')) {
+                onUpdate(editing.id, { folder: folder.trim() });
+              }
+            }}
+            placeholder={'C:\\01 Comunicação\\...'}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid var(--input-border)',
+              borderRadius: 6,
+              fontSize: 14,
+              color: 'var(--text)',
+              background: 'var(--input-bg)',
+              outline: 'none',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
 
@@ -228,7 +262,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.saveBtn} onClick={handleSave} disabled={!hasContent || !date}>
+          <button className={styles.saveBtn} onClick={handleSave} disabled={!hasContent || !date || !folder.trim()}>
             Salvar
           </button>
           {isEditing && (

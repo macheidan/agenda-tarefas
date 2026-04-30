@@ -121,6 +121,7 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       type: 'story',
       title: '',
       content: '',
+      folder: '',
       status: 'pending',
     });
   };
@@ -133,23 +134,25 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       type: item.type,
       title: item.title || '',
       content: item.content || '',
+      folder: item.folder || '',
       status: item.status || 'pending',
     });
   };
 
-  const handleSave = async ({ title, store, type, content, status, dateKey }) => {
+  const handleSave = async ({ title, store, type, content, folder, status, dateKey }) => {
     const trimmed = (content || '').trim();
     const trimmedTitle = (title || '').trim();
+    const trimmedFolder = (folder || '').trim();
     const hasContent = trimmedTitle || stripHtml(trimmed);
     const finalDateKey = dateKey || editing.dateKey;
     if (editing.id) {
       if (!hasContent) {
         await deleteItem(editing.id);
       } else {
-        await updateItem(editing.id, { title: trimmedTitle, store, type, content: trimmed, status, dateKey: finalDateKey });
+        await updateItem(editing.id, { title: trimmedTitle, store, type, content: trimmed, folder: trimmedFolder, status, dateKey: finalDateKey });
       }
     } else if (hasContent) {
-      await addItem({ dateKey: finalDateKey, store, type, title: trimmedTitle, content: trimmed, status }, user);
+      await addItem({ dateKey: finalDateKey, store, type, title: trimmedTitle, content: trimmed, folder: trimmedFolder, status }, user);
     }
     setEditing(null);
   };
