@@ -283,15 +283,25 @@
   display: none;
 }
 
-/* Header row (week/day view) */
+/* Header row (week/day view) — cobre todas as camadas do FullCalendar */
+.container :global(.fc .fc-scrollgrid-section-header),
+.container :global(.fc .fc-scrollgrid-section-header > *),
+.container :global(.fc .fc-scrollgrid-section-header td),
+.container :global(.fc .fc-scrollgrid-section-header th),
+.container :global(.fc .fc-col-header),
+.container :global(.fc .fc-col-header-cell),
+.container :global(.fc .fc-scroller-harness),
+.container :global(.fc .fc-scroller) {
+  background: var(--card) !important;
+  border-color: var(--border-light) !important;
+}
+
 .container :global(.fc .fc-col-header) {
   border: none;
-  background: var(--card);
 }
 
 .container :global(.fc .fc-col-header-cell) {
   border: none;
-  background: var(--card);
 }
 
 .container :global(.fc .fc-col-header-cell-cushion) {
