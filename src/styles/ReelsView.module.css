@@ -34,39 +34,34 @@
 
 .newBtn {
   padding: 8px 16px;
-  border: 2px solid var(--accent);
+  border: none;
   border-radius: 6px;
   background: var(--accent);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s;
 }
 
 .newBtn:hover {
   background: var(--accent-hover);
-  border-color: var(--accent-hover);
 }
 
 .newBtnStories {
   background: #ff9800;
-  border-color: #ff9800;
 }
 
 .newBtnStories:hover {
   background: #f57c00;
-  border-color: #f57c00;
 }
 
 .newBtnScripts {
   background: #9c27b0;
-  border-color: #9c27b0;
 }
 
 .newBtnScripts:hover {
   background: #7b1fa2;
-  border-color: #7b1fa2;
 }
 
 .archivedBtn {
