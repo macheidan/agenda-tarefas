@@ -83,7 +83,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
     updateTitle(api);
   };
 
-  const events = tasks.map((task) => {
+  const events = tasks.flatMap((task) => {
     const isOverdue =
       task.status !== 'done' && task.finishDate && task.finishDate < today;
 
@@ -114,10 +114,8 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       classNames = ['fc-event--not-started'];
     }
 
-    const event = {
-      id: task.id,
+    const baseEvent = {
       title: task.title,
-      start: task.date,
       backgroundColor,
       borderColor: 'transparent',
       textColor,
@@ -125,13 +123,24 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       extendedProps: { task },
     };
 
+    // Tarefas multi-dia: expande em vários eventos de um dia, um pra cada
+    // data, em vez de uma barra contínua que atravessa as células.
     if (task.finishDate && task.finishDate > task.date) {
-      const endDate = new Date(task.finishDate + 'T12:00:00');
-      endDate.setDate(endDate.getDate() + 1);
-      event.end = endDate.toISOString().split('T')[0];
+      const result = [];
+      const start = new Date(task.date + 'T12:00:00');
+      const end = new Date(task.finishDate + 'T12:00:00');
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const iso = d.toISOString().split('T')[0];
+        result.push({
+          ...baseEvent,
+          id: `${task.id}__${iso}`,
+          start: iso,
+        });
+      }
+      return result;
     }
 
-    return event;
+    return [{ ...baseEvent, id: task.id, start: task.date }];
   });
 
   events.sort((a, b) => {
