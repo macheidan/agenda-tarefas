@@ -15,6 +15,15 @@ const MONTHS = [
 const STORE_LABEL = { lov: 'LOV', dame: 'DAME' };
 const TYPE_LABEL = { story: 'Story', reel: 'Reels', influencer: 'Influencer' };
 
+const STATUS_LEGACY_MAP = {
+  changes_requested: 'alteracao',
+  changes_2: 'alteracao',
+  approved: 'publicar',
+  revised: 'revisado',
+};
+
+const normalizeStatus = (s) => (!s ? 'pending' : (STATUS_LEGACY_MAP[s] || s));
+
 function formatWeekTitle(start, end) {
   const s = new Date(start);
   const e = new Date(end);
@@ -44,7 +53,7 @@ const eventTitleFor = (it) => {
 };
 
 export default function ContentPlanView({ items, addItem, updateItem, deleteItem }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const calRef = useRef(null);
   const [currentView, setCurrentView] = useState(
     () => localStorage.getItem('contentPlanView') || 'dayGridMonth'
@@ -96,7 +105,7 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
     start: it.dateKey,
     backgroundColor: 'transparent',
     borderColor: 'transparent',
-    classNames: [`fc-event--cp-${it.status || 'pending'}`, `fc-event--cp-store-${it.store}`],
+    classNames: [`fc-event--cp-${normalizeStatus(it.status)}`, `fc-event--cp-store-${it.store}`],
     extendedProps: { item: it },
   }));
 
@@ -173,10 +182,11 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
 
       <div className={styles.legend}>
         <span><span className={`${styles.legendDot} ${styles.statusPending}`} /> Aguardando</span>
-        <span><span className={`${styles.legendDot} ${styles.statusChanges}`} /> Alteração 1</span>
-        <span><span className={`${styles.legendDot} ${styles.statusRevised}`} /> Revisado</span>
-        <span><span className={`${styles.legendDot} ${styles.statusChanges2}`} /> Alteração 2</span>
-        <span><span className={`${styles.legendDot} ${styles.statusApproved}`} /> Aprovado</span>
+        <span><span className={`${styles.legendDot} ${styles.statusAlteracao}`} /> Alteração</span>
+        <span><span className={`${styles.legendDot} ${styles.statusRevisado}`} /> Revisado</span>
+        <span><span className={`${styles.legendDot} ${styles.statusAprovadoGravar}`} /> Aprovado gravar</span>
+        <span><span className={`${styles.legendDot} ${styles.statusPronto}`} /> Pronto</span>
+        <span><span className={`${styles.legendDot} ${styles.statusPublicar}`} /> Publicar</span>
       </div>
 
       <FullCalendar
@@ -202,6 +212,7 @@ export default function ContentPlanView({ items, addItem, updateItem, deleteItem
       {editing && (
         <ContentPlanModal
           editing={editing}
+          isAdmin={isAdmin}
           onSave={handleSave}
           onUpdate={updateItem}
           onClose={() => setEditing(null)}

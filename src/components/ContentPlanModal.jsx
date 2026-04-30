@@ -14,12 +14,27 @@ const TYPE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Aguardando', color: '#9e9e9e' },
-  { value: 'changes_requested', label: 'Alteração 1', color: '#ff9800' },
-  { value: 'revised', label: 'Revisado', color: '#3b82f6' },
-  { value: 'changes_2', label: 'Alteração 2', color: '#e53935' },
-  { value: 'approved', label: 'Aprovado', color: '#4caf50' },
+  { value: 'pending', label: 'Aguardando', color: '#9e9e9e', adminOnly: false },
+  { value: 'alteracao', label: 'Alteração', color: '#e53935', adminOnly: true },
+  { value: 'revisado', label: 'Revisado', color: '#3b82f6', adminOnly: false },
+  { value: 'aprovado_gravar', label: 'Aprovado gravar', color: '#009688', adminOnly: true },
+  { value: 'pronto', label: 'Pronto', color: '#ff9800', adminOnly: false },
+  { value: 'publicar', label: 'Publicar', color: '#4caf50', adminOnly: true },
 ];
+
+// Legacy values: items criados antes do redesign do fluxo de status
+// continuam funcionando, mapeados pra um valor equivalente da lista nova.
+const STATUS_LEGACY_MAP = {
+  changes_requested: 'alteracao',
+  changes_2: 'alteracao',
+  approved: 'publicar',
+  revised: 'revisado',
+};
+
+function normalizeStatus(value) {
+  if (!value) return 'pending';
+  return STATUS_LEGACY_MAP[value] || value;
+}
 
 // Conversão automática do path do Drive: caminho do dono ("Meu Drive")
 // vira o caminho do shortcut compartilhado, que é o que o auxiliar usa.
@@ -34,7 +49,7 @@ function convertFolderPath(input) {
   return input;
 }
 
-export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, onDelete }) {
+export default function ContentPlanModal({ editing, isAdmin, onSave, onUpdate, onClose, onDelete }) {
   const isEditing = !!editing.id;
 
   const [title, setTitle] = useState(editing.title || '');
@@ -43,7 +58,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
   const [date, setDate] = useState(editing.dateKey || '');
   const [store, setStore] = useState(editing.store || 'lov');
   const [type, setType] = useState(editing.type || 'story');
-  const [status, setStatus] = useState(editing.status || 'pending');
+  const [status, setStatus] = useState(normalizeStatus(editing.status));
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [folderCopied, setFolderCopied] = useState(false);
@@ -55,7 +70,7 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
     setDate(editing.dateKey || '');
     setStore(editing.store || 'lov');
     setType(editing.type || 'story');
-    setStatus(editing.status || 'pending');
+    setStatus(normalizeStatus(editing.status));
   }, [editing]);
 
   const currentStore = STORE_OPTIONS.find((o) => o.value === store) || STORE_OPTIONS[0];
@@ -304,12 +319,15 @@ export default function ContentPlanModal({ editing, onSave, onUpdate, onClose, o
               <div className={styles.statusInlineRow}>
                 {STATUS_OPTIONS.map((opt) => {
                   const active = status === opt.value;
+                  const blocked = opt.adminOnly && !isAdmin;
                   return (
                     <button
                       key={opt.value}
                       className={styles.statusInlineBtn}
                       style={active ? { background: opt.color, borderColor: opt.color, color: '#fff' } : undefined}
-                      onClick={() => updatePill('status', opt.value)}
+                      onClick={() => { if (!blocked) updatePill('status', opt.value); }}
+                      disabled={blocked}
+                      title={blocked ? 'Apenas admin pode marcar' : opt.label}
                     >
                       {opt.label}
                     </button>
