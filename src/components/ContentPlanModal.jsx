@@ -14,11 +14,11 @@ const TYPE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Aguardando', color: '#9e9e9e', adminOnly: false },
-  { value: 'alteracao', label: 'Alteração', color: '#e53935', adminOnly: true },
-  { value: 'revisado', label: 'Revisado', color: '#3b82f6', adminOnly: false },
-  { value: 'aprovado_gravar', label: 'Aprovado gravar', color: '#009688', adminOnly: true },
-  { value: 'pronto', label: 'Pronto', color: '#ff9800', adminOnly: false },
+  { value: 'pending', label: 'Aguardando ▶', color: '#9e9e9e', adminOnly: false },
+  { value: 'alteracao', label: 'Alteração ▶', color: '#e53935', adminOnly: true },
+  { value: 'revisado', label: 'Revisado ▶', color: '#3b82f6', adminOnly: false },
+  { value: 'aprovado_gravar', label: 'Aprovado gravar ▶', color: '#009688', adminOnly: true },
+  { value: 'pronto', label: 'Pronto ▶', color: '#ff9800', adminOnly: false },
   { value: 'publicar', label: 'Publicar', color: '#4caf50', adminOnly: true },
 ];
 
