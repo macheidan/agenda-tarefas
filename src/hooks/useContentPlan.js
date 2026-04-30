@@ -22,13 +22,14 @@ export function useContentPlan() {
     return unsub;
   }, []);
 
-  const addItem = useCallback(async ({ dateKey, store, type, title, content, status }, author) => {
+  const addItem = useCallback(async ({ dateKey, store, type, title, content, folder, status }, author) => {
     await addDoc(collection(db, 'contentPlan'), {
       dateKey,
       store,
       type,
       title: (title || '').trim(),
       content: (content || '').trim(),
+      folder: (folder || '').trim(),
       status: status || 'pending',
       authorUid: author.uid,
       authorName: author.displayName || author.email,
