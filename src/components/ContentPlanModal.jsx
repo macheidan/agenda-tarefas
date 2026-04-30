@@ -241,7 +241,7 @@ export default function ContentPlanModal({ editing, isAdmin, onSave, onUpdate, o
         </div>
 
         <div className={styles.fields}>
-          <div className={styles.dateRow}>
+          <div className={styles.statusPriorityRow}>
             <div className={styles.field}>
               <label>Data</label>
               <input
@@ -255,9 +255,7 @@ export default function ContentPlanModal({ editing, isAdmin, onSave, onUpdate, o
                 }}
               />
             </div>
-          </div>
 
-          <div className={styles.statusPriorityRow}>
             <div className={styles.field}>
               <label>Loja</label>
               <div className={styles.statusWrapper}>
@@ -313,27 +311,27 @@ export default function ContentPlanModal({ editing, isAdmin, onSave, onUpdate, o
                 )}
               </div>
             </div>
+          </div>
 
-            <div className={styles.field}>
-              <label>Status</label>
-              <div className={styles.statusInlineRow}>
-                {STATUS_OPTIONS.map((opt) => {
-                  const active = status === opt.value;
-                  const blocked = opt.adminOnly && !isAdmin;
-                  return (
-                    <button
-                      key={opt.value}
-                      className={styles.statusInlineBtn}
-                      style={active ? { background: opt.color, borderColor: opt.color, color: '#fff' } : undefined}
-                      onClick={() => { if (!blocked) updatePill('status', opt.value); }}
-                      disabled={blocked}
-                      title={blocked ? 'Apenas admin pode marcar' : opt.label}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className={styles.field}>
+            <label>Status</label>
+            <div className={styles.statusInlineRow}>
+              {STATUS_OPTIONS.map((opt) => {
+                const active = status === opt.value;
+                const blocked = opt.adminOnly && !isAdmin;
+                return (
+                  <button
+                    key={opt.value}
+                    className={styles.statusInlineBtn}
+                    style={active ? { background: opt.color, borderColor: opt.color, color: '#fff' } : undefined}
+                    onClick={() => { if (!blocked) updatePill('status', opt.value); }}
+                    disabled={blocked}
+                    title={blocked ? 'Apenas admin pode marcar' : opt.label}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
