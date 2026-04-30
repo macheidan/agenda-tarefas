@@ -314,6 +314,14 @@
   overflow: hidden;
 }
 
+/* Multi-day event title alignment: FullCalendar usa position:sticky no título
+   pra acompanhar scroll vertical, mas com overflow:hidden no container o título
+   gruda no canto esquerdo da viewport. Reset pra fluir dentro do chip. */
+.container :global(.fc .fc-sticky) {
+  position: static !important;
+  left: auto !important;
+}
+
 /* Other month days */
 .container :global(.fc .fc-day-other .fc-daygrid-day-number) {
   opacity: 0.4;
