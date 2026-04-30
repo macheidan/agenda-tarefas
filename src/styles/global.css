@@ -160,3 +160,25 @@ button {
 input, select, textarea {
   font-family: inherit;
 }
+
+/* Dark mode: força legibilidade em rich content com cores inline salvas em temas anteriores.
+   Texto com highlight (background-color) mantém cor escura pra contrastar com o pastel. */
+[data-theme="dark"] [data-rich-content],
+[data-theme="dark"] [data-rich-content] p,
+[data-theme="dark"] [data-rich-content] span,
+[data-theme="dark"] [data-rich-content] div,
+[data-theme="dark"] [data-rich-content] li,
+[data-theme="dark"] [data-rich-content] strong,
+[data-theme="dark"] [data-rich-content] em,
+[data-theme="dark"] [data-rich-content] u {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] [data-rich-content] [style*="background-color"],
+[data-theme="dark"] [data-rich-content] [style*="background:"] {
+  color: #101828 !important;
+}
+
+[data-theme="dark"] [data-rich-content] a {
+  color: var(--accent) !important;
+}

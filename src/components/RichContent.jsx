@@ -11,6 +11,7 @@ export default function RichContent({ html, className }) {
   return (
     <div
       className={className}
+      data-rich-content="true"
       onClick={handleClick}
       dangerouslySetInnerHTML={{ __html: processed || '' }}
     />

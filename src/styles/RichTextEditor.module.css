@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--text);
   transition: background 0.15s;
 }
 
@@ -49,7 +49,7 @@
   font-size: 12px;
   background: var(--input-bg);
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--text);
 }
 
 .editor {
@@ -80,6 +80,28 @@
 .editor a {
   color: var(--accent);
   text-decoration: underline;
+}
+
+/* Dark mode: forçar cor legível em conteúdo com style inline herdado de temas anteriores.
+   Texto com background-color (highlight) mantém cor escura pra legibilidade no destaque pastel. */
+:global([data-theme="dark"]) .editor,
+:global([data-theme="dark"]) .editor p,
+:global([data-theme="dark"]) .editor span,
+:global([data-theme="dark"]) .editor div,
+:global([data-theme="dark"]) .editor li,
+:global([data-theme="dark"]) .editor strong,
+:global([data-theme="dark"]) .editor em,
+:global([data-theme="dark"]) .editor u {
+  color: var(--text) !important;
+}
+
+:global([data-theme="dark"]) .editor [style*="background-color"],
+:global([data-theme="dark"]) .editor [style*="background:"] {
+  color: #101828 !important;
+}
+
+:global([data-theme="dark"]) .editor a {
+  color: var(--accent) !important;
 }
 
 .editor ul {
