@@ -118,6 +118,7 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       id: task.id,
       title: task.title,
       start: task.date,
+      allDay: true,
       backgroundColor,
       borderColor: 'transparent',
       textColor,
@@ -129,15 +130,10 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
       const endDate = new Date(task.finishDate + 'T12:00:00');
       endDate.setDate(endDate.getDate() + 1);
       event.end = endDate.toISOString().split('T')[0];
+      event.display = 'block';
     }
 
     return event;
-  });
-
-  events.sort((a, b) => {
-    const pa = a.extendedProps.task.priority ?? 5;
-    const pb = b.extendedProps.task.priority ?? 5;
-    return pb - pa;
   });
 
   return (
