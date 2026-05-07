@@ -314,12 +314,30 @@
   display: none;
 }
 
+/* Header row (dias da semana) — cobre todas as camadas do FullCalendar
+   pra evitar fundo branco no dark theme */
+.container :global(.fc .fc-scrollgrid-section-header),
+.container :global(.fc .fc-scrollgrid-section-header > *),
+.container :global(.fc .fc-scrollgrid-section-header td),
+.container :global(.fc .fc-scrollgrid-section-header th),
+.container :global(.fc .fc-col-header),
+.container :global(.fc .fc-col-header-cell),
+.container :global(.fc .fc-scroller-harness),
+.container :global(.fc .fc-scroller) {
+  background: var(--card) !important;
+  border-color: var(--border-light) !important;
+}
+
 .container :global(.fc .fc-col-header) {
   border: none;
 }
 
 .container :global(.fc .fc-col-header-cell) {
   border: none;
+}
+
+.container :global(.fc .fc-col-header-cell-cushion) {
+  color: var(--text-muted);
 }
 
 .container :global(.fc .fc-day-other .fc-daygrid-day-number) {
