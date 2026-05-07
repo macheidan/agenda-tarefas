@@ -22,6 +22,7 @@ import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
 import MobileCalendarView from '../components/MobileCalendarView';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useTabsOrder } from '../hooks/useTabsOrder';
 import ArchivedView from '../components/ArchivedView';
 import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
   const isMobile = useIsMobile(768);
+  const { order: tabsOrder, updateOrder: updateTabsOrder } = useTabsOrder();
 
   const [selectedUid, setSelectedUid] = useState(user.uid);
   const [activeTab, setActiveTab] = useState('calendar');
@@ -115,6 +117,7 @@ export default function Dashboard() {
         completedCount={completedTasks.length}
         customName={settings.customName}
         allSettings={allSettings}
+        tabsOrder={tabsOrder}
       />
 
       {viewingOther && viewingUser && (
@@ -246,7 +249,7 @@ export default function Dashboard() {
             onDeleteMessage={deleteAdminMessage}
           />
         )}
-        {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} geminiKey={kbGeminiKey} updateGeminiKey={updateGeminiKey} />}
+        {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} geminiKey={kbGeminiKey} updateGeminiKey={updateGeminiKey} tabsOrder={tabsOrder} updateTabsOrder={updateTabsOrder} />}
       </main>
 
       {modalOpen && (

@@ -23,7 +23,31 @@ export default function Header({
   completedCount,
   customName,
   allSettings,
+  tabsOrder,
 }) {
+  const TABS_DEF = {
+    calendar: { enabled: calendarEnabled, key: 'calendar', label: 'Calendário' },
+    reels: { enabled: reelsEnabled, key: 'reels', label: 'Instagram' },
+    contentPlan: { enabled: contentPlanEnabled, key: 'contentPlan', label: 'Content Plan' },
+    notes: { enabled: notesEnabled, key: 'notes', label: 'Anotações' },
+    shopping: { enabled: shoppingListEnabled, key: 'shopping', label: 'Lista de Compras' },
+    ideas: {
+      enabled: ideasEnabled,
+      key: 'ideas',
+      label: 'Ideias',
+      badge: ideasUnread > 0 ? <span className={styles.bellBadge}>🔔</span> : null,
+    },
+    reviews: {
+      enabled: reviewsEnabled,
+      key: 'reviews',
+      label: 'Avaliações',
+      badge: reviewsUnread > 0 ? <span className={styles.sirenBadge}>🚨</span> : null,
+    },
+    knowledge: { enabled: knowledgeEnabled, key: 'knowledge', label: 'Conhecimento' },
+  };
+  const orderedTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(TABS_DEF))
+    .map((k) => TABS_DEF[k])
+    .filter((t) => t && t.enabled);
   const { user, logout, isAdmin } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() =>
@@ -167,72 +191,16 @@ export default function Header({
 
       <nav className={styles.nav}>
         <div className={styles.tabs} ref={tabsRef}>
-          {calendarEnabled && (
+          {orderedTabs.map((t) => (
             <button
-              className={`${styles.tab} ${activeTab === 'calendar' ? styles.active : ''}`}
-              onClick={() => onTabChange('calendar')}
+              key={t.key}
+              className={`${styles.tab} ${activeTab === t.key ? styles.active : ''}`}
+              onClick={() => onTabChange(t.key)}
             >
-              Calendário
+              {t.label}
+              {t.badge}
             </button>
-          )}
-          {reelsEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'reels' ? styles.active : ''}`}
-              onClick={() => onTabChange('reels')}
-            >
-              Instagram
-            </button>
-          )}
-          {contentPlanEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'contentPlan' ? styles.active : ''}`}
-              onClick={() => onTabChange('contentPlan')}
-            >
-              Content Plan
-            </button>
-          )}
-          {notesEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'notes' ? styles.active : ''}`}
-              onClick={() => onTabChange('notes')}
-            >
-              Anotações
-            </button>
-          )}
-          {shoppingListEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'shopping' ? styles.active : ''}`}
-              onClick={() => onTabChange('shopping')}
-            >
-              Lista de Compras
-            </button>
-          )}
-          {ideasEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'ideas' ? styles.active : ''}`}
-              onClick={() => onTabChange('ideas')}
-            >
-              Ideias
-              {ideasUnread > 0 && <span className={styles.bellBadge}>🔔</span>}
-            </button>
-          )}
-          {reviewsEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'reviews' ? styles.active : ''}`}
-              onClick={() => onTabChange('reviews')}
-            >
-              Avaliações
-              {reviewsUnread > 0 && <span className={styles.sirenBadge}>🚨</span>}
-            </button>
-          )}
-          {knowledgeEnabled && (
-            <button
-              className={`${styles.tab} ${activeTab === 'knowledge' ? styles.active : ''}`}
-              onClick={() => onTabChange('knowledge')}
-            >
-              Conhecimento
-            </button>
-          )}
+          ))}
         </div>
       </nav>
     </header>

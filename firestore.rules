@@ -81,9 +81,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Configurações: dono lê as suas, admin lê/escreve todas
+    // Configurações: dono lê as suas, admin lê/escreve todas.
+    // settings/global é lido por qualquer logado (ordem do menu, etc).
     match /settings/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isAdmin() || uid == 'global';
       allow write: if isAdmin();
     }
 

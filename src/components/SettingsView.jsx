@@ -6,7 +6,18 @@ import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import styles from '../styles/SettingsView.module.css';
 
-export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey }) {
+const TAB_LABELS = {
+  calendar: 'Calendário',
+  reels: 'Instagram',
+  contentPlan: 'Content Plan',
+  notes: 'Anotações',
+  shopping: 'Lista de Compras',
+  ideas: 'Ideias',
+  reviews: 'Avaliações',
+  knowledge: 'Conhecimento',
+};
+
+export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
   const [userSettings, setUserSettings] = useState({});
@@ -150,6 +161,47 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey })
           </button>
           {apiKeyStatus && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{apiKeyStatus}</span>}
         </div>
+      </div>
+
+      <div className={styles.section}>
+        <h3>Ordem do Menu</h3>
+        <p className={styles.sectionDesc}>Reordene as abas do menu superior. Vale para todos os usuários.</p>
+        <ul className={styles.orderList}>
+          {tabsOrder.map((key, idx) => (
+            <li key={key} className={styles.orderItem}>
+              <span className={styles.orderIndex}>{idx + 1}</span>
+              <span className={styles.orderLabel}>{TAB_LABELS[key] || key}</span>
+              <div className={styles.orderActions}>
+                <button
+                  className={styles.orderBtn}
+                  disabled={idx === 0}
+                  onClick={() => {
+                    const next = [...tabsOrder];
+                    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                    updateTabsOrder(next);
+                  }}
+                  title="Mover para cima"
+                  aria-label="Mover para cima"
+                >
+                  ↑
+                </button>
+                <button
+                  className={styles.orderBtn}
+                  disabled={idx === tabsOrder.length - 1}
+                  onClick={() => {
+                    const next = [...tabsOrder];
+                    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                    updateTabsOrder(next);
+                  }}
+                  title="Mover para baixo"
+                  aria-label="Mover para baixo"
+                >
+                  ↓
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className={styles.section}>

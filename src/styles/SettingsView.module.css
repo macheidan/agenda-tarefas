@@ -36,6 +36,82 @@
   margin-bottom: 16px;
 }
 
+.orderList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.orderItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.orderItem:last-child {
+  border-bottom: none;
+}
+
+.orderIndex {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.orderLabel {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.orderActions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.orderBtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.orderBtn:hover:not(:disabled) {
+  background: var(--card-hover);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.orderBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .userList {
   display: flex;
   flex-direction: column;
