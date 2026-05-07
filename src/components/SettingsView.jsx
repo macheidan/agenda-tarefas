@@ -27,7 +27,8 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
   const SECTIONS = [
     { key: 'calendarEnabled', label: 'Calendário' },
-    { key: 'contentPlanEnabled', label: 'Content Plan (inclui Instagram)' },
+    { key: 'contentPlanEnabled', label: 'Content Plan' },
+    { key: 'reelsEnabled', label: 'Instagram' },
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'notesEnabled', label: 'Anotações' },
     { key: 'shoppingListEnabled', label: 'Lista de Compras' },
@@ -205,7 +206,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
       <div className={styles.section}>
         <h3>Visibilidade de Seções</h3>
-        <p className={styles.sectionDesc}>Escolha quais seções cada usuário pode ver. O Instagram (Reels/Stories/Roteiros) está dentro de Content Plan.</p>
+        <p className={styles.sectionDesc}>Escolha quais seções cada usuário pode ver.</p>
 
         <div className={styles.userList}>
           {allVisibleUsers.map((u) => {

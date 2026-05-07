@@ -65,9 +65,8 @@ export default function Dashboard() {
 
   const calendarEnabled = settings.calendarEnabled !== false;
   const ideasEnabled = settings.ideasEnabled !== false;
+  const reelsEnabled = settings.reelsEnabled !== false;
   const contentPlanEnabled = settings.contentPlanEnabled !== false;
-  // Reels (aba Instagram) está dentro do Content Plan — segue o pai
-  const reelsEnabled = contentPlanEnabled;
   const notesEnabled = settings.notesEnabled !== false;
   const shoppingListEnabled = settings.shoppingListEnabled !== false;
   const reviewsEnabled = settings.reviewsEnabled !== false;
