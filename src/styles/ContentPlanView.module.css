@@ -109,12 +109,12 @@
   display: inline-block;
 }
 
-.statusPending { background: #f4f4f4; }
-.statusAlteracao { background: #ffd5cc; }
-.statusRevisado { background: #d6e4ff; }
-.statusAprovadoGravar { background: #c8e6e3; }
-.statusPronto { background: #ffe5c2; }
-.statusPublicar { background: #cfe9c8; }
+.statusPending { background: var(--cp-pending-bg); }
+.statusAlteracao { background: var(--cp-alteracao-bg); }
+.statusRevisado { background: var(--cp-revisado-bg); }
+.statusAprovadoGravar { background: var(--cp-aprovado-gravar-bg); }
+.statusPronto { background: var(--cp-pronto-bg); }
+.statusPublicar { background: var(--cp-publicar-bg); }
 
 /* Table structure (same as CalendarView) */
 .container :global(.fc table) {
@@ -260,54 +260,54 @@
 
 /* Status backgrounds */
 .container :global(.fc .fc-event.fc-event--cp-pending) {
-  background: #f4f4f4 !important;
+  background: var(--cp-pending-bg) !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-pending:hover) {
-  background: #eaeaea !important;
+  background: var(--cp-pending-bg-hover) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-alteracao) {
-  background: #ffd5cc !important;
+  background: var(--cp-alteracao-bg) !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-alteracao:hover) {
-  background: #ffb8a8 !important;
+  background: var(--cp-alteracao-bg-hover) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-revisado) {
-  background: #d6e4ff !important;
+  background: var(--cp-revisado-bg) !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-revisado:hover) {
-  background: #b8cdff !important;
+  background: var(--cp-revisado-bg-hover) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-aprovado_gravar) {
-  background: #c8e6e3 !important;
+  background: var(--cp-aprovado-gravar-bg) !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-aprovado_gravar:hover) {
-  background: #a5d4cf !important;
+  background: var(--cp-aprovado-gravar-bg-hover) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-pronto) {
-  background: #ffe5c2 !important;
+  background: var(--cp-pronto-bg) !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-pronto:hover) {
-  background: #ffd29c !important;
+  background: var(--cp-pronto-bg-hover) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-publicar) {
-  background: #cfe9c8 !important;
+  background: var(--cp-publicar-bg) !important;
 }
 .container :global(.fc .fc-event.fc-event--cp-publicar:hover) {
-  background: #b8dba9 !important;
+  background: var(--cp-publicar-bg-hover) !important;
 }
 
 /* Store left border for quick visual ID */
 .container :global(.fc .fc-event.fc-event--cp-store-lov) {
-  border-left-color: #ff9800 !important;
+  border-left-color: var(--cp-store-lov-border) !important;
 }
 
 .container :global(.fc .fc-event.fc-event--cp-store-dame) {
-  border-left-color: #3949ab !important;
+  border-left-color: var(--cp-store-dame-border) !important;
 }
 
 .container :global(.fc .fc-daygrid-event-dot) {

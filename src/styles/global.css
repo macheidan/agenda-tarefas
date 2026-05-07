@@ -60,6 +60,22 @@
   --event-not-started-bg-hover: rgba(16, 24, 40, 0.09);
   --event-multiday-border: rgba(16, 24, 40, 0.15);
 
+  /* Content Plan status chips (light: pastéis sólidos) */
+  --cp-pending-bg: #f4f4f4;
+  --cp-pending-bg-hover: #eaeaea;
+  --cp-alteracao-bg: #ffd5cc;
+  --cp-alteracao-bg-hover: #ffb8a8;
+  --cp-revisado-bg: #d6e4ff;
+  --cp-revisado-bg-hover: #b8cdff;
+  --cp-aprovado-gravar-bg: #c8e6e3;
+  --cp-aprovado-gravar-bg-hover: #a5d4cf;
+  --cp-pronto-bg: #ffe5c2;
+  --cp-pronto-bg-hover: #ffd29c;
+  --cp-publicar-bg: #cfe9c8;
+  --cp-publicar-bg-hover: #b8dba9;
+  --cp-store-lov-border: #ff9800;
+  --cp-store-dame-border: #3949ab;
+
   /* Tipografia (TailAdmin) */
   --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --text-xs: 12px;
@@ -133,6 +149,22 @@
   --event-not-started-bg: rgba(255, 255, 255, 0.06);
   --event-not-started-bg-hover: rgba(255, 255, 255, 0.12);
   --event-multiday-border: rgba(255, 255, 255, 0.2);
+
+  /* Content Plan status chips (dark: rgba translúcido — mesmo padrão do calendário) */
+  --cp-pending-bg: rgba(255, 255, 255, 0.06);
+  --cp-pending-bg-hover: rgba(255, 255, 255, 0.12);
+  --cp-alteracao-bg: rgba(249, 112, 102, 0.18);
+  --cp-alteracao-bg-hover: rgba(249, 112, 102, 0.30);
+  --cp-revisado-bg: rgba(117, 146, 255, 0.18);
+  --cp-revisado-bg-hover: rgba(117, 146, 255, 0.30);
+  --cp-aprovado-gravar-bg: rgba(45, 212, 191, 0.18);
+  --cp-aprovado-gravar-bg-hover: rgba(45, 212, 191, 0.30);
+  --cp-pronto-bg: rgba(253, 176, 34, 0.18);
+  --cp-pronto-bg-hover: rgba(253, 176, 34, 0.30);
+  --cp-publicar-bg: rgba(50, 213, 131, 0.20);
+  --cp-publicar-bg-hover: rgba(50, 213, 131, 0.32);
+  --cp-store-lov-border: #ff9800;
+  --cp-store-dame-border: #7592ff;
 
   --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.35), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
