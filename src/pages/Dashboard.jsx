@@ -20,6 +20,8 @@ import NoteModal from '../components/NoteModal';
 import AdminMessageModal from '../components/AdminMessageModal';
 import MessageOverlay from '../components/MessageOverlay';
 import CalendarView from '../components/CalendarView';
+import MobileCalendarView from '../components/MobileCalendarView';
+import { useIsMobile } from '../hooks/useIsMobile';
 import ArchivedView from '../components/ArchivedView';
 import CompletedView from '../components/CompletedView';
 import SettingsView from '../components/SettingsView';
@@ -35,6 +37,7 @@ import styles from '../styles/Dashboard.module.css';
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
+  const isMobile = useIsMobile(768);
 
   const [selectedUid, setSelectedUid] = useState(user.uid);
   const [activeTab, setActiveTab] = useState('calendar');
@@ -122,11 +125,19 @@ export default function Dashboard() {
 
       <main className={styles.main}>
         {activeTab === 'calendar' && calendarEnabled && (
-          <CalendarView
-            tasks={tasks}
-            onDateClick={handleDateClick}
-            onTaskClick={handleTaskClick}
-          />
+          isMobile ? (
+            <MobileCalendarView
+              tasks={tasks}
+              onDateClick={handleDateClick}
+              onTaskClick={handleTaskClick}
+            />
+          ) : (
+            <CalendarView
+              tasks={tasks}
+              onDateClick={handleDateClick}
+              onTaskClick={handleTaskClick}
+            />
+          )
         )}
         {activeTab === 'ideas' && ideasEnabled && (
           <IdeasView
@@ -177,7 +188,7 @@ export default function Dashboard() {
           <iframe
             src="https://macheidan.github.io/lista_compras/insumos.html"
             title="Lista de Compras"
-            style={{ width: '100%', height: 'calc(100vh - 120px)', border: 'none' }}
+            style={{ width: '100%', height: isMobile ? 'calc(100dvh - 110px)' : 'calc(100vh - 120px)', border: 'none' }}
             onLoad={(e) => {
               try {
                 const doc = e.target.contentDocument;

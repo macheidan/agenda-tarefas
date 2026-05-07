@@ -1,6 +1,7 @@
 .container {
   min-height: 100vh;
   background: var(--bg);
+  overflow-x: hidden;
 }
 
 .banner {
@@ -16,6 +17,9 @@
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 @media (max-width: 640px) {

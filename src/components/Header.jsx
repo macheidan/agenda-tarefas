@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import logoUrl from '../imgs/logo.png';
 import styles from '../styles/Header.module.css';
 
 export default function Header({
@@ -31,6 +32,7 @@ export default function Header({
       : 'light'
   );
   const menuRef = useRef(null);
+  const tabsRef = useRef(null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -58,10 +60,22 @@ export default function Header({
     }
   };
 
+  useEffect(() => {
+    const container = tabsRef.current;
+    if (!container) return;
+    const active = container.querySelector(`.${styles.active}`);
+    if (active && active.scrollIntoView) {
+      active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [activeTab]);
+
   return (
     <header className={styles.header}>
       <div className={styles.top}>
-        <h1 className={styles.logo}>Intranet 🍕</h1>
+        <h1 className={styles.logo}>
+          <img className={styles.logoImg} src={logoUrl} alt="" />
+          <span className={styles.logoText}>Intranet Dáme &amp; Lov</span>
+        </h1>
         <div className={styles.userArea}>
           {isAdmin && users.length > 0 && (
             <select
@@ -152,7 +166,7 @@ export default function Header({
       </div>
 
       <nav className={styles.nav}>
-        <div className={styles.tabs}>
+        <div className={styles.tabs} ref={tabsRef}>
           {calendarEnabled && (
             <button
               className={`${styles.tab} ${activeTab === 'calendar' ? styles.active : ''}`}

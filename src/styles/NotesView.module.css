@@ -3,6 +3,9 @@
   border-radius: 10px;
   padding: 24px;
   box-shadow: 0 1px 4px var(--shadow);
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .header {
@@ -41,48 +44,71 @@
   font-size: 14px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-}
-
-.card {
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 16px;
-  cursor: pointer;
-  transition: box-shadow 0.15s, border-color 0.15s;
-}
-
-.card:hover {
-  box-shadow: 0 2px 8px var(--shadow);
-  border-color: var(--accent);
-}
-
-.cardTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.cardContent {
-  font-size: 13px;
-  color: var(--text-secondary);
-  max-height: 80px;
   overflow: hidden;
-  margin-bottom: 10px;
-  line-height: 1.5;
+  width: 100%;
+  max-width: 100%;
+  background: var(--card);
 }
 
-.cardContent a {
-  color: var(--accent);
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  min-width: 0;
+  transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.cardDate {
-  font-size: 11px;
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--card-hover);
+}
+
+.row:active {
+  background: var(--card-hover);
+}
+
+.rowTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowDate {
+  font-size: 12px;
   color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rowChevron {
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -100,25 +126,21 @@
   }
 
   .newBtn {
-    padding: 7px 12px;
+    padding: 9px 14px;
     font-size: 13px;
+    min-height: 38px;
   }
 
-  .grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
+  .row {
+    padding: 14px;
+    min-height: 52px;
   }
 
-  .card {
-    padding: 12px;
-  }
-
-  .cardTitle {
+  .rowTitle {
     font-size: 14px;
   }
 
-  .cardContent {
-    font-size: 12px;
-    max-height: 60px;
+  .rowDate {
+    font-size: 11px;
   }
 }

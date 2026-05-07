@@ -4,6 +4,8 @@
   box-shadow: 0 1px 4px var(--shadow);
   padding: 24px;
   padding-top: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .header {
@@ -360,17 +362,25 @@
 }
 
 .pendingLink {
+  display: inline-flex;
+  align-items: center;
   color: var(--accent);
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   text-decoration: none;
+  padding: 3px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent-light);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+  flex-shrink: 0;
+  transition: background 0.15s;
 }
 
 .pendingLink:hover {
-  text-decoration: underline;
+  background: var(--accent);
+  color: #fff;
 }
 
 .pendingDesc {
@@ -472,6 +482,10 @@
   align-items: flex-start;
   justify-content: space-between;
   transition: box-shadow 0.15s;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .card:hover {
@@ -513,17 +527,39 @@
   color: var(--text-muted);
 }
 
+.linkCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.dash {
+  color: var(--text-muted);
+}
+
 .link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--accent);
-  font-size: 13px;
-  word-break: break-all;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   text-decoration: none;
-  margin-bottom: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent-light);
+  white-space: nowrap;
+  transition: background 0.15s;
 }
 
 .link:hover {
-  text-decoration: underline;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
 }
 
 .description {
@@ -531,6 +567,8 @@
   color: var(--text-secondary);
   line-height: 1.5;
   margin: 4px 0 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .cardActions {
@@ -591,8 +629,16 @@
 
 .tableWrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 8px;
+  position: relative;
+  background:
+    linear-gradient(to right, var(--card) 30%, rgba(255, 255, 255, 0)) left center / 32px 100% no-repeat,
+    linear-gradient(to right, rgba(255, 255, 255, 0), var(--card) 70%) right center / 32px 100% no-repeat,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0)) left center / 14px 100% no-repeat,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0)) right center / 14px 100% no-repeat;
+  background-attachment: local, local, scroll, scroll;
 }
 
 .table {
@@ -1140,14 +1186,33 @@
   color: var(--text-muted);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .container {
     padding: 16px;
+    border-radius: 8px;
+    overflow-x: hidden;
+  }
+
+  .header {
+    padding: 12px 0;
+    gap: 8px;
   }
 
   .pendingRow {
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 6px 10px;
+    padding: 10px 12px;
+  }
+
+  .pendingDesc {
+    flex-basis: 100%;
+    white-space: normal;
+    line-height: 1.35;
+    order: 5;
+  }
+
+  .pendingActions {
+    margin-left: auto;
   }
 
   .card {
@@ -1172,18 +1237,172 @@
   .scriptHeader {
     flex-wrap: wrap;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 12px;
   }
 
   .scriptMusicTag {
     display: none;
+  }
+
+  .scriptMetaRight {
+    margin-left: auto;
+  }
+
+  .approveBtn,
+  .archiveBtn,
+  .deleteBtnSmall,
+  .statusBtnMini {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .copyBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+
+  /* Tabelas viram cards empilhados — sem rolagem horizontal */
+  .tableWrap {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+    background: none;
+    padding: 0;
+  }
+
+  .table,
+  .table thead,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .table tr {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    padding: 10px 12px;
+  }
+
+  .table tbody tr:hover {
+    background: var(--card);
+  }
+
+  .table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .table td {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+  }
+
+  .table td:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .table td:first-child {
+    padding-top: 0;
+  }
+
+  .cellDate {
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .cellAuthor {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .cellDesc {
+    white-space: normal;
+  }
+
+  .descClickable {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .cellActions,
+  .cellActionsRight {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .scriptActions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .storeCell {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Linha expandida do roteiro */
+  .scriptBodyRow {
+    border: 1px solid var(--accent);
+    background: var(--bg-secondary);
+    margin-top: -4px;
+  }
+
+  .scriptBodyCell {
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .scriptBody {
+    padding: 14px;
+  }
+
+  .scriptPre {
+    font-size: 13px;
+  }
+
+  .scriptFooter {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Subseção: garantir que não estoura largura */
+  .section {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .pendingList {
+    max-width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   .container {
     padding: 12px;
-    border-radius: 8px;
   }
 
   .header {
@@ -1196,13 +1415,21 @@
     font-size: 16px;
   }
 
+  .headerActions {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
   .newBtn,
   .archivedBtn,
   .storyBtn,
   .scriptBtn,
   .reelsBtn {
-    padding: 7px 12px;
+    padding: 9px 12px;
     font-size: 12px;
+    flex: 1 1 auto;
+    min-height: 38px;
   }
 
   .form {
@@ -1212,24 +1439,20 @@
   }
 
   .titleInput {
-    font-size: 13px;
-    padding: 8px 12px;
+    font-size: 14px;
+    padding: 10px 12px;
   }
 
   .submitBtn {
     font-size: 13px;
-    padding: 8px 16px;
-    align-self: flex-end;
-  }
-
-  .pendingRow {
-    padding: 8px 10px;
-    gap: 6px;
-    font-size: 12px;
+    padding: 10px 16px;
+    align-self: stretch;
+    min-height: 40px;
   }
 
   .pendingLink {
-    font-size: 12px;
+    font-size: 13px;
+    flex-basis: 100%;
   }
 
   .card {
@@ -1241,4 +1464,16 @@
     padding: 8px 10px;
     font-size: 12px;
   }
+
+  .scriptTitleText {
+    font-size: 14px;
+  }
+
+  .typeBadgeReel,
+  .typeBadgeStory,
+  .storeBadge {
+    font-size: 10px;
+    padding: 2px 7px;
+  }
 }
+

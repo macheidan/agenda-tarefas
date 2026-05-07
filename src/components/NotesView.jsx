@@ -1,4 +1,3 @@
-import RichContent from './RichContent';
 import styles from '../styles/NotesView.module.css';
 
 export default function NotesView({ notes, onNewNote, onNoteClick }) {
@@ -22,21 +21,19 @@ export default function NotesView({ notes, onNewNote, onNoteClick }) {
           <p>Nenhuma anotação ainda. Crie uma nova anotação para começar.</p>
         </div>
       ) : (
-        <div className={styles.grid}>
+        <ul className={styles.list}>
           {notes.map((note) => (
-            <div
+            <li
               key={note.id}
-              className={styles.card}
+              className={styles.row}
               onClick={() => onNoteClick(note)}
             >
-              <h3 className={styles.cardTitle}>{note.title}</h3>
-              {note.content && (
-                <RichContent className={styles.cardContent} html={note.content} />
-              )}
-              <span className={styles.cardDate}>{formatDate(note.createdAt)}</span>
-            </div>
+              <span className={styles.rowTitle}>{note.title || 'Sem título'}</span>
+              <span className={styles.rowDate}>{formatDate(note.createdAt)}</span>
+              <span className={styles.rowChevron} aria-hidden>›</span>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

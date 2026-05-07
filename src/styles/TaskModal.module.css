@@ -309,20 +309,25 @@
 @media (max-width: 480px) {
   .overlay {
     padding: 8px;
+    align-items: flex-start;
+    padding-top: 16px;
   }
 
   .modal {
     padding: 16px;
     border-radius: 10px;
+    max-height: calc(100vh - 32px);
   }
 
   .closeBtn {
     top: 12px;
     right: 12px;
+    width: 36px;
+    height: 36px;
   }
 
   .titleInput {
-    font-size: 16px;
+    font-size: 18px;
     margin-bottom: 16px;
   }
 
@@ -341,10 +346,11 @@
     flex-wrap: wrap;
   }
 
+  /* font-size 16px evita zoom automático no iOS Safari */
   .field input,
   .field select {
-    font-size: 13px;
-    padding: 7px 10px;
+    font-size: 16px;
+    padding: 9px 12px;
   }
 
   .actions {
@@ -356,6 +362,7 @@
   .deleteBtn {
     width: 100%;
     text-align: center;
+    min-height: 44px;
   }
 
   .statusDropdown {
@@ -366,7 +373,13 @@
     flex-direction: column;
   }
 
+  .commentInput input {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+
   .commentInput button {
-    align-self: flex-end;
+    align-self: stretch;
+    min-height: 40px;
   }
 }

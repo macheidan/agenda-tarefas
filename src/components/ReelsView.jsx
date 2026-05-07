@@ -282,11 +282,18 @@ export default function ReelsView({
               <td className={styles.cellDate}>{formatDate(reel.createdAt)}</td>
               <td>{reel.authorName}</td>
               <td>
-                {reel.link ? (
-                  <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
-                    {reel.link}
-                  </a>
-                ) : '—'}
+                <div className={styles.linkCell}>
+                  {reel.link ? (
+                    <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
+                      LINK
+                    </a>
+                  ) : <span className={styles.dash}>—</span>}
+                  {isAdmin && editingId !== reel.id && (
+                    <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                      Arquivar
+                    </button>
+                  )}
+                </div>
               </td>
               <td className={styles.cellDesc}>
                 {editingId === reel.id ? (
@@ -312,22 +319,16 @@ export default function ReelsView({
                 )}
               </td>
               <td>
-                <div className={styles.cellActions}>
-                  {editingId === reel.id ? (
-                    <>
-                      <button className={styles.saveBtn} onClick={() => saveEditDesc(reel.id)} title="Salvar">
-                        Salvar
-                      </button>
-                      <button className={styles.archiveBtnSmall} onClick={cancelEditDesc} title="Cancelar">
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                      Arquivar
+                {editingId === reel.id && (
+                  <div className={styles.cellActions}>
+                    <button className={styles.saveBtn} onClick={() => saveEditDesc(reel.id)} title="Salvar">
+                      Salvar
                     </button>
-                  )}
-                </div>
+                    <button className={styles.archiveBtnSmall} onClick={cancelEditDesc} title="Cancelar">
+                      Cancelar
+                    </button>
+                  </div>
+                )}
               </td>
             </tr>
           ))}
@@ -440,7 +441,7 @@ export default function ReelsView({
                       </div>
                       {reel.link && (
                         <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
-                          {reel.link}
+                          LINK
                         </a>
                       )}
                       {reel.description && <p className={styles.description}>{reel.description}</p>}
@@ -536,7 +537,7 @@ export default function ReelsView({
                   <span className={styles.pendingAuthor}>{reel.authorName}</span>
                   {reel.link && (
                     <a className={styles.pendingLink} href={reel.link} target="_blank" rel="noopener noreferrer">
-                      link
+                      LINK
                     </a>
                   )}
                   {reel.description && <span className={styles.pendingDesc}>{reel.description}</span>}
@@ -573,11 +574,18 @@ export default function ReelsView({
                   {approvedStories.map((reel) => (
                     <tr key={reel.id}>
                       <td>
-                        {reel.link ? (
-                          <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
-                            link
-                          </a>
-                        ) : '—'}
+                        <div className={styles.linkCell}>
+                          {reel.link ? (
+                            <a className={styles.link} href={reel.link} target="_blank" rel="noopener noreferrer">
+                              LINK
+                            </a>
+                          ) : <span className={styles.dash}>—</span>}
+                          {isAdmin && editingId !== reel.id && (
+                            <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
+                              Arquivar
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className={styles.cellDesc}>
                         {editingId === reel.id ? (
@@ -603,7 +611,7 @@ export default function ReelsView({
                         )}
                       </td>
                       <td className={styles.cellActionsRight}>
-                        {editingId === reel.id ? (
+                        {editingId === reel.id && (
                           <div className={styles.cellActions}>
                             <button className={styles.saveBtn} onClick={() => saveEditDesc(reel.id)} title="Salvar">
                               Salvar
@@ -612,10 +620,6 @@ export default function ReelsView({
                               Cancelar
                             </button>
                           </div>
-                        ) : (
-                          <button className={styles.archiveBtnSmall} onClick={() => archiveReel(reel.id)} title="Arquivar">
-                            Arquivar
-                          </button>
                         )}
                       </td>
                     </tr>
@@ -890,9 +894,9 @@ export default function ReelsView({
                                   <pre className={styles.scriptPre}>{s.references}</pre>
                                   {extractLinks(s.references).length > 0 && (
                                     <div className={styles.scriptLinks}>
-                                      {extractLinks(s.references).map((l, i) => (
+                                      {extractLinks(s.references).map((l, i, arr) => (
                                         <a key={`ref-${i}`} className={styles.link} href={l} target="_blank" rel="noopener noreferrer">
-                                          {l}
+                                          {arr.length > 1 ? `LINK ${i + 1}` : 'LINK'}
                                         </a>
                                       ))}
                                     </div>
@@ -962,7 +966,7 @@ export default function ReelsView({
                 <span className={styles.pendingAuthor}>{reel.authorName}</span>
                 {reel.link && (
                   <a className={styles.pendingLink} href={reel.link} target="_blank" rel="noopener noreferrer">
-                    {reel.link}
+                    LINK
                   </a>
                 )}
                 {reel.description && <span className={styles.pendingDesc}>{reel.description}</span>}
