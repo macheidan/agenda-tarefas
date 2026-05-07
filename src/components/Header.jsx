@@ -98,7 +98,7 @@ export default function Header({
       <div className={styles.top}>
         <h1 className={styles.logo}>
           <img className={styles.logoImg} src={logoUrl} alt="" />
-          <span className={styles.logoText}>Intranet Dáme &amp; Lov</span>
+          <span className={styles.logoText}>Dáme &amp; Lov</span>
         </h1>
         <div className={styles.userArea}>
           {isAdmin && users.length > 0 && (
