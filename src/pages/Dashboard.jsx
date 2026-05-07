@@ -63,14 +63,15 @@ export default function Dashboard() {
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
   const allSettings = useAllSettings(users);
 
+  // calendarEnabled é o kill switch único: se ele estiver false, todas as seções ficam ocultas
   const calendarEnabled = settings.calendarEnabled !== false;
-  const ideasEnabled = settings.ideasEnabled !== false;
-  const reelsEnabled = settings.reelsEnabled !== false;
-  const contentPlanEnabled = settings.contentPlanEnabled !== false;
-  const notesEnabled = settings.notesEnabled !== false;
-  const shoppingListEnabled = settings.shoppingListEnabled !== false;
-  const reviewsEnabled = settings.reviewsEnabled !== false;
-  const knowledgeEnabled = settings.knowledgeEnabled !== false;
+  const ideasEnabled = calendarEnabled;
+  const reelsEnabled = calendarEnabled;
+  const contentPlanEnabled = calendarEnabled;
+  const notesEnabled = calendarEnabled;
+  const shoppingListEnabled = calendarEnabled;
+  const reviewsEnabled = calendarEnabled;
+  const knowledgeEnabled = calendarEnabled;
   const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);

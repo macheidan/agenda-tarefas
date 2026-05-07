@@ -27,13 +27,6 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
   const SECTIONS = [
     { key: 'calendarEnabled', label: 'Calendário' },
-    { key: 'contentPlanEnabled', label: 'Content Plan' },
-    { key: 'reelsEnabled', label: 'Reels', parent: 'contentPlanEnabled' },
-    { key: 'ideasEnabled', label: 'Ideias' },
-    { key: 'notesEnabled', label: 'Anotações' },
-    { key: 'shoppingListEnabled', label: 'Lista de Compras' },
-    { key: 'reviewsEnabled', label: 'Avaliações' },
-    { key: 'knowledgeEnabled', label: 'Conhecimento' },
   ];
 
   // Admin loads settings for all users
@@ -206,7 +199,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
       <div className={styles.section}>
         <h3>Visibilidade de Seções</h3>
-        <p className={styles.sectionDesc}>Escolha quais seções cada usuário pode ver.</p>
+        <p className={styles.sectionDesc}>Habilitando o Calendário o usuário passa a ver todas as seções (Instagram, Content Plan, Anotações, etc.).</p>
 
         <div className={styles.userList}>
           {allVisibleUsers.map((u) => {
