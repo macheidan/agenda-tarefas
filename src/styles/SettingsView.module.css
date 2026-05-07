@@ -173,6 +173,23 @@
   font-size: 13px;
 }
 
+.sectionToggleNested {
+  flex-basis: 100%;
+  padding-left: 22px;
+  position: relative;
+}
+
+.sectionToggleNested::before {
+  content: '└';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-55%);
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+}
+
 .sectionLabel {
   color: var(--text-secondary);
   font-size: 13px;

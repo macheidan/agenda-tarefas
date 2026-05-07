@@ -27,9 +27,9 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
   const SECTIONS = [
     { key: 'calendarEnabled', label: 'Calendário' },
-    { key: 'ideasEnabled', label: 'Ideias' },
-    { key: 'reelsEnabled', label: 'Reels' },
     { key: 'contentPlanEnabled', label: 'Content Plan' },
+    { key: 'reelsEnabled', label: 'Reels', parent: 'contentPlanEnabled' },
+    { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'notesEnabled', label: 'Anotações' },
     { key: 'shoppingListEnabled', label: 'Lista de Compras' },
     { key: 'reviewsEnabled', label: 'Avaliações' },
@@ -225,7 +225,10 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                 </div>
                 <div className={styles.sectionToggles}>
                   {SECTIONS.map((sec) => (
-                    <label key={sec.key} className={styles.sectionToggle}>
+                    <label
+                      key={sec.key}
+                      className={`${styles.sectionToggle} ${sec.parent ? styles.sectionToggleNested : ''}`}
+                    >
                       <input
                         type="checkbox"
                         checked={s[sec.key] !== false}
