@@ -1,0 +1,26 @@
+{
+  "name": "Intranet Dáme & Lov",
+  "short_name": "Intranet",
+  "description": "Intranet operacional das pizzarias Dáme & Lov",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#d4502a",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ]
+}
