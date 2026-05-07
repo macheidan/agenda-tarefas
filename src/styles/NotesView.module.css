@@ -13,6 +13,33 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  gap: 8px;
+}
+
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md, 6px);
+  background: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.viewToggle:hover {
+  background: var(--card-hover);
+  color: var(--text);
+  border-color: var(--accent);
 }
 
 .header h2 {
@@ -42,6 +69,77 @@
   padding: 40px 20px;
   color: var(--text-muted);
   font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: var(--card);
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px var(--shadow);
+  border-color: var(--accent);
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.cardContent {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-height: 80px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.cardContent a {
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.cardContent img,
+.cardContent video,
+.cardContent iframe,
+.cardContent table,
+.cardContent pre {
+  max-width: 100%;
+  height: auto;
+}
+
+.cardContent pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cardDate {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .list {
