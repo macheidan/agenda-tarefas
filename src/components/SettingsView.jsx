@@ -116,6 +116,17 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
   const allVisibleUsers = users.filter((u) => !removedUsers.has(u.uid));
   const otherUsers = allVisibleUsers.filter((u) => u.uid !== user.uid);
+  const pendingUsers = otherUsers.filter((u) => u.approved === false);
+
+  const approveUser = async (uid) => {
+    await setDoc(doc(db, 'users', uid), { approved: true }, { merge: true });
+  };
+
+  const rejectUser = async (uid) => {
+    await deleteDoc(doc(db, 'users', uid));
+    await deleteDoc(doc(db, 'settings', uid));
+    setRemovedUsers((prev) => new Set(prev).add(uid));
+  };
 
   if (!isAdmin) {
     return (
@@ -129,6 +140,50 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
   return (
     <div className={styles.container}>
       <h2>Configurações</h2>
+
+      <div className={styles.section}>
+        <h3>Aprovação de Novos Usuários</h3>
+        <p className={styles.sectionDesc}>
+          Novos usuários que fizerem login só terão acesso ao app após sua aprovação.
+        </p>
+
+        {pendingUsers.length === 0 ? (
+          <p className={styles.noAccess}>Nenhum usuário aguardando aprovação.</p>
+        ) : (
+          <div className={styles.userList}>
+            {pendingUsers.map((u) => (
+              <div key={u.uid} className={styles.userRow}>
+                <img
+                  className={styles.userAvatar}
+                  src={u.photoURL || 'https://via.placeholder.com/32'}
+                  alt={u.displayName || u.email}
+                />
+                <span className={styles.userName}>
+                  {u.displayName || u.email}
+                  {u.displayName && u.email && (
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6, fontSize: 12 }}>
+                      ({u.email})
+                    </span>
+                  )}
+                </span>
+                <button
+                  className={styles.cancelBtn}
+                  style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}
+                  onClick={() => approveUser(u.uid)}
+                >
+                  Aprovar
+                </button>
+                <button
+                  className={styles.removeBtn}
+                  onClick={() => rejectUser(u.uid)}
+                >
+                  Recusar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className={styles.section}>
         <button

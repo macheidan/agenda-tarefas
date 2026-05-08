@@ -14,10 +14,13 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
 
-    // Usuários: qualquer logado lê, cada um escreve o seu, admin escreve todos
+    // Usuários: qualquer logado lê. Cada usuário cria o próprio doc no
+    // primeiro login (com approved=false); só o admin pode atualizar/deletar
+    // (incluindo aprovar usuários).
     match /users/{uid} {
       allow read: if isSignedIn();
-      allow write: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update, delete: if isAdmin();
     }
 
     // Tarefas: dono lê/escreve as suas, admin lê/escreve todas
