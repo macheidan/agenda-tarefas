@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import { useDirtyClose } from '../hooks/useDirtyClose';
 import styles from '../styles/AdminMessageModal.module.css';
 
 export default function AdminMessageModal({ users, onSend, onClose }) {
   const [text, setText] = useState('');
   const [selectedUids, setSelectedUids] = useState([]);
+
+  const isDirty = text.trim() !== '' || selectedUids.length > 0;
+  const handleClose = useDirtyClose(isDirty, onClose);
 
   const toggleUser = (uid) => {
     setSelectedUids((prev) =>
@@ -26,7 +30,7 @@ export default function AdminMessageModal({ users, onSend, onClose }) {
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={handleClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <h3 className={styles.title}>Enviar Mensagem</h3>
 
@@ -67,7 +71,7 @@ export default function AdminMessageModal({ users, onSend, onClose }) {
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.cancelBtn} onClick={onClose}>
+          <button className={styles.cancelBtn} onClick={handleClose}>
             Cancelar
           </button>
           <button

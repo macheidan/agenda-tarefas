@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
+import { useDirtyClose } from '../hooks/useDirtyClose';
 import styles from '../styles/TaskModal.module.css';
 
 const STATUS_OPTIONS = [
@@ -105,22 +106,24 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
     }
   };
 
-  const hasUnsavedContent = () => {
-    if (isEditing) {
-      return title !== (task.title || '') || description !== (task.description || '');
-    }
-    return title.trim() !== '' || (description.trim() !== '' && description !== '<p></p>');
-  };
+  const isDirty = isEditing
+    ? (
+        title !== (task.title || '') ||
+        description !== (task.description || '') ||
+        date !== (task.date || '') ||
+        finishDate !== (task.finishDate || '') ||
+        endDate !== (task.endDate || '') ||
+        recurrence !== (task.recurrence || 'once')
+      )
+    : (
+        title.trim() !== '' ||
+        (description.trim() !== '' && description !== '<p></p>') ||
+        (initialDate ? date !== initialDate : date !== '') ||
+        finishDate !== '' ||
+        endDate !== ''
+      );
 
-  const handleClose = () => {
-    if (hasUnsavedContent()) {
-      if (window.confirm('Você tem alterações não salvas. Deseja realmente fechar?')) {
-        onClose();
-      }
-    } else {
-      onClose();
-    }
-  };
+  const handleClose = useDirtyClose(isDirty, onClose);
 
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
 

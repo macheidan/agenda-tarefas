@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useDirtyClose, isFormDirty } from '../hooks/useDirtyClose';
 import styles from '../styles/InfluencersModal.module.css';
 
 const MONTHS = [
@@ -30,14 +31,24 @@ const empty = {
   txEngaj: '',
   segmento: '',
   midiaKitUrl: '',
-  contatoTipo: 'insta',
-  contatoValor: '',
+  contatos: [{ tipo: 'insta', valor: '' }],
   contatado: false,
   retornou: false,
   divulgouEm: '',
   observacoes: '',
   textoConvite: '',
 };
+
+// Migra docs antigos que tinham contatoTipo/contatoValor singular pro novo formato
+function normalizeIncoming(it) {
+  if (!it) return empty;
+  let contatos = Array.isArray(it.contatos) ? it.contatos.filter(Boolean) : [];
+  if (contatos.length === 0 && (it.contatoTipo || it.contatoValor)) {
+    contatos = [{ tipo: it.contatoTipo || 'insta', valor: it.contatoValor || '' }];
+  }
+  if (contatos.length === 0) contatos = [{ tipo: 'insta', valor: '' }];
+  return { ...empty, ...it, contatos };
+}
 
 export default function InfluencersModal({
   influencer,
@@ -47,29 +58,55 @@ export default function InfluencersModal({
   onClose,
   isAdmin,
 }) {
-  const [form, setForm] = useState(empty);
+  const initial = useMemo(() => normalizeIncoming(influencer), [influencer]);
+  const [form, setForm] = useState(initial);
 
   useEffect(() => {
-    if (influencer) {
-      setForm({ ...empty, ...influencer });
-    } else {
-      setForm(empty);
-    }
-  }, [influencer]);
+    setForm(initial);
+  }, [initial]);
+
+  const dirty = isFormDirty(form, initial);
+  const tryClose = useDirtyClose(dirty, onClose);
 
   const set = (key) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updateContato = (idx, key, value) => {
+    setForm((prev) => {
+      const next = prev.contatos.map((c, i) => (i === idx ? { ...c, [key]: value } : c));
+      return { ...prev, contatos: next };
+    });
+  };
+
+  const addContato = () => {
+    setForm((prev) => ({
+      ...prev,
+      contatos: [...prev.contatos, { tipo: 'whatsapp', valor: '' }],
+    }));
+  };
+
+  const removeContato = (idx) => {
+    setForm((prev) => {
+      const next = prev.contatos.filter((_, i) => i !== idx);
+      return { ...prev, contatos: next.length ? next : [{ tipo: 'insta', valor: '' }] };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.nome.trim()) return;
+    const cleanContatos = form.contatos
+      .map((c) => ({ tipo: c.tipo || 'outro', valor: (c.valor || '').trim() }))
+      .filter((c) => c.valor);
+    const payload = { ...form, contatos: cleanContatos };
     if (influencer?.id) {
-      const { id, authorUid, authorName, authorPhoto, createdAt, updatedAt, ...updates } = form;
+      // remove campos legados/identificação que não devem entrar no update
+      const { id, authorUid, authorName, authorPhoto, createdAt, updatedAt, contatoTipo, contatoValor, ...updates } = payload;
       await onUpdate(influencer.id, updates);
     } else {
-      await onSave(form);
+      await onSave(payload);
     }
     onClose();
   };
@@ -83,9 +120,9 @@ export default function InfluencersModal({
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={tryClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeBtn} onClick={onClose} aria-label="Fechar">×</button>
+        <button className={styles.closeBtn} onClick={tryClose} aria-label="Fechar">×</button>
 
         <form onSubmit={handleSubmit}>
           <input
@@ -161,21 +198,47 @@ export default function InfluencersModal({
           </div>
 
           <div className={styles.section}>
-            <span className={styles.sectionTitle}>Contato</span>
-            <div className={styles.row}>
-              <div className={styles.fieldSmall}>
-                <label>Tipo</label>
-                <select value={form.contatoTipo} onChange={set('contatoTipo')}>
-                  {CONTATO_TIPOS.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label>Valor</label>
-                <input type="text" value={form.contatoValor} onChange={set('contatoValor')} placeholder="@usuario, email ou telefone" />
-              </div>
+            <div className={styles.sectionHeaderRow}>
+              <span className={styles.sectionTitle}>Contatos</span>
+              <button type="button" className={styles.addInline} onClick={addContato}>
+                + Adicionar contato
+              </button>
             </div>
+            {form.contatos.map((c, idx) => (
+              <div className={styles.contatoRow} key={idx}>
+                <div className={styles.fieldSmall}>
+                  <label>Tipo</label>
+                  <select
+                    value={c.tipo}
+                    onChange={(e) => updateContato(idx, 'tipo', e.target.value)}
+                  >
+                    {CONTATO_TIPOS.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label>Valor</label>
+                  <input
+                    type="text"
+                    value={c.valor}
+                    onChange={(e) => updateContato(idx, 'valor', e.target.value)}
+                    placeholder="@usuario, email ou telefone"
+                  />
+                </div>
+                {form.contatos.length > 1 && (
+                  <button
+                    type="button"
+                    className={styles.removeContatoBtn}
+                    onClick={() => removeContato(idx)}
+                    title="Remover contato"
+                    aria-label="Remover contato"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
 
           <div className={styles.section}>
@@ -206,7 +269,7 @@ export default function InfluencersModal({
                 Excluir
               </button>
             )}
-            <button type="button" className={styles.cancelBtn} onClick={onClose}>
+            <button type="button" className={styles.cancelBtn} onClick={tryClose}>
               Cancelar
             </button>
             <button type="submit" className={styles.saveBtn} disabled={!form.nome.trim()}>

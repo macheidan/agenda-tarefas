@@ -44,6 +44,11 @@ export function useInfluencers() {
 
   const addInfluencer = useCallback(async (data, author) => {
     const ref = collection(db, 'influencers');
+    const contatos = Array.isArray(data.contatos)
+      ? data.contatos
+          .map((c) => ({ tipo: c.tipo || 'outro', valor: (c.valor || '').trim() }))
+          .filter((c) => c.valor)
+      : [];
     await addDoc(ref, {
       mes: data.mes || '',
       ano: data.ano || new Date().getFullYear(),
@@ -53,8 +58,7 @@ export function useInfluencers() {
       txEngaj: (data.txEngaj || '').trim(),
       segmento: (data.segmento || '').trim(),
       midiaKitUrl: (data.midiaKitUrl || '').trim(),
-      contatoTipo: data.contatoTipo || 'insta',
-      contatoValor: (data.contatoValor || '').trim(),
+      contatos,
       contatado: !!data.contatado,
       retornou: !!data.retornou,
       divulgouEm: data.divulgouEm || '',

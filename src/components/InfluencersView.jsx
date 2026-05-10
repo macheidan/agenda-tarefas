@@ -12,19 +12,31 @@ const DIVULGOU_CLASS = {
   ambas: styles.tagAmbas,
 };
 
-const handleHref = (form) => {
-  if (!form.contatoValor) return null;
-  if (form.contatoTipo === 'insta') {
-    const h = form.contatoValor.replace(/^@/, '').trim();
+const contatoHref = (c) => {
+  if (!c?.valor) return null;
+  const v = c.valor.trim();
+  if (c.tipo === 'insta') {
+    const h = v.replace(/^@/, '').trim();
     return h ? `https://instagram.com/${h}` : null;
   }
-  if (form.contatoTipo === 'whatsapp' || form.contatoTipo === 'telefone') {
-    const num = form.contatoValor.replace(/\D/g, '');
+  if (c.tipo === 'whatsapp' || c.tipo === 'telefone') {
+    const num = v.replace(/\D/g, '');
     return num ? `https://wa.me/55${num}` : null;
   }
-  if (form.contatoTipo === 'email') return `mailto:${form.contatoValor}`;
-  if (form.contatoValor.startsWith('http')) return form.contatoValor;
+  if (c.tipo === 'email') return `mailto:${v}`;
+  if (v.startsWith('http')) return v;
   return null;
+};
+
+const TIPO_LABEL = { insta: 'IG', whatsapp: 'WA', email: 'E-MAIL', telefone: 'TEL', outro: 'LINK' };
+
+// Devolve a lista normalizada de contatos (com fallback pro formato singular antigo)
+const getContatos = (it) => {
+  if (Array.isArray(it.contatos) && it.contatos.length) return it.contatos;
+  if (it.contatoValor || it.contatoTipo) {
+    return [{ tipo: it.contatoTipo || 'insta', valor: it.contatoValor || '' }];
+  }
+  return [];
 };
 
 export default function InfluencersView({ influencers, addInfluencer, updateInfluencer, deleteInfluencer }) {
@@ -53,7 +65,8 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
       if (filterDivulgou === 'pendente' && it.divulgouEm) return false;
       if (filterDivulgou !== 'all' && filterDivulgou !== 'pendente' && it.divulgouEm !== filterDivulgou) return false;
       if (s) {
-        const hay = [it.nome, it.handle, it.segmento, it.contatoValor].join(' ').toLowerCase();
+        const contatos = getContatos(it).map((c) => c.valor).join(' ');
+        const hay = [it.nome, it.handle, it.segmento, contatos].join(' ').toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
@@ -141,7 +154,7 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
               <tr>
                 <th>Mês</th>
                 <th>Nome</th>
-                <th>@</th>
+                <th>Contatos</th>
                 <th>Alcance</th>
                 <th>Eng.</th>
                 <th>Segmento</th>
@@ -153,17 +166,36 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
             </thead>
             <tbody>
               {filtered.map((it) => {
-                const href = handleHref(it);
+                const contatos = getContatos(it);
                 return (
                   <tr key={it.id} className={it.divulgouEm ? styles.rowDone : ''}>
                     <td><span className={styles.monthBadge}>{it.mes || '—'}</span></td>
                     <td className={styles.cellName}>{it.nome}</td>
                     <td>
-                      {href ? (
-                        <a className={styles.link} href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                          {it.handle || it.contatoValor || 'LINK'}
-                        </a>
-                      ) : (it.handle || '—')}
+                      {contatos.length === 0 && '—'}
+                      {contatos.length > 0 && (
+                        <div className={styles.contatosCell}>
+                          {contatos.map((c, idx) => {
+                            const href = contatoHref(c);
+                            const label = TIPO_LABEL[c.tipo] || 'LINK';
+                            return href ? (
+                              <a
+                                key={idx}
+                                className={styles.link}
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                title={c.valor}
+                              >
+                                {label}
+                              </a>
+                            ) : (
+                              <span key={idx} className={styles.linkInactive} title={c.valor}>{label}</span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </td>
                     <td className={styles.cellNum}>{it.alcance || '—'}</td>
                     <td className={styles.cellNum}>{it.txEngaj || '—'}</td>

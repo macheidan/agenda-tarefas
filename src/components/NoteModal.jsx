@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import RichTextEditor from './RichTextEditor';
+import { useDirtyClose } from '../hooks/useDirtyClose';
 import styles from '../styles/TaskModal.module.css';
 
 export default function NoteModal({ note, onSave, onUpdate, onDelete, onClose }) {
@@ -32,22 +33,11 @@ export default function NoteModal({ note, onSave, onUpdate, onDelete, onClose })
     }
   };
 
-  const hasUnsavedContent = () => {
-    if (isEditing) {
-      return title !== (note.title || '') || content !== (note.content || '');
-    }
-    return title.trim() !== '' || (content.trim() !== '' && content !== '<p></p>');
-  };
+  const isDirty = isEditing
+    ? (title !== (note.title || '') || content !== (note.content || ''))
+    : (title.trim() !== '' || (content.trim() !== '' && content !== '<p></p>'));
 
-  const handleClose = () => {
-    if (hasUnsavedContent()) {
-      if (window.confirm('Você tem alterações não salvas. Deseja realmente fechar?')) {
-        onClose();
-      }
-    } else {
-      onClose();
-    }
-  };
+  const handleClose = useDirtyClose(isDirty, onClose);
 
   return (
     <div className={styles.overlay} onClick={handleClose}>
