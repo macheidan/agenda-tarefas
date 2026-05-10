@@ -39,14 +39,52 @@ const getContatos = (it) => {
   return [];
 };
 
-export default function InfluencersView({ influencers, addInfluencer, updateInfluencer, deleteInfluencer }) {
+export default function InfluencersView({
+  influencers,
+  addInfluencer,
+  updateInfluencer,
+  deleteInfluencer,
+  archiveInfluencer,
+  unarchiveInfluencer,
+  bulkUpdateHandles,
+}) {
   const { user, isAdmin } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [updatingHandles, setUpdatingHandles] = useState(false);
 
   const [filterMes, setFilterMes] = useState('all');
   const [filterDivulgou, setFilterDivulgou] = useState('all');
   const [search, setSearch] = useState('');
+
+  const handleArchive = async (e, item) => {
+    e.stopPropagation();
+    if (!window.confirm(`Arquivar ${item.nome}?`)) return;
+    await archiveInfluencer(item.id);
+  };
+
+  const handleUnarchive = async (e, item) => {
+    e.stopPropagation();
+    await unarchiveInfluencer(item.id);
+  };
+
+  const handleUpdateHandles = async () => {
+    if (updatingHandles) return;
+    if (!window.confirm('Buscar @ handles na planilha e atualizar todos os influencers já cadastrados?')) return;
+    try {
+      setUpdatingHandles(true);
+      const mod = await import('../data/handles-import.json');
+      const list = mod.default || mod;
+      const { matched, notFound } = await bulkUpdateHandles(list);
+      window.alert(`${matched} atualizados.\n${notFound} sem match (provavelmente influencers cadastrados manualmente).`);
+    } catch (err) {
+      console.error('Update handles error:', err);
+      window.alert(`Erro: ${err.message || err}`);
+    } finally {
+      setUpdatingHandles(false);
+    }
+  };
 
   const openNew = () => {
     setEditing(null);
@@ -58,9 +96,19 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
     setModalOpen(true);
   };
 
+  const activeList = useMemo(
+    () => influencers.filter((i) => (showArchived ? i.archived === true : i.archived !== true)),
+    [influencers, showArchived]
+  );
+
+  const archivedCount = useMemo(
+    () => influencers.filter((i) => i.archived === true).length,
+    [influencers]
+  );
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return influencers.filter((it) => {
+    return activeList.filter((it) => {
       if (filterMes !== 'all' && (it.mes || '') !== filterMes) return false;
       if (filterDivulgou === 'pendente' && it.divulgouEm) return false;
       if (filterDivulgou !== 'all' && filterDivulgou !== 'pendente' && it.divulgouEm !== filterDivulgou) return false;
@@ -71,13 +119,14 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
       }
       return true;
     });
-  }, [influencers, filterMes, filterDivulgou, search]);
+  }, [activeList, filterMes, filterDivulgou, search]);
 
   const counts = useMemo(() => {
-    const total = influencers.length;
-    const contatados = influencers.filter((i) => i.contatado).length;
-    const retornaram = influencers.filter((i) => i.retornou).length;
-    const divulgaram = influencers.filter((i) => i.divulgouEm).length;
+    const base = influencers.filter((i) => i.archived !== true);
+    const total = base.length;
+    const contatados = base.filter((i) => i.contatado).length;
+    const retornaram = base.filter((i) => i.retornou).length;
+    const divulgaram = base.filter((i) => i.divulgouEm).length;
     return { total, contatados, retornaram, divulgaram };
   }, [influencers]);
 
@@ -90,16 +139,36 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
   };
 
   const monthsAvailable = useMemo(() => {
-    const set = new Set(influencers.map((i) => i.mes).filter(Boolean));
+    const set = new Set(activeList.map((i) => i.mes).filter(Boolean));
     return MONTHS_ORDER.filter((m) => set.has(m));
-  }, [influencers]);
+  }, [activeList]);
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>Influencers</h2>
+        <h2>{showArchived ? 'Influencers — Arquivados' : 'Influencers'}</h2>
         <div className={styles.headerActions}>
-          <button className={styles.newBtn} onClick={openNew}>+ Novo influencer</button>
+          {isAdmin && (
+            <button
+              className={`${styles.archivedBtn} ${showArchived ? styles.archivedBtnActive : ''}`}
+              onClick={() => setShowArchived((v) => !v)}
+            >
+              {showArchived ? 'Voltar' : `Arquivados (${archivedCount})`}
+            </button>
+          )}
+          {isAdmin && !showArchived && (
+            <button
+              className={styles.handlesBtn}
+              onClick={handleUpdateHandles}
+              disabled={updatingHandles}
+              title="Importa @ handles da planilha pros influencers já cadastrados"
+            >
+              {updatingHandles ? 'Atualizando…' : '@ Atualizar handles'}
+            </button>
+          )}
+          {!showArchived && (
+            <button className={styles.newBtn} onClick={openNew}>+ Novo influencer</button>
+          )}
         </div>
       </div>
 
@@ -234,7 +303,24 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
                       </select>
                     </td>
                     <td>
-                      <button className={styles.editBtn} onClick={() => openEdit(it)}>Editar</button>
+                      <div className={styles.cellActions}>
+                        <button className={styles.editBtn} onClick={() => openEdit(it)}>Editar</button>
+                        {showArchived ? (
+                          <button
+                            className={styles.archiveBtn}
+                            onClick={(e) => handleUnarchive(e, it)}
+                          >
+                            ↩ Restaurar
+                          </button>
+                        ) : (
+                          <button
+                            className={styles.archiveBtn}
+                            onClick={(e) => handleArchive(e, it)}
+                          >
+                            Arquivar
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

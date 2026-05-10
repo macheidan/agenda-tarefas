@@ -272,7 +272,14 @@
   border-color: var(--success);
 }
 
-.editBtn {
+.cellActions {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.editBtn,
+.archiveBtn {
   padding: 5px 12px;
   border: 1px solid var(--input-border);
   border-radius: 4px;
@@ -288,6 +295,54 @@
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+}
+
+.archiveBtn:hover {
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+.archivedBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.archivedBtn:hover {
+  background: var(--card-hover);
+}
+
+.archivedBtnActive {
+  background: var(--text-secondary);
+  color: var(--card);
+  border-color: var(--text-secondary);
+}
+
+.handlesBtn {
+  padding: 8px 14px;
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.handlesBtn:hover:not(:disabled) {
+  background: var(--accent-light);
+}
+
+.handlesBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
