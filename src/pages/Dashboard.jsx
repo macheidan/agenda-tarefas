@@ -74,7 +74,7 @@ export default function Dashboard() {
   const reviewsEnabled = settings.reviewsEnabled !== false;
   const knowledgeEnabled = settings.knowledgeEnabled !== false;
   const influencersEnabled = settings.influencersEnabled !== false;
-  const { influencers, addInfluencer, updateInfluencer, deleteInfluencer, bulkImport: bulkImportInfluencers } = useInfluencers();
+  const { influencers, addInfluencer, updateInfluencer, deleteInfluencer } = useInfluencers();
   const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
@@ -191,7 +191,6 @@ export default function Dashboard() {
             addInfluencer={addInfluencer}
             updateInfluencer={updateInfluencer}
             deleteInfluencer={deleteInfluencer}
-            bulkImport={bulkImportInfluencers}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (
