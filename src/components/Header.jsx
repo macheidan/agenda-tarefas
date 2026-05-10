@@ -17,6 +17,7 @@ export default function Header({
   shoppingListEnabled,
   reviewsEnabled,
   knowledgeEnabled,
+  influencersEnabled,
   ideasUnread,
   reviewsUnread,
   onOpenMessage,
@@ -29,6 +30,7 @@ export default function Header({
     calendar: { enabled: calendarEnabled, key: 'calendar', label: 'Calendário' },
     reels: { enabled: reelsEnabled, key: 'reels', label: 'Instagram' },
     contentPlan: { enabled: contentPlanEnabled, key: 'contentPlan', label: 'Content Plan' },
+    influencers: { enabled: influencersEnabled, key: 'influencers', label: 'Influencers' },
     notes: { enabled: notesEnabled, key: 'notes', label: 'Anotações' },
     shopping: { enabled: shoppingListEnabled, key: 'shopping', label: 'Lista de Compras' },
     ideas: {

@@ -29,6 +29,8 @@ import SettingsView from '../components/SettingsView';
 import IdeasView from '../components/IdeasView';
 import ReelsView from '../components/ReelsView';
 import ContentPlanView from '../components/ContentPlanView';
+import InfluencersView from '../components/InfluencersView';
+import { useInfluencers } from '../hooks/useInfluencers';
 import ReviewsView from '../components/ReviewsView';
 import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
@@ -71,6 +73,8 @@ export default function Dashboard() {
   const shoppingListEnabled = settings.shoppingListEnabled !== false;
   const reviewsEnabled = settings.reviewsEnabled !== false;
   const knowledgeEnabled = settings.knowledgeEnabled !== false;
+  const influencersEnabled = settings.influencersEnabled !== false;
+  const { influencers, addInfluencer, updateInfluencer, deleteInfluencer } = useInfluencers();
   const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
@@ -111,6 +115,7 @@ export default function Dashboard() {
         shoppingListEnabled={shoppingListEnabled}
         reviewsEnabled={reviewsEnabled}
         knowledgeEnabled={knowledgeEnabled}
+        influencersEnabled={influencersEnabled}
         ideasUnread={ideasUnread}
         reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
@@ -178,6 +183,14 @@ export default function Dashboard() {
             addItem={addContentPlanItem}
             updateItem={updateContentPlanItem}
             deleteItem={deleteContentPlanItem}
+          />
+        )}
+        {activeTab === 'influencers' && influencersEnabled && (
+          <InfluencersView
+            influencers={influencers}
+            addInfluencer={addInfluencer}
+            updateInfluencer={updateInfluencer}
+            deleteInfluencer={deleteInfluencer}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (

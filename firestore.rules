@@ -68,6 +68,14 @@ service cloud.firestore {
       allow delete: if isSignedIn();
     }
 
+    // Influencers: qualquer logado lê/cria/edita; admin deleta
+    match /influencers/{itemId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
     // Avaliações: qualquer logado lê e cria, admin pode tudo
     match /reviews/{reviewId} {
       allow read: if isSignedIn();
