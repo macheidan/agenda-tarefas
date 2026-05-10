@@ -81,7 +81,6 @@ export default function Dashboard() {
     deleteInfluencer,
     archiveInfluencer,
     unarchiveInfluencer,
-    bulkUpdateHandles,
   } = useInfluencers();
   const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
@@ -201,7 +200,6 @@ export default function Dashboard() {
             deleteInfluencer={deleteInfluencer}
             archiveInfluencer={archiveInfluencer}
             unarchiveInfluencer={unarchiveInfluencer}
-            bulkUpdateHandles={bulkUpdateHandles}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (

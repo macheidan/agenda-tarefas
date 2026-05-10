@@ -89,13 +89,11 @@ export default function InfluencersView({
   deleteInfluencer,
   archiveInfluencer,
   unarchiveInfluencer,
-  bulkUpdateHandles,
 }) {
   const { user, isAdmin } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
-  const [updatingHandles, setUpdatingHandles] = useState(false);
 
   const [filterMes, setFilterMes] = useState('all');
   const [filterDivulgou, setFilterDivulgou] = useState('all');
@@ -129,23 +127,6 @@ export default function InfluencersView({
   const handleUnarchive = async (e, item) => {
     e.stopPropagation();
     await unarchiveInfluencer(item.id);
-  };
-
-  const handleUpdateHandles = async () => {
-    if (updatingHandles) return;
-    if (!window.confirm('Buscar @ handles na planilha e atualizar todos os influencers já cadastrados?')) return;
-    try {
-      setUpdatingHandles(true);
-      const mod = await import('../data/handles-import.json');
-      const list = mod.default || mod;
-      const { matched, notFound } = await bulkUpdateHandles(list);
-      window.alert(`${matched} atualizados.\n${notFound} sem match (provavelmente influencers cadastrados manualmente).`);
-    } catch (err) {
-      console.error('Update handles error:', err);
-      window.alert(`Erro: ${err.message || err}`);
-    } finally {
-      setUpdatingHandles(false);
-    }
   };
 
   const openNew = () => {
@@ -231,16 +212,6 @@ export default function InfluencersView({
               onClick={() => setShowArchived((v) => !v)}
             >
               {showArchived ? 'Voltar' : `Arquivados (${archivedCount})`}
-            </button>
-          )}
-          {isAdmin && !showArchived && (
-            <button
-              className={styles.handlesBtn}
-              onClick={handleUpdateHandles}
-              disabled={updatingHandles}
-              title="Importa @ handles da planilha pros influencers já cadastrados"
-            >
-              {updatingHandles ? 'Atualizando…' : '@ Atualizar handles'}
             </button>
           )}
           {!showArchived && (

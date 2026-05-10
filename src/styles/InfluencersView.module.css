@@ -341,26 +341,6 @@
   border-color: var(--text-secondary);
 }
 
-.handlesBtn {
-  padding: 8px 14px;
-  border: 1px dashed var(--accent);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.handlesBtn:hover:not(:disabled) {
-  background: var(--accent-light);
-}
-
-.handlesBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 
 @media (max-width: 768px) {
   .container {
