@@ -39,14 +39,41 @@ const getContatos = (it) => {
   return [];
 };
 
-export default function InfluencersView({ influencers, addInfluencer, updateInfluencer, deleteInfluencer }) {
+export default function InfluencersView({ influencers, addInfluencer, updateInfluencer, deleteInfluencer, bulkImport }) {
   const { user, isAdmin } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   const [filterMes, setFilterMes] = useState('all');
   const [filterDivulgou, setFilterDivulgou] = useState('all');
   const [search, setSearch] = useState('');
+
+  const alreadyImportedCount = useMemo(
+    () => influencers.filter((i) => i.importSource === 'planilha-2026-lista').length,
+    [influencers]
+  );
+
+  const handleImport = async () => {
+    if (importing) return;
+    let warn = `Importar 97 influencers da planilha Lista 2026?`;
+    if (alreadyImportedCount > 0) {
+      warn = `Já existem ${alreadyImportedCount} registros importados anteriormente da planilha. Importar de novo vai DUPLICAR. Continuar?`;
+    }
+    if (!window.confirm(warn)) return;
+    try {
+      setImporting(true);
+      const mod = await import('../data/influencers-import.json');
+      const items = mod.default || mod;
+      const { count } = await bulkImport(items, user);
+      window.alert(`${count} influencers importados com sucesso.`);
+    } catch (err) {
+      console.error('Import error:', err);
+      window.alert(`Erro ao importar: ${err.message || err}`);
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const openNew = () => {
     setEditing(null);
@@ -99,6 +126,16 @@ export default function InfluencersView({ influencers, addInfluencer, updateInfl
       <div className={styles.header}>
         <h2>Influencers</h2>
         <div className={styles.headerActions}>
+          {isAdmin && (
+            <button
+              className={styles.importBtn}
+              onClick={handleImport}
+              disabled={importing}
+              title="Importa as 97 linhas da Lista 2026"
+            >
+              {importing ? 'Importando…' : '⬇ Importar planilha'}
+            </button>
+          )}
           <button className={styles.newBtn} onClick={openNew}>+ Novo influencer</button>
         </div>
       </div>
