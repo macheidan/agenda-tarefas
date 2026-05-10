@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import logoUrl from '../imgs/logo.png';
 import styles from '../styles/Header.module.css';
 
 export default function Header({
@@ -99,7 +98,6 @@ export default function Header({
     <header className={styles.header}>
       <div className={styles.top}>
         <h1 className={styles.logo}>
-          <img className={styles.logoImg} src={logoUrl} alt="" />
           <span className={styles.logoText}>Dáme &amp; Lov</span>
         </h1>
         <div className={styles.userArea}>

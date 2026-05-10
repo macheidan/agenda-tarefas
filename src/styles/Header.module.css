@@ -25,15 +25,6 @@
   min-width: 0;
 }
 
-.logoImg {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  display: block;
-}
-
 .logoText {
   white-space: nowrap;
   overflow: hidden;
@@ -349,11 +340,6 @@
   .logo {
     font-size: 15px;
     gap: 8px;
-  }
-
-  .logoImg {
-    width: 30px;
-    height: 30px;
   }
 
   .userArea {
