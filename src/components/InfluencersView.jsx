@@ -4,8 +4,51 @@ import InfluencersModal from './InfluencersModal';
 import styles from '../styles/InfluencersView.module.css';
 
 const MONTHS_ORDER = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+const MONTH_INDEX = MONTHS_ORDER.reduce((acc, m, i) => ({ ...acc, [m]: i + 1 }), {});
+
+// Converte (ano, mes) num inteiro YYYYMM pra ordenação. Sem mês = 0 (vai pro fim em desc).
+const monthKey = (it) => {
+  const m = MONTH_INDEX[it.mes];
+  if (!m) return 0;
+  const y = Number(it.ano) || new Date().getFullYear();
+  return y * 100 + m;
+};
+
+// "13,5K" / "147k" / "1,2M" → número
+const parseAlcance = (s) => {
+  if (!s) return -1;
+  const clean = String(s).trim().replace(/\./g, '').replace(',', '.').toLowerCase();
+  const m = clean.match(/^([\d.]+)\s*([km]?)/);
+  if (!m) return -1;
+  const n = parseFloat(m[1]);
+  if (Number.isNaN(n)) return -1;
+  if (m[2] === 'k') return n * 1000;
+  if (m[2] === 'm') return n * 1_000_000;
+  return n;
+};
+
+// "0,41%" → 0.0041
+const parsePct = (s) => {
+  if (!s) return -1;
+  const clean = String(s).trim().replace('%', '').replace(',', '.');
+  const n = parseFloat(clean);
+  return Number.isNaN(n) ? -1 : n;
+};
 
 const DIVULGOU_LABEL = { lov: 'LOV', dame: 'DAME', ambas: 'AMBAS', '': '—' };
+const DIVULGOU_RANK = { ambas: 3, lov: 2, dame: 2, '': 0 };
+
+// Define como cada coluna é comparada
+const SORT_KEYS = {
+  mes: (it) => monthKey(it),
+  nome: (it) => (it.nome || '').toLowerCase(),
+  alcance: (it) => parseAlcance(it.alcance),
+  txEngaj: (it) => parsePct(it.txEngaj),
+  segmento: (it) => (it.segmento || '').toLowerCase(),
+  contatado: (it) => (it.contatado ? 1 : 0),
+  retornou: (it) => (it.retornou ? 1 : 0),
+  divulgouEm: (it) => DIVULGOU_RANK[it.divulgouEm || ''] ?? 0,
+};
 const DIVULGOU_CLASS = {
   lov: styles.tagLov,
   dame: styles.tagDame,
@@ -57,6 +100,25 @@ export default function InfluencersView({
   const [filterMes, setFilterMes] = useState('all');
   const [filterDivulgou, setFilterDivulgou] = useState('all');
   const [search, setSearch] = useState('');
+  // Default: mês atual no topo, mais antigo embaixo (desc)
+  const [sort, setSort] = useState({ col: 'mes', dir: 'desc' });
+
+  const toggleSort = (col) => {
+    setSort((prev) => {
+      if (prev.col !== col) {
+        // Numéricos / mês começam em desc (mais alto/recente primeiro);
+        // texto começa em asc.
+        const numericCols = ['mes', 'alcance', 'txEngaj', 'contatado', 'retornou', 'divulgouEm'];
+        return { col, dir: numericCols.includes(col) ? 'desc' : 'asc' };
+      }
+      return { col, dir: prev.dir === 'asc' ? 'desc' : 'asc' };
+    });
+  };
+
+  const sortIndicator = (col) => {
+    if (sort.col !== col) return null;
+    return <span className={styles.sortArrow}>{sort.dir === 'asc' ? '↑' : '↓'}</span>;
+  };
 
   const handleArchive = async (e, item) => {
     e.stopPropagation();
@@ -108,7 +170,7 @@ export default function InfluencersView({
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return activeList.filter((it) => {
+    const list = activeList.filter((it) => {
       if (filterMes !== 'all' && (it.mes || '') !== filterMes) return false;
       if (filterDivulgou === 'pendente' && it.divulgouEm) return false;
       if (filterDivulgou !== 'all' && filterDivulgou !== 'pendente' && it.divulgouEm !== filterDivulgou) return false;
@@ -119,7 +181,22 @@ export default function InfluencersView({
       }
       return true;
     });
-  }, [activeList, filterMes, filterDivulgou, search]);
+
+    const accessor = SORT_KEYS[sort.col] || SORT_KEYS.mes;
+    const factor = sort.dir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const av = accessor(a);
+      const bv = accessor(b);
+      if (av < bv) return -1 * factor;
+      if (av > bv) return 1 * factor;
+      // Desempate: nome asc, sempre
+      const an = (a.nome || '').toLowerCase();
+      const bn = (b.nome || '').toLowerCase();
+      if (an < bn) return -1;
+      if (an > bn) return 1;
+      return 0;
+    });
+  }, [activeList, filterMes, filterDivulgou, search, sort]);
 
   const counts = useMemo(() => {
     const base = influencers.filter((i) => i.archived !== true);
@@ -221,15 +298,15 @@ export default function InfluencersView({
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Mês</th>
-                <th>Nome</th>
+                <th className={styles.thSort} onClick={() => toggleSort('mes')}>Mês{sortIndicator('mes')}</th>
+                <th className={styles.thSort} onClick={() => toggleSort('nome')}>Nome{sortIndicator('nome')}</th>
                 <th>Contatos</th>
-                <th>Alcance</th>
-                <th>Eng.</th>
-                <th>Segmento</th>
-                <th className={styles.colCenter}>Cont.</th>
-                <th className={styles.colCenter}>Ret.</th>
-                <th>Divulgou</th>
+                <th className={styles.thSort} onClick={() => toggleSort('alcance')}>Alcance{sortIndicator('alcance')}</th>
+                <th className={styles.thSort} onClick={() => toggleSort('txEngaj')}>Eng.{sortIndicator('txEngaj')}</th>
+                <th className={styles.thSort} onClick={() => toggleSort('segmento')}>Segmento{sortIndicator('segmento')}</th>
+                <th className={`${styles.colCenter} ${styles.thSort}`} onClick={() => toggleSort('contatado')}>Cont.{sortIndicator('contatado')}</th>
+                <th className={`${styles.colCenter} ${styles.thSort}`} onClick={() => toggleSort('retornou')}>Ret.{sortIndicator('retornou')}</th>
+                <th className={styles.thSort} onClick={() => toggleSort('divulgouEm')}>Divulgou{sortIndicator('divulgouEm')}</th>
                 <th>Ações</th>
               </tr>
             </thead>

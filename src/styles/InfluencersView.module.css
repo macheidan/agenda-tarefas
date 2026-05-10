@@ -136,6 +136,23 @@
   letter-spacing: 0.4px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  user-select: none;
+}
+
+.thSort {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.thSort:hover {
+  color: var(--text);
+}
+
+.sortArrow {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .table td {
