@@ -1,10 +1,11 @@
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import PendingApproval from './pages/PendingApproval';
 import './styles/global.css';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, approved } = useAuth();
 
   if (loading) {
     return (
@@ -14,7 +15,9 @@ function AppContent() {
     );
   }
 
-  return user ? <Dashboard /> : <Login />;
+  if (!user) return <Login />;
+  if (!approved) return <PendingApproval />;
+  return <Dashboard />;
 }
 
 export default function App() {

@@ -38,6 +38,12 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     { key: 'knowledgeEnabled', label: 'Conhecimento' },
   ];
 
+  // Chaves de visibilidade definidas como false ao aprovar (default tudo oculto)
+  const VISIBILITY_KEYS_FALSE = SECTIONS.reduce(
+    (acc, s) => ({ ...acc, [s.key]: false }),
+    {}
+  );
+
   // Admin loads settings for all users
   useEffect(() => {
     if (!isAdmin) return;
@@ -75,6 +81,23 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
       setConfirmUid(null);
       setConfirmText('');
     }
+  };
+
+  const approveUser = async (uid) => {
+    // Marca o user como aprovado E garante settings com todas as seções desmarcadas
+    await setDoc(doc(db, 'users', uid), { approved: true }, { merge: true });
+    await setDoc(doc(db, 'settings', uid), VISIBILITY_KEYS_FALSE, { merge: true });
+    setUserSettings((prev) => ({
+      ...prev,
+      [uid]: { ...prev[uid], ...VISIBILITY_KEYS_FALSE },
+    }));
+  };
+
+  const rejectUser = async (uid) => {
+    if (!window.confirm('Rejeitar este usuário? O cadastro será removido.')) return;
+    await deleteDoc(doc(db, 'users', uid));
+    await deleteDoc(doc(db, 'settings', uid));
+    setRemovedUsers((prev) => new Set(prev).add(uid));
   };
 
   const startRemove = (uid) => {
@@ -118,6 +141,8 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
   const allVisibleUsers = users.filter((u) => !removedUsers.has(u.uid));
   const otherUsers = allVisibleUsers.filter((u) => u.uid !== user.uid);
+  const pendingUsers = allVisibleUsers.filter((u) => u.uid !== user.uid && u.approved !== true);
+  const approvedOtherUsers = otherUsers.filter((u) => u.approved === true);
 
   if (!isAdmin) {
     return (
@@ -165,6 +190,45 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
         </div>
       </div>
 
+      {pendingUsers.length > 0 && (
+        <div className={`${styles.section} ${styles.pendingSection}`}>
+          <h3>Aprovações Pendentes ({pendingUsers.length})</h3>
+          <p className={styles.sectionDesc}>
+            Novos usuários precisam ser aprovados antes de acessar a plataforma.
+            Ao aprovar, todas as seções nascem desmarcadas — habilite individualmente em "Visibilidade de Seções".
+          </p>
+          <div className={styles.userList}>
+            {pendingUsers.map((u) => (
+              <div key={u.uid} className={styles.userRow}>
+                <img
+                  className={styles.userAvatar}
+                  src={u.photoURL || 'https://via.placeholder.com/32'}
+                  alt={u.displayName || u.email}
+                />
+                <div className={styles.userInfoStack}>
+                  <span className={styles.userName}>{u.displayName || u.email}</span>
+                  <span className={styles.userEmail}>{u.email}</span>
+                </div>
+                <div className={styles.confirmActions}>
+                  <button
+                    className={styles.approveBtn}
+                    onClick={() => approveUser(u.uid)}
+                  >
+                    ✓ Aprovar
+                  </button>
+                  <button
+                    className={styles.rejectBtn}
+                    onClick={() => rejectUser(u.uid)}
+                  >
+                    ✗ Rejeitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className={styles.section}>
         <h3>Ordem do Menu</h3>
         <p className={styles.sectionDesc}>Reordene as abas do menu superior. Vale para todos os usuários.</p>
@@ -211,7 +275,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
         <p className={styles.sectionDesc}>Escolha quais seções cada usuário pode ver.</p>
 
         <div className={styles.userList}>
-          {allVisibleUsers.map((u) => {
+          {allVisibleUsers.filter((u) => u.uid === user.uid || u.approved === true).map((u) => {
             const s = userSettings[u.uid] || {};
             return (
               <div key={u.uid} className={styles.userRowSections}>
@@ -251,7 +315,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
         <p className={styles.sectionDesc}>Altere o nome exibido de cada usuário (login permanece o mesmo).</p>
 
         <div className={styles.userList}>
-          {otherUsers.map((u) => {
+          {approvedOtherUsers.map((u) => {
             const s = userSettings[u.uid] || {};
             const displayName = s.customName || u.displayName || u.email;
             return (
@@ -297,7 +361,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
         <p className={styles.sectionDesc}>Remova o acesso de usuários da plataforma.</p>
 
         <div className={styles.userList}>
-          {otherUsers.map((u) => (
+          {approvedOtherUsers.map((u) => (
             <div key={u.uid} className={styles.userRow}>
               <img
                 className={styles.userAvatar}
@@ -344,7 +408,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
               )}
             </div>
           ))}
-          {otherUsers.length === 0 && (
+          {approvedOtherUsers.length === 0 && (
             <p className={styles.noAccess}>Nenhum usuário cadastrado.</p>
           )}
         </div>

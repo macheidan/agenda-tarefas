@@ -17,6 +17,12 @@
   margin: 0 16px;
 }
 
+.icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
 .title {
   font-size: 28px;
   font-weight: 700;

@@ -14,10 +14,17 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
 
-    // Usuários: qualquer logado lê, cada um escreve o seu, admin escreve todos
+    // Usuários: qualquer logado lê. Cada um cria o seu (sem se auto-aprovar)
+    // e atualiza só perfil; admin pode tudo (aprovar/rejeitar/deletar).
     match /users/{uid} {
       allow read: if isSignedIn();
-      allow write: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && (
+        isAdmin() || request.resource.data.get('approved', false) == false
+      );
+      allow update: if isAdmin() ||
+        (isOwner(uid) &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approved']));
+      allow delete: if isAdmin();
     }
 
     // Tarefas: dono lê/escreve as suas, admin lê/escreve todas
