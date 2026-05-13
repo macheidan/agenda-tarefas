@@ -100,7 +100,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
   };
 
   const handleDelete = () => {
-    if (task) {
+    if (task && window.confirm('Excluir esta tarefa?')) {
       onDelete(task.id);
       onClose();
     }
