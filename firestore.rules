@@ -90,10 +90,17 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Mensagens admin: qualquer logado lê, admin cria/edita/deleta
+    // Mensagens admin: qualquer logado lê; admin cria/deleta;
+    // usuário comum pode atualizar apenas readBy (marcar como lida) sem remover ninguém.
     match /adminMessages/{msgId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']) &&
+        request.resource.data.readBy.hasAll(resource.data.readBy) &&
+        request.auth.uid in request.resource.data.readBy
+      );
     }
 
     // Configurações: dono lê as suas, admin lê/escreve todas.
