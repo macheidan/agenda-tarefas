@@ -17,9 +17,6 @@
   padding: 16px 0;
   margin-bottom: 8px;
   background: var(--card);
-  position: sticky;
-  top: var(--app-header-height, 96px);
-  z-index: 20;
   border-bottom: 1px solid var(--border-light);
 }
 
