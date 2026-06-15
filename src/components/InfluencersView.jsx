@@ -314,9 +314,9 @@ export default function InfluencersView({
                         </div>
                       )}
                     </td>
-                    <td className={styles.cellNum}>{it.alcance || '—'}</td>
-                    <td className={styles.cellNum}>{it.txEngaj || '—'}</td>
-                    <td className={styles.cellSeg}>{it.segmento || '—'}</td>
+                    <td className={styles.cellNum} data-label="Alcance">{it.alcance || '—'}</td>
+                    <td className={styles.cellNum} data-label="Eng.">{it.txEngaj || '—'}</td>
+                    <td className={styles.cellSeg} data-label="Seg.">{it.segmento || '—'}</td>
                     <td className={styles.colCenter}>
                       <input
                         type="checkbox"
