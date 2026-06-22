@@ -12,6 +12,7 @@ export const DEFAULT_TABS_ORDER = [
   'ideas',
   'reviews',
   'knowledge',
+  'precosInsumos',
 ];
 
 export function useTabsOrder() {
