@@ -3,6 +3,7 @@ import { supabase } from '../utils/supabase';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
+import styles from '../styles/PrecosInsumosView.module.css';
 
 const COLORS = ['#8E0000', '#A50000', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777'];
 
@@ -66,44 +67,37 @@ export default function PrecosInsumosView() {
   const totalFornecedores = new Set(precos.map(p => p.fornecedor)).size;
 
   return (
-    <div>
-      {/* Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-        <StatCard label="Produtos" value={totalProdutos} />
-        <StatCard label="Fornecedores" value={totalFornecedores} />
-        <StatCard label="Registros" value={precos.length} />
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2>Preços Insumos</h2>
       </div>
 
-      {/* Filtro */}
-      <input
-        type="text"
-        placeholder="Filtrar por produto ou fornecedor..."
-        value={filtro}
-        onChange={e => setFiltro(e.target.value)}
-        style={{
-          width: '100%', padding: '10px 14px', borderRadius: 8,
-          border: '1px solid var(--border)', marginBottom: 16,
-          fontSize: 14, boxSizing: 'border-box',
-          background: 'var(--card-bg)', color: 'var(--text)',
-        }}
-      />
+      <div className={styles.stats}>
+        <span><strong>{totalProdutos}</strong> produtos</span>
+        <span><strong>{totalFornecedores}</strong> fornecedores</span>
+        <span><strong>{precos.length}</strong> registros</span>
+      </div>
 
-      {/* Grafico */}
+      <div className={styles.filters}>
+        <input
+          className={styles.searchInput}
+          type="search"
+          placeholder="Filtrar por produto ou fornecedor..."
+          value={filtro}
+          onChange={e => setFiltro(e.target.value)}
+        />
+      </div>
+
       {chartData.length > 1 && (
-        <div style={{
-          background: 'var(--card-bg)', borderRadius: 8,
-          border: '1px solid var(--border)', padding: 16, marginBottom: 16,
-        }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>
-            Historico de Precos (R$/unidade)
-          </h3>
+        <div className={styles.chartWrap}>
+          <h3 className={styles.chartTitle}>Histórico de Preços (R$/unidade)</h3>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="data" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip
-                contentStyle={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 6 }}
+                contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6 }}
               />
               {produtosUnicos.map((prod, i) => (
                 <Line
@@ -117,56 +111,42 @@ export default function PrecosInsumosView() {
         </div>
       )}
 
-      {/* Tabela */}
-      <div style={{
-        background: 'var(--card-bg)', borderRadius: 8,
-        border: '1px solid var(--border)', overflow: 'hidden',
-      }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: 'var(--bg)', textAlign: 'left' }}>
-              <th style={thStyle}>Data</th>
-              <th style={thStyle}>Produto</th>
-              <th style={thStyle}>Fornecedor</th>
-              <th style={{ ...thStyle, textAlign: 'right' }}>Preco/un</th>
-              <th style={{ ...thStyle, textAlign: 'right' }}>Un</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} style={emptyStyle}>Carregando...</td></tr>
-            ) : filtrados.length === 0 ? (
-              <tr><td colSpan={5} style={emptyStyle}>Nenhum registro</td></tr>
-            ) : filtrados.map(p => (
-              <tr key={p.id} style={{ borderTop: '1px solid var(--border)' }}>
-                <td style={tdStyle}>{p.data}</td>
-                <td style={{ ...tdStyle, fontWeight: 500 }}>{p.produto}</td>
-                <td style={tdStyle}>{p.fornecedor}</td>
-                <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace' }}>
-                  R$ {p.preco_normalizado.toFixed(2)}
-                </td>
-                <td style={{ ...tdStyle, textAlign: 'right' }}>{p.unidade_normalizada}</td>
+      {loading ? (
+        <div className={styles.empty}>Carregando...</div>
+      ) : filtrados.length === 0 ? (
+        <div className={styles.empty}>
+          {precos.length === 0
+            ? 'Nenhum registro de preço cadastrado.'
+            : 'Nenhum resultado para o filtro atual.'}
+        </div>
+      ) : (
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Produto</th>
+                <th>Fornecedor</th>
+                <th className={styles.thRight}>Preço/un</th>
+                <th className={styles.thRight}>Un</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filtrados.map(p => (
+                <tr key={p.id}>
+                  <td data-label="Data">{p.data}</td>
+                  <td className={styles.cellProduct} data-label="Produto">{p.produto}</td>
+                  <td data-label="Fornec.">{p.fornecedor}</td>
+                  <td className={styles.cellNum} data-label="Preço">
+                    R$ {p.preco_normalizado.toFixed(2)}
+                  </td>
+                  <td className={styles.cellRight} data-label="Un">{p.unidade_normalizada}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
-
-function StatCard({ label, value }) {
-  return (
-    <div style={{
-      background: 'var(--card-bg)', borderRadius: 8,
-      border: '1px solid var(--border)', padding: '10px 14px',
-    }}>
-      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
-    </div>
-  );
-}
-
-const thStyle = { padding: '8px 12px', fontSize: 12, fontWeight: 600 };
-const tdStyle = { padding: '8px 12px' };
-const emptyStyle = { padding: '32px 12px', textAlign: 'center', color: 'var(--text-secondary)' };
