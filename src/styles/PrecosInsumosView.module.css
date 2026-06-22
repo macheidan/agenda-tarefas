@@ -136,7 +136,7 @@
 }
 
 .table tbody tr:hover {
-  background: var(--bg-secondary);
+  background: var(--badge-bg);
 }
 
 .cellProduct {
