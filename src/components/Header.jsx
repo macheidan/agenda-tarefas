@@ -17,6 +17,7 @@ export default function Header({
   reviewsEnabled,
   knowledgeEnabled,
   influencersEnabled,
+  precosInsumosEnabled,
   ideasUnread,
   reviewsUnread,
   onOpenMessage,
@@ -45,7 +46,7 @@ export default function Header({
       badge: reviewsUnread > 0 ? <span className={styles.sirenBadge}>🚨</span> : null,
     },
     knowledge: { enabled: knowledgeEnabled, key: 'knowledge', label: 'Conhecimento' },
-    precosInsumos: { enabled: true, key: 'precosInsumos', label: 'Precos Insumos' },
+    precosInsumos: { enabled: precosInsumosEnabled, key: 'precosInsumos', label: 'Precos Insumos' },
   };
   const orderedTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(TABS_DEF))
     .map((k) => TABS_DEF[k])

@@ -16,6 +16,7 @@ const TAB_LABELS = {
   ideas: 'Ideias',
   reviews: 'Avaliações',
   knowledge: 'Conhecimento',
+  precosInsumos: 'Preços Insumos',
 };
 
 export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
@@ -36,6 +37,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     { key: 'shoppingListEnabled', label: 'Lista de Compras' },
     { key: 'reviewsEnabled', label: 'Avaliações' },
     { key: 'knowledgeEnabled', label: 'Conhecimento' },
+    { key: 'precosInsumosEnabled', label: 'Preços Insumos' },
   ];
 
   // Chaves de visibilidade definidas como false ao aprovar (default tudo oculto)

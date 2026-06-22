@@ -75,6 +75,7 @@ export default function Dashboard() {
   const reviewsEnabled = settings.reviewsEnabled !== false;
   const knowledgeEnabled = settings.knowledgeEnabled !== false;
   const influencersEnabled = settings.influencersEnabled !== false;
+  const precosInsumosEnabled = settings.precosInsumosEnabled !== false;
   const {
     influencers,
     addInfluencer,
@@ -124,6 +125,7 @@ export default function Dashboard() {
         reviewsEnabled={reviewsEnabled}
         knowledgeEnabled={knowledgeEnabled}
         influencersEnabled={influencersEnabled}
+        precosInsumosEnabled={precosInsumosEnabled}
         ideasUnread={ideasUnread}
         reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
@@ -256,7 +258,7 @@ export default function Dashboard() {
             error={kbError}
           />
         )}
-        {activeTab === 'precosInsumos' && <PrecosInsumosView />}
+        {activeTab === 'precosInsumos' && precosInsumosEnabled && <PrecosInsumosView />}
         {activeTab === 'completed' && isAdmin && (
           <CompletedView
             completedTasks={completedTasks}
