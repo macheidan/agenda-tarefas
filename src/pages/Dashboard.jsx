@@ -35,6 +35,7 @@ import ReviewsView from '../components/ReviewsView';
 import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
 import TaskModal from '../components/TaskModal';
+import PrecosInsumosView from '../components/PrecosInsumosView';
 import styles from '../styles/Dashboard.module.css';
 
 export default function Dashboard() {
@@ -255,6 +256,7 @@ export default function Dashboard() {
             error={kbError}
           />
         )}
+        {activeTab === 'precosInsumos' && <PrecosInsumosView />}
         {activeTab === 'completed' && isAdmin && (
           <CompletedView
             completedTasks={completedTasks}
