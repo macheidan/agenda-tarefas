@@ -147,7 +147,7 @@
 .cellNum {
   text-align: right;
   white-space: nowrap;
-  font-family: monospace;
+  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
