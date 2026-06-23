@@ -22,12 +22,14 @@ export const ABSENCE_TYPES = [
 
 // Lojas padrão criadas na primeira vez (IDs fixos = seed idempotente).
 const DEFAULT_STORES = [
-  { id: 'loja1', name: 'Loja 1', order: 0 },
-  { id: 'loja2', name: 'Loja 2', order: 1 },
+  { id: 'dame', name: 'Dáme', order: 0 },
+  { id: 'lov', name: 'Lov', order: 1 },
 ];
 
 export function useDepartamentoPessoal() {
   const [stores, setStores] = useState([]);
+  const [loadingStores, setLoadingStores] = useState(true);
+  const [storesError, setStoresError] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [absences, setAbsences] = useState([]);
 
@@ -35,21 +37,30 @@ export function useDepartamentoPessoal() {
   useEffect(() => {
     let seeded = false;
     const ref = collection(db, 'dpStores');
-    const unsub = onSnapshot(ref, (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      setStores(items);
-      if (items.length === 0 && !seeded) {
-        seeded = true;
-        DEFAULT_STORES.forEach((s) => {
-          setDoc(doc(db, 'dpStores', s.id), {
-            name: s.name,
-            order: s.order,
-            createdAt: Timestamp.now(),
-          }).catch(() => {});
-        });
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        setStores(items);
+        setLoadingStores(false);
+        setStoresError(null);
+        if (items.length === 0 && !seeded) {
+          seeded = true;
+          DEFAULT_STORES.forEach((s) => {
+            setDoc(doc(db, 'dpStores', s.id), {
+              name: s.name,
+              order: s.order,
+              createdAt: Timestamp.now(),
+            }).catch((e) => setStoresError(e?.message || String(e)));
+          });
+        }
+      },
+      (err) => {
+        setLoadingStores(false);
+        setStoresError(err?.message || String(err));
       }
-    });
+    );
     return unsub;
   }, []);
 
@@ -78,6 +89,19 @@ export function useDepartamentoPessoal() {
   }, []);
 
   // ---- Lojas ----
+  // Cria as duas lojas padrão (botão manual de fallback).
+  const seedDefaultStores = useCallback(async () => {
+    await Promise.all(
+      DEFAULT_STORES.map((s) =>
+        setDoc(doc(db, 'dpStores', s.id), {
+          name: s.name,
+          order: s.order,
+          createdAt: Timestamp.now(),
+        })
+      )
+    );
+  }, []);
+
   const addStore = useCallback(async (name) => {
     const trimmed = (name || '').trim();
     if (!trimmed) return;
@@ -111,6 +135,16 @@ export function useDepartamentoPessoal() {
 
   const renameEmployee = useCallback(async (employeeId, name) => {
     await updateDoc(doc(db, 'dpEmployees', employeeId), { name: (name || '').trim() });
+  }, []);
+
+  // Edita nome e/ou loja do funcionário.
+  const updateEmployee = useCallback(async (employeeId, updates) => {
+    const clean = {};
+    if (typeof updates?.name === 'string') clean.name = updates.name.trim();
+    if (updates?.store) clean.store = updates.store;
+    if (Object.keys(clean).length) {
+      await updateDoc(doc(db, 'dpEmployees', employeeId), clean);
+    }
   }, []);
 
   // "Remover" = desativar (preserva histórico de faltas).
@@ -153,6 +187,9 @@ export function useDepartamentoPessoal() {
 
   return {
     stores,
+    loadingStores,
+    storesError,
+    seedDefaultStores,
     employees,
     absences,
     addStore,
@@ -160,6 +197,7 @@ export function useDepartamentoPessoal() {
     deleteStore,
     addEmployee,
     renameEmployee,
+    updateEmployee,
     deactivateEmployee,
     reactivateEmployee,
     deleteEmployee,

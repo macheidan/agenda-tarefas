@@ -234,6 +234,24 @@
   font-size: 13px;
 }
 
+.dpStoresRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 42px;
+  margin-top: 2px;
+}
+
+.dpStoresRow .sectionToggles {
+  padding-left: 0;
+}
+
+.dpStoresLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .sectionToggleNested {
   flex-basis: 100%;
   padding-left: 22px;
