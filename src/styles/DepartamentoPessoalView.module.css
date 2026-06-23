@@ -591,3 +591,172 @@
 .popClear:hover {
   background: var(--danger-bg);
 }
+
+/* ---- Mobile ---- */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+    padding-top: 0;
+    border-radius: 8px;
+  }
+
+  .header {
+    padding: 12px 0;
+    margin-bottom: 6px;
+  }
+
+  .header h2 {
+    font-size: 16px;
+  }
+
+  .sectionTab {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .storeBar {
+    margin-bottom: 10px;
+  }
+
+  .storeTabs {
+    gap: 6px;
+  }
+
+  .storeTab {
+    padding: 6px 13px;
+    font-size: 12px;
+  }
+
+  .manageStoresBtn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .manageBox {
+    padding: 12px;
+  }
+
+  /* Toolbar do mês em duas linhas */
+  .toolbar {
+    gap: 8px;
+  }
+
+  .monthNav {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .monthLabel {
+    font-size: 15px;
+    min-width: 0;
+  }
+
+  .toolbarActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .newBtn {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Inputs não estouram a largura da tela */
+  .inlineInput {
+    min-width: 0;
+  }
+
+  .addEmpRow,
+  .addStoreRow {
+    flex-wrap: wrap;
+  }
+
+  .addEmpRow .inlineInput,
+  .addStoreRow .inlineInput {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+
+  .addEmpRow .storeSelect {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+
+  .addEmpRow .smallBtn,
+  .addStoreRow .smallBtn {
+    flex: 1 1 100%;
+  }
+
+  .manageRow {
+    flex-wrap: wrap;
+  }
+
+  .manageRow .inlineInput {
+    flex: 1 1 100%;
+  }
+
+  /* Grade compacta + scroll horizontal por toque */
+  .gridWrap {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nameCol {
+    min-width: 136px;
+    max-width: 136px;
+  }
+
+  .cornerCell {
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .empName {
+    font-size: 12px;
+  }
+
+  /* Ações sempre visíveis no toque, com alvo maior */
+  .rowActions {
+    opacity: 1;
+  }
+
+  .iconBtn,
+  .iconBtnDanger {
+    font-size: 16px;
+    padding: 5px 6px;
+  }
+
+  .dayHead {
+    min-width: 27px;
+    width: 27px;
+  }
+
+  .cell {
+    width: 27px;
+    min-width: 27px;
+    height: 36px;
+  }
+
+  .mark {
+    width: 21px;
+    height: 21px;
+    font-size: 9px;
+  }
+
+  .nameColEditing {
+    min-width: 184px;
+    max-width: 184px;
+  }
+
+  .legend {
+    gap: 8px 14px;
+    margin-top: 12px;
+  }
+
+  .legendItem {
+    font-size: 11px;
+  }
+
+  .empty {
+    padding: 28px 12px;
+  }
+}

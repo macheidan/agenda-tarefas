@@ -470,7 +470,10 @@ export default function DepartamentoPessoalView() {
         <div
           ref={popRef}
           className={styles.popover}
-          style={{ top: popover.y + 4, left: Math.min(popover.x, window.innerWidth - 220) }}
+          style={{
+            top: Math.max(8, Math.min(popover.y + 4, window.innerHeight - 260)),
+            left: Math.max(8, Math.min(popover.x, window.innerWidth - 220)),
+          }}
         >
           {ABSENCE_TYPES.map((t) => (
             <button key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
