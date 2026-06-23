@@ -1,0 +1,513 @@
+.container {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px var(--shadow);
+  padding: 24px;
+  padding-top: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  margin-bottom: 8px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.sectionTab {
+  padding: 8px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sectionTabActive {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---- Lojas ---- */
+.storeBar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.storeTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.storeTab {
+  padding: 7px 16px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.manageStoresBtn {
+  padding: 6px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.manageStoresBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.manageBox {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.manageBox h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.manageList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.manageRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manageName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.addStoreRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---- Toolbar de mês ---- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.monthLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 140px;
+  text-align: center;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.navBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inactiveToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.newBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.newBtn:hover {
+  background: var(--accent-hover);
+}
+
+.addEmpRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.inlineInput {
+  padding: 7px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 13px;
+  min-width: 200px;
+}
+
+.inlineInput:focus {
+  outline: none;
+  border-color: var(--input-focus);
+}
+
+.smallBtn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smallBtn:hover {
+  background: var(--accent-hover);
+}
+
+.smallBtnGhost {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smallBtnDanger {
+  padding: 7px 12px;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---- Grade ---- */
+.gridWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.grid {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+}
+
+.grid th,
+.grid td {
+  border: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.nameCol {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 170px;
+  max-width: 170px;
+}
+
+.cornerCell {
+  background: var(--toolbar-bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.dayHead {
+  background: var(--toolbar-bg);
+  padding: 4px 0;
+  min-width: 30px;
+  width: 30px;
+}
+
+.dayNum {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.dayWd {
+  display: block;
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.nameCell {
+  background: var(--card);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.nameWrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.empName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowActions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.nameCell:hover .rowActions {
+  opacity: 1;
+}
+
+.nameEdit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nameEdit .inlineInput {
+  min-width: 110px;
+  padding: 4px 6px;
+}
+
+.iconBtn,
+.iconBtnDanger {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.iconBtn:hover {
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+.iconBtnDanger {
+  color: var(--danger);
+}
+
+.iconBtnDanger:hover {
+  background: var(--danger-bg);
+}
+
+.inactiveRow .nameCell,
+.inactiveRow .cell {
+  opacity: 0.55;
+}
+
+.cell {
+  width: 30px;
+  min-width: 30px;
+  height: 32px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--card);
+}
+
+.cell:hover {
+  background: var(--accent-light);
+}
+
+.weekend {
+  background: var(--bg-secondary);
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ---- Legenda ---- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.legendDot,
+.popDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ---- Popover ---- */
+.popover {
+  position: fixed;
+  z-index: 100;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px var(--shadow-hover);
+  padding: 6px;
+  width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.popItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.popItem:hover {
+  background: var(--bg-secondary);
+}
+
+.popClear {
+  margin-top: 4px;
+  padding: 7px 8px;
+  border: none;
+  border-top: 1px solid var(--border-light);
+  border-radius: 0 0 6px 6px;
+  background: transparent;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.popClear:hover {
+  background: var(--danger-bg);
+}

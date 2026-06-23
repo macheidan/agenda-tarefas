@@ -17,6 +17,7 @@ const TAB_LABELS = {
   reviews: 'Avaliações',
   knowledge: 'Conhecimento',
   precosInsumos: 'Preços Insumos',
+  departamentoPessoal: 'Depto Pessoal',
 };
 
 export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
@@ -38,6 +39,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     { key: 'reviewsEnabled', label: 'Avaliações' },
     { key: 'knowledgeEnabled', label: 'Conhecimento' },
     { key: 'precosInsumosEnabled', label: 'Preços Insumos' },
+    { key: 'departamentoPessoalEnabled', label: 'Depto Pessoal', defaultOff: true },
   ];
 
   // Chaves de visibilidade definidas como false ao aprovar (default tudo oculto)
@@ -299,7 +301,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                     >
                       <input
                         type="checkbox"
-                        checked={s[sec.key] !== false}
+                        checked={sec.defaultOff ? s[sec.key] === true : s[sec.key] !== false}
                         onChange={(e) => toggleSection(u.uid, sec.key, e.target.checked)}
                       />
                       <span className={styles.sectionLabel}>{sec.label}</span>

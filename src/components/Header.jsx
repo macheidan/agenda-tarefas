@@ -18,6 +18,7 @@ export default function Header({
   knowledgeEnabled,
   influencersEnabled,
   precosInsumosEnabled,
+  departamentoPessoalEnabled,
   ideasUnread,
   reviewsUnread,
   onOpenMessage,
@@ -47,6 +48,7 @@ export default function Header({
     },
     knowledge: { enabled: knowledgeEnabled, key: 'knowledge', label: 'Conhecimento' },
     precosInsumos: { enabled: precosInsumosEnabled, key: 'precosInsumos', label: 'Precos Insumos' },
+    departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
   };
   const orderedTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(TABS_DEF))
     .map((k) => TABS_DEF[k])
