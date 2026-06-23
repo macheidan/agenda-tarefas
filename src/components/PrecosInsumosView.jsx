@@ -20,7 +20,7 @@ export default function PrecosInsumosView() {
   const [loading, setLoading] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
-  const [dataInicio, setDataInicio] = useState(daysAgo(30));
+  const [dataInicio, setDataInicio] = useState(daysAgo(90));
   const [dataFim, setDataFim] = useState(new Date().toISOString().slice(0, 10));
   const [porPagina, setPorPagina] = useState(50);
   const [paginaAtual, setPaginaAtual] = useState(1);
