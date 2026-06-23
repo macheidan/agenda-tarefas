@@ -75,6 +75,7 @@ export default function DepartamentoPessoalView() {
   const [editName, setEditName] = useState('');
   const [editStore, setEditStore] = useState('');
   const [popover, setPopover] = useState(null);
+  const [selectedEmp, setSelectedEmp] = useState(null); // funcionário escolhido no mobile
   const [managingStores, setManagingStores] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [editingStore, setEditingStore] = useState(null);
@@ -180,6 +181,10 @@ export default function DepartamentoPessoalView() {
     updateEmployee(id, { name: editName, store: editStore });
     setEditingEmp(null);
   };
+
+  // No mobile, mostra um funcionário por vez (escolhido no seletor).
+  const mobileEmp =
+    storeEmployees.find((e) => e.id === selectedEmp) || storeEmployees[0] || null;
 
   // Info de uma célula (data, marca, tipo, fim de semana) — usada na grade e nos cartões mobile.
   const dayInfo = (empId, d) => {
@@ -372,7 +377,21 @@ export default function DepartamentoPessoalView() {
         </p>
       ) : isMobile ? (
         <div className={styles.mList}>
-          {storeEmployees.map((emp) => {
+          <div className={styles.mEmpSelectRow}>
+            <span className={styles.mEmpSelectLabel}>Funcionário</span>
+            <select
+              className={styles.mEmpSelect}
+              value={mobileEmp?.id || ''}
+              onChange={(e) => setSelectedEmp(e.target.value)}
+            >
+              {storeEmployees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {isAmbas && storeMeta[e.store] ? `${storeMeta[e.store].name} — ${e.name}` : e.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {[mobileEmp].filter(Boolean).map((emp) => {
             const firstDow = new Date(year, month, 1).getDay();
             return (
               <div key={emp.id} className={styles.mEmpCard}>
