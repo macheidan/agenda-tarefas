@@ -15,11 +15,22 @@ function daysAgo(n) {
 
 const PAGE_OPTIONS = [50, 100, 200];
 
+// Normaliza o identificador da loja (pizzaria) para exibicao: 'lov' -> 'Lov', 'dame' -> 'Dame'.
+function normalizeLoja(raw) {
+  if (!raw) return '';
+  const v = String(raw).trim();
+  const low = v.toLowerCase();
+  if (low === 'lov') return 'Lov';
+  if (low === 'dame') return 'Dame';
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
+
 export default function PrecosInsumosView() {
   const [precos, setPrecos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
+  const [filtroLoja, setFiltroLoja] = useState('');
   const [dataInicio, setDataInicio] = useState(daysAgo(90));
   const [dataFim, setDataFim] = useState(new Date().toISOString().slice(0, 10));
   const [porPagina, setPorPagina] = useState(50);
@@ -54,6 +65,7 @@ export default function PrecosInsumosView() {
         unidade_embalagem: r.unidade_embalagem || '',
         produto: r.produtos?.nome || '',
         fornecedor: r.fornecedores?.nome || '',
+        loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? ''),
       }));
 
       console.log('[precos] mapped:', mapped.length);
@@ -69,25 +81,31 @@ export default function PrecosInsumosView() {
     [precos]
   );
 
+  const lojasUnicas = useMemo(() =>
+    [...new Set(precos.map(p => p.loja))].filter(Boolean).sort(),
+    [precos]
+  );
+
   const filtrados = useMemo(() => {
     return precos.filter(p => {
       if (dataInicio && p.data < dataInicio) return false;
       if (dataFim && p.data > dataFim) return false;
       if (filtroFornecedor && p.fornecedor !== filtroFornecedor) return false;
+      if (filtroLoja && p.loja !== filtroLoja) return false;
       if (filtroTexto) {
         const f = filtroTexto.toLowerCase();
         if (!p.produto.toLowerCase().includes(f) && !p.fornecedor.toLowerCase().includes(f)) return false;
       }
       return true;
     });
-  }, [precos, filtroTexto, filtroFornecedor, dataInicio, dataFim]);
+  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
   const paginaSegura = Math.min(paginaAtual, totalPaginas);
   const inicio = (paginaSegura - 1) * porPagina;
   const paginados = filtrados.slice(inicio, inicio + porPagina);
 
-  useEffect(() => { setPaginaAtual(1); }, [filtroTexto, filtroFornecedor, dataInicio, dataFim, porPagina]);
+  useEffect(() => { setPaginaAtual(1); }, [filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim, porPagina]);
 
   const totalProdutos = new Set(filtrados.map(p => p.produto)).size;
 
@@ -110,8 +128,12 @@ export default function PrecosInsumosView() {
           style={{ ...inputS, flex: '1 1 160px' }}
         />
         <select value={filtroFornecedor} onChange={e => setFiltroFornecedor(e.target.value)} style={{ ...inputS, flex: '1 1 140px' }}>
-          <option value="">Todas as lojas</option>
+          <option value="">Todos fornecedores</option>
           {fornecedoresUnicos.map(f => <option key={f} value={f}>{f}</option>)}
+        </select>
+        <select value={filtroLoja} onChange={e => setFiltroLoja(e.target.value)} style={{ ...inputS, flex: '1 1 120px' }}>
+          <option value="">Todas as lojas</option>
+          {lojasUnicas.map(l => <option key={l} value={l}>{l}</option>)}
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 260px' }}>
           <span style={{ fontSize: 11, color: '#888' }}>De</span>
@@ -134,6 +156,7 @@ export default function PrecosInsumosView() {
               <thead>
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
                   <th style={thS}>Produto</th>
+                  <th style={thS}>Fornecedor</th>
                   <th style={thS}>Data</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
@@ -143,6 +166,7 @@ export default function PrecosInsumosView() {
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     <td style={{ ...tdS, fontWeight: 500 }}>{p.produto}</td>
+                    <td style={tdS}>{p.fornecedor}</td>
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
