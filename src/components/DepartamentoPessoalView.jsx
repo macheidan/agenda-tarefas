@@ -17,6 +17,9 @@ export default function DepartamentoPessoalView() {
   const { user } = useAuth();
   const {
     stores,
+    loadingStores,
+    storesError,
+    seedDefaultStores,
     employees,
     absences,
     addStore,
@@ -287,8 +290,21 @@ export default function DepartamentoPessoalView() {
       )}
 
       {/* Grade */}
-      {stores.length === 0 ? (
+      {loadingStores ? (
         <p className={styles.empty}>Carregando lojas...</p>
+      ) : stores.length === 0 ? (
+        <div className={styles.empty}>
+          <p>Nenhuma loja cadastrada ainda.</p>
+          <button className={styles.newBtn} onClick={() => seedDefaultStores()}>
+            Criar minhas duas lojas (Dáme e Lov)
+          </button>
+          {storesError && (
+            <p className={styles.errorMsg}>
+              Erro ao acessar o banco: {storesError}. Pode ser necessário publicar as
+              regras do Firestore (coleções dpStores/dpEmployees/dpAbsences).
+            </p>
+          )}
+        </div>
       ) : storeEmployees.length === 0 ? (
         <p className={styles.empty}>
           Nenhum funcionário em <strong>{activeStoreObj?.name}</strong>. Clique em
