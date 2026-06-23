@@ -66,3 +66,36 @@ export function getHotDates(years) {
   }
   return set;
 }
+
+// Feriados com nome para o calendário do Departamento Pessoal:
+// nacionais obrigatórios + estadual RS + municipal Porto Alegre + móveis.
+const NAMED_FIXED = [
+  ['01-01', 'Confraternização Universal'],
+  ['02-02', 'N. Sra. dos Navegantes (POA)'], // municipal Porto Alegre
+  ['04-21', 'Tiradentes'],
+  ['05-01', 'Dia do Trabalho'],
+  ['09-07', 'Independência do Brasil'],
+  ['09-20', 'Revolução Farroupilha (RS)'], // estadual RS
+  ['10-12', 'N. Sra. Aparecida'],
+  ['11-02', 'Finados'],
+  ['11-15', 'Proclamação da República'],
+  ['11-20', 'Consciência Negra'],
+  ['12-25', 'Natal'],
+];
+
+const mmddKey = (d) =>
+  `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// Mapa { 'MM-DD': 'Nome do feriado' } para o ano informado.
+export function getNamedHolidays(year) {
+  const map = {};
+  const add = (key, name) => {
+    map[key] = map[key] ? `${map[key]} / ${name}` : name;
+  };
+  NAMED_FIXED.forEach(([k, n]) => add(k, n));
+  const easter = easterSunday(year);
+  add(mmddKey(addDays(easter, -47)), 'Carnaval');
+  add(mmddKey(addDays(easter, -2)), 'Sexta-feira Santa');
+  add(mmddKey(addDays(easter, 60)), 'Corpus Christi');
+  return map;
+}
