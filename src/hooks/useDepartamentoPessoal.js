@@ -137,6 +137,16 @@ export function useDepartamentoPessoal() {
     await updateDoc(doc(db, 'dpEmployees', employeeId), { name: (name || '').trim() });
   }, []);
 
+  // Edita nome e/ou loja do funcionário.
+  const updateEmployee = useCallback(async (employeeId, updates) => {
+    const clean = {};
+    if (typeof updates?.name === 'string') clean.name = updates.name.trim();
+    if (updates?.store) clean.store = updates.store;
+    if (Object.keys(clean).length) {
+      await updateDoc(doc(db, 'dpEmployees', employeeId), clean);
+    }
+  }, []);
+
   // "Remover" = desativar (preserva histórico de faltas).
   const deactivateEmployee = useCallback(async (employeeId) => {
     await updateDoc(doc(db, 'dpEmployees', employeeId), { active: false });
@@ -187,6 +197,7 @@ export function useDepartamentoPessoal() {
     deleteStore,
     addEmployee,
     renameEmployee,
+    updateEmployee,
     deactivateEmployee,
     reactivateEmployee,
     deleteEmployee,

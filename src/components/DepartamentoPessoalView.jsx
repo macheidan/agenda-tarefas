@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../hooks/useSettings';
 import { useDepartamentoPessoal, ABSENCE_TYPES } from '../hooks/useDepartamentoPessoal';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
@@ -9,12 +10,14 @@ const MONTHS = [
 ];
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const STORE_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab'];
+const ALL_STORES = '__all__';
 
 const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
 
 export default function DepartamentoPessoalView() {
   const { user } = useAuth();
+  const { settings } = useSettings(user.uid);
   const {
     stores,
     loadingStores,
@@ -26,36 +29,54 @@ export default function DepartamentoPessoalView() {
     renameStore,
     deleteStore,
     addEmployee,
-    renameEmployee,
-    deactivateEmployee,
-    reactivateEmployee,
+    updateEmployee,
     deleteEmployee,
     setAbsence,
   } = useDepartamentoPessoal();
 
+  // Lojas escondidas para este usuário (configurado pelo admin em Settings).
+  const hiddenSet = useMemo(
+    () => new Set(settings?.dpHiddenStores || []),
+    [settings]
+  );
+  const visibleStores = useMemo(
+    () => stores.filter((s) => !hiddenSet.has(s.id)),
+    [stores, hiddenSet]
+  );
+
+  // Cor e nome por loja (índice estável na lista completa).
+  const storeMeta = useMemo(() => {
+    const m = {};
+    stores.forEach((s, idx) => {
+      m[s.id] = { name: s.name, color: STORE_COLORS[idx % STORE_COLORS.length] };
+    });
+    return m;
+  }, [stores]);
+
   const [selectedStore, setSelectedStore] = useState(null);
-  // Loja ativa derivada: a selecionada se ainda existir, senão a primeira.
+  const validIds = [...visibleStores.map((s) => s.id), ALL_STORES];
   const activeStore =
-    selectedStore && stores.some((s) => s.id === selectedStore)
+    selectedStore && validIds.includes(selectedStore)
       ? selectedStore
-      : stores[0]?.id || null;
-  const setActiveStore = setSelectedStore;
+      : visibleStores[0]?.id || null;
+  const isAmbas = activeStore === ALL_STORES;
+
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth()); // 0-indexed
-  const [showInactive, setShowInactive] = useState(false);
+  const [month, setMonth] = useState(today.getMonth());
   const [addingEmp, setAddingEmp] = useState(false);
   const [empName, setEmpName] = useState('');
+  const [empStore, setEmpStore] = useState('');
   const [editingEmp, setEditingEmp] = useState(null);
-  const [editingEmpName, setEditingEmpName] = useState('');
-  const [popover, setPopover] = useState(null); // { employeeId, date, x, y }
+  const [editName, setEditName] = useState('');
+  const [editStore, setEditStore] = useState('');
+  const [popover, setPopover] = useState(null);
   const [managingStores, setManagingStores] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [editingStore, setEditingStore] = useState(null);
   const [editingStoreName, setEditingStoreName] = useState('');
   const popRef = useRef(null);
 
-  // Fecha popover ao clicar fora.
   useEffect(() => {
     if (!popover) return;
     const onDown = (e) => {
@@ -71,25 +92,42 @@ export default function DepartamentoPessoalView() {
     [daysInMonth]
   );
 
-  const storeEmployees = useMemo(
-    () =>
-      employees.filter(
-        (e) => e.store === activeStore && (showInactive || e.active !== false)
-      ),
-    [employees, activeStore, showInactive]
+  // Lojas relevantes para a visão atual (uma loja, ou todas as visíveis em "Ambas").
+  const relevantStoreIds = useMemo(
+    () => (isAmbas ? visibleStores.map((s) => s.id) : activeStore ? [activeStore] : []),
+    [isAmbas, visibleStores, activeStore]
   );
+  const relevantSet = useMemo(() => new Set(relevantStoreIds), [relevantStoreIds]);
 
-  // Mapa de ocorrências: `${employeeId}__${date}` -> { id, type }
+  const storeOrder = useMemo(() => {
+    const o = {};
+    stores.forEach((s, idx) => { o[s.id] = idx; });
+    return o;
+  }, [stores]);
+
+  const storeEmployees = useMemo(() => {
+    const list = employees.filter((e) => relevantSet.has(e.store) && e.active !== false);
+    list.sort((a, b) => {
+      if (isAmbas) {
+        const so = (storeOrder[a.store] ?? 0) - (storeOrder[b.store] ?? 0);
+        if (so !== 0) return so;
+      }
+      return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+    });
+    return list;
+  }, [employees, relevantSet, isAmbas, storeOrder]);
+
+  // Mapa de ocorrências do mês: `${employeeId}__${date}` -> { id, type }
   const absenceMap = useMemo(() => {
     const map = {};
     const prefix = `${year}-${pad(month + 1)}-`;
     for (const a of absences) {
-      if (a.store !== activeStore) continue;
+      if (!relevantSet.has(a.store)) continue;
       if (!a.date || !a.date.startsWith(prefix)) continue;
       map[`${a.employeeId}__${a.date}`] = { id: a.id, type: a.type };
     }
     return map;
-  }, [absences, activeStore, year, month]);
+  }, [absences, relevantSet, year, month]);
 
   const prevMonth = () => {
     if (month === 0) { setMonth(11); setYear((y) => y - 1); }
@@ -100,38 +138,49 @@ export default function DepartamentoPessoalView() {
     else setMonth((m) => m + 1);
   };
 
-  const handleCellClick = (e, employeeId, day) => {
+  const handleCellClick = (e, emp, day) => {
     const date = `${year}-${pad(month + 1)}-${pad(day)}`;
     const rect = e.currentTarget.getBoundingClientRect();
-    setPopover({ employeeId, date, x: rect.left, y: rect.bottom });
+    setPopover({ employeeId: emp.id, store: emp.store, date, x: rect.left, y: rect.bottom });
   };
 
   const applyType = (typeKey) => {
     if (!popover) return;
     const existing = absenceMap[`${popover.employeeId}__${popover.date}`];
-    setAbsence(popover.employeeId, activeStore, popover.date, typeKey, existing?.id, user);
+    setAbsence(popover.employeeId, popover.store, popover.date, typeKey, existing?.id, user);
     setPopover(null);
+  };
+
+  const openAddEmp = () => {
+    setEmpStore(isAmbas ? (visibleStores[0]?.id || '') : activeStore || '');
+    setEmpName('');
+    setAddingEmp((v) => !v);
   };
 
   const handleAddEmployee = () => {
     const name = empName.trim();
-    if (!name) return;
-    addEmployee(name, activeStore, user);
+    const store = isAmbas ? empStore : activeStore;
+    if (!name || !store) return;
+    addEmployee(name, store, user);
     setEmpName('');
     setAddingEmp(false);
   };
 
-  const saveEmpRename = (id) => {
-    if (editingEmpName.trim()) renameEmployee(id, editingEmpName);
+  const startEdit = (emp) => {
+    setEditingEmp(emp.id);
+    setEditName(emp.name || '');
+    setEditStore(emp.store || '');
+  };
+  const saveEdit = (id) => {
+    if (!editName.trim()) return;
+    updateEmployee(id, { name: editName, store: editStore });
     setEditingEmp(null);
-    setEditingEmpName('');
   };
 
   const activeStoreObj = stores.find((s) => s.id === activeStore);
 
   return (
     <div className={styles.container}>
-      {/* Cabeçalho da seção (submenu como na seção Instagram) */}
       <div className={styles.header}>
         <h2>👥 Departamento Pessoal</h2>
         <div className={styles.headerActions}>
@@ -141,11 +190,11 @@ export default function DepartamentoPessoalView() {
         </div>
       </div>
 
-      {/* Abas de lojas + gerenciar */}
+      {/* Abas de lojas (+ Ambas) + gerenciar */}
       <div className={styles.storeBar}>
         <div className={styles.storeTabs}>
-          {stores.map((s, idx) => {
-            const color = STORE_COLORS[idx % STORE_COLORS.length];
+          {visibleStores.map((s) => {
+            const color = storeMeta[s.id]?.color || 'var(--accent)';
             const active = s.id === activeStore;
             return (
               <button
@@ -156,12 +205,25 @@ export default function DepartamentoPessoalView() {
                   background: active ? color : 'var(--card)',
                   color: active ? '#fff' : color,
                 }}
-                onClick={() => setActiveStore(s.id)}
+                onClick={() => setSelectedStore(s.id)}
               >
                 {s.name}
               </button>
             );
           })}
+          {visibleStores.length > 1 && (
+            <button
+              className={styles.storeTab}
+              style={{
+                borderColor: 'var(--text-secondary)',
+                background: isAmbas ? 'var(--text-secondary)' : 'var(--card)',
+                color: isAmbas ? '#fff' : 'var(--text-secondary)',
+              }}
+              onClick={() => setSelectedStore(ALL_STORES)}
+            >
+              Ambas
+            </button>
+          )}
           <button
             className={styles.manageStoresBtn}
             onClick={() => setManagingStores((v) => !v)}
@@ -186,37 +248,20 @@ export default function DepartamentoPessoalView() {
                       autoFocus
                       onChange={(e) => setEditingStoreName(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          renameStore(s.id, editingStoreName);
-                          setEditingStore(null);
-                        }
+                        if (e.key === 'Enter') { renameStore(s.id, editingStoreName); setEditingStore(null); }
                       }}
                     />
-                    <button
-                      className={styles.smallBtn}
-                      onClick={() => { renameStore(s.id, editingStoreName); setEditingStore(null); }}
-                    >
-                      Salvar
-                    </button>
-                    <button className={styles.smallBtnGhost} onClick={() => setEditingStore(null)}>
-                      Cancelar
-                    </button>
+                    <button className={styles.smallBtn} onClick={() => { renameStore(s.id, editingStoreName); setEditingStore(null); }}>Salvar</button>
+                    <button className={styles.smallBtnGhost} onClick={() => setEditingStore(null)}>Cancelar</button>
                   </>
                 ) : (
                   <>
                     <span className={styles.manageName}>{s.name}</span>
-                    <button
-                      className={styles.smallBtnGhost}
-                      onClick={() => { setEditingStore(s.id); setEditingStoreName(s.name); }}
-                    >
-                      Renomear
-                    </button>
+                    <button className={styles.smallBtnGhost} onClick={() => { setEditingStore(s.id); setEditingStoreName(s.name); }}>Renomear</button>
                     <button
                       className={styles.smallBtnDanger}
                       onClick={() => {
-                        if (window.confirm(`Remover a loja "${s.name}"? Os funcionários dela deixam de aparecer.`)) {
-                          deleteStore(s.id);
-                        }
+                        if (window.confirm(`Remover a loja "${s.name}"? Os funcionários dela deixam de aparecer.`)) deleteStore(s.id);
                       }}
                     >
                       Remover
@@ -233,17 +278,12 @@ export default function DepartamentoPessoalView() {
               value={newStoreName}
               onChange={(e) => setNewStoreName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && newStoreName.trim()) {
-                  addStore(newStoreName);
-                  setNewStoreName('');
-                }
+                if (e.key === 'Enter' && newStoreName.trim()) { addStore(newStoreName); setNewStoreName(''); }
               }}
             />
             <button
               className={styles.smallBtn}
-              onClick={() => {
-                if (newStoreName.trim()) { addStore(newStoreName); setNewStoreName(''); }
-              }}
+              onClick={() => { if (newStoreName.trim()) { addStore(newStoreName); setNewStoreName(''); } }}
             >
               + Adicionar loja
             </button>
@@ -259,16 +299,8 @@ export default function DepartamentoPessoalView() {
           <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
         </div>
         <div className={styles.toolbarActions}>
-          <label className={styles.inactiveToggle}>
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-            />
-            Mostrar inativos
-          </label>
-          {activeStore && (
-            <button className={styles.newBtn} onClick={() => setAddingEmp((v) => !v)}>
+          {(activeStore || isAmbas) && visibleStores.length > 0 && (
+            <button className={styles.newBtn} onClick={openAddEmp}>
               {addingEmp ? 'Cancelar' : '+ Funcionário'}
             </button>
           )}
@@ -279,12 +311,21 @@ export default function DepartamentoPessoalView() {
         <div className={styles.addEmpRow}>
           <input
             className={styles.inlineInput}
-            placeholder={`Nome do funcionário (${activeStoreObj?.name || ''})`}
+            placeholder="Nome do funcionário"
             value={empName}
             autoFocus
             onChange={(e) => setEmpName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddEmployee()}
           />
+          {isAmbas ? (
+            <select className={styles.storeSelect} value={empStore} onChange={(e) => setEmpStore(e.target.value)}>
+              {visibleStores.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className={styles.addEmpStoreLabel}>em <strong>{activeStoreObj?.name}</strong></span>
+          )}
           <button className={styles.smallBtn} onClick={handleAddEmployee}>Adicionar</button>
         </div>
       )}
@@ -305,10 +346,12 @@ export default function DepartamentoPessoalView() {
             </p>
           )}
         </div>
+      ) : visibleStores.length === 0 ? (
+        <p className={styles.empty}>Nenhuma loja disponível para o seu usuário.</p>
       ) : storeEmployees.length === 0 ? (
         <p className={styles.empty}>
-          Nenhum funcionário em <strong>{activeStoreObj?.name}</strong>. Clique em
-          {' '}<strong>+ Funcionário</strong> para começar.
+          Nenhum funcionário {isAmbas ? 'cadastrado' : <>em <strong>{activeStoreObj?.name}</strong></>}.
+          Clique em <strong>+ Funcionário</strong> para começar.
         </p>
       ) : (
         <div className={styles.gridWrap}>
@@ -330,63 +373,52 @@ export default function DepartamentoPessoalView() {
             </thead>
             <tbody>
               {storeEmployees.map((emp) => (
-                <tr key={emp.id} className={emp.active === false ? styles.inactiveRow : ''}>
-                  <td className={`${styles.nameCell} ${styles.nameCol}`}>
+                <tr key={emp.id}>
+                  <td className={`${styles.nameCell} ${styles.nameCol} ${editingEmp === emp.id ? styles.nameColEditing : ''}`}>
                     {editingEmp === emp.id ? (
                       <div className={styles.nameEdit}>
                         <input
                           className={styles.inlineInput}
-                          value={editingEmpName}
+                          value={editName}
                           autoFocus
-                          onChange={(e) => setEditingEmpName(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && saveEmpRename(emp.id)}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && saveEdit(emp.id)}
                         />
-                        <button className={styles.iconBtn} onClick={() => saveEmpRename(emp.id)} title="Salvar">✓</button>
+                        <select className={styles.storeSelect} value={editStore} onChange={(e) => setEditStore(e.target.value)}>
+                          {stores.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                        <button className={styles.iconBtn} onClick={() => saveEdit(emp.id)} title="Salvar">✓</button>
                         <button className={styles.iconBtn} onClick={() => setEditingEmp(null)} title="Cancelar">✕</button>
                       </div>
                     ) : (
                       <div className={styles.nameWrap}>
-                        <span className={styles.empName} title={emp.name}>
-                          {emp.name}{emp.active === false ? ' (inativo)' : ''}
+                        <span className={styles.empNameWrap}>
+                          {isAmbas && (
+                            <span
+                              className={styles.empStoreTag}
+                              style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}
+                              title={storeMeta[emp.store]?.name}
+                            >
+                              {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
+                            </span>
+                          )}
+                          <span className={styles.empName} title={emp.name}>{emp.name}</span>
                         </span>
                         <span className={styles.rowActions}>
+                          <button className={styles.iconBtn} onClick={() => startEdit(emp)} title="Editar funcionário">✎</button>
                           <button
-                            className={styles.iconBtn}
-                            onClick={() => { setEditingEmp(emp.id); setEditingEmpName(emp.name); }}
-                            title="Renomear"
+                            className={styles.iconBtnDanger}
+                            onClick={() => {
+                              if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
+                                deleteEmployee(emp.id);
+                              }
+                            }}
+                            title="Apagar funcionário"
                           >
-                            ✎
+                            🗑
                           </button>
-                          {emp.active === false ? (
-                            <>
-                              <button
-                                className={styles.iconBtn}
-                                onClick={() => reactivateEmployee(emp.id)}
-                                title="Reativar"
-                              >
-                                ↩
-                              </button>
-                              <button
-                                className={styles.iconBtnDanger}
-                                onClick={() => {
-                                  if (window.confirm(`Excluir definitivamente "${emp.name}"? Isso remove o funcionário do histórico.`)) {
-                                    deleteEmployee(emp.id);
-                                  }
-                                }}
-                                title="Excluir definitivamente"
-                              >
-                                🗑
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              className={styles.iconBtn}
-                              onClick={() => deactivateEmployee(emp.id)}
-                              title="Remover (mantém histórico)"
-                            >
-                              ✕
-                            </button>
-                          )}
                         </span>
                       </div>
                     )}
@@ -401,17 +433,10 @@ export default function DepartamentoPessoalView() {
                       <td
                         key={d}
                         className={`${styles.cell} ${weekend ? styles.weekend : ''}`}
-                        onClick={(e) => handleCellClick(e, emp.id, d)}
+                        onClick={(e) => handleCellClick(e, emp, d)}
                         title={t ? t.label : ''}
                       >
-                        {t && (
-                          <span
-                            className={styles.mark}
-                            style={{ background: t.color }}
-                          >
-                            {t.short}
-                          </span>
-                        )}
+                        {t && <span className={styles.mark} style={{ background: t.color }}>{t.short}</span>}
                       </td>
                     );
                   })}
@@ -445,9 +470,7 @@ export default function DepartamentoPessoalView() {
               {t.label}
             </button>
           ))}
-          <button className={styles.popClear} onClick={() => applyType(null)}>
-            Limpar
-          </button>
+          <button className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
         </div>
       )}
     </div>

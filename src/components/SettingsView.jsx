@@ -2,7 +2,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUsers } from '../hooks/useUsers';
 import { useSettings } from '../hooks/useSettings';
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import styles from '../styles/SettingsView.module.css';
 
@@ -27,6 +27,32 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
   const [removedUsers, setRemovedUsers] = useState(new Set());
   const [apiKeyValue, setApiKeyValue] = useState('');
   const [apiKeyStatus, setApiKeyStatus] = useState('');
+  const [dpStores, setDpStores] = useState([]);
+
+  // Lojas do Departamento Pessoal (para visibilidade por usuário).
+  useEffect(() => {
+    if (!isAdmin) return;
+    const unsub = onSnapshot(collection(db, 'dpStores'), (snap) => {
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      setDpStores(items);
+    });
+    return unsub;
+  }, [isAdmin]);
+
+  // Marca/desmarca a visibilidade de uma loja para um usuário (lista de ocultas).
+  const toggleStoreVisibility = async (uid, storeId, visible) => {
+    const current = new Set(userSettings[uid]?.dpHiddenStores || []);
+    if (visible) current.delete(storeId);
+    else current.add(storeId);
+    const dpHiddenStores = [...current];
+    const ref = doc(db, 'settings', uid);
+    await setDoc(ref, { dpHiddenStores }, { merge: true });
+    setUserSettings((prev) => ({
+      ...prev,
+      [uid]: { ...prev[uid], dpHiddenStores },
+    }));
+  };
 
   const SECTIONS = [
     { key: 'calendarEnabled', label: 'Calendário' },
@@ -308,6 +334,23 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                     </label>
                   ))}
                 </div>
+                {s.departamentoPessoalEnabled === true && dpStores.length > 0 && (
+                  <div className={styles.dpStoresRow}>
+                    <span className={styles.dpStoresLabel}>Lojas visíveis (Depto Pessoal):</span>
+                    <div className={styles.sectionToggles}>
+                      {dpStores.map((store) => (
+                        <label key={store.id} className={styles.sectionToggle}>
+                          <input
+                            type="checkbox"
+                            checked={!(s.dpHiddenStores || []).includes(store.id)}
+                            onChange={(e) => toggleStoreVisibility(u.uid, store.id, e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>{store.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

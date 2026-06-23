@@ -476,6 +476,60 @@
   padding: 10px 14px;
 }
 
+.storeSelect {
+  padding: 6px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.addEmpStoreLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.empNameWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.empStoreTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.nameColEditing {
+  min-width: 250px;
+  max-width: 250px;
+}
+
+.nameColEditing .nameEdit {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.nameColEditing .inlineInput {
+  min-width: 90px;
+}
+
+.nameColEditing .storeSelect {
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
 /* ---- Popover ---- */
 .popover {
   position: fixed;
