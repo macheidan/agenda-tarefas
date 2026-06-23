@@ -132,6 +132,13 @@ export default function PrecosInsumosView() {
 
   const totalProdutos = new Set(filtrados.map(p => p.produto)).size;
 
+  // Diagnostico (sobre TODOS os registros carregados, ignorando filtros):
+  // ajuda a ver se o problema e dado faltando no banco ou data/formato.
+  const datasValidas = precos.map(p => p.data).filter(Boolean).sort();
+  const dataMin = datasValidas[0] || '—';
+  const dataMax = datasValidas[datasValidas.length - 1] || '—';
+  const semData = precos.filter(p => !p.data).length;
+
   if (loading) return <p style={{ padding: 20, textAlign: 'center' }}>Carregando precos...</p>;
 
   return (
@@ -141,6 +148,12 @@ export default function PrecosInsumosView() {
         <StatCard label="Produtos" value={totalProdutos} />
         <StatCard label="Fornecedores" value={filtroFornecedor ? 1 : fornecedoresUnicos.length} />
         <StatCard label="Registros" value={filtrados.length} />
+      </div>
+
+      {/* Diagnostico de carregamento do banco (todos os registros, sem filtro) */}
+      <div style={{ fontSize: 11, color: '#888', marginBottom: 10, padding: '6px 10px', background: 'var(--bg, #f5f5f5)', borderRadius: 6 }}>
+        Banco: <strong>{precos.length}</strong> registros carregados · datas no banco: <strong>{dataMin}</strong> → <strong>{dataMax}</strong>
+        {semData > 0 && <> · <strong>{semData}</strong> sem data válida</>}
       </div>
 
       {/* Filtros */}
