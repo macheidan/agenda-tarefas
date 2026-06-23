@@ -24,14 +24,9 @@ export default function DepartamentoPessoalView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
   const isMobile = useIsMobile(768);
-  // Editores (e o admin) gerenciam lojas/funcionários. Não-editores podem
-  // trabalhar no calendário (marcar faltas), mas só com os tipos de falta.
+  // Editores (e o admin) gerenciam lojas/funcionários. Qualquer usuário com a
+  // seção visível pode trabalhar no calendário (marcar todos os tipos).
   const canEdit = isAdmin || settings?.dpEditor === true;
-  const markTypes = canEdit
-    ? ABSENCE_TYPES
-    : ABSENCE_TYPES.filter(
-        (t) => t.key === 'falta_justificada' || t.key === 'falta_injustificada'
-      );
   const {
     stores,
     loadingStores,
@@ -628,7 +623,7 @@ export default function DepartamentoPessoalView() {
             left: Math.max(8, Math.min(popover.x, window.innerWidth - 220)),
           }}
         >
-          {markTypes.map((t) => (
+          {ABSENCE_TYPES.map((t) => (
             <button key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
               <span className={styles.popDot} style={{ background: t.color }}>{t.short}</span>
               {t.label}
