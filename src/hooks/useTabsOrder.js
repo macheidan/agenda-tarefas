@@ -13,6 +13,7 @@ export const DEFAULT_TABS_ORDER = [
   'reviews',
   'knowledge',
   'precosInsumos',
+  'departamentoPessoal',
 ];
 
 export function useTabsOrder() {

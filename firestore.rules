@@ -115,5 +115,17 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    // Departamento Pessoal (lojas, funcionários e escala de faltas):
+    // qualquer logado lê/cria/edita/deleta (acesso controlado pelo toggle de visibilidade).
+    match /dpStores/{storeId} {
+      allow read, write: if isSignedIn();
+    }
+    match /dpEmployees/{employeeId} {
+      allow read, write: if isSignedIn();
+    }
+    match /dpAbsences/{absenceId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

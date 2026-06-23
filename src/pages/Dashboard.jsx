@@ -36,6 +36,7 @@ import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
 import TaskModal from '../components/TaskModal';
 import PrecosInsumosView from '../components/PrecosInsumosView';
+import DepartamentoPessoalView from '../components/DepartamentoPessoalView';
 import styles from '../styles/Dashboard.module.css';
 
 export default function Dashboard() {
@@ -76,6 +77,8 @@ export default function Dashboard() {
   const knowledgeEnabled = settings.knowledgeEnabled !== false;
   const influencersEnabled = settings.influencersEnabled !== false;
   const precosInsumosEnabled = settings.precosInsumosEnabled !== false;
+  // Departamento Pessoal: desmarcado por padrão (default OFF).
+  const departamentoPessoalEnabled = settings.departamentoPessoalEnabled === true;
   const {
     influencers,
     addInfluencer,
@@ -126,6 +129,7 @@ export default function Dashboard() {
         knowledgeEnabled={knowledgeEnabled}
         influencersEnabled={influencersEnabled}
         precosInsumosEnabled={precosInsumosEnabled}
+        departamentoPessoalEnabled={departamentoPessoalEnabled}
         ideasUnread={ideasUnread}
         reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
@@ -259,6 +263,7 @@ export default function Dashboard() {
           />
         )}
         {activeTab === 'precosInsumos' && precosInsumosEnabled && <PrecosInsumosView />}
+        {activeTab === 'departamentoPessoal' && departamentoPessoalEnabled && <DepartamentoPessoalView />}
         {activeTab === 'completed' && isAdmin && (
           <CompletedView
             completedTasks={completedTasks}
