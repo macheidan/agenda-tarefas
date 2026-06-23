@@ -407,6 +407,18 @@
   background: var(--accent-light);
 }
 
+.cellReadonly {
+  cursor: default;
+}
+
+.cellReadonly:hover {
+  background: var(--card);
+}
+
+.cellReadonly.weekend:hover {
+  background: var(--bg-secondary);
+}
+
 .weekend {
   background: var(--bg-secondary);
 }

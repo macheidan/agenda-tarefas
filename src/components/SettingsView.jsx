@@ -334,21 +334,33 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                     </label>
                   ))}
                 </div>
-                {s.departamentoPessoalEnabled === true && dpStores.length > 0 && (
+                {s.departamentoPessoalEnabled === true && (
                   <div className={styles.dpStoresRow}>
-                    <span className={styles.dpStoresLabel}>Lojas visíveis (Depto Pessoal):</span>
-                    <div className={styles.sectionToggles}>
-                      {dpStores.map((store) => (
-                        <label key={store.id} className={styles.sectionToggle}>
-                          <input
-                            type="checkbox"
-                            checked={!(s.dpHiddenStores || []).includes(store.id)}
-                            onChange={(e) => toggleStoreVisibility(u.uid, store.id, e.target.checked)}
-                          />
-                          <span className={styles.sectionLabel}>{store.name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
+                      <input
+                        type="checkbox"
+                        checked={s.dpEditor === true}
+                        onChange={(e) => toggleSection(u.uid, 'dpEditor', e.target.checked)}
+                      />
+                      <span className={styles.sectionLabel}>Editor (gerencia funcionários e lojas)</span>
+                    </label>
+                    {dpStores.length > 0 && (
+                      <>
+                        <span className={styles.dpStoresLabel}>Lojas visíveis (Depto Pessoal):</span>
+                        <div className={styles.sectionToggles}>
+                          {dpStores.map((store) => (
+                            <label key={store.id} className={styles.sectionToggle}>
+                              <input
+                                type="checkbox"
+                                checked={!(s.dpHiddenStores || []).includes(store.id)}
+                                onChange={(e) => toggleStoreVisibility(u.uid, store.id, e.target.checked)}
+                              />
+                              <span className={styles.sectionLabel}>{store.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
