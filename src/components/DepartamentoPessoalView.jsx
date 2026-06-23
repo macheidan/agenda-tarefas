@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { getNamedHolidays } from '../utils/holidays';
 import { useDepartamentoPessoal, ABSENCE_TYPES } from '../hooks/useDepartamentoPessoal';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
@@ -182,17 +183,21 @@ export default function DepartamentoPessoalView() {
     setEditingEmp(null);
   };
 
+  // Feriados (nacionais + RS + Porto Alegre + móveis) do ano exibido.
+  const holidays = useMemo(() => getNamedHolidays(year), [year]);
+  const holidayFor = (d) => holidays[`${pad(month + 1)}-${pad(d)}`];
+
   // No mobile, mostra um funcionário por vez (escolhido no seletor).
   const mobileEmp =
     storeEmployees.find((e) => e.id === selectedEmp) || storeEmployees[0] || null;
 
-  // Info de uma célula (data, marca, tipo, fim de semana) — usada na grade e nos cartões mobile.
+  // Info de uma célula (data, marca, tipo, fim de semana, feriado) — grade e cartões mobile.
   const dayInfo = (empId, d) => {
     const date = `${year}-${pad(month + 1)}-${pad(d)}`;
     const mark = absenceMap[`${empId}__${date}`];
     const t = mark && typeByKey(mark.type);
     const wd = new Date(year, month, d).getDay();
-    return { date, mark, t, wd, weekend: wd === 0 || wd === 6 };
+    return { date, mark, t, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
   };
 
   const activeStoreObj = stores.find((s) => s.id === activeStore);
@@ -458,9 +463,9 @@ export default function DepartamentoPessoalView() {
                     return (
                       <button
                         key={d}
-                        className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${canEdit ? '' : styles.mDayReadonly}`}
+                        className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${info.holiday ? styles.mDayHoliday : ''} ${canEdit ? '' : styles.mDayReadonly}`}
                         onClick={canEdit ? (e) => handleCellClick(e, emp, d) : undefined}
-                        title={info.t ? info.t.label : ''}
+                        title={info.t ? info.t.label : info.holiday || ''}
                       >
                         <span className={styles.mDayNum}>{d}</span>
                         {info.t && <span className={styles.mDayMark} style={{ background: info.t.color }}>{info.t.short}</span>}
@@ -481,8 +486,13 @@ export default function DepartamentoPessoalView() {
                 {days.map((d) => {
                   const wd = new Date(year, month, d).getDay();
                   const weekend = wd === 0 || wd === 6;
+                  const hol = holidayFor(d);
                   return (
-                    <th key={d} className={`${styles.dayHead} ${weekend ? styles.weekend : ''}`}>
+                    <th
+                      key={d}
+                      className={`${styles.dayHead} ${weekend ? styles.weekend : ''} ${hol ? styles.holidayHead : ''}`}
+                      title={hol || ''}
+                    >
                       <span className={styles.dayNum}>{d}</span>
                       <span className={styles.dayWd}>{WEEKDAYS[wd]}</span>
                     </th>
@@ -550,12 +560,13 @@ export default function DepartamentoPessoalView() {
                     const t = mark && typeByKey(mark.type);
                     const wd = new Date(year, month, d).getDay();
                     const weekend = wd === 0 || wd === 6;
+                    const hol = holidayFor(d);
                     return (
                       <td
                         key={d}
-                        className={`${styles.cell} ${weekend ? styles.weekend : ''} ${canEdit ? '' : styles.cellReadonly}`}
+                        className={`${styles.cell} ${weekend ? styles.weekend : ''} ${hol ? styles.holidayCell : ''} ${canEdit ? '' : styles.cellReadonly}`}
                         onClick={canEdit ? (e) => handleCellClick(e, emp, d) : undefined}
-                        title={t ? t.label : ''}
+                        title={t ? t.label : hol || ''}
                       >
                         {t && <span className={styles.mark} style={{ background: t.color }}>{t.short}</span>}
                       </td>
@@ -576,6 +587,10 @@ export default function DepartamentoPessoalView() {
             {t.label}
           </span>
         ))}
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendDot} ${styles.holidayLegendDot}`} />
+          Feriado (nacional / RS / POA)
+        </span>
       </div>
 
       {/* Popover de seleção de tipo */}
