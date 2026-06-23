@@ -17,6 +17,7 @@ export const ABSENCE_TYPES = [
   { key: 'falta_injustificada', label: 'Falta NÃO Justificada', short: 'F', color: '#f04438' },
   { key: 'vales', label: 'Vales', short: 'V', color: '#9c27b0' },
   { key: 'feriado_trabalhado', label: 'Feriado Trabalhado', short: 'FT', color: '#12b76a' },
+  { key: 'folga', label: 'Folga', short: 'FG', color: '#0d9488' },
 ];
 
 // Lojas padrão criadas na primeira vez (IDs fixos = seed idempotente).
@@ -120,7 +121,7 @@ export function useDepartamentoPessoal() {
   }, []);
 
   // ---- Funcionários ----
-  const addEmployee = useCallback(async (name, storeId, author) => {
+  const addEmployee = useCallback(async (name, storeId, author, extra = {}) => {
     const trimmed = (name || '').trim();
     if (!trimmed || !storeId) return;
     await addDoc(collection(db, 'dpEmployees'), {
@@ -129,6 +130,8 @@ export function useDepartamentoPessoal() {
       active: true,
       createdAt: Timestamp.now(),
       createdBy: author?.uid || '',
+      folgaWeekday: extra.folgaWeekday ?? null,
+      folgaMonthN: extra.folgaMonthN ?? null,
     });
   }, []);
 
@@ -136,11 +139,13 @@ export function useDepartamentoPessoal() {
     await updateDoc(doc(db, 'dpEmployees', employeeId), { name: (name || '').trim() });
   }, []);
 
-  // Edita nome e/ou loja do funcionário.
+  // Edita nome, loja e/ou configuração de folga do funcionário.
   const updateEmployee = useCallback(async (employeeId, updates) => {
     const clean = {};
     if (typeof updates?.name === 'string') clean.name = updates.name.trim();
     if (updates?.store) clean.store = updates.store;
+    if (updates && 'folgaWeekday' in updates) clean.folgaWeekday = updates.folgaWeekday;
+    if (updates && 'folgaMonthN' in updates) clean.folgaMonthN = updates.folgaMonthN;
     if (Object.keys(clean).length) {
       await updateDoc(doc(db, 'dpEmployees', employeeId), clean);
     }

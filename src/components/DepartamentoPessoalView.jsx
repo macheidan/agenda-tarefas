@@ -13,6 +13,9 @@ const MONTHS = [
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const STORE_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab'];
 const ALL_STORES = '__all__';
+// Folga semanal permitida: segunda a quinta.
+const FOLGA_WEEK = [[1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta']];
+const FOLGA_WEEK_NAME = { 1: 'Segunda', 2: 'Terça', 3: 'Quarta', 4: 'Quinta' };
 
 const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
@@ -69,12 +72,13 @@ export default function DepartamentoPessoalView() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
-  const [addingEmp, setAddingEmp] = useState(false);
-  const [empName, setEmpName] = useState('');
-  const [empStore, setEmpStore] = useState('');
-  const [editingEmp, setEditingEmp] = useState(null);
-  const [editName, setEditName] = useState('');
-  const [editStore, setEditStore] = useState('');
+  // Formulário de funcionário (add/editar) numa barra no topo.
+  const [formMode, setFormMode] = useState(null); // null | 'add' | 'edit'
+  const [formId, setFormId] = useState(null);
+  const [fName, setFName] = useState('');
+  const [fStore, setFStore] = useState('');
+  const [fWeekday, setFWeekday] = useState(''); // '' | 1..4 (seg-qui)
+  const [fMonthN, setFMonthN] = useState(''); // '' | 1..5 (domingo do mês)
   const [popover, setPopover] = useState(null);
   const [selectedEmp, setSelectedEmp] = useState(null); // funcionário escolhido no mobile
   const [managingStores, setManagingStores] = useState(false);
@@ -157,45 +161,74 @@ export default function DepartamentoPessoalView() {
     setPopover(null);
   };
 
-  const openAddEmp = () => {
-    setEmpStore(isAmbas ? (visibleStores[0]?.id || '') : activeStore || '');
-    setEmpName('');
-    setAddingEmp((v) => !v);
+  const closeForm = () => setFormMode(null);
+
+  const openAdd = () => {
+    if (formMode === 'add') { closeForm(); return; }
+    setFormMode('add');
+    setFormId(null);
+    setFName('');
+    setFStore(isAmbas ? (visibleStores[0]?.id || '') : activeStore || '');
+    setFWeekday('');
+    setFMonthN('');
   };
 
-  const handleAddEmployee = () => {
-    const name = empName.trim();
-    const store = isAmbas ? empStore : activeStore;
-    if (!name || !store) return;
-    addEmployee(name, store, user);
-    setEmpName('');
-    setAddingEmp(false);
+  const openEdit = (emp) => {
+    setFormMode('edit');
+    setFormId(emp.id);
+    setFName(emp.name || '');
+    setFStore(emp.store || '');
+    setFWeekday(emp.folgaWeekday != null ? String(emp.folgaWeekday) : '');
+    setFMonthN(emp.folgaMonthN != null ? String(emp.folgaMonthN) : '');
   };
 
-  const startEdit = (emp) => {
-    setEditingEmp(emp.id);
-    setEditName(emp.name || '');
-    setEditStore(emp.store || '');
-  };
-  const saveEdit = (id) => {
-    if (!editName.trim()) return;
-    updateEmployee(id, { name: editName, store: editStore });
-    setEditingEmp(null);
+  const submitForm = () => {
+    const name = fName.trim();
+    if (!name || !fStore) return;
+    const wd = fWeekday === '' ? null : Number(fWeekday);
+    const mn = fMonthN === '' ? null : Number(fMonthN);
+    if (formMode === 'edit' && formId) {
+      updateEmployee(formId, { name, store: fStore, folgaWeekday: wd, folgaMonthN: mn });
+    } else {
+      addEmployee(name, fStore, user, { folgaWeekday: wd, folgaMonthN: mn });
+    }
+    closeForm();
   };
 
   // Feriados (nacionais + RS + Porto Alegre + móveis) do ano exibido.
   const holidays = useMemo(() => getNamedHolidays(year), [year]);
   const holidayFor = (d) => holidays[`${pad(month + 1)}-${pad(d)}`];
 
+  const folgaType = typeByKey('folga');
+  const nthSundayOfMonth = (d) => {
+    let c = 0;
+    for (let i = 1; i <= d; i++) if (new Date(year, month, i).getDay() === 0) c++;
+    return c;
+  };
+  // Dia é folga (derivado da config do funcionário): dia fixo da semana OU o Nº domingo do mês.
+  const isFolgaDay = (emp, d) => {
+    const wd = new Date(year, month, d).getDay();
+    if (emp.folgaWeekday != null && wd === emp.folgaWeekday) return true;
+    if (emp.folgaMonthN != null && wd === 0 && nthSundayOfMonth(d) === emp.folgaMonthN) return true;
+    return false;
+  };
+  const folgaDesc = (emp) => {
+    const p = [];
+    if (emp.folgaWeekday != null) p.push(FOLGA_WEEK_NAME[emp.folgaWeekday] || '');
+    if (emp.folgaMonthN != null) p.push(`${emp.folgaMonthN}º domingo`);
+    return p.filter(Boolean).join(' • ');
+  };
+
   // No mobile, mostra um funcionário por vez (escolhido no seletor).
   const mobileEmp =
     storeEmployees.find((e) => e.id === selectedEmp) || storeEmployees[0] || null;
 
-  // Info de uma célula (data, marca, tipo, fim de semana, feriado) — grade e cartões mobile.
-  const dayInfo = (empId, d) => {
+  // Info de uma célula. Marca real do banco tem prioridade; senão, folga derivada da config.
+  const dayInfo = (emp, d) => {
     const date = `${year}-${pad(month + 1)}-${pad(d)}`;
-    const mark = absenceMap[`${empId}__${date}`];
-    const t = mark && typeByKey(mark.type);
+    const mark = absenceMap[`${emp.id}__${date}`];
+    let t = mark ? typeByKey(mark.type) : null;
+    if (!t && isFolgaDay(emp, d)) t = folgaType;
     const wd = new Date(year, month, d).getDay();
     return { date, mark, t, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
   };
@@ -325,33 +358,58 @@ export default function DepartamentoPessoalView() {
         </div>
         <div className={styles.toolbarActions}>
           {canEdit && (activeStore || isAmbas) && visibleStores.length > 0 && (
-            <button className={styles.newBtn} onClick={openAddEmp}>
-              {addingEmp ? 'Cancelar' : '+ Funcionário'}
+            <button className={styles.newBtn} onClick={openAdd}>
+              {formMode === 'add' ? 'Cancelar' : '+ Funcionário'}
             </button>
           )}
         </div>
       </div>
 
-      {addingEmp && (
-        <div className={styles.addEmpRow}>
-          <input
-            className={styles.inlineInput}
-            placeholder="Nome do funcionário"
-            value={empName}
-            autoFocus
-            onChange={(e) => setEmpName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddEmployee()}
-          />
-          {isAmbas ? (
-            <select className={styles.storeSelect} value={empStore} onChange={(e) => setEmpStore(e.target.value)}>
-              {visibleStores.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          ) : (
-            <span className={styles.addEmpStoreLabel}>em <strong>{activeStoreObj?.name}</strong></span>
-          )}
-          <button className={styles.smallBtn} onClick={handleAddEmployee}>Adicionar</button>
+      {formMode && canEdit && (
+        <div className={styles.empForm}>
+          <div className={styles.empFormTitle}>
+            {formMode === 'add' ? 'Novo funcionário' : 'Editar funcionário'}
+          </div>
+          <div className={styles.empFormFields}>
+            <input
+              className={styles.inlineInput}
+              placeholder="Nome do funcionário"
+              value={fName}
+              autoFocus
+              onChange={(e) => setFName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && submitForm()}
+            />
+            <label className={styles.fieldLabel}>
+              Loja
+              <select className={styles.storeSelect} value={fStore} onChange={(e) => setFStore(e.target.value)}>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.fieldLabel}>
+              Folga da semana
+              <select className={styles.storeSelect} value={fWeekday} onChange={(e) => setFWeekday(e.target.value)}>
+                <option value="">—</option>
+                {FOLGA_WEEK.map(([v, n]) => (
+                  <option key={v} value={v}>{n}</option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.fieldLabel}>
+              Folga do mês
+              <select className={styles.storeSelect} value={fMonthN} onChange={(e) => setFMonthN(e.target.value)}>
+                <option value="">—</option>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n}>{n}º domingo</option>
+                ))}
+              </select>
+            </label>
+            <button className={styles.smallBtn} onClick={submitForm}>
+              {formMode === 'add' ? 'Adicionar' : 'Salvar'}
+            </button>
+            <button className={styles.smallBtnGhost} onClick={closeForm}>Cancelar</button>
+          </div>
         </div>
       )}
 
@@ -401,54 +459,36 @@ export default function DepartamentoPessoalView() {
             return (
               <div key={emp.id} className={styles.mEmpCard}>
                 <div className={styles.mEmpHeader}>
-                  {editingEmp === emp.id ? (
-                    <div className={styles.mEditRow}>
-                      <input
-                        className={styles.inlineInput}
-                        value={editName}
-                        autoFocus
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(emp.id)}
-                      />
-                      <select className={styles.storeSelect} value={editStore} onChange={(e) => setEditStore(e.target.value)}>
-                        {stores.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                      <button className={styles.iconBtn} onClick={() => saveEdit(emp.id)} title="Salvar">✓</button>
-                      <button className={styles.iconBtn} onClick={() => setEditingEmp(null)} title="Cancelar">✕</button>
-                    </div>
-                  ) : (
-                    <>
-                      <span className={styles.empNameWrap}>
-                        {isAmbas && (
-                          <span
-                            className={styles.empStoreTag}
-                            style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}
-                            title={storeMeta[emp.store]?.name}
-                          >
-                            {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
-                          </span>
-                        )}
-                        <span className={styles.mEmpName} title={emp.name}>{emp.name}</span>
+                  <span className={styles.empNameWrap}>
+                    {isAmbas && (
+                      <span
+                        className={styles.empStoreTag}
+                        style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}
+                        title={storeMeta[emp.store]?.name}
+                      >
+                        {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
                       </span>
-                      {canEdit && (
-                        <span className={`${styles.rowActions} ${styles.rowActionsVisible}`}>
-                          <button className={styles.iconBtn} onClick={() => startEdit(emp)} title="Editar funcionário">✎</button>
-                          <button
-                            className={styles.iconBtnDanger}
-                            onClick={() => {
-                              if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
-                                deleteEmployee(emp.id);
-                              }
-                            }}
-                            title="Apagar funcionário"
-                          >
-                            🗑
-                          </button>
-                        </span>
-                      )}
-                    </>
+                    )}
+                    <span className={styles.mEmpName} title={emp.name}>{emp.name}</span>
+                    {folgaDesc(emp) && (
+                      <span className={styles.folgaTag} title={`Folga: ${folgaDesc(emp)}`}>FG</span>
+                    )}
+                  </span>
+                  {canEdit && (
+                    <span className={`${styles.rowActions} ${styles.rowActionsVisible}`}>
+                      <button className={styles.iconBtn} onClick={() => openEdit(emp)} title="Editar funcionário">✎</button>
+                      <button
+                        className={styles.iconBtnDanger}
+                        onClick={() => {
+                          if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
+                            deleteEmployee(emp.id);
+                          }
+                        }}
+                        title="Apagar funcionário"
+                      >
+                        🗑
+                      </button>
+                    </span>
                   )}
                 </div>
                 <div className={styles.mCalGrid}>
@@ -459,7 +499,7 @@ export default function DepartamentoPessoalView() {
                     <span key={`b${i}`} className={styles.mDayEmpty} />
                   ))}
                   {days.map((d) => {
-                    const info = dayInfo(emp.id, d);
+                    const info = dayInfo(emp, d);
                     return (
                       <button
                         key={d}
@@ -503,72 +543,51 @@ export default function DepartamentoPessoalView() {
             <tbody>
               {storeEmployees.map((emp) => (
                 <tr key={emp.id}>
-                  <td className={`${styles.nameCell} ${styles.nameCol} ${editingEmp === emp.id ? styles.nameColEditing : ''}`}>
-                    {editingEmp === emp.id ? (
-                      <div className={styles.nameEdit}>
-                        <input
-                          className={styles.inlineInput}
-                          value={editName}
-                          autoFocus
-                          onChange={(e) => setEditName(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && saveEdit(emp.id)}
-                        />
-                        <select className={styles.storeSelect} value={editStore} onChange={(e) => setEditStore(e.target.value)}>
-                          {stores.map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </select>
-                        <button className={styles.iconBtn} onClick={() => saveEdit(emp.id)} title="Salvar">✓</button>
-                        <button className={styles.iconBtn} onClick={() => setEditingEmp(null)} title="Cancelar">✕</button>
-                      </div>
-                    ) : (
-                      <div className={styles.nameWrap}>
-                        <span className={styles.empNameWrap}>
-                          {isAmbas && (
-                            <span
-                              className={styles.empStoreTag}
-                              style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}
-                              title={storeMeta[emp.store]?.name}
-                            >
-                              {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
-                            </span>
-                          )}
-                          <span className={styles.empName} title={emp.name}>{emp.name}</span>
-                        </span>
-                        {canEdit && (
-                          <span className={styles.rowActions}>
-                            <button className={styles.iconBtn} onClick={() => startEdit(emp)} title="Editar funcionário">✎</button>
-                            <button
-                              className={styles.iconBtnDanger}
-                              onClick={() => {
-                                if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
-                                  deleteEmployee(emp.id);
-                                }
-                              }}
-                              title="Apagar funcionário"
-                            >
-                              🗑
-                            </button>
+                  <td className={`${styles.nameCell} ${styles.nameCol}`}>
+                    <div className={styles.nameWrap}>
+                      <span className={styles.empNameWrap}>
+                        {isAmbas && (
+                          <span
+                            className={styles.empStoreTag}
+                            style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}
+                            title={storeMeta[emp.store]?.name}
+                          >
+                            {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
                           </span>
                         )}
-                      </div>
-                    )}
+                        <span className={styles.empName} title={emp.name}>{emp.name}</span>
+                        {folgaDesc(emp) && (
+                          <span className={styles.folgaTag} title={`Folga: ${folgaDesc(emp)}`}>FG</span>
+                        )}
+                      </span>
+                      {canEdit && (
+                        <span className={styles.rowActions}>
+                          <button className={styles.iconBtn} onClick={() => openEdit(emp)} title="Editar funcionário">✎</button>
+                          <button
+                            className={styles.iconBtnDanger}
+                            onClick={() => {
+                              if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
+                                deleteEmployee(emp.id);
+                              }
+                            }}
+                            title="Apagar funcionário"
+                          >
+                            🗑
+                          </button>
+                        </span>
+                      )}
+                    </div>
                   </td>
                   {days.map((d) => {
-                    const date = `${year}-${pad(month + 1)}-${pad(d)}`;
-                    const mark = absenceMap[`${emp.id}__${date}`];
-                    const t = mark && typeByKey(mark.type);
-                    const wd = new Date(year, month, d).getDay();
-                    const weekend = wd === 0 || wd === 6;
-                    const hol = holidayFor(d);
+                    const info = dayInfo(emp, d);
                     return (
                       <td
                         key={d}
-                        className={`${styles.cell} ${weekend ? styles.weekend : ''} ${hol ? styles.holidayCell : ''} ${canEdit ? '' : styles.cellReadonly}`}
+                        className={`${styles.cell} ${info.weekend ? styles.weekend : ''} ${info.holiday ? styles.holidayCell : ''} ${canEdit ? '' : styles.cellReadonly}`}
                         onClick={canEdit ? (e) => handleCellClick(e, emp, d) : undefined}
-                        title={t ? t.label : hol || ''}
+                        title={info.t ? info.t.label : info.holiday || ''}
                       >
-                        {t && <span className={styles.mark} style={{ background: t.color }}>{t.short}</span>}
+                        {info.t && <span className={styles.mark} style={{ background: info.t.color }}>{info.t.short}</span>}
                       </td>
                     );
                   })}
