@@ -110,7 +110,7 @@ export default function PrecosInsumosView() {
           style={{ ...inputS, flex: '1 1 160px' }}
         />
         <select value={filtroFornecedor} onChange={e => setFiltroFornecedor(e.target.value)} style={{ ...inputS, flex: '1 1 140px' }}>
-          <option value="">Todos fornecedores</option>
+          <option value="">Todas as lojas</option>
           {fornecedoresUnicos.map(f => <option key={f} value={f}>{f}</option>)}
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 260px' }}>
@@ -134,7 +134,6 @@ export default function PrecosInsumosView() {
               <thead>
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
                   <th style={thS}>Produto</th>
-                  <th style={thS}>Fornecedor</th>
                   <th style={thS}>Data</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
@@ -144,7 +143,6 @@ export default function PrecosInsumosView() {
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     <td style={{ ...tdS, fontWeight: 500 }}>{p.produto}</td>
-                    <td style={tdS}>{p.fornecedor}</td>
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
