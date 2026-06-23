@@ -603,6 +603,33 @@
   gap: 12px;
 }
 
+.mEmpSelectRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mEmpSelectLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mEmpSelect {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .mEmpCard {
   border: 1px solid var(--border);
   border-radius: 10px;
