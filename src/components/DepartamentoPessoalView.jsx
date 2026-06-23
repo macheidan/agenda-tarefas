@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { useDepartamentoPessoal, ABSENCE_TYPES } from '../hooks/useDepartamentoPessoal';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
@@ -18,6 +19,7 @@ const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
 export default function DepartamentoPessoalView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
+  const isMobile = useIsMobile(768);
   // Editores (e o admin) podem gerenciar; os demais apenas visualizam.
   const canEdit = isAdmin || settings?.dpEditor === true;
   const {
@@ -179,6 +181,15 @@ export default function DepartamentoPessoalView() {
     setEditingEmp(null);
   };
 
+  // Info de uma célula (data, marca, tipo, fim de semana) — usada na grade e nos cartões mobile.
+  const dayInfo = (empId, d) => {
+    const date = `${year}-${pad(month + 1)}-${pad(d)}`;
+    const mark = absenceMap[`${empId}__${date}`];
+    const t = mark && typeByKey(mark.type);
+    const wd = new Date(year, month, d).getDay();
+    return { date, mark, t, wd, weekend: wd === 0 || wd === 6 };
+  };
+
   const activeStoreObj = stores.find((s) => s.id === activeStore);
 
   return (
@@ -187,7 +198,7 @@ export default function DepartamentoPessoalView() {
         <h2>👥 Departamento Pessoal</h2>
         <div className={styles.headerActions}>
           <button className={`${styles.sectionTab} ${styles.sectionTabActive}`}>
-            Escala de Faltas
+            Escala
           </button>
         </div>
       </div>
@@ -359,6 +370,89 @@ export default function DepartamentoPessoalView() {
           Nenhum funcionário {isAmbas ? 'cadastrado' : <>em <strong>{activeStoreObj?.name}</strong></>}.
           Clique em <strong>+ Funcionário</strong> para começar.
         </p>
+      ) : isMobile ? (
+        <div className={styles.mList}>
+          {storeEmployees.map((emp) => {
+            const firstDow = new Date(year, month, 1).getDay();
+            return (
+              <div key={emp.id} className={styles.mEmpCard}>
+                <div className={styles.mEmpHeader}>
+                  {editingEmp === emp.id ? (
+                    <div className={styles.mEditRow}>
+                      <input
+                        className={styles.inlineInput}
+                        value={editName}
+                        autoFocus
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(emp.id)}
+                      />
+                      <select className={styles.storeSelect} value={editStore} onChange={(e) => setEditStore(e.target.value)}>
+                        {stores.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <button className={styles.iconBtn} onClick={() => saveEdit(emp.id)} title="Salvar">✓</button>
+                      <button className={styles.iconBtn} onClick={() => setEditingEmp(null)} title="Cancelar">✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className={styles.empNameWrap}>
+                        {isAmbas && (
+                          <span
+                            className={styles.empStoreTag}
+                            style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}
+                            title={storeMeta[emp.store]?.name}
+                          >
+                            {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
+                          </span>
+                        )}
+                        <span className={styles.mEmpName} title={emp.name}>{emp.name}</span>
+                      </span>
+                      {canEdit && (
+                        <span className={`${styles.rowActions} ${styles.rowActionsVisible}`}>
+                          <button className={styles.iconBtn} onClick={() => startEdit(emp)} title="Editar funcionário">✎</button>
+                          <button
+                            className={styles.iconBtnDanger}
+                            onClick={() => {
+                              if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
+                                deleteEmployee(emp.id);
+                              }
+                            }}
+                            title="Apagar funcionário"
+                          >
+                            🗑
+                          </button>
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className={styles.mCalGrid}>
+                  {WEEKDAYS.map((w, i) => (
+                    <span key={`h${i}`} className={styles.mWeekday}>{w}</span>
+                  ))}
+                  {Array.from({ length: firstDow }).map((_, i) => (
+                    <span key={`b${i}`} className={styles.mDayEmpty} />
+                  ))}
+                  {days.map((d) => {
+                    const info = dayInfo(emp.id, d);
+                    return (
+                      <button
+                        key={d}
+                        className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${canEdit ? '' : styles.mDayReadonly}`}
+                        onClick={canEdit ? (e) => handleCellClick(e, emp, d) : undefined}
+                        title={info.t ? info.t.label : ''}
+                      >
+                        <span className={styles.mDayNum}>{d}</span>
+                        {info.t && <span className={styles.mDayMark} style={{ background: info.t.color }}>{info.t.short}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className={styles.gridWrap}>
           <table className={styles.grid}>
