@@ -24,8 +24,14 @@ export default function DepartamentoPessoalView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
   const isMobile = useIsMobile(768);
-  // Editores (e o admin) podem gerenciar; os demais apenas visualizam.
+  // Editores (e o admin) gerenciam lojas/funcionários. Não-editores podem
+  // trabalhar no calendário (marcar faltas), mas só com os tipos de falta.
   const canEdit = isAdmin || settings?.dpEditor === true;
+  const markTypes = canEdit
+    ? ABSENCE_TYPES
+    : ABSENCE_TYPES.filter(
+        (t) => t.key === 'falta_justificada' || t.key === 'falta_injustificada'
+      );
   const {
     stores,
     loadingStores,
@@ -436,7 +442,7 @@ export default function DepartamentoPessoalView() {
       ) : storeEmployees.length === 0 ? (
         <p className={styles.empty}>
           Nenhum funcionário {isAmbas ? 'cadastrado' : <>em <strong>{activeStoreObj?.name}</strong></>}.
-          Clique em <strong>+ Funcionário</strong> para começar.
+          {canEdit && <> Clique em <strong>+ Funcionário</strong> para começar.</>}
         </p>
       ) : isMobile ? (
         <div className={styles.mList}>
@@ -503,8 +509,8 @@ export default function DepartamentoPessoalView() {
                     return (
                       <button
                         key={d}
-                        className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${info.holiday ? styles.mDayHoliday : ''} ${canEdit ? '' : styles.mDayReadonly}`}
-                        onClick={canEdit ? (e) => handleCellClick(e, emp, d) : undefined}
+                        className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${info.holiday ? styles.mDayHoliday : ''}`}
+                        onClick={(e) => handleCellClick(e, emp, d)}
                         title={info.t ? info.t.label : info.holiday || ''}
                       >
                         <span className={styles.mDayNum}>{d}</span>
@@ -583,8 +589,8 @@ export default function DepartamentoPessoalView() {
                     return (
                       <td
                         key={d}
-                        className={`${styles.cell} ${info.weekend ? styles.weekend : ''} ${info.holiday ? styles.holidayCell : ''} ${canEdit ? '' : styles.cellReadonly}`}
-                        onClick={canEdit ? (e) => handleCellClick(e, emp, d) : undefined}
+                        className={`${styles.cell} ${info.weekend ? styles.weekend : ''} ${info.holiday ? styles.holidayCell : ''}`}
+                        onClick={(e) => handleCellClick(e, emp, d)}
                         title={info.t ? info.t.label : info.holiday || ''}
                       >
                         {info.t && <span className={styles.mark} style={{ background: info.t.color }}>{info.t.short}</span>}
@@ -622,7 +628,7 @@ export default function DepartamentoPessoalView() {
             left: Math.max(8, Math.min(popover.x, window.innerWidth - 220)),
           }}
         >
-          {ABSENCE_TYPES.map((t) => (
+          {markTypes.map((t) => (
             <button key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
               <span className={styles.popDot} style={{ background: t.color }}>{t.short}</span>
               {t.label}
