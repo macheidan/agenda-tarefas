@@ -13,6 +13,19 @@ function daysAgo(n) {
   return d.toISOString().slice(0, 10);
 }
 
+// Normaliza a data para 'YYYY-MM-DD' independente do formato de origem
+// (ISO com hora, 'DD/MM/YYYY' ou ja 'YYYY-MM-DD'). Sem isso, datas em
+// formato diferente quebram a comparacao de string usada no filtro.
+function parseDataISO(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  const d = new Date(s);
+  return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+}
+
 const PAGE_OPTIONS = [50, 100, 200];
 
 // Normaliza o identificador da loja (pizzaria) para exibicao: 'lov' -> 'Lov', 'dame' -> 'Dame'.
@@ -41,23 +54,32 @@ export default function PrecosInsumosView() {
   async function loadData() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('precos')
-        .select('*, produtos(nome, categoria, medida_padrao), fornecedores(nome, categoria)')
-        .order('data', { ascending: false })
-        .limit(2000);
+      // Pagina pra nao esbarrar no limite padrao de linhas do PostgREST (~1000),
+      // que poderia esconder parte das notas.
+      const PAGE = 1000;
+      let all = [];
+      for (let p = 0; p < 30; p++) {
+        const { data, error } = await supabase
+          .from('precos')
+          .select('*, produtos(nome, categoria, medida_padrao), fornecedores(nome, categoria)')
+          .order('data', { ascending: false })
+          .range(p * PAGE, p * PAGE + PAGE - 1);
 
-      console.log('[precos] response:', data?.length, 'rows, error:', error);
-
-      if (error) {
-        console.error('[precos] supabase error:', error);
-        setLoading(false);
-        return;
+        if (error) {
+          console.error('[precos] supabase error:', error);
+          break;
+        }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
       }
 
-      const mapped = (data || []).map(r => ({
+      console.log('[precos] total rows:', all.length);
+      if (all[0]) console.log('[precos] colunas da tabela precos:', Object.keys(all[0]));
+
+      const mapped = all.map(r => ({
         id: r.id,
-        data: r.data || '',
+        data: parseDataISO(r.data),
         preco_bruto: Number(r.preco_bruto) || 0,
         preco_normalizado: Number(r.preco_normalizado) || 0,
         unidade_normalizada: r.unidade_normalizada || '',
@@ -65,10 +87,11 @@ export default function PrecosInsumosView() {
         unidade_embalagem: r.unidade_embalagem || '',
         produto: r.produtos?.nome || '',
         fornecedor: r.fornecedores?.nome || '',
-        loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? ''),
+        loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
       }));
 
-      console.log('[precos] mapped:', mapped.length);
+      const datas = mapped.map(m => m.data).filter(Boolean).sort();
+      console.log('[precos] datas min->max:', datas[0], '->', datas[datas.length - 1], '| mapeadas:', mapped.length);
       setPrecos(mapped);
     } catch (e) {
       console.error('[precos] catch:', e);
@@ -131,10 +154,12 @@ export default function PrecosInsumosView() {
           <option value="">Todos fornecedores</option>
           {fornecedoresUnicos.map(f => <option key={f} value={f}>{f}</option>)}
         </select>
-        <select value={filtroLoja} onChange={e => setFiltroLoja(e.target.value)} style={{ ...inputS, flex: '1 1 120px' }}>
-          <option value="">Todas as lojas</option>
-          {lojasUnicas.map(l => <option key={l} value={l}>{l}</option>)}
-        </select>
+        {lojasUnicas.length > 0 && (
+          <select value={filtroLoja} onChange={e => setFiltroLoja(e.target.value)} style={{ ...inputS, flex: '1 1 120px' }}>
+            <option value="">Todas as lojas</option>
+            {lojasUnicas.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 260px' }}>
           <span style={{ fontSize: 11, color: '#888' }}>De</span>
           <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={{ ...inputS, flex: 1 }} />
