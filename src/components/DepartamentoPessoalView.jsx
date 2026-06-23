@@ -589,7 +589,7 @@ export default function DepartamentoPessoalView() {
         ))}
         <span className={styles.legendItem}>
           <span className={`${styles.legendDot} ${styles.holidayLegendDot}`} />
-          Feriado (nacional / RS / POA)
+          Feriado
         </span>
       </div>
 

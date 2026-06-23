@@ -15,7 +15,6 @@ import { db } from '../firebase';
 export const ABSENCE_TYPES = [
   { key: 'falta_justificada', label: 'Falta Justificada', short: 'FJ', color: '#3949ab' },
   { key: 'falta_injustificada', label: 'Falta NÃO Justificada', short: 'F', color: '#f04438' },
-  { key: 'quebra_caixa', label: 'Quebra de Caixa', short: 'QC', color: '#ff9800' },
   { key: 'vales', label: 'Vales', short: 'V', color: '#9c27b0' },
   { key: 'feriado_trabalhado', label: 'Feriado Trabalhado', short: 'FT', color: '#12b76a' },
 ];

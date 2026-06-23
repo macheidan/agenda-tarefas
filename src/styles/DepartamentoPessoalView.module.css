@@ -425,19 +425,19 @@
 
 /* ---- Feriados ---- */
 .holidayHead {
-  box-shadow: inset 0 -3px 0 #dc2626;
+  box-shadow: inset 0 -3px 0 #ff9800;
 }
 
 .holidayHead .dayNum {
-  color: #dc2626;
+  color: #ff9800;
 }
 
 .holidayCell {
-  background: rgba(220, 38, 38, 0.07);
+  background: rgba(255, 152, 0, 0.10);
 }
 
 .holidayLegendDot {
-  background: #dc2626;
+  background: #ff9800;
 }
 
 .mark {
@@ -726,12 +726,12 @@
 }
 
 .mDayHoliday {
-  border-color: #dc2626;
-  box-shadow: inset 0 0 0 1px #dc2626;
+  border-color: #ff9800;
+  box-shadow: inset 0 0 0 1px #ff9800;
 }
 
 .mDayHoliday .mDayNum {
-  color: #dc2626;
+  color: #ff9800;
 }
 
 .mDayReadonly {
