@@ -135,6 +135,15 @@ export function useTasks(uid) {
     return deleteDoc(taskRef);
   };
 
+  const deleteTaskAndFuture = async (taskId, recurrenceGroup, fromDate) => {
+    const toDelete = allTasks.filter(
+      (t) => t.recurrenceGroup === recurrenceGroup && t.date >= fromDate
+    );
+    return Promise.all(
+      toDelete.map((t) => deleteDoc(doc(db, 'tasks', uid, 'items', t.id)))
+    );
+  };
+
   const archiveTask = async (taskId) => {
     const taskRef = doc(db, 'tasks', uid, 'items', taskId);
     return updateDoc(taskRef, { archived: true });
@@ -145,5 +154,5 @@ export function useTasks(uid) {
     return updateDoc(taskRef, { archived: false });
   };
 
-  return { tasks, archivedTasks, loading, addTask, updateTask, updateTaskGroup, deleteTask, archiveTask, unarchiveTask };
+  return { tasks, archivedTasks, loading, addTask, updateTask, updateTaskGroup, deleteTask, deleteTaskAndFuture, archiveTask, unarchiveTask };
 }

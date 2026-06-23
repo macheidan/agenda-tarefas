@@ -18,7 +18,7 @@ const RECURRENCE_OPTIONS = [
   { value: 'monthly', label: 'Mensal' },
 ];
 
-export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdateGroup, onDelete, onClose }) {
+export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdateGroup, onDelete, onDeleteAndFuture, onClose }) {
   const { user } = useAuth();
   const isEditing = !!task;
 
@@ -33,6 +33,7 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
   const [priority, setPriority] = useState(5);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (task) {
@@ -100,10 +101,25 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
   };
 
   const handleDelete = () => {
-    if (task && window.confirm('Excluir esta tarefa?')) {
-      onDelete(task.id);
-      onClose();
+    if (!task) return;
+    if (task.recurrenceGroup) {
+      setShowDeleteConfirm(true);
+    } else {
+      if (window.confirm('Excluir esta tarefa?')) {
+        onDelete(task.id);
+        onClose();
+      }
     }
+  };
+
+  const handleDeleteOnly = () => {
+    onDelete(task.id);
+    onClose();
+  };
+
+  const handleDeleteAndFuture = () => {
+    onDeleteAndFuture(task.id, task.recurrenceGroup, task.date);
+    onClose();
   };
 
   const isDirty = isEditing
@@ -274,6 +290,26 @@ export default function TaskModal({ task, initialDate, onSave, onUpdate, onUpdat
             </button>
           )}
         </div>
+
+        {showDeleteConfirm && (
+          <div className={styles.deleteConfirmOverlay}>
+            <div className={styles.deleteConfirmBox}>
+              <p className={styles.deleteConfirmTitle}>Excluir tarefa recorrente</p>
+              <p className={styles.deleteConfirmDesc}>Esta tarefa faz parte de uma recorrência. O que deseja excluir?</p>
+              <div className={styles.deleteConfirmActions}>
+                <button className={styles.deleteConfirmBtn} onClick={handleDeleteOnly}>
+                  Somente esta
+                </button>
+                <button className={`${styles.deleteConfirmBtn} ${styles.deleteConfirmBtnDanger}`} onClick={handleDeleteAndFuture}>
+                  Esta e próximas
+                </button>
+                <button className={styles.deleteConfirmBtnCancel} onClick={() => setShowDeleteConfirm(false)}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

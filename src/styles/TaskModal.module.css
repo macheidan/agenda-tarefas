@@ -296,6 +296,90 @@
   opacity: 0.85;
 }
 
+.deleteConfirmOverlay {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.deleteConfirmBox {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 20px 24px;
+  max-width: 340px;
+  width: 90%;
+  box-shadow: 0 4px 16px var(--shadow);
+}
+
+.deleteConfirmTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.deleteConfirmDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.deleteConfirmActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deleteConfirmBtn {
+  padding: 9px 16px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.deleteConfirmBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.deleteConfirmBtnDanger {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.deleteConfirmBtnDanger:hover {
+  opacity: 0.85;
+  background: var(--danger);
+}
+
+.deleteConfirmBtnCancel {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.deleteConfirmBtnCancel:hover {
+  color: var(--text);
+}
+
 @media (max-width: 640px) {
   .modal {
     padding: 20px;
