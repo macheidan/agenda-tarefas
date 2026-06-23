@@ -252,6 +252,11 @@
   color: var(--text-muted);
 }
 
+.dpEditorToggle {
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .sectionToggleNested {
   flex-basis: 100%;
   padding-left: 22px;

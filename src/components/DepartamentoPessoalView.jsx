@@ -16,8 +16,10 @@ const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
 
 export default function DepartamentoPessoalView() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
+  // Editores (e o admin) podem gerenciar; os demais apenas visualizam.
+  const canEdit = isAdmin || settings?.dpEditor === true;
   const {
     stores,
     loadingStores,
@@ -224,17 +226,19 @@ export default function DepartamentoPessoalView() {
               Ambas
             </button>
           )}
-          <button
-            className={styles.manageStoresBtn}
-            onClick={() => setManagingStores((v) => !v)}
-            title="Gerenciar lojas"
-          >
-            {managingStores ? 'Fechar' : '⚙ Lojas'}
-          </button>
+          {canEdit && (
+            <button
+              className={styles.manageStoresBtn}
+              onClick={() => setManagingStores((v) => !v)}
+              title="Gerenciar lojas"
+            >
+              {managingStores ? 'Fechar' : '⚙ Lojas'}
+            </button>
+          )}
         </div>
       </div>
 
-      {managingStores && (
+      {managingStores && canEdit && (
         <div className={styles.manageBox}>
           <h4>Lojas</h4>
           <div className={styles.manageList}>
@@ -299,7 +303,7 @@ export default function DepartamentoPessoalView() {
           <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
         </div>
         <div className={styles.toolbarActions}>
-          {(activeStore || isAmbas) && visibleStores.length > 0 && (
+          {canEdit && (activeStore || isAmbas) && visibleStores.length > 0 && (
             <button className={styles.newBtn} onClick={openAddEmp}>
               {addingEmp ? 'Cancelar' : '+ Funcionário'}
             </button>
@@ -336,9 +340,11 @@ export default function DepartamentoPessoalView() {
       ) : stores.length === 0 ? (
         <div className={styles.empty}>
           <p>Nenhuma loja cadastrada ainda.</p>
-          <button className={styles.newBtn} onClick={() => seedDefaultStores()}>
-            Criar minhas duas lojas (Dáme e Lov)
-          </button>
+          {canEdit && (
+            <button className={styles.newBtn} onClick={() => seedDefaultStores()}>
+              Criar minhas duas lojas (Dáme e Lov)
+            </button>
+          )}
           {storesError && (
             <p className={styles.errorMsg}>
               Erro ao acessar o banco: {storesError}. Pode ser necessário publicar as
@@ -406,20 +412,22 @@ export default function DepartamentoPessoalView() {
                           )}
                           <span className={styles.empName} title={emp.name}>{emp.name}</span>
                         </span>
-                        <span className={styles.rowActions}>
-                          <button className={styles.iconBtn} onClick={() => startEdit(emp)} title="Editar funcionário">✎</button>
-                          <button
-                            className={styles.iconBtnDanger}
-                            onClick={() => {
-                              if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
-                                deleteEmployee(emp.id);
-                              }
-                            }}
-                            title="Apagar funcionário"
-                          >
-                            🗑
-                          </button>
-                        </span>
+                        {canEdit && (
+                          <span className={styles.rowActions}>
+                            <button className={styles.iconBtn} onClick={() => startEdit(emp)} title="Editar funcionário">✎</button>
+                            <button
+                              className={styles.iconBtnDanger}
+                              onClick={() => {
+                                if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
+                                  deleteEmployee(emp.id);
+                                }
+                              }}
+                              title="Apagar funcionário"
+                            >
+                              🗑
+                            </button>
+                          </span>
+                        )}
                       </div>
                     )}
                   </td>
@@ -432,8 +440,8 @@ export default function DepartamentoPessoalView() {
                     return (
                       <td
                         key={d}
-                        className={`${styles.cell} ${weekend ? styles.weekend : ''}`}
-                        onClick={(e) => handleCellClick(e, emp, d)}
+                        className={`${styles.cell} ${weekend ? styles.weekend : ''} ${canEdit ? '' : styles.cellReadonly}`}
+                        onClick={canEdit ? (e) => handleCellClick(e, emp, d) : undefined}
                         title={t ? t.label : ''}
                       >
                         {t && <span className={styles.mark} style={{ background: t.color }}>{t.short}</span>}
