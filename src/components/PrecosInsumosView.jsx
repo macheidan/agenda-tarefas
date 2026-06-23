@@ -29,23 +29,38 @@ export default function PrecosInsumosView() {
 
   async function loadData() {
     setLoading(true);
-    const { data } = await supabase
-      .from('precos')
-      .select('*, produtos(nome, categoria, medida_padrao), fornecedores(nome, categoria)')
-      .order('data', { ascending: false })
-      .limit(2000);
+    try {
+      const { data, error } = await supabase
+        .from('precos')
+        .select('*, produtos(nome, categoria, medida_padrao), fornecedores(nome, categoria)')
+        .order('data', { ascending: false })
+        .limit(2000);
 
-    setPrecos((data || []).map(r => ({
-      id: r.id,
-      data: r.data,
-      preco_bruto: r.preco_bruto,
-      preco_normalizado: r.preco_normalizado,
-      unidade_normalizada: r.unidade_normalizada,
-      qtd_embalagem: r.qtd_embalagem,
-      unidade_embalagem: r.unidade_embalagem,
-      produto: r.produtos?.nome || '',
-      fornecedor: r.fornecedores?.nome || '',
-    })));
+      console.log('[precos] response:', data?.length, 'rows, error:', error);
+
+      if (error) {
+        console.error('[precos] supabase error:', error);
+        setLoading(false);
+        return;
+      }
+
+      const mapped = (data || []).map(r => ({
+        id: r.id,
+        data: r.data || '',
+        preco_bruto: Number(r.preco_bruto) || 0,
+        preco_normalizado: Number(r.preco_normalizado) || 0,
+        unidade_normalizada: r.unidade_normalizada || '',
+        qtd_embalagem: Number(r.qtd_embalagem) || 0,
+        unidade_embalagem: r.unidade_embalagem || '',
+        produto: r.produtos?.nome || '',
+        fornecedor: r.fornecedores?.nome || '',
+      }));
+
+      console.log('[precos] mapped:', mapped.length);
+      setPrecos(mapped);
+    } catch (e) {
+      console.error('[precos] catch:', e);
+    }
     setLoading(false);
   }
 
@@ -76,98 +91,76 @@ export default function PrecosInsumosView() {
 
   const totalProdutos = new Set(filtrados.map(p => p.produto)).size;
 
-  return (
-    <div className="pi-root">
-      <style>{CSS}</style>
+  if (loading) return <p style={{ padding: 20, textAlign: 'center' }}>Carregando precos...</p>;
 
+  return (
+    <div>
       {/* Stats */}
-      <div className="pi-stats">
-        <div className="pi-stat"><span className="pi-stat-val">{totalProdutos}</span><span className="pi-stat-lbl">produtos</span></div>
-        <div className="pi-stat"><span className="pi-stat-val">{filtroFornecedor ? 1 : fornecedoresUnicos.length}</span><span className="pi-stat-lbl">fornec.</span></div>
-        <div className="pi-stat"><span className="pi-stat-val">{filtrados.length}</span><span className="pi-stat-lbl">registros</span></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+        <StatCard label="Produtos" value={totalProdutos} />
+        <StatCard label="Fornecedores" value={filtroFornecedor ? 1 : fornecedoresUnicos.length} />
+        <StatCard label="Registros" value={filtrados.length} />
       </div>
 
       {/* Filtros */}
-      <div className="pi-filters">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12, alignItems: 'center' }}>
         <input
-          type="search"
-          placeholder="Buscar produto..."
-          value={filtroTexto}
-          onChange={e => setFiltroTexto(e.target.value)}
-          className="pi-input pi-search"
+          type="search" placeholder="Buscar produto..."
+          value={filtroTexto} onChange={e => setFiltroTexto(e.target.value)}
+          style={{ ...inputS, flex: '1 1 160px' }}
         />
-        <select value={filtroFornecedor} onChange={e => setFiltroFornecedor(e.target.value)} className="pi-input pi-select">
+        <select value={filtroFornecedor} onChange={e => setFiltroFornecedor(e.target.value)} style={{ ...inputS, flex: '1 1 140px' }}>
           <option value="">Todos fornecedores</option>
           {fornecedoresUnicos.map(f => <option key={f} value={f}>{f}</option>)}
         </select>
-        <div className="pi-dates">
-          <label className="pi-date-lbl">De</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="pi-input pi-date" />
-          <label className="pi-date-lbl">Ate</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="pi-input pi-date" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 260px' }}>
+          <span style={{ fontSize: 11, color: '#888' }}>De</span>
+          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={{ ...inputS, flex: 1 }} />
+          <span style={{ fontSize: 11, color: '#888' }}>Ate</span>
+          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={{ ...inputS, flex: 1 }} />
         </div>
-        <select value={porPagina} onChange={e => setPorPagina(Number(e.target.value))} className="pi-input pi-perpag">
+        <select value={porPagina} onChange={e => setPorPagina(Number(e.target.value))} style={{ ...inputS, width: 75 }}>
           {PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}/pag</option>)}
         </select>
       </div>
 
-      {/* Conteudo */}
-      {loading ? (
-        <div className="pi-empty">Carregando...</div>
-      ) : filtrados.length === 0 ? (
-        <div className="pi-empty">Nenhum registro encontrado</div>
+      {filtrados.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum registro encontrado ({precos.length} total, filtro removeu todos)</p>
       ) : (
         <>
-          {/* Tabela desktop */}
-          <div className="pi-table-wrap">
-            <table className="pi-table">
+          {/* Tabela */}
+          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>Fornecedor</th>
-                  <th>Data</th>
-                  <th className="pi-r">$ Compra</th>
-                  <th className="pi-r">$ kg/un/L</th>
+                <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                  <th style={thS}>Produto</th>
+                  <th style={thS}>Fornecedor</th>
+                  <th style={thS}>Data</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
                 </tr>
               </thead>
               <tbody>
                 {paginados.map(p => (
-                  <tr key={p.id}>
-                    <td className="pi-bold">{p.produto}</td>
-                    <td>{p.fornecedor}</td>
-                    <td>{formatDate(p.data)}</td>
-                    <td className="pi-num">R$ {p.preco_bruto.toFixed(2)}</td>
-                    <td className="pi-num">R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
+                  <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                    <td style={{ ...tdS, fontWeight: 500 }}>{p.produto}</td>
+                    <td style={tdS}>{p.fornecedor}</td>
+                    <td style={tdS}>{formatDate(p.data)}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Cards mobile */}
-          <div className="pi-cards">
-            {paginados.map(p => (
-              <div key={p.id} className="pi-card">
-                <div className="pi-card-top">
-                  <span className="pi-card-produto">{p.produto}</span>
-                  <span className="pi-card-data">{formatDate(p.data)}</span>
-                </div>
-                <div className="pi-card-forn">{p.fornecedor}</div>
-                <div className="pi-card-bottom">
-                  <span className="pi-card-compra">R$ {p.preco_bruto.toFixed(2)}</span>
-                  <span className="pi-card-norm">R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Paginacao */}
-          <div className="pi-pag">
-            <span className="pi-pag-info">{inicio + 1}-{Math.min(inicio + porPagina, filtrados.length)} de {filtrados.length}</span>
-            <div className="pi-pag-btns">
-              <button onClick={() => setPaginaAtual(p => Math.max(1, p - 1))} disabled={paginaSegura <= 1} className="pi-pag-btn">Ant</button>
-              <span className="pi-pag-cur">{paginaSegura}/{totalPaginas}</span>
-              <button onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))} disabled={paginaSegura >= totalPaginas} className="pi-pag-btn">Prox</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, fontSize: 12 }}>
+            <span style={{ color: '#888' }}>{inicio + 1}-{Math.min(inicio + porPagina, filtrados.length)} de {filtrados.length}</span>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button onClick={() => setPaginaAtual(p => Math.max(1, p - 1))} disabled={paginaSegura <= 1} style={btnS}>Ant</button>
+              <strong>{paginaSegura}/{totalPaginas}</strong>
+              <button onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))} disabled={paginaSegura >= totalPaginas} style={btnS}>Prox</button>
             </div>
           </div>
         </>
@@ -176,65 +169,16 @@ export default function PrecosInsumosView() {
   );
 }
 
-const CSS = `
-.pi-root { font-size: 14px; }
-
-/* Stats */
-.pi-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-.pi-stat { background: var(--card-bg, #fff); border-radius: 8px; border: 1px solid var(--border, #e5e5e5); padding: 8px 12px; display: flex; flex-direction: column; }
-.pi-stat-val { font-size: 20px; font-weight: 700; }
-.pi-stat-lbl { font-size: 11px; color: var(--text-secondary, #888); }
-
-/* Filtros */
-.pi-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.pi-input { padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border, #e5e5e5); font-size: 13px; background: var(--card-bg, #fff); color: var(--text, #222); box-sizing: border-box; }
-.pi-search { flex: 1 1 160px; min-width: 0; }
-.pi-select { flex: 1 1 140px; min-width: 0; }
-.pi-dates { display: flex; align-items: center; gap: 4px; flex: 1 1 260px; }
-.pi-date-lbl { font-size: 11px; color: var(--text-secondary, #888); }
-.pi-date { flex: 1; min-width: 0; }
-.pi-perpag { width: 75px; flex: 0 0 75px; }
-
-/* Tabela desktop */
-.pi-table-wrap { background: var(--card-bg, #fff); border-radius: 8px; border: 1px solid var(--border, #e5e5e5); overflow: auto; }
-.pi-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.pi-table thead tr { background: var(--bg, #f5f5f5); }
-.pi-table th { padding: 8px 10px; font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
-.pi-table td { padding: 7px 10px; border-top: 1px solid var(--border, #e5e5e5); }
-.pi-bold { font-weight: 500; }
-.pi-r { text-align: right !important; }
-.pi-num { text-align: right; font-family: monospace; font-size: 12px; white-space: nowrap; }
-
-/* Cards mobile - escondido no desktop */
-.pi-cards { display: none; }
-.pi-card { background: var(--card-bg, #fff); border-radius: 8px; border: 1px solid var(--border, #e5e5e5); padding: 10px 12px; margin-bottom: 6px; }
-.pi-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.pi-card-produto { font-weight: 600; font-size: 13px; flex: 1; }
-.pi-card-data { font-size: 11px; color: var(--text-secondary, #888); white-space: nowrap; }
-.pi-card-forn { font-size: 11px; color: var(--text-secondary, #888); margin: 2px 0 6px; }
-.pi-card-bottom { display: flex; justify-content: space-between; }
-.pi-card-compra { font-size: 12px; color: var(--text-secondary, #888); }
-.pi-card-norm { font-size: 14px; font-weight: 700; font-family: monospace; }
-
-/* Paginacao */
-.pi-pag { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; }
-.pi-pag-info { color: var(--text-secondary, #888); }
-.pi-pag-btns { display: flex; align-items: center; gap: 6px; }
-.pi-pag-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border, #e5e5e5); background: var(--card-bg, #fff); color: var(--text, #222); cursor: pointer; font-size: 12px; }
-.pi-pag-btn:disabled { opacity: 0.4; cursor: default; }
-.pi-pag-cur { font-weight: 600; }
-.pi-empty { padding: 32px 12px; text-align: center; color: var(--text-secondary, #888); }
-
-/* Mobile */
-@media (max-width: 640px) {
-  .pi-table-wrap { display: none; }
-  .pi-cards { display: block; }
-  .pi-filters { flex-direction: column; }
-  .pi-search, .pi-select { flex: 1 1 100%; }
-  .pi-dates { flex: 1 1 100%; }
-  .pi-perpag { flex: 1 1 100%; width: 100%; }
-  .pi-stats { gap: 6px; }
-  .pi-stat { padding: 6px 10px; }
-  .pi-stat-val { font-size: 18px; }
+function StatCard({ label, value }) {
+  return (
+    <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', padding: '8px 12px' }}>
+      <div style={{ fontSize: 11, color: '#888' }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
+    </div>
+  );
 }
-`;
+
+const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
+const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
+const tdS = { padding: '7px 10px' };
+const btnS = { padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', cursor: 'pointer', fontSize: 12 };
