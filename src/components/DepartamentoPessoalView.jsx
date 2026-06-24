@@ -28,6 +28,24 @@ const LOV_ESCALA = [
   { name: 'Júlio', folgaWeekday: null, folgaMonthN: 3 },
 ];
 
+// Escala inicial da loja Dáme (importação de 1 clique).
+const DAME_ESCALA = [
+  { name: 'Cintia', folgaWeekday: 1, folgaMonthN: 2 },
+  { name: 'Paty', folgaWeekday: 2, folgaMonthN: 1 },
+  { name: 'Priscila', folgaWeekday: 3, folgaMonthN: 3 },
+  { name: 'Atendente', folgaWeekday: 4, folgaMonthN: 4 },
+  { name: 'Leandro', folgaWeekday: 1, folgaMonthN: 2 },
+  { name: 'Silvia', folgaWeekday: 1, folgaMonthN: 1 },
+  { name: 'Fabi', folgaWeekday: 2, folgaMonthN: 3 },
+  { name: 'Julio', folgaWeekday: 3, folgaMonthN: 1 },
+  { name: 'Eliel', folgaWeekday: 4, folgaMonthN: 4 },
+  { name: 'Everton', folgaWeekday: null, folgaMonthN: 4 },
+];
+
+// Normaliza nome (sem acento, minúsculo) para comparar lojas/funcionários.
+const normName = (s) =>
+  (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+
 const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
 
@@ -207,24 +225,24 @@ export default function DepartamentoPessoalView() {
     closeForm();
   };
 
-  // Importa a escala inicial da Lov (cria os funcionários com folga; ignora repetidos).
-  const importLovEscala = () => {
-    const lov = stores.find((s) => (s.name || '').trim().toLowerCase() === 'lov');
-    if (!lov) {
-      window.alert('Loja "Lov" não encontrada. Crie a loja Lov antes de importar.');
+  // Importa uma escala inicial numa loja (cria os funcionários com folga; ignora repetidos).
+  const importEscala = (storeName, list) => {
+    const store = stores.find((s) => normName(s.name) === normName(storeName));
+    if (!store) {
+      window.alert(`Loja "${storeName}" não encontrada. Crie a loja antes de importar.`);
       return;
     }
     const existing = new Set(
-      employees.filter((e) => e.store === lov.id).map((e) => (e.name || '').trim().toLowerCase())
+      employees.filter((e) => e.store === store.id).map((e) => normName(e.name))
     );
-    const toAdd = LOV_ESCALA.filter((e) => !existing.has(e.name.toLowerCase()));
+    const toAdd = list.filter((e) => !existing.has(normName(e.name)));
     if (toAdd.length === 0) {
-      window.alert('Todos os funcionários da escala Lov já estão cadastrados.');
+      window.alert(`Todos os funcionários da escala ${store.name} já estão cadastrados.`);
       return;
     }
-    if (!window.confirm(`Importar ${toAdd.length} funcionário(s) na loja Lov com as folgas configuradas?`)) return;
+    if (!window.confirm(`Importar ${toAdd.length} funcionário(s) na loja ${store.name} com as folgas configuradas?`)) return;
     toAdd.forEach((e) =>
-      addEmployee(e.name, lov.id, user, { folgaWeekday: e.folgaWeekday, folgaMonthN: e.folgaMonthN })
+      addEmployee(e.name, store.id, user, { folgaWeekday: e.folgaWeekday, folgaMonthN: e.folgaMonthN })
     );
   };
 
@@ -390,9 +408,14 @@ export default function DepartamentoPessoalView() {
           <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
         </div>
         <div className={styles.toolbarActions}>
-          {canEdit && stores.some((s) => (s.name || '').trim().toLowerCase() === 'lov') && (
-            <button className={styles.smallBtnGhost} onClick={importLovEscala} title="Cria os funcionários da escala Lov com folga">
+          {canEdit && stores.some((s) => normName(s.name) === 'lov') && (
+            <button className={styles.smallBtnGhost} onClick={() => importEscala('Lov', LOV_ESCALA)} title="Cria os funcionários da escala Lov com folga">
               Importar escala Lov
+            </button>
+          )}
+          {canEdit && stores.some((s) => normName(s.name) === 'dame') && (
+            <button className={styles.smallBtnGhost} onClick={() => importEscala('Dáme', DAME_ESCALA)} title="Cria os funcionários da escala Dáme com folga">
+              Importar escala Dáme
             </button>
           )}
           {canEdit && (activeStore || isAmbas) && visibleStores.length > 0 && (
