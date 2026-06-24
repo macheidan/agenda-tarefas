@@ -82,6 +82,7 @@ export default function DepartamentoPessoalView() {
   const [fMonthN, setFMonthN] = useState(''); // '' | 1..5 (domingo do mês)
   const [popover, setPopover] = useState(null);
   const [selectedEmp, setSelectedEmp] = useState(null); // funcionário escolhido no mobile
+  const [copied, setCopied] = useState(false);
   const [managingStores, setManagingStores] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [editingStore, setEditingStore] = useState(null);
@@ -232,6 +233,88 @@ export default function DepartamentoPessoalView() {
     if (!t && isFolgaDay(emp, d)) t = folgaType;
     const wd = new Date(year, month, d).getDay();
     return { date, mark, t, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
+  };
+
+  // Resumo do mês (só para editores). Folga conta no ciclo dia 6 → dia 5;
+  // faltas/feriado no mês exibido; Dias Trabalhados = dias do mês − folgas − faltas.
+  const monthSummary = useMemo(() => {
+    if (!canEdit) return [];
+    const daysInM = new Date(year, month + 1, 0).getDate();
+    const monthPrefix = `${year}-${pad(month + 1)}-`;
+    const winStart = new Date(year, month, 6);
+    const winEnd = new Date(year, month + 1, 5);
+    const nthSundayOf = (dt) => {
+      let c = 0;
+      const y = dt.getFullYear(), m = dt.getMonth(), d = dt.getDate();
+      for (let i = 1; i <= d; i++) if (new Date(y, m, i).getDay() === 0) c++;
+      return c;
+    };
+    const isFolgaOn = (emp, dt) => {
+      const ds = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+      const real = absences.find((a) => a.employeeId === emp.id && a.date === ds);
+      if (real) return real.type === 'folga';
+      const wd = dt.getDay();
+      if (emp.folgaWeekday != null && wd === emp.folgaWeekday) return true;
+      if (emp.folgaMonthN != null && wd === 0 && nthSundayOf(dt) === emp.folgaMonthN) return true;
+      return false;
+    };
+    return storeEmployees.map((emp) => {
+      const monthAbs = absences.filter(
+        (a) => a.employeeId === emp.id && a.date && a.date.startsWith(monthPrefix)
+      );
+      const faltaJust = monthAbs.filter((a) => a.type === 'falta_justificada').length;
+      const faltaNaoJust = monthAbs.filter((a) => a.type === 'falta_injustificada').length;
+      const feriadoTrab = monthAbs.filter((a) => a.type === 'feriado_trabalhado').length;
+      let folgas = 0;
+      const dt = new Date(winStart);
+      while (dt <= winEnd) {
+        if (isFolgaOn(emp, dt)) folgas++;
+        dt.setDate(dt.getDate() + 1);
+      }
+      const diasTrab = Math.max(0, daysInM - folgas - faltaJust - faltaNaoJust);
+      return { id: emp.id, name: emp.name, store: emp.store, faltaJust, faltaNaoJust, feriadoTrab, folgas, diasTrab };
+    });
+  }, [canEdit, storeEmployees, absences, year, month]);
+
+  const summaryTotals = useMemo(
+    () =>
+      monthSummary.reduce(
+        (t, r) => ({
+          faltaJust: t.faltaJust + r.faltaJust,
+          faltaNaoJust: t.faltaNaoJust + r.faltaNaoJust,
+          feriadoTrab: t.feriadoTrab + r.feriadoTrab,
+          folgas: t.folgas + r.folgas,
+          diasTrab: t.diasTrab + r.diasTrab,
+        }),
+        { faltaJust: 0, faltaNaoJust: 0, feriadoTrab: 0, folgas: 0, diasTrab: 0 }
+      ),
+    [monthSummary]
+  );
+
+  const copySummary = () => {
+    const head = isAmbas
+      ? ['Loja', 'Funcionário', 'Falta Just.', 'Falta Não Just.', 'Feriado Trab.', 'Folgas', 'Dias Trabalhados']
+      : ['Funcionário', 'Falta Just.', 'Falta Não Just.', 'Feriado Trab.', 'Folgas', 'Dias Trabalhados'];
+    const line = (cells) => cells.join('\t');
+    const rows = monthSummary.map((r) =>
+      line(
+        isAmbas
+          ? [storeMeta[r.store]?.name || '', r.name, r.faltaJust, r.faltaNaoJust, r.feriadoTrab, r.folgas, r.diasTrab]
+          : [r.name, r.faltaJust, r.faltaNaoJust, r.feriadoTrab, r.folgas, r.diasTrab]
+      )
+    );
+    const totalRow = line(
+      (isAmbas ? ['', 'Total'] : ['Total']).concat([
+        summaryTotals.faltaJust, summaryTotals.faltaNaoJust, summaryTotals.feriadoTrab, summaryTotals.folgas, summaryTotals.diasTrab,
+      ])
+    );
+    const tsv = [line(head), ...rows, totalRow].join('\n');
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(tsv).then(
+        () => { setCopied(true); setTimeout(() => setCopied(false), 1500); },
+        () => {}
+      );
+    }
   };
 
   const activeStoreObj = stores.find((s) => s.id === activeStore);
@@ -612,6 +695,58 @@ export default function DepartamentoPessoalView() {
           Feriado
         </span>
       </div>
+
+      {/* Resumo do mês (somente editores) */}
+      {canEdit && monthSummary.length > 0 && (
+        <div className={styles.summary}>
+          <div className={styles.summaryHead}>
+            <h3>Resumo — {MONTHS[month]} {year}{isAmbas ? ' (todas as lojas)' : activeStoreObj ? ` — ${activeStoreObj.name}` : ''}</h3>
+            <button className={styles.smallBtn} onClick={copySummary}>
+              {copied ? 'Copiado!' : 'Copiar tabela'}
+            </button>
+          </div>
+          <p className={styles.summaryNote}>
+            Folgas contadas de 06/{pad(month + 1)} a 05/{pad(((month + 1) % 12) + 1)}. Dias Trabalhados = dias do mês − folgas − faltas.
+          </p>
+          <div className={styles.summaryWrap}>
+            <table className={styles.summaryTable}>
+              <thead>
+                <tr>
+                  {isAmbas && <th>Loja</th>}
+                  <th className={styles.summaryNameCol}>Funcionário</th>
+                  <th>Falta Just.</th>
+                  <th>Falta Não Just.</th>
+                  <th>Feriado Trab.</th>
+                  <th>Folgas</th>
+                  <th>Dias Trabalhados</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthSummary.map((r) => (
+                  <tr key={r.id}>
+                    {isAmbas && <td>{storeMeta[r.store]?.name || ''}</td>}
+                    <td className={styles.summaryNameCol}>{r.name}</td>
+                    <td>{r.faltaJust}</td>
+                    <td>{r.faltaNaoJust}</td>
+                    <td>{r.feriadoTrab}</td>
+                    <td>{r.folgas}</td>
+                    <td>{r.diasTrab}</td>
+                  </tr>
+                ))}
+                <tr className={styles.summaryTotalRow}>
+                  {isAmbas && <td />}
+                  <td className={styles.summaryNameCol}>Total</td>
+                  <td>{summaryTotals.faltaJust}</td>
+                  <td>{summaryTotals.faltaNaoJust}</td>
+                  <td>{summaryTotals.feriadoTrab}</td>
+                  <td>{summaryTotals.folgas}</td>
+                  <td>{summaryTotals.diasTrab}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Popover de seleção de tipo */}
       {popover && (

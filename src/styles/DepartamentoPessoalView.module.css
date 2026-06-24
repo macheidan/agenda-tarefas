@@ -607,6 +607,71 @@
   padding: 4px 6px;
 }
 
+/* ---- Resumo do mês ---- */
+.summary {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.summaryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.summaryHead h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.summaryNote {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0 12px;
+}
+
+.summaryWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.summaryTable {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 520px;
+  font-size: 13px;
+}
+
+.summaryTable th,
+.summaryTable td {
+  border: 1px solid var(--border-light);
+  padding: 7px 10px;
+  text-align: center;
+  color: var(--text);
+}
+
+.summaryTable th {
+  background: var(--toolbar-bg);
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.summaryNameCol {
+  text-align: left !important;
+  font-weight: 600;
+}
+
+.summaryTotalRow td {
+  background: var(--bg-secondary);
+  font-weight: 700;
+}
+
 /* ---- Popover ---- */
 .popover {
   position: fixed;
