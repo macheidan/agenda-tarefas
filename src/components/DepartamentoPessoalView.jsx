@@ -236,7 +236,7 @@ export default function DepartamentoPessoalView() {
   };
 
   // Resumo do mês (só para editores). Folga conta no ciclo dia 6 → dia 5;
-  // faltas/feriado no mês exibido; Dias Trabalhados = dias do mês − folgas − faltas.
+  // faltas/feriado no mês exibido; Transporte a Pagar = dias do mês − folgas − faltas.
   const monthSummary = useMemo(() => {
     if (!canEdit) return [];
     const daysInM = new Date(year, month + 1, 0).getDate();
@@ -293,8 +293,8 @@ export default function DepartamentoPessoalView() {
 
   const copySummary = () => {
     const head = isAmbas
-      ? ['Loja', 'Funcionário', 'Falta Just.', 'Falta Não Just.', 'Feriado Trab.', 'Folgas', 'Dias Trabalhados']
-      : ['Funcionário', 'Falta Just.', 'Falta Não Just.', 'Feriado Trab.', 'Folgas', 'Dias Trabalhados'];
+      ? ['Loja', 'Funcionário', 'Falta Just.', 'Falta Não Just.', 'Feriado Trab.', 'Folgas', 'Transporte a Pagar']
+      : ['Funcionário', 'Falta Just.', 'Falta Não Just.', 'Feriado Trab.', 'Folgas', 'Transporte a Pagar'];
     const line = (cells) => cells.join('\t');
     const rows = monthSummary.map((r) =>
       line(
@@ -706,7 +706,7 @@ export default function DepartamentoPessoalView() {
             </button>
           </div>
           <p className={styles.summaryNote}>
-            Folgas contadas de 06/{pad(month + 1)} a 05/{pad(((month + 1) % 12) + 1)}. Dias Trabalhados = dias do mês − folgas − faltas.
+            Folgas contadas de 06/{pad(month + 1)} a 05/{pad(((month + 1) % 12) + 1)}. Transporte a Pagar = dias do mês − folgas − faltas.
           </p>
           <div className={styles.summaryWrap}>
             <table className={styles.summaryTable}>
@@ -718,7 +718,7 @@ export default function DepartamentoPessoalView() {
                   <th>Falta Não Just.</th>
                   <th>Feriado Trab.</th>
                   <th>Folgas</th>
-                  <th>Dias Trabalhados</th>
+                  <th>Transporte a Pagar</th>
                 </tr>
               </thead>
               <tbody>
