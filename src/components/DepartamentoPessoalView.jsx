@@ -17,35 +17,6 @@ const ALL_STORES = '__all__';
 const FOLGA_WEEK = [[1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta']];
 const FOLGA_WEEK_NAME = { 1: 'Segunda', 2: 'Terça', 3: 'Quarta', 4: 'Quinta' };
 
-// Escala inicial da loja Lov (importação de 1 clique).
-const LOV_ESCALA = [
-  { name: 'Michel', folgaWeekday: 1, folgaMonthN: 2 },
-  { name: 'Natalia', folgaWeekday: 1, folgaMonthN: 3 },
-  { name: 'Sergio', folgaWeekday: 1, folgaMonthN: 4 },
-  { name: 'Juliana', folgaWeekday: 2, folgaMonthN: 2 },
-  { name: 'Luis', folgaWeekday: 3, folgaMonthN: 1 },
-  { name: 'Marcos', folgaWeekday: 4, folgaMonthN: 4 },
-  { name: 'Júlio', folgaWeekday: null, folgaMonthN: 3 },
-];
-
-// Escala inicial da loja Dáme (importação de 1 clique).
-const DAME_ESCALA = [
-  { name: 'Cintia', folgaWeekday: 1, folgaMonthN: 2 },
-  { name: 'Paty', folgaWeekday: 2, folgaMonthN: 1 },
-  { name: 'Priscila', folgaWeekday: 3, folgaMonthN: 3 },
-  { name: 'Atendente', folgaWeekday: 4, folgaMonthN: 4 },
-  { name: 'Leandro', folgaWeekday: 1, folgaMonthN: 2 },
-  { name: 'Silvia', folgaWeekday: 1, folgaMonthN: 1 },
-  { name: 'Fabi', folgaWeekday: 2, folgaMonthN: 3 },
-  { name: 'Julio', folgaWeekday: 3, folgaMonthN: 1 },
-  { name: 'Eliel', folgaWeekday: 4, folgaMonthN: 4 },
-  { name: 'Everton', folgaWeekday: null, folgaMonthN: 4 },
-];
-
-// Normaliza nome (sem acento, minúsculo) para comparar lojas/funcionários.
-const normName = (s) =>
-  (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
-
 const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
 
@@ -225,27 +196,6 @@ export default function DepartamentoPessoalView() {
     closeForm();
   };
 
-  // Importa uma escala inicial numa loja (cria os funcionários com folga; ignora repetidos).
-  const importEscala = (storeName, list) => {
-    const store = stores.find((s) => normName(s.name) === normName(storeName));
-    if (!store) {
-      window.alert(`Loja "${storeName}" não encontrada. Crie a loja antes de importar.`);
-      return;
-    }
-    const existing = new Set(
-      employees.filter((e) => e.store === store.id).map((e) => normName(e.name))
-    );
-    const toAdd = list.filter((e) => !existing.has(normName(e.name)));
-    if (toAdd.length === 0) {
-      window.alert(`Todos os funcionários da escala ${store.name} já estão cadastrados.`);
-      return;
-    }
-    if (!window.confirm(`Importar ${toAdd.length} funcionário(s) na loja ${store.name} com as folgas configuradas?`)) return;
-    toAdd.forEach((e) =>
-      addEmployee(e.name, store.id, user, { folgaWeekday: e.folgaWeekday, folgaMonthN: e.folgaMonthN })
-    );
-  };
-
   // Feriados (nacionais + RS + Porto Alegre + móveis) do ano exibido.
   const holidays = useMemo(() => getNamedHolidays(year), [year]);
   const holidayFor = (d) => holidays[`${pad(month + 1)}-${pad(d)}`];
@@ -408,16 +358,6 @@ export default function DepartamentoPessoalView() {
           <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
         </div>
         <div className={styles.toolbarActions}>
-          {canEdit && stores.some((s) => normName(s.name) === 'lov') && (
-            <button className={styles.smallBtnGhost} onClick={() => importEscala('Lov', LOV_ESCALA)} title="Cria os funcionários da escala Lov com folga">
-              Importar escala Lov
-            </button>
-          )}
-          {canEdit && stores.some((s) => normName(s.name) === 'dame') && (
-            <button className={styles.smallBtnGhost} onClick={() => importEscala('Dáme', DAME_ESCALA)} title="Cria os funcionários da escala Dáme com folga">
-              Importar escala Dáme
-            </button>
-          )}
           {canEdit && (activeStore || isAmbas) && visibleStores.length > 0 && (
             <button className={styles.newBtn} onClick={openAdd}>
               {formMode === 'add' ? 'Cancelar' : '+ Funcionário'}
