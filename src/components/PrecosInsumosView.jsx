@@ -48,8 +48,26 @@ export default function PrecosInsumosView() {
   const [dataFim, setDataFim] = useState(new Date().toISOString().slice(0, 10));
   const [porPagina, setPorPagina] = useState(50);
   const [paginaAtual, setPaginaAtual] = useState(1);
+  // Mapa produto_id -> fator (Regra3). Compartilhado entre todas as linhas do
+  // mesmo produto bruto: editar uma reflete em todas, persiste em produtos.fator_regra3.
+  const [fatores, setFatores] = useState({});
 
   useEffect(() => { loadData(); }, []);
+
+  function handleFatorChange(produtoId, raw) {
+    setFatores(prev => ({ ...prev, [produtoId]: raw }));
+  }
+
+  async function handleFatorBlur(produtoId) {
+    const raw = fatores[produtoId];
+    const num = raw === '' || raw == null ? null : Number(String(raw).replace(',', '.'));
+    if (num !== null && Number.isNaN(num)) return; // ignora texto invalido
+    const { error } = await supabase
+      .from('produtos')
+      .update({ fator_regra3: num })
+      .eq('id', produtoId);
+    if (error) console.error('[precos] erro ao salvar fator:', error);
+  }
 
   async function loadData() {
     setLoading(true);
@@ -61,7 +79,7 @@ export default function PrecosInsumosView() {
       for (let p = 0; p < 30; p++) {
         const { data, error } = await supabase
           .from('precos')
-          .select('*, produtos(nome, nome_padrao, categoria, medida_padrao), fornecedores(nome, nome_curto, categoria)')
+          .select('*, produtos(nome, nome_padrao, categoria, medida_padrao, fator_regra3), fornecedores(nome, nome_curto, categoria)')
           .order('data', { ascending: false })
           .range(p * PAGE, p * PAGE + PAGE - 1);
 
@@ -79,6 +97,7 @@ export default function PrecosInsumosView() {
 
       const mapped = all.map(r => ({
         id: r.id,
+        produto_id: r.produto_id,
         data: parseDataISO(r.data),
         preco_bruto: Number(r.preco_bruto) || 0,
         preco_normalizado: Number(r.preco_normalizado) || 0,
@@ -87,9 +106,20 @@ export default function PrecosInsumosView() {
         unidade_embalagem: r.unidade_embalagem || '',
         produto: r.produtos?.nome || '',
         produto_padrao: r.produtos?.nome_padrao || '',
+        fator_regra3: r.produtos?.fator_regra3 ?? null,
         fornecedor: r.fornecedores?.nome_curto || r.fornecedores?.nome || '',
         loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
       }));
+
+      // Fator (Regra3) e por produto bruto (produto_id), nao por linha de preco.
+      // Inicializa o mapa produto_id -> fator a partir do que ja esta salvo no banco.
+      const fmap = {};
+      for (const m of mapped) {
+        if (m.fator_regra3 != null && fmap[m.produto_id] === undefined) {
+          fmap[m.produto_id] = m.fator_regra3;
+        }
+      }
+      setFatores(fmap);
 
       const datas = mapped.map(m => m.data).filter(Boolean).sort();
       console.log('[precos] datas min->max:', datas[0], '->', datas[datas.length - 1], '| mapeadas:', mapped.length);
@@ -200,6 +230,8 @@ export default function PrecosInsumosView() {
                   <th style={thS}>Data</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Regra3</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
                 </tr>
               </thead>
               <tbody>
@@ -211,6 +243,23 @@ export default function PrecosInsumosView() {
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
+                    <td style={{ ...tdS, textAlign: 'right' }}>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="—"
+                        value={fatores[p.produto_id] ?? ''}
+                        onChange={e => handleFatorChange(p.produto_id, e.target.value)}
+                        onBlur={() => handleFatorBlur(p.produto_id)}
+                        style={fatorInputS}
+                      />
+                    </td>
+                    <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>{(() => {
+                      const raw = fatores[p.produto_id];
+                      const f = raw === '' || raw == null ? null : Number(String(raw).replace(',', '.'));
+                      if (f == null || Number.isNaN(f)) return '—';
+                      return 'R$ ' + (p.preco_normalizado * f).toFixed(2);
+                    })()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -244,4 +293,5 @@ function StatCard({ label, value }) {
 const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
+const fatorInputS = { width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--border, #e5e5e5)', textAlign: 'right', fontSize: 12, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
 const btnS = { padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', cursor: 'pointer', fontSize: 12 };
