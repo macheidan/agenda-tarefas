@@ -61,7 +61,7 @@ export default function PrecosInsumosView() {
       for (let p = 0; p < 30; p++) {
         const { data, error } = await supabase
           .from('precos')
-          .select('*, produtos(nome, categoria, medida_padrao), fornecedores(nome, categoria)')
+          .select('*, produtos(nome, nome_padrao, categoria, medida_padrao), fornecedores(nome, nome_curto, categoria)')
           .order('data', { ascending: false })
           .range(p * PAGE, p * PAGE + PAGE - 1);
 
@@ -86,7 +86,8 @@ export default function PrecosInsumosView() {
         qtd_embalagem: Number(r.qtd_embalagem) || 0,
         unidade_embalagem: r.unidade_embalagem || '',
         produto: r.produtos?.nome || '',
-        fornecedor: r.fornecedores?.nome || '',
+        produto_padrao: r.produtos?.nome_padrao || '',
+        fornecedor: r.fornecedores?.nome_curto || r.fornecedores?.nome || '',
         loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
       }));
 
@@ -194,6 +195,7 @@ export default function PrecosInsumosView() {
               <thead>
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
                   <th style={thS}>Produto</th>
+                  <th style={thS}>Produto (planilha)</th>
                   <th style={thS}>Fornecedor</th>
                   <th style={thS}>Data</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
@@ -204,6 +206,7 @@ export default function PrecosInsumosView() {
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     <td style={{ ...tdS, fontWeight: 500 }}>{p.produto}</td>
+                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>{p.produto_padrao || '—'}</td>
                     <td style={tdS}>{p.fornecedor}</td>
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
