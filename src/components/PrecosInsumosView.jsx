@@ -28,6 +28,20 @@ function parseDataISO(raw) {
 
 const PAGE_OPTIONS = [50, 100, 200];
 
+// Regra3: o fator multiplica o preco/kg por padrao (ex: "2" -> x2). Com o
+// prefixo "/" ele divide (ex: "/2" -> dividido por 2). Aceita virgula decimal.
+// Retorna o resultado numerico ou null se o campo estiver vazio/invalido.
+function calcResultado(precoNorm, raw) {
+  if (raw === '' || raw == null) return null;
+  const s = String(raw).trim();
+  const isDiv = s.startsWith('/');
+  const numStr = (isDiv ? s.slice(1) : s).replace(',', '.').trim();
+  const n = Number(numStr);
+  if (numStr === '' || Number.isNaN(n)) return null;
+  if (isDiv) return n === 0 ? null : precoNorm / n;
+  return precoNorm * n;
+}
+
 // Normaliza o identificador da loja (pizzaria) para exibicao: 'lov' -> 'Lov', 'dame' -> 'Dame'.
 function normalizeLoja(raw) {
   if (!raw) return '';
@@ -60,11 +74,11 @@ export default function PrecosInsumosView() {
 
   async function handleFatorBlur(produtoId) {
     const raw = fatores[produtoId];
-    const num = raw === '' || raw == null ? null : Number(String(raw).replace(',', '.'));
-    if (num !== null && Number.isNaN(num)) return; // ignora texto invalido
+    // Guarda o texto exato (ex: "2" ou "/2") pra preservar a operacao escolhida.
+    const val = raw === '' || raw == null ? null : String(raw).trim();
     const { error } = await supabase
       .from('produtos')
-      .update({ fator_regra3: num })
+      .update({ fator_regra3: val })
       .eq('id', produtoId);
     if (error) console.error('[precos] erro ao salvar fator:', error);
   }
@@ -246,8 +260,9 @@ export default function PrecosInsumosView() {
                     <td style={{ ...tdS, textAlign: 'right' }}>
                       <input
                         type="text"
-                        inputMode="decimal"
-                        placeholder="—"
+                        inputMode="text"
+                        placeholder="2 ou /2"
+                        title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)"
                         value={fatores[p.produto_id] ?? ''}
                         onChange={e => handleFatorChange(p.produto_id, e.target.value)}
                         onBlur={() => handleFatorBlur(p.produto_id)}
@@ -255,10 +270,8 @@ export default function PrecosInsumosView() {
                       />
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>{(() => {
-                      const raw = fatores[p.produto_id];
-                      const f = raw === '' || raw == null ? null : Number(String(raw).replace(',', '.'));
-                      if (f == null || Number.isNaN(f)) return '—';
-                      return 'R$ ' + (p.preco_normalizado * f).toFixed(2);
+                      const res = calcResultado(p.preco_normalizado, fatores[p.produto_id]);
+                      return res == null ? '—' : 'R$ ' + res.toFixed(2);
                     })()}</td>
                   </tr>
                 ))}
