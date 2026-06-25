@@ -418,6 +418,7 @@ function FornecedoresView({ precos }) {
 
   const [ano, setAno] = useState(() => anos[anos.length - 1] || String(new Date().getFullYear()));
   const [fornecedorSel, setFornecedorSel] = useState(null);
+  const [busca, setBusca] = useState('');
 
   // Se os anos mudarem (dados chegaram/trocaram) e o ano atual sumir, cai no mais recente.
   useEffect(() => {
@@ -454,6 +455,13 @@ function FornecedoresView({ precos }) {
     [doAno]
   );
 
+  // Busca por nome do fornecedor (filtra so a lista exibida; os stats seguem o ano inteiro).
+  const fornecedoresFiltrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return porFornecedor;
+    return porFornecedor.filter(r => r.fornecedor.toLowerCase().includes(q));
+  }, [porFornecedor, busca]);
+
   const porProduto = useMemo(() => {
     if (!fornecedorSel) return [];
     return agrega(doAno.filter(p => (p.fornecedor || '(sem)') === fornecedorSel), p => p.produto, 'produto');
@@ -483,7 +491,7 @@ function FornecedoresView({ precos }) {
     const { t, geral } = totaisPorMes(rows);
     return (
       <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <table className="fornMatriz" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
               <th style={{ ...thS, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>{labelCol}</th>
@@ -527,6 +535,11 @@ function FornecedoresView({ precos }) {
 
   return (
     <div>
+      {/* Hover de linha igual ao da pagina Preços (inclui a coluna fixa). */}
+      <style>{`
+        .fornMatriz tbody tr { transition: background 0.1s ease; }
+        .fornMatriz tbody tr:hover td { background: var(--accent-light, #ecf3ff) !important; }
+      `}</style>
       {/* Navegacao de ano + stats */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -555,10 +568,23 @@ function FornecedoresView({ precos }) {
         <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhuma compra registrada em {ano}.</p>
       ) : !fornecedorSel ? (
         <>
-          <p style={{ fontSize: 12, color: '#888', margin: '0 0 8px' }}>
-            Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para ver por produto.
-          </p>
-          <Matriz rows={porFornecedor} labelCol="Fornecedor" labelKey="fornecedor" onRowClick={r => setFornecedorSel(r.fornecedor)} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 8px', flexWrap: 'wrap' }}>
+            <input
+              type="search"
+              placeholder="Buscar fornecedor..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
+            />
+            <p style={{ fontSize: 12, color: '#888', margin: 0, flex: '1 1 240px' }}>
+              Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para ver por produto.
+            </p>
+          </div>
+          {fornecedoresFiltrados.length === 0 ? (
+            <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum fornecedor encontrado para "{busca}".</p>
+          ) : (
+            <Matriz rows={fornecedoresFiltrados} labelCol="Fornecedor" labelKey="fornecedor" onRowClick={r => setFornecedorSel(r.fornecedor)} />
+          )}
         </>
       ) : porProduto.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhuma compra de {fornecedorSel} em {ano}.</p>
