@@ -292,7 +292,6 @@ export default function PrecosInsumosView() {
                   <th style={thS}>Fornecedor</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Regra3</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
@@ -307,19 +306,6 @@ export default function PrecosInsumosView() {
                     <td style={tdS}>{p.fornecedor}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
-                    <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
-                      const ant = precoAnteriorPorId[p.id];
-                      if (ant == null) return <span style={{ color: '#bbb' }}>—</span>;
-                      const subiu = p.preco_normalizado > ant + 1e-9;
-                      const desceu = p.preco_normalizado < ant - 1e-9;
-                      const cor = subiu ? '#e53935' : desceu ? '#43a047' : '#888';
-                      const seta = subiu ? '▲' : desceu ? '▼' : '=';
-                      return (
-                        <span style={{ color: cor, fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
-                          {seta} R$ {ant.toFixed(2)}
-                        </span>
-                      );
-                    })()}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>
                       <input
                         type="text"
