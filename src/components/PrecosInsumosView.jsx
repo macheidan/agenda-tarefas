@@ -74,20 +74,46 @@ export default function PrecosInsumosView() {
 
   useEffect(() => { loadData(); }, []);
 
-  // Ao focar um campo da Regra3 ja preenchido, confirma a intencao de editar.
-  // Se o usuario cancelar, tira o foco e mantem o valor; se confirmar, libera
-  // a edicao ate o blur.
-  function handleFatorFocus(e, produtoId) {
+  // Confirma a intencao de editar um campo da Regra3 ja preenchido. Retorna true
+  // se a edicao esta liberada (campo vazio, ja desbloqueado, ou usuario confirmou
+  // agora). A confirmacao roda na ACAO de editar (clique/tecla), nao no foco: usar
+  // window.confirm dentro de onFocus criava um loop de popup (o dialog tira o foco,
+  // o blur reseta o desbloqueio e ao voltar o foco a confirmacao reaparecia).
+  function confirmaEdicaoFator(produtoId) {
+    if (fatoresDesbloqueados[produtoId]) return true;
     const atual = fatores[produtoId];
     const preenchido = atual != null && String(atual).trim() !== '';
-    if (preenchido && !fatoresDesbloqueados[produtoId]) {
-      const ok = window.confirm('A Regra3 deste produto já está preenchida. Tem certeza que deseja editar?');
-      if (ok) {
-        setFatoresDesbloqueados(prev => ({ ...prev, [produtoId]: true }));
-      } else {
-        e.target.blur();
-      }
+    if (!preenchido) return true;
+    const ok = window.confirm('A Regra3 deste produto já está preenchida. Tem certeza que deseja editar?');
+    if (ok) setFatoresDesbloqueados(prev => ({ ...prev, [produtoId]: true }));
+    return ok;
+  }
+
+  // Campo travado (somente leitura) enquanto estiver preenchido e ainda nao confirmado.
+  function fatorTravado(produtoId) {
+    if (fatoresDesbloqueados[produtoId]) return false;
+    const atual = fatores[produtoId];
+    return atual != null && String(atual).trim() !== '';
+  }
+
+  // Clique num campo travado: pede confirmacao antes de liberar e focar.
+  function handleFatorMouseDown(e, produtoId) {
+    if (!fatorTravado(produtoId)) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    if (confirmaEdicaoFator(produtoId)) {
+      // Foca/seleciona apos o desbloqueio aplicar (input deixa de ser readOnly).
+      setTimeout(() => { el.focus(); el.select(); }, 0);
     }
+  }
+
+  // Tecla de edicao (digito ou apagar) num campo travado: confirma antes de aceitar.
+  function handleFatorKeyDown(e, produtoId) {
+    if (!fatorTravado(produtoId)) return;
+    const editKey = e.key.length === 1 ? !e.ctrlKey && !e.metaKey && !e.altKey : (e.key === 'Backspace' || e.key === 'Delete');
+    if (!editKey) return; // deixa Tab, setas, etc. passarem
+    e.preventDefault();
+    confirmaEdicaoFator(produtoId);
   }
 
   function handleFatorChange(produtoId, raw) {
@@ -354,7 +380,9 @@ export default function PrecosInsumosView() {
                         placeholder="2 ou /2"
                         title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)"
                         value={fatores[p.produto_id] ?? ''}
-                        onFocus={e => handleFatorFocus(e, p.produto_id)}
+                        readOnly={fatorTravado(p.produto_id)}
+                        onMouseDown={e => handleFatorMouseDown(e, p.produto_id)}
+                        onKeyDown={e => handleFatorKeyDown(e, p.produto_id)}
                         onChange={e => handleFatorChange(p.produto_id, e.target.value)}
                         onBlur={() => handleFatorBlur(p.produto_id)}
                         style={fatorInputS}
