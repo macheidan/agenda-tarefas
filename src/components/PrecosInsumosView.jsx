@@ -286,24 +286,25 @@ export default function PrecosInsumosView() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                  <th style={thS}>Data</th>
                   <th style={thS}>Produto</th>
                   <th style={thS}>Produto (planilha)</th>
                   <th style={thS}>Fornecedor</th>
-                  <th style={thS}>Data</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Regra3</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
                 </tr>
               </thead>
               <tbody>
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-                    <td style={{ ...tdS, fontWeight: 500 }}>{p.produto}</td>
+                    <td style={tdS}>{formatDate(p.data)}</td>
+                    <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{p.produto}</td>
                     <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>{p.produto_padrao || '—'}</td>
                     <td style={tdS}>{p.fornecedor}</td>
-                    <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
@@ -335,6 +336,19 @@ export default function PrecosInsumosView() {
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>{(() => {
                       const res = calcResultado(p.preco_normalizado, fatores[p.produto_id]);
                       return res == null ? '—' : 'R$ ' + res.toFixed(2);
+                    })()}</td>
+                    <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
+                      const ant = precoAnteriorPorId[p.id];
+                      if (ant == null) return <span style={{ color: '#bbb' }}>—</span>;
+                      const subiu = p.preco_normalizado > ant + 1e-9;
+                      const desceu = p.preco_normalizado < ant - 1e-9;
+                      const cor = subiu ? '#e53935' : desceu ? '#43a047' : '#888';
+                      const seta = subiu ? '▲' : desceu ? '▼' : '=';
+                      return (
+                        <span style={{ color: cor, fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
+                          {seta} R$ {ant.toFixed(2)}
+                        </span>
+                      );
                     })()}</td>
                   </tr>
                 ))}
