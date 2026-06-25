@@ -65,14 +65,40 @@ export default function PrecosInsumosView() {
   // Mapa produto_id -> fator (Regra3). Compartilhado entre todas as linhas do
   // mesmo produto bruto: editar uma reflete em todas, persiste em produtos.fator_regra3.
   const [fatores, setFatores] = useState({});
+  // Produtos cuja edicao da Regra3 ja foi confirmada nesta sessao de foco. Um
+  // campo ja preenchido pede confirmacao antes de aceitar a 1a alteracao.
+  const [fatoresDesbloqueados, setFatoresDesbloqueados] = useState({});
 
   useEffect(() => { loadData(); }, []);
+
+  // Ao focar um campo da Regra3 ja preenchido, confirma a intencao de editar.
+  // Se o usuario cancelar, tira o foco e mantem o valor; se confirmar, libera
+  // a edicao ate o blur.
+  function handleFatorFocus(e, produtoId) {
+    const atual = fatores[produtoId];
+    const preenchido = atual != null && String(atual).trim() !== '';
+    if (preenchido && !fatoresDesbloqueados[produtoId]) {
+      const ok = window.confirm('A Regra3 deste produto já está preenchida. Tem certeza que deseja editar?');
+      if (ok) {
+        setFatoresDesbloqueados(prev => ({ ...prev, [produtoId]: true }));
+      } else {
+        e.target.blur();
+      }
+    }
+  }
 
   function handleFatorChange(produtoId, raw) {
     setFatores(prev => ({ ...prev, [produtoId]: raw }));
   }
 
   async function handleFatorBlur(produtoId) {
+    // Reseta o desbloqueio: o proximo foco num campo preenchido pede confirmacao de novo.
+    setFatoresDesbloqueados(prev => {
+      if (!prev[produtoId]) return prev;
+      const next = { ...prev };
+      delete next[produtoId];
+      return next;
+    });
     const raw = fatores[produtoId];
     // Guarda o texto exato (ex: "2" ou "/2") pra preservar a operacao escolhida.
     const val = raw === '' || raw == null ? null : String(raw).trim();
@@ -153,6 +179,28 @@ export default function PrecosInsumosView() {
     [...new Set(precos.map(p => p.loja))].filter(Boolean).sort(),
     [precos]
   );
+
+  // Mapa id-da-linha -> preco_normalizado da compra IMEDIATAMENTE anterior do
+  // mesmo produto. Usa todos os registros carregados (ignora filtros) pra que a
+  // "ultima compra" seja a real, e nao a anterior dentro do recorte filtrado.
+  const precoAnteriorPorId = useMemo(() => {
+    const porProduto = {};
+    for (const p of precos) {
+      (porProduto[p.produto_id] ||= []).push(p);
+    }
+    const result = {};
+    for (const id in porProduto) {
+      // Ordena por data crescente (id como desempate estavel pra mesma data).
+      const list = porProduto[id].slice().sort((a, b) => {
+        if (a.data !== b.data) return a.data < b.data ? -1 : 1;
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      });
+      for (let i = 0; i < list.length; i++) {
+        result[list[i].id] = i > 0 ? list[i - 1].preco_normalizado : null;
+      }
+    }
+    return result;
+  }, [precos]);
 
   const filtrados = useMemo(() => {
     return precos.filter(p => {
@@ -244,6 +292,7 @@ export default function PrecosInsumosView() {
                   <th style={thS}>Data</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Regra3</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
                 </tr>
@@ -257,6 +306,19 @@ export default function PrecosInsumosView() {
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
+                    <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
+                      const ant = precoAnteriorPorId[p.id];
+                      if (ant == null) return <span style={{ color: '#bbb' }}>—</span>;
+                      const subiu = p.preco_normalizado > ant + 1e-9;
+                      const desceu = p.preco_normalizado < ant - 1e-9;
+                      const cor = subiu ? '#e53935' : desceu ? '#43a047' : '#888';
+                      const seta = subiu ? '▲' : desceu ? '▼' : '=';
+                      return (
+                        <span style={{ color: cor, fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
+                          {seta} R$ {ant.toFixed(2)}
+                        </span>
+                      );
+                    })()}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>
                       <input
                         type="text"
@@ -264,6 +326,7 @@ export default function PrecosInsumosView() {
                         placeholder="2 ou /2"
                         title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)"
                         value={fatores[p.produto_id] ?? ''}
+                        onFocus={e => handleFatorFocus(e, p.produto_id)}
                         onChange={e => handleFatorChange(p.produto_id, e.target.value)}
                         onBlur={() => handleFatorBlur(p.produto_id)}
                         style={fatorInputS}
