@@ -1,6 +1,27 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../utils/supabase';
 
+const OCULTOS_KEY = 'precos_fornecedores_ocultos';
+
+// Fornecedores ocultados pelo usuario (ex: fornecedores eventuais sem relacao
+// com insumos). Some das listas de Preços, Fornecedores e Subiram. Persistido em
+// localStorage — preferencia simples, sem depender de schema no banco.
+function useFornecedoresOcultos() {
+  const [ocultos, setOcultos] = useState(() => {
+    try {
+      const raw = localStorage.getItem(OCULTOS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(OCULTOS_KEY, JSON.stringify(ocultos)); } catch { /* ignora quota/privado */ }
+  }, [ocultos]);
+  const toggle = (nome) =>
+    setOcultos(prev => prev.includes(nome) ? prev.filter(n => n !== nome) : [...prev, nome]);
+  return { ocultos, toggle };
+}
+
 function formatDate(d) {
   if (!d) return '';
   const [, m, day] = d.split('-');
@@ -58,6 +79,9 @@ export default function PrecosInsumosView() {
   const [subPage, setSubPage] = useState('precos');
   const [precos, setPrecos] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Fornecedores ocultos (compartilhado pelas 3 sub-paginas).
+  const { ocultos, toggle: toggleOculto } = useFornecedoresOcultos();
+  const ocultosSet = useMemo(() => new Set(ocultos), [ocultos]);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroLoja, setFiltroLoja] = useState('');
@@ -200,8 +224,8 @@ export default function PrecosInsumosView() {
   }
 
   const fornecedoresUnicos = useMemo(() =>
-    [...new Set(precos.map(p => p.fornecedor))].filter(Boolean).sort(),
-    [precos]
+    [...new Set(precos.map(p => p.fornecedor))].filter(f => f && !ocultosSet.has(f)).sort(),
+    [precos, ocultosSet]
   );
 
   const lojasUnicas = useMemo(() =>
@@ -233,6 +257,7 @@ export default function PrecosInsumosView() {
 
   const filtrados = useMemo(() => {
     return precos.filter(p => {
+      if (ocultosSet.has(p.fornecedor || '(sem)')) return false;
       if (dataInicio && p.data < dataInicio) return false;
       if (dataFim && p.data > dataFim) return false;
       if (filtroFornecedor && p.fornecedor !== filtroFornecedor) return false;
@@ -243,7 +268,7 @@ export default function PrecosInsumosView() {
       }
       return true;
     });
-  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim]);
+  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim, ocultosSet]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
   const paginaSegura = Math.min(paginaAtual, totalPaginas);
@@ -284,7 +309,7 @@ export default function PrecosInsumosView() {
     return (
       <div>
         {header}
-        <FornecedoresView precos={precos} />
+        <FornecedoresView precos={precos} ocultos={ocultosSet} ocultosList={ocultos} toggleOculto={toggleOculto} />
       </div>
     );
   }
@@ -293,7 +318,7 @@ export default function PrecosInsumosView() {
     return (
       <div>
         {header}
-        <SubiramView precos={precos} />
+        <SubiramView precos={precos} ocultos={ocultosSet} />
       </div>
     );
   }
@@ -446,7 +471,7 @@ function formatBRL(n, decimals = 0) {
 // Sub-pagina "Fornecedores": usa as notas (precos) puxadas da Receita Federal
 // pra mostrar quanto se compra por fornecedor por mes. Clicar num fornecedor
 // abre o detalhe por produto/mes (quanto de cada produto com aquele fornecedor).
-function FornecedoresView({ precos }) {
+function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   // Anos disponiveis a partir das datas das notas (asc).
   const anos = useMemo(() => {
     const s = new Set();
@@ -463,9 +488,10 @@ function FornecedoresView({ precos }) {
     if (anos.length && !anos.includes(ano)) setAno(anos[anos.length - 1]);
   }, [anos, ano]);
 
+  // Fornecedores ocultos somem de tudo aqui (agregacao, stats, matriz).
   const doAno = useMemo(
-    () => precos.filter(p => p.data && p.data.slice(0, 4) === ano),
-    [precos, ano]
+    () => precos.filter(p => p.data && p.data.slice(0, 4) === ano && !ocultos.has(p.fornecedor || '(sem)')),
+    [precos, ano, ocultos]
   );
 
   // Mostra so os meses que tem alguma compra no ano (matriz mais enxuta).
@@ -524,8 +550,9 @@ function FornecedoresView({ precos }) {
   const nFornecedores = porFornecedor.length;
   const nProdutos = new Set(doAno.map(p => p.produto).filter(Boolean)).size;
 
-  // Renderiza a matriz (linhas x meses + total). `onRowClick` opcional pra drill-down.
-  function Matriz({ rows, labelCol, labelKey, onRowClick }) {
+  // Renderiza a matriz (linhas x meses + total). `onRowClick` opcional pra drill-down,
+  // `onHide` opcional mostra um botao de ocultar fornecedor em cada linha.
+  function Matriz({ rows, labelCol, labelKey, onRowClick, onHide }) {
     const { t, geral } = totaisPorMes(rows);
     return (
       <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
@@ -547,6 +574,15 @@ function FornecedoresView({ precos }) {
                 style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: onRowClick ? 'pointer' : 'default' }}
               >
                 <td style={{ ...tdS, fontWeight: 500, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--card-bg, #fff)' }}>
+                  {onHide && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onHide(r); }}
+                      title={`Ocultar "${r[labelKey]}" das listas`}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#888', marginRight: 6, fontSize: 14, padding: 0, lineHeight: 1 }}
+                    >
+                      🚫
+                    </button>
+                  )}
                   {onRowClick && <span style={{ color: 'var(--accent)', marginRight: 4 }}>›</span>}
                   {r[labelKey]}
                 </td>
@@ -615,13 +651,13 @@ function FornecedoresView({ precos }) {
               style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
             />
             <p style={{ fontSize: 12, color: '#888', margin: 0, flex: '1 1 240px' }}>
-              Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para ver por produto.
+              Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para ver por produto, ou em 🚫 para ocultá-lo das listas.
             </p>
           </div>
           {fornecedoresFiltrados.length === 0 ? (
             <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum fornecedor encontrado para "{busca}".</p>
           ) : (
-            <Matriz rows={fornecedoresFiltrados} labelCol="Fornecedor" labelKey="fornecedor" onRowClick={r => setFornecedorSel(r.fornecedor)} />
+            <Matriz rows={fornecedoresFiltrados} labelCol="Fornecedor" labelKey="fornecedor" onRowClick={r => setFornecedorSel(r.fornecedor)} onHide={r => toggleOculto(r.fornecedor)} />
           )}
         </>
       ) : porProduto.length === 0 ? (
@@ -629,17 +665,40 @@ function FornecedoresView({ precos }) {
       ) : (
         <Matriz rows={porProduto} labelCol="Produto" labelKey="produto" />
       )}
+
+      {/* Fornecedores ocultos — restaurar com 1 clique. */}
+      {!fornecedorSel && ocultosList.length > 0 && (
+        <div style={{ marginTop: 16, padding: 12, border: '1px dashed var(--border, #e5e5e5)', borderRadius: 8, background: 'var(--bg, #f9fafb)' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8 }}>
+            Fornecedores ocultos ({ocultosList.length}) — não aparecem em Preços, Fornecedores nem Subiram
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {ocultosList.slice().sort((a, b) => a.localeCompare(b)).map(nome => (
+              <button
+                key={nome}
+                onClick={() => toggleOculto(nome)}
+                title="Mostrar este fornecedor novamente"
+                style={{ ...btnS, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <span>{nome}</span>
+                <span style={{ color: 'var(--accent)', fontWeight: 700 }}>↺ Mostrar</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // Sub-pagina "Subiram": lista os produtos cuja ULTIMA compra ficou mais cara
 // que a compra anterior (comparando o preco normalizado por kg/un/L).
-function SubiramView({ precos }) {
+function SubiramView({ precos, ocultos }) {
   const itens = useMemo(() => {
     const porProduto = {};
     for (const p of precos) {
       if (!p.data) continue;
+      if (ocultos.has(p.fornecedor || '(sem)')) continue; // fornecedor oculto some da lista
       (porProduto[p.produto_id] ||= []).push(p);
     }
     const out = [];
@@ -658,7 +717,7 @@ function SubiramView({ precos }) {
       }
     }
     return out.sort((a, b) => b.pct - a.pct);
-  }, [precos]);
+  }, [precos, ocultos]);
 
   const [busca, setBusca] = useState('');
   const filtrados = useMemo(() => {
