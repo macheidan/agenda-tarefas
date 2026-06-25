@@ -282,8 +282,12 @@ export default function PrecosInsumosView() {
       ) : (
         <>
           {/* Tabela */}
+          <style>{`
+            .precosTable tbody tr { transition: background 0.1s ease; }
+            .precosTable tbody tr:hover { background: var(--accent-light, #ecf3ff); }
+          `}</style>
           <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="precosTable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
                   <th style={thS}>Data</th>
@@ -292,7 +296,6 @@ export default function PrecosInsumosView() {
                   <th style={thS}>Fornecedor</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
                   <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Regra3</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
@@ -305,21 +308,8 @@ export default function PrecosInsumosView() {
                     <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{p.produto}</td>
                     <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>{p.produto_padrao || '—'}</td>
                     <td style={tdS}>{p.fornecedor}</td>
-                    <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
-                    <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
-                    <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
-                      const ant = precoAnteriorPorId[p.id];
-                      if (ant == null) return <span style={{ color: '#bbb' }}>—</span>;
-                      const subiu = p.preco_normalizado > ant + 1e-9;
-                      const desceu = p.preco_normalizado < ant - 1e-9;
-                      const cor = subiu ? '#e53935' : desceu ? '#43a047' : '#888';
-                      const seta = subiu ? '▲' : desceu ? '▼' : '=';
-                      return (
-                        <span style={{ color: cor, fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
-                          {seta} R$ {ant.toFixed(2)}
-                        </span>
-                      );
-                    })()}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>
                       <input
                         type="text"
@@ -333,7 +323,7 @@ export default function PrecosInsumosView() {
                         style={fatorInputS}
                       />
                     </td>
-                    <td style={{ ...tdS, textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>{(() => {
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>{(() => {
                       const res = calcResultado(p.preco_normalizado, fatores[p.produto_id]);
                       return res == null ? '—' : 'R$ ' + res.toFixed(2);
                     })()}</td>
@@ -345,7 +335,7 @@ export default function PrecosInsumosView() {
                       const cor = subiu ? '#e53935' : desceu ? '#43a047' : '#888';
                       const seta = subiu ? '▲' : desceu ? '▼' : '=';
                       return (
-                        <span style={{ color: cor, fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
+                        <span style={{ color: cor, fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
                           {seta} R$ {ant.toFixed(2)}
                         </span>
                       );
