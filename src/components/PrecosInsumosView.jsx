@@ -242,6 +242,7 @@ export default function PrecosInsumosView() {
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={tabBtnS(subPage === 'precos')} onClick={() => setSubPage('precos')}>Preços</button>
         <button style={tabBtnS(subPage === 'fornecedores')} onClick={() => setSubPage('fornecedores')}>Fornecedores</button>
+        <button style={tabBtnS(subPage === 'subiram', '#e53935')} onClick={() => setSubPage('subiram')}>Subiram</button>
       </div>
     </div>
   );
@@ -258,6 +259,15 @@ export default function PrecosInsumosView() {
       <div>
         {header}
         <FornecedoresView precos={precos} />
+      </div>
+    );
+  }
+
+  if (subPage === 'subiram') {
+    return (
+      <div>
+        {header}
+        <SubiramView precos={precos} />
       </div>
     );
   }
@@ -595,9 +605,101 @@ function FornecedoresView({ precos }) {
   );
 }
 
+// Sub-pagina "Subiram": lista os produtos cuja ULTIMA compra ficou mais cara
+// que a compra anterior (comparando o preco normalizado por kg/un/L).
+function SubiramView({ precos }) {
+  const itens = useMemo(() => {
+    const porProduto = {};
+    for (const p of precos) {
+      if (!p.data) continue;
+      (porProduto[p.produto_id] ||= []).push(p);
+    }
+    const out = [];
+    for (const id in porProduto) {
+      const list = porProduto[id].slice().sort((a, b) => {
+        if (a.data !== b.data) return a.data < b.data ? -1 : 1;
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      });
+      if (list.length < 2) continue;
+      const atual = list[list.length - 1];
+      const anterior = list[list.length - 2];
+      if (anterior.preco_normalizado > 0 && atual.preco_normalizado > anterior.preco_normalizado + 1e-9) {
+        const diff = atual.preco_normalizado - anterior.preco_normalizado;
+        const pct = (diff / anterior.preco_normalizado) * 100;
+        out.push({ row: atual, anterior: anterior.preco_normalizado, diff, pct });
+      }
+    }
+    return out.sort((a, b) => b.pct - a.pct);
+  }, [precos]);
+
+  const [busca, setBusca] = useState('');
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return itens;
+    return itens.filter(i =>
+      i.row.produto.toLowerCase().includes(q) || (i.row.fornecedor || '').toLowerCase().includes(q)
+    );
+  }, [itens, busca]);
+
+  return (
+    <div>
+      <style>{`
+        .subiuTable tbody tr { transition: background 0.1s ease; }
+        .subiuTable tbody tr:hover td { background: var(--accent-light, #ecf3ff) !important; }
+      `}</style>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <input
+          type="search"
+          placeholder="Buscar produto ou fornecedor..."
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+          style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
+        />
+        <div style={{ flex: '1 1 160px' }}>
+          <StatCard label="Itens que subiram" value={itens.length} />
+        </div>
+      </div>
+      {itens.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum item subiu em relação à última compra.</p>
+      ) : filtrados.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum item encontrado para "{busca}".</p>
+      ) : (
+        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+          <table className="subiuTable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                <th style={thS}>Produto</th>
+                <th style={thS}>Fornecedor</th>
+                <th style={thS}>Última compra</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Anterior</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Atual</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Variação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map(i => (
+                <tr key={i.row.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                  <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{i.row.produto}</td>
+                  <td style={tdS}>{i.row.fornecedor}</td>
+                  <td style={tdS}>{formatDate(i.row.data)}</td>
+                  <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {i.anterior.toFixed(2)}/{i.row.unidade_normalizada}</td>
+                  <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {i.row.preco_normalizado.toFixed(2)}/{i.row.unidade_normalizada}</td>
+                  <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: '#e53935', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    ▲ +R$ {i.diff.toFixed(2)} (+{i.pct.toFixed(1)}%)
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const headerS = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 0', marginBottom: 12, borderBottom: '1px solid var(--border, #e5e5e5)' };
 const headerTitleS = { fontSize: 18, fontWeight: 700, color: 'var(--text, #222)' };
-const tabBtnS = (active) => ({ padding: '8px 14px', border: '2px solid var(--accent, #465fff)', borderRadius: 6, background: active ? 'var(--accent, #465fff)' : 'var(--card-bg, #fff)', color: active ? '#fff' : 'var(--accent, #465fff)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
+const tabBtnS = (active, color = 'var(--accent, #465fff)') => ({ padding: '8px 14px', border: `2px solid ${color}`, borderRadius: 6, background: active ? color : 'var(--card-bg, #fff)', color: active ? '#fff' : color, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
 const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
