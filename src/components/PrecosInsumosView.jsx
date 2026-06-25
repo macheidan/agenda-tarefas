@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { supabase } from '../utils/supabase';
 
 const OCULTOS_KEY = 'precos_fornecedores_ocultos';
@@ -471,6 +471,16 @@ function formatBRL(n, decimals = 0) {
 // Sub-pagina "Fornecedores": usa as notas (precos) puxadas da Receita Federal
 // pra mostrar quanto se compra por fornecedor por mes. Clicar num fornecedor
 // abre o detalhe por produto/mes (quanto de cada produto com aquele fornecedor).
+// Olho cortado (eye-off) — indica "ocultar". SVG inline pra herdar a cor (currentColor).
+function EyeOffIcon({ size = 15 }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }} aria-hidden="true">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
 function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   // Anos disponiveis a partir das datas das notas (asc).
   const anos = useMemo(() => {
@@ -480,8 +490,15 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   }, [precos]);
 
   const [ano, setAno] = useState(() => anos[anos.length - 1] || String(new Date().getFullYear()));
-  const [fornecedorSel, setFornecedorSel] = useState(null);
+  // Fornecedores com a lista de produtos expandida (accordion inline).
+  const [expandidos, setExpandidos] = useState(() => new Set());
   const [busca, setBusca] = useState('');
+
+  const toggleExpand = (nome) => setExpandidos(prev => {
+    const next = new Set(prev);
+    if (next.has(nome)) next.delete(nome); else next.add(nome);
+    return next;
+  });
 
   // Se os anos mudarem (dados chegaram/trocaram) e o ano atual sumir, cai no mais recente.
   useEffect(() => {
@@ -526,10 +543,22 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
     return porFornecedor.filter(r => r.fornecedor.toLowerCase().includes(q));
   }, [porFornecedor, busca]);
 
-  const porProduto = useMemo(() => {
-    if (!fornecedorSel) return [];
-    return agrega(doAno.filter(p => (p.fornecedor || '(sem)') === fornecedorSel), p => p.produto, 'produto');
-  }, [doAno, fornecedorSel]);
+  // Produtos por fornecedor (pra expandir inline): fornecedor -> [{produto, meses, total}].
+  const produtosPorFornecedor = useMemo(() => {
+    const tmp = {};
+    for (const p of doAno) {
+      const f = p.fornecedor || '(sem)';
+      const prod = p.produto || '(sem)';
+      const m = Number(p.data.slice(5, 7)) - 1;
+      const byF = (tmp[f] ||= {});
+      const r = (byF[prod] ||= { produto: prod, meses: {}, total: 0 });
+      r.meses[m] = (r.meses[m] || 0) + p.preco_bruto;
+      r.total += p.preco_bruto;
+    }
+    const out = {};
+    for (const f in tmp) out[f] = Object.values(tmp[f]).sort((a, b) => b.total - a.total);
+    return out;
+  }, [doAno]);
 
   // Totais por mes (rodape) das linhas exibidas.
   function totaisPorMes(rows) {
@@ -550,16 +579,16 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   const nFornecedores = porFornecedor.length;
   const nProdutos = new Set(doAno.map(p => p.produto).filter(Boolean)).size;
 
-  // Renderiza a matriz (linhas x meses + total). `onRowClick` opcional pra drill-down,
-  // `onHide` opcional mostra um botao de ocultar fornecedor em cada linha.
-  function Matriz({ rows, labelCol, labelKey, onRowClick, onHide }) {
+  // Matriz fornecedor x mes. Cada linha expande (accordion) os produtos daquele
+  // fornecedor (produto x mes) inline, logo abaixo. Botao de olho-cortado oculta.
+  function Matriz({ rows }) {
     const { t, geral } = totaisPorMes(rows);
     return (
       <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
         <table className="fornMatriz" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
-              <th style={{ ...thS, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>{labelCol}</th>
+              <th style={{ ...thS, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>Fornecedor</th>
               {mesesAtivos.map(m => (
                 <th key={m} style={{ ...thS, textAlign: 'right' }}>{MESES[m]}</th>
               ))}
@@ -567,33 +596,49 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map(r => (
-              <tr
-                key={r[labelKey]}
-                onClick={onRowClick ? () => onRowClick(r) : undefined}
-                style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: onRowClick ? 'pointer' : 'default' }}
-              >
-                <td style={{ ...tdS, fontWeight: 500, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--card-bg, #fff)' }}>
-                  {onHide && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onHide(r); }}
-                      title={`Ocultar "${r[labelKey]}" das listas`}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#888', marginRight: 6, fontSize: 14, padding: 0, lineHeight: 1 }}
-                    >
-                      🚫
-                    </button>
-                  )}
-                  {onRowClick && <span style={{ color: 'var(--accent)', marginRight: 4 }}>›</span>}
-                  {r[labelKey]}
-                </td>
-                {mesesAtivos.map(m => (
-                  <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, color: r.meses[m] ? 'inherit' : '#ccc' }} title={r.meses[m] ? formatBRL(r.meses[m], 2) : ''}>
-                    {r.meses[m] ? formatBRL(r.meses[m]) : '—'}
-                  </td>
-                ))}
-                <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 700 }} title={formatBRL(r.total, 2)}>{formatBRL(r.total)}</td>
-              </tr>
-            ))}
+            {rows.map(r => {
+              const aberto = expandidos.has(r.fornecedor);
+              const produtos = produtosPorFornecedor[r.fornecedor] || [];
+              return (
+                <Fragment key={r.fornecedor}>
+                  <tr
+                    onClick={() => toggleExpand(r.fornecedor)}
+                    style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: 'pointer' }}
+                  >
+                    <td style={{ ...tdS, fontWeight: 500, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--card-bg, #fff)' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleOculto(r.fornecedor); }}
+                        title={`Ocultar "${r.fornecedor}" das listas`}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#888', marginRight: 8, padding: 0, lineHeight: 0, verticalAlign: 'middle' }}
+                      >
+                        <EyeOffIcon />
+                      </button>
+                      <span style={{ color: 'var(--accent)', marginRight: 6, display: 'inline-block', width: 10 }}>{aberto ? '▾' : '▸'}</span>
+                      {r.fornecedor}
+                    </td>
+                    {mesesAtivos.map(m => (
+                      <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, color: r.meses[m] ? 'inherit' : '#ccc' }} title={r.meses[m] ? formatBRL(r.meses[m], 2) : ''}>
+                        {r.meses[m] ? formatBRL(r.meses[m]) : '—'}
+                      </td>
+                    ))}
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 700 }} title={formatBRL(r.total, 2)}>{formatBRL(r.total)}</td>
+                  </tr>
+                  {aberto && produtos.map(prod => (
+                    <tr key={`${r.fornecedor}|${prod.produto}`} style={{ background: 'var(--bg, #f9fafb)' }}>
+                      <td style={{ ...tdS, paddingLeft: 40, fontSize: 12, color: 'var(--text-secondary, #555)', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--bg, #f9fafb)' }}>
+                        {prod.produto}
+                      </td>
+                      {mesesAtivos.map(m => (
+                        <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, color: prod.meses[m] ? 'var(--text-secondary, #555)' : '#ccc' }} title={prod.meses[m] ? formatBRL(prod.meses[m], 2) : ''}>
+                          {prod.meses[m] ? formatBRL(prod.meses[m]) : '—'}
+                        </td>
+                      ))}
+                      <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary, #555)' }} title={formatBRL(prod.total, 2)}>{formatBRL(prod.total)}</td>
+                    </tr>
+                  ))}
+                </Fragment>
+              );
+            })}
             <tr style={{ borderTop: '2px solid var(--border, #e5e5e5)', background: 'var(--bg, #f5f5f5)' }}>
               <td style={{ ...tdS, fontWeight: 700, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>Total</td>
               {mesesAtivos.map(m => (
@@ -628,19 +673,9 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
         </div>
       </div>
 
-      {/* Breadcrumb / drill-down */}
-      {fornecedorSel && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 14 }}>
-          <button onClick={() => setFornecedorSel(null)} style={{ ...btnS, fontWeight: 600 }}>← Fornecedores</button>
-          <span style={{ color: '#888' }}>/</span>
-          <strong>{fornecedorSel}</strong>
-          <span style={{ color: '#888', fontSize: 12 }}>— compras por produto/mês</span>
-        </div>
-      )}
-
       {doAno.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhuma compra registrada em {ano}.</p>
-      ) : !fornecedorSel ? (
+      ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 8px', flexWrap: 'wrap' }}>
             <input
@@ -651,23 +686,19 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
               style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
             />
             <p style={{ fontSize: 12, color: '#888', margin: 0, flex: '1 1 240px' }}>
-              Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para ver por produto, ou em 🚫 para ocultá-lo das listas.
+              Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para expandir os produtos, ou no ícone de olho cortado para ocultá-lo das listas.
             </p>
           </div>
           {fornecedoresFiltrados.length === 0 ? (
             <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum fornecedor encontrado para "{busca}".</p>
           ) : (
-            <Matriz rows={fornecedoresFiltrados} labelCol="Fornecedor" labelKey="fornecedor" onRowClick={r => setFornecedorSel(r.fornecedor)} onHide={r => toggleOculto(r.fornecedor)} />
+            <Matriz rows={fornecedoresFiltrados} />
           )}
         </>
-      ) : porProduto.length === 0 ? (
-        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhuma compra de {fornecedorSel} em {ano}.</p>
-      ) : (
-        <Matriz rows={porProduto} labelCol="Produto" labelKey="produto" />
       )}
 
       {/* Fornecedores ocultos — restaurar com 1 clique. */}
-      {!fornecedorSel && ocultosList.length > 0 && (
+      {ocultosList.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, border: '1px dashed var(--border, #e5e5e5)', borderRadius: 8, background: 'var(--bg, #f9fafb)' }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8 }}>
             Fornecedores ocultos ({ocultosList.length}) — não aparecem em Preços, Fornecedores nem Subiram
