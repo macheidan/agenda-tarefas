@@ -290,12 +290,11 @@ export default function PrecosInsumosView() {
             <table className="precosTable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
-                  <th style={thS}>Data</th>
                   <th style={thS}>Produto</th>
                   <th style={thS}>Produto (planilha)</th>
                   <th style={thS}>Fornecedor</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>$ Compra</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>$ kg/un/L</th>
+                  <th style={thS}>Data</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Preço Item</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Regra3</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
@@ -304,11 +303,10 @@ export default function PrecosInsumosView() {
               <tbody>
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-                    <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{p.produto}</td>
                     <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>{p.produto_padrao || '—'}</td>
                     <td style={tdS}>{p.fornecedor}</td>
-                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_bruto.toFixed(2)}</td>
+                    <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>
                       <input
