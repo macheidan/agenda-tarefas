@@ -3,7 +3,7 @@ import { supabase } from '../utils/supabase';
 
 function formatDate(d) {
   if (!d) return '';
-  const [y, m, day] = d.split('-');
+  const [, m, day] = d.split('-');
   return `${day}/${m}`;
 }
 
@@ -53,6 +53,9 @@ function normalizeLoja(raw) {
 }
 
 export default function PrecosInsumosView() {
+  // Sub-paginas (mesmo estilo de navegacao do Depto Pessoal): 'precos' = tabela
+  // de notas; 'fornecedores' = total de compras por fornecedor/produto/mes.
+  const [subPage, setSubPage] = useState('precos');
   const [precos, setPrecos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState('');
@@ -232,10 +235,36 @@ export default function PrecosInsumosView() {
   const dataMax = datasValidas[datasValidas.length - 1] || '—';
   const semData = precos.filter(p => !p.data).length;
 
-  if (loading) return <p style={{ padding: 20, textAlign: 'center' }}>Carregando precos...</p>;
+  // Navegacao por sub-paginas, no mesmo estilo do Depto Pessoal (abas no topo).
+  const header = (
+    <div style={headerS}>
+      <h2 style={headerTitleS}>📦 Preços Insumos</h2>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button style={tabBtnS(subPage === 'precos')} onClick={() => setSubPage('precos')}>Preços</button>
+        <button style={tabBtnS(subPage === 'fornecedores')} onClick={() => setSubPage('fornecedores')}>Fornecedores</button>
+      </div>
+    </div>
+  );
+
+  if (loading) return (
+    <div>
+      {header}
+      <p style={{ padding: 20, textAlign: 'center' }}>Carregando precos...</p>
+    </div>
+  );
+
+  if (subPage === 'fornecedores') {
+    return (
+      <div>
+        {header}
+        <FornecedoresView precos={precos} />
+      </div>
+    );
+  }
 
   return (
     <div>
+      {header}
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
         <StatCard label="Produtos" value={totalProdutos} />
@@ -368,6 +397,181 @@ function StatCard({ label, value }) {
   );
 }
 
+const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+// Formata em R$ (pt-BR). Por padrao sem casas decimais pra deixar a matriz
+// compacta; o valor exato (2 casas) vai no title de cada celula.
+function formatBRL(n, decimals = 0) {
+  return 'R$ ' + (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+// Sub-pagina "Fornecedores": usa as notas (precos) puxadas da Receita Federal
+// pra mostrar quanto se compra por fornecedor por mes. Clicar num fornecedor
+// abre o detalhe por produto/mes (quanto de cada produto com aquele fornecedor).
+function FornecedoresView({ precos }) {
+  // Anos disponiveis a partir das datas das notas (asc).
+  const anos = useMemo(() => {
+    const s = new Set();
+    for (const p of precos) { if (p.data) s.add(p.data.slice(0, 4)); }
+    return [...s].sort();
+  }, [precos]);
+
+  const [ano, setAno] = useState(() => anos[anos.length - 1] || String(new Date().getFullYear()));
+  const [fornecedorSel, setFornecedorSel] = useState(null);
+
+  // Se os anos mudarem (dados chegaram/trocaram) e o ano atual sumir, cai no mais recente.
+  useEffect(() => {
+    if (anos.length && !anos.includes(ano)) setAno(anos[anos.length - 1]);
+  }, [anos, ano]);
+
+  const doAno = useMemo(
+    () => precos.filter(p => p.data && p.data.slice(0, 4) === ano),
+    [precos, ano]
+  );
+
+  // Mostra so os meses que tem alguma compra no ano (matriz mais enxuta).
+  const mesesAtivos = useMemo(() => {
+    const s = new Set();
+    for (const p of doAno) s.add(Number(p.data.slice(5, 7)) - 1);
+    return [...s].sort((a, b) => a - b);
+  }, [doAno]);
+
+  // Agrega valor (preco_bruto = "$ Compra" da nota) por chave -> mes.
+  function agrega(rows, keyFn, keyLabel) {
+    const map = {};
+    for (const p of rows) {
+      const key = keyFn(p) || '(sem)';
+      const m = Number(p.data.slice(5, 7)) - 1;
+      const r = (map[key] ||= { [keyLabel]: key, meses: {}, total: 0 });
+      r.meses[m] = (r.meses[m] || 0) + p.preco_bruto;
+      r.total += p.preco_bruto;
+    }
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }
+
+  const porFornecedor = useMemo(
+    () => agrega(doAno, p => p.fornecedor, 'fornecedor'),
+    [doAno]
+  );
+
+  const porProduto = useMemo(() => {
+    if (!fornecedorSel) return [];
+    return agrega(doAno.filter(p => (p.fornecedor || '(sem)') === fornecedorSel), p => p.produto, 'produto');
+  }, [doAno, fornecedorSel]);
+
+  // Totais por mes (rodape) das linhas exibidas.
+  function totaisPorMes(rows) {
+    const t = {};
+    let geral = 0;
+    for (const r of rows) {
+      for (const m of mesesAtivos) t[m] = (t[m] || 0) + (r.meses[m] || 0);
+      geral += r.total;
+    }
+    return { t, geral };
+  }
+
+  const anoIdx = anos.indexOf(ano);
+  const prevAno = () => { if (anoIdx > 0) setAno(anos[anoIdx - 1]); };
+  const nextAno = () => { if (anoIdx >= 0 && anoIdx < anos.length - 1) setAno(anos[anoIdx + 1]); };
+
+  const totalAno = porFornecedor.reduce((s, r) => s + r.total, 0);
+  const nFornecedores = porFornecedor.length;
+  const nProdutos = new Set(doAno.map(p => p.produto).filter(Boolean)).size;
+
+  // Renderiza a matriz (linhas x meses + total). `onRowClick` opcional pra drill-down.
+  function Matriz({ rows, labelCol, labelKey, onRowClick }) {
+    const { t, geral } = totaisPorMes(rows);
+    return (
+      <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+              <th style={{ ...thS, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>{labelCol}</th>
+              {mesesAtivos.map(m => (
+                <th key={m} style={{ ...thS, textAlign: 'right' }}>{MESES[m]}</th>
+              ))}
+              <th style={{ ...thS, textAlign: 'right' }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr
+                key={r[labelKey]}
+                onClick={onRowClick ? () => onRowClick(r) : undefined}
+                style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: onRowClick ? 'pointer' : 'default' }}
+              >
+                <td style={{ ...tdS, fontWeight: 500, whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--card-bg, #fff)' }}>
+                  {onRowClick && <span style={{ color: 'var(--accent)', marginRight: 4 }}>›</span>}
+                  {r[labelKey]}
+                </td>
+                {mesesAtivos.map(m => (
+                  <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, color: r.meses[m] ? 'inherit' : '#ccc' }} title={r.meses[m] ? formatBRL(r.meses[m], 2) : ''}>
+                    {r.meses[m] ? formatBRL(r.meses[m]) : '—'}
+                  </td>
+                ))}
+                <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 700 }} title={formatBRL(r.total, 2)}>{formatBRL(r.total)}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: '2px solid var(--border, #e5e5e5)', background: 'var(--bg, #f5f5f5)' }}>
+              <td style={{ ...tdS, fontWeight: 700, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>Total</td>
+              {mesesAtivos.map(m => (
+                <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600 }} title={formatBRL(t[m] || 0, 2)}>{formatBRL(t[m] || 0)}</td>
+              ))}
+              <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 800 }} title={formatBRL(geral, 2)}>{formatBRL(geral)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Navegacao de ano + stats */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={prevAno} disabled={anoIdx <= 0} style={btnS} aria-label="Ano anterior">‹</button>
+          <strong style={{ fontSize: 16, minWidth: 56, textAlign: 'center' }}>{ano}</strong>
+          <button onClick={nextAno} disabled={anoIdx < 0 || anoIdx >= anos.length - 1} style={btnS} aria-label="Próximo ano">›</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(110px, 1fr))', gap: 8, flex: 1 }}>
+          <StatCard label="Total no ano" value={formatBRL(totalAno)} />
+          <StatCard label="Fornecedores" value={nFornecedores} />
+          <StatCard label="Produtos" value={nProdutos} />
+        </div>
+      </div>
+
+      {/* Breadcrumb / drill-down */}
+      {fornecedorSel && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 14 }}>
+          <button onClick={() => setFornecedorSel(null)} style={{ ...btnS, fontWeight: 600 }}>← Fornecedores</button>
+          <span style={{ color: '#888' }}>/</span>
+          <strong>{fornecedorSel}</strong>
+          <span style={{ color: '#888', fontSize: 12 }}>— compras por produto/mês</span>
+        </div>
+      )}
+
+      {doAno.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhuma compra registrada em {ano}.</p>
+      ) : !fornecedorSel ? (
+        <>
+          <p style={{ fontSize: 12, color: '#888', margin: '0 0 8px' }}>
+            Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para ver por produto.
+          </p>
+          <Matriz rows={porFornecedor} labelCol="Fornecedor" labelKey="fornecedor" onRowClick={r => setFornecedorSel(r.fornecedor)} />
+        </>
+      ) : porProduto.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhuma compra de {fornecedorSel} em {ano}.</p>
+      ) : (
+        <Matriz rows={porProduto} labelCol="Produto" labelKey="produto" />
+      )}
+    </div>
+  );
+}
+
+const headerS = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 0', marginBottom: 12, borderBottom: '1px solid var(--border, #e5e5e5)' };
+const headerTitleS = { fontSize: 18, fontWeight: 700, color: 'var(--text, #222)' };
+const tabBtnS = (active) => ({ padding: '8px 14px', border: '2px solid var(--accent, #465fff)', borderRadius: 6, background: active ? 'var(--accent, #465fff)' : 'var(--card-bg, #fff)', color: active ? '#fff' : 'var(--accent, #465fff)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
 const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
