@@ -1,12 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useCompras } from '../hooks/useCompras';
 import styles from '../styles/ComprasView.module.css';
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+const LOJAS = ['Lov', 'Dáme'];
 const FORNEC_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab', '#0d9488'];
 const ALL = '__all__';
+const LOJA_KEY = 'comprasLoja';
 
 // Normaliza para busca: minúsculas e sem acentos.
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -35,6 +37,10 @@ export default function ComprasView() {
 
   const [selectedId, setSelectedId] = useState(null);
   const [day, setDay] = useState(''); // '' = não selecionado (entrega obrigatória)
+  // Loja escolhida fica memorizada no navegador (localStorage).
+  const [loja, setLoja] = useState(() => {
+    try { return localStorage.getItem(LOJA_KEY) || ''; } catch { return ''; }
+  });
   const [copied, setCopied] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -53,26 +59,41 @@ export default function ComprasView() {
   const [fMarca, setFMarca] = useState('');
   const [fUnid, setFUnid] = useState('');
 
-  const cor = (idx) => FORNEC_COLORS[idx % FORNEC_COLORS.length];
+  useEffect(() => {
+    try { localStorage.setItem(LOJA_KEY, loja); } catch { /* ignore */ }
+  }, [loja]);
 
-  const validIds = [...fornecedores.map((f) => f.id), ALL];
+  // Fornecedores em ordem alfabética (usado em todo lugar que exibe a lista).
+  const sortedFornecedores = useMemo(
+    () => [...fornecedores].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', 'pt', { sensitivity: 'base' })),
+    [fornecedores]
+  );
+  // Índice estável de cor por fornecedor (segue a ordem alfabética).
+  const colorIndex = useMemo(() => {
+    const m = {};
+    sortedFornecedores.forEach((f, i) => { m[f.id] = i; });
+    return m;
+  }, [sortedFornecedores]);
+  const cor = (fornecId) => FORNEC_COLORS[(colorIndex[fornecId] ?? 0) % FORNEC_COLORS.length];
+
+  const validIds = [...sortedFornecedores.map((f) => f.id), ALL];
   const activeId =
     selectedId && validIds.includes(selectedId)
       ? selectedId
-      : fornecedores[0]?.id || null;
+      : sortedFornecedores[0]?.id || null;
   const isAll = activeId === ALL;
-  const activeFornec = isAll ? null : fornecedores.find((f) => f.id === activeId) || null;
-  const activeIdx = fornecedores.findIndex((f) => f.id === activeId);
+  const activeFornec = isAll ? null : sortedFornecedores.find((f) => f.id === activeId) || null;
 
   const fornecItems = useMemo(
     () => itens.filter((i) => i.fornecedorId === activeId),
     [itens, activeId]
   );
 
-  // Todos os fornecedores com seus itens (para a aba "Todos").
+  // Todos os fornecedores com seus itens (para a opção "Todos").
   const allGroups = useMemo(
-    () => fornecedores.map((f, idx) => ({ fornec: f, idx, items: itens.filter((i) => i.fornecedorId === f.id) })),
-    [fornecedores, itens]
+    () => sortedFornecedores.map((f) => ({ fornec: f, items: itens.filter((i) => i.fornecedorId === f.id) })),
+    [sortedFornecedores, itens]
   );
 
   // Busca por produto (em todos os fornecedores). Ao digitar, mostra a lista
@@ -85,10 +106,10 @@ export default function ComprasView() {
   const searchGroups = useMemo(() => {
     if (!searching) return [];
     const nq = norm(query.trim());
-    return fornecedores
-      .map((f, idx) => ({ fornec: f, idx, items: itens.filter((i) => i.fornecedorId === f.id) }))
+    return sortedFornecedores
+      .map((f) => ({ fornec: f, items: itens.filter((i) => i.fornecedorId === f.id) }))
       .filter((g) => g.items.some((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)));
-  }, [searching, query, fornecedores, itens]);
+  }, [searching, query, sortedFornecedores, itens]);
   const matchCount = useMemo(() => {
     if (!searching) return 0;
     const nq = norm(query.trim());
@@ -96,7 +117,7 @@ export default function ComprasView() {
   }, [searching, query, itens]);
 
   // Renderiza uma linha de item, reaproveitada na lista normal e na busca.
-  const renderItem = (item, fIdx, highlight = false) => {
+  const renderItem = (item, fornecId, highlight = false) => {
     const ativo = Number(item.qty) > 0;
     return (
       <div
@@ -118,7 +139,7 @@ export default function ComprasView() {
             step="any"
             value={item.qty ?? 0}
             onChange={(e) => updateItem(item.id, { qty: e.target.value })}
-            style={{ borderColor: cor(fIdx) }}
+            style={{ borderColor: cor(fornecId) }}
           />
           {canEdit && (
             <>
@@ -142,12 +163,12 @@ export default function ComprasView() {
   };
 
   // Renderiza o bloco de um fornecedor (cabeçalho clicável + lista de itens),
-  // usado na busca e na aba "Todos". highlightFn opcional destaca os que casam.
-  const renderGroup = ({ fornec, idx, items }, highlightFn) => (
+  // usado na busca e na opção "Todos". highlightFn opcional destaca os que casam.
+  const renderGroup = ({ fornec, items }, highlightFn) => (
     <div key={fornec.id} className={styles.group}>
       <button
         className={styles.groupHead}
-        style={{ borderColor: cor(idx), color: cor(idx) }}
+        style={{ borderColor: cor(fornec.id), color: cor(fornec.id) }}
         onClick={() => { setSelectedId(fornec.id); setQuery(''); }}
         title="Abrir fornecedor"
       >
@@ -157,7 +178,7 @@ export default function ComprasView() {
         {items.length === 0 ? (
           <p className={styles.emptyGroup}>Sem itens.</p>
         ) : (
-          items.map((item) => renderItem(item, idx, highlightFn ? highlightFn(item) : false))
+          items.map((item) => renderItem(item, fornec.id, highlightFn ? highlightFn(item) : false))
         )}
       </div>
     </div>
@@ -216,17 +237,21 @@ export default function ComprasView() {
     });
     return [
       `*PEDIDO ${fornec.name}*`,
-      '*Dáme & Lov*',
+      `*${loja}*`,
       `*Entrega ${day} após 16:30*`,
       '',
       ...linhas,
     ].join('\n');
   };
 
-  // Copia o pedido. A seleção do dia de entrega é obrigatória.
+  // Copia o pedido. Seleção do dia de entrega e da loja são obrigatórias.
   const copyOrder = () => {
     if (!day) {
       window.alert('Selecione o dia da entrega antes de copiar o pedido.');
+      return;
+    }
+    if (!loja) {
+      window.alert('Selecione a loja (Lov ou Dáme) antes de copiar o pedido.');
       return;
     }
     let txt;
@@ -272,6 +297,24 @@ export default function ComprasView() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2>🛒 Compras</h2>
+        {fornecedores.length > 0 && (
+          <div className={styles.headerActions}>
+            {canEdit && activeFornec && (
+              <button className={styles.newBtn} onClick={openAdd}>
+                {formMode === 'add' ? 'Cancelar' : '+ Item'}
+              </button>
+            )}
+            {canEdit && (
+              <button
+                className={styles.manageBtn}
+                onClick={() => setManaging((v) => !v)}
+                title="Gerenciar fornecedores"
+              >
+                {managing ? 'Fechar' : '+ Fornecedores'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {fornecedores.length > 0 && (
@@ -292,57 +335,28 @@ export default function ComprasView() {
         </div>
       )}
 
-      {/* Abas de fornecedores + gerenciar */}
-      <div className={styles.fornecBar}>
-        <div className={styles.fornecTabs}>
-          {fornecedores.map((f, idx) => {
-            const color = cor(idx);
-            const active = f.id === activeId;
-            return (
-              <button
-                key={f.id}
-                className={styles.fornecTab}
-                style={{
-                  borderColor: color,
-                  background: active ? color : 'var(--card)',
-                  color: active ? '#fff' : color,
-                }}
-                onClick={() => setSelectedId(f.id)}
-              >
-                {f.name}
-              </button>
-            );
-          })}
-          {fornecedores.length > 1 && (
-            <button
-              className={styles.fornecTab}
-              style={{
-                borderColor: 'var(--text-secondary)',
-                background: isAll ? 'var(--text-secondary)' : 'var(--card)',
-                color: isAll ? '#fff' : 'var(--text-secondary)',
-              }}
-              onClick={() => setSelectedId(ALL)}
-            >
-              Todos
-            </button>
-          )}
-          {canEdit && (
-            <button
-              className={styles.manageBtn}
-              onClick={() => setManaging((v) => !v)}
-              title="Gerenciar fornecedores"
-            >
-              {managing ? 'Fechar' : '⚙ Fornecedores'}
-            </button>
-          )}
+      {/* Seletor de fornecedor (alfabético) + opção Todos */}
+      {fornecedores.length > 0 && (
+        <div className={styles.fornecBar}>
+          <select
+            className={styles.fornecSelect}
+            style={{ borderColor: isAll ? 'var(--text-secondary)' : cor(activeId) }}
+            value={isAll ? ALL : (activeId || '')}
+            onChange={(e) => { setSelectedId(e.target.value); setQuery(''); }}
+          >
+            {sortedFornecedores.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+            {sortedFornecedores.length > 1 && <option value={ALL}>Todos os fornecedores</option>}
+          </select>
         </div>
-      </div>
+      )}
 
       {managing && canEdit && (
         <div className={styles.manageBox}>
           <h4>Fornecedores</h4>
           <div className={styles.manageList}>
-            {fornecedores.map((f) => (
+            {sortedFornecedores.map((f) => (
               <div key={f.id} className={styles.manageRow}>
                 {editingFornec === f.id ? (
                   <>
@@ -395,39 +409,41 @@ export default function ComprasView() {
         </div>
       )}
 
-      {/* Barra de ações */}
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarLeft}>
+      {/* Barra de ações: Zerar | Entrega · Loja · Copiar (uma linha) */}
+      {fornecedores.length > 0 && (activeFornec || isAll) && (
+        <div className={styles.toolbar}>
           <button className={styles.resetBtn} onClick={handleReset} disabled={resetting}>
             {resetting ? 'Zerando...' : 'Zerar'}
           </button>
-        </div>
-        <div className={styles.toolbarActions}>
-          {(activeFornec || isAll) && (
-            <>
-              <select
-                className={`${styles.daySelect} ${!day ? styles.daySelectEmpty : ''}`}
-                value={day}
-                onChange={(e) => setDay(e.target.value)}
-                required
-              >
-                <option value="">Entrega</option>
-                {WEEKDAYS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-              <button className={styles.copyBtn} onClick={copyOrder}>
-                {copied ? 'Copiado!' : 'Copiar pedido'}
-              </button>
-            </>
-          )}
-          {canEdit && activeFornec && (
-            <button className={styles.newBtn} onClick={openAdd}>
-              {formMode === 'add' ? 'Cancelar' : '+ Item'}
+          <div className={styles.toolbarActions}>
+            <select
+              className={`${styles.daySelect} ${!day ? styles.selectEmpty : ''}`}
+              value={day}
+              onChange={(e) => setDay(e.target.value)}
+              required
+            >
+              <option value="">Entrega</option>
+              {WEEKDAYS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <select
+              className={`${styles.daySelect} ${!loja ? styles.selectEmpty : ''}`}
+              value={loja}
+              onChange={(e) => setLoja(e.target.value)}
+              required
+            >
+              <option value="">Loja</option>
+              {LOJAS.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <button className={styles.copyBtn} onClick={copyOrder}>
+              {copied ? 'Copiado!' : 'Copiar pedido'}
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {formMode && canEdit && activeFornec && (
         <div className={styles.itemForm}>
@@ -508,7 +524,7 @@ export default function ComprasView() {
         </p>
       ) : (
         <div className={styles.list}>
-          {fornecItems.map((item) => renderItem(item, activeIdx))}
+          {fornecItems.map((item) => renderItem(item, activeId))}
         </div>
       )}
     </div>
