@@ -127,5 +127,15 @@ service cloud.firestore {
     match /dpAbsences/{absenceId} {
       allow read, write: if isSignedIn();
     }
+
+    // Compras (fornecedores e itens da lista de pedidos):
+    // qualquer logado lê/cria/edita/deleta (acesso controlado pelo toggle de
+    // visibilidade; quem gerencia o catálogo é controlado no cliente por comprasEditor).
+    match /comprasFornecedores/{fornecedorId} {
+      allow read, write: if isSignedIn();
+    }
+    match /comprasItens/{itemId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

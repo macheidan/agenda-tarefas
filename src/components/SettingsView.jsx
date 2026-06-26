@@ -12,7 +12,7 @@ const TAB_LABELS = {
   contentPlan: 'Content Plan',
   influencers: 'Influencers',
   notes: 'Anotações',
-  shopping: 'Lista de Compras',
+  shopping: 'Compras',
   ideas: 'Ideias',
   reviews: 'Avaliações',
   knowledge: 'Conhecimento',
@@ -61,7 +61,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     { key: 'influencersEnabled', label: 'Influencers' },
     { key: 'ideasEnabled', label: 'Ideias' },
     { key: 'notesEnabled', label: 'Anotações' },
-    { key: 'shoppingListEnabled', label: 'Lista de Compras' },
+    { key: 'shoppingListEnabled', label: 'Compras' },
     { key: 'reviewsEnabled', label: 'Avaliações' },
     { key: 'knowledgeEnabled', label: 'Conhecimento' },
     { key: 'precosInsumosEnabled', label: 'Preços Insumos' },
@@ -361,6 +361,18 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                         </div>
                       </>
                     )}
+                  </div>
+                )}
+                {s.shoppingListEnabled !== false && (
+                  <div className={styles.dpStoresRow}>
+                    <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
+                      <input
+                        type="checkbox"
+                        checked={s.comprasEditor === true}
+                        onChange={(e) => toggleSection(u.uid, 'comprasEditor', e.target.checked)}
+                      />
+                      <span className={styles.sectionLabel}>Editor (gerencia fornecedores e itens de Compras)</span>
+                    </label>
                   </div>
                 )}
               </div>

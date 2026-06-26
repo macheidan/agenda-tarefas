@@ -37,6 +37,7 @@ import { useKnowledge } from '../hooks/useKnowledge';
 import TaskModal from '../components/TaskModal';
 import PrecosInsumosView from '../components/PrecosInsumosView';
 import DepartamentoPessoalView from '../components/DepartamentoPessoalView';
+import ComprasView from '../components/ComprasView';
 import styles from '../styles/Dashboard.module.css';
 
 export default function Dashboard() {
@@ -216,27 +217,7 @@ export default function Dashboard() {
             onNoteClick={(note) => { setEditingNote(note); setNoteModalOpen(true); }}
           />
         )}
-        {activeTab === 'shopping' && shoppingListEnabled && (
-          <iframe
-            src="https://macheidan.github.io/lista_compras/insumos.html"
-            title="Lista de Compras"
-            style={{ width: '100%', height: isMobile ? 'calc(100dvh - 110px)' : 'calc(100vh - 120px)', border: 'none' }}
-            onLoad={(e) => {
-              try {
-                const doc = e.target.contentDocument;
-                const input = doc.querySelector('input[type="password"], input[type="text"]');
-                const btn = doc.querySelector('button');
-                if (input && btn && !input.value) {
-                  input.value = '54321';
-                  input.dispatchEvent(new Event('input', { bubbles: true }));
-                  btn.click();
-                }
-              } catch (err) {
-                // cross-origin fallback
-              }
-            }}
-          />
-        )}
+        {activeTab === 'shopping' && shoppingListEnabled && <ComprasView />}
         {activeTab === 'reviews' && reviewsEnabled && (
           <ReviewsView
             reviews={reviews}
