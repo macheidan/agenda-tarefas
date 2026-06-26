@@ -1,0 +1,380 @@
+.container {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px var(--shadow);
+  padding: 24px;
+  padding-top: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  margin-bottom: 8px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ---- Fornecedores ---- */
+.fornecBar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.fornecTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.fornecTab {
+  padding: 7px 16px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.manageBtn {
+  padding: 6px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.manageBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.manageBox {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.manageBox h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.manageList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.manageRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manageName {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.addFornecRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inlineInput {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  min-width: 160px;
+  flex: 1;
+}
+
+.inlineInputSm {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  width: 110px;
+}
+
+.inlineInput:focus,
+.inlineInputSm:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.smallBtn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smallBtnGhost {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smallBtnDanger {
+  padding: 7px 12px;
+  border: 1px solid #f04438;
+  border-radius: 6px;
+  background: var(--card);
+  color: #f04438;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---- Toolbar ---- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dayLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.daySelect {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.toolbarActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copyBtn {
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---- Form de item ---- */
+.itemForm {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.itemFormTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.itemFormFields {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---- Lista ---- */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.rowActive {
+  background: rgba(18, 183, 106, 0.10);
+  border-color: rgba(18, 183, 106, 0.45);
+}
+
+.rowInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.produto {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.marca {
+  font-weight: 600;
+}
+
+.unid {
+  opacity: 0.85;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.qtyInput {
+  width: 72px;
+  padding: 7px 8px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.qtyInput:focus {
+  outline: none;
+}
+
+.iconBtn,
+.iconBtnDanger {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.iconBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.iconBtnDanger:hover {
+  background: rgba(240, 68, 56, 0.12);
+}
+
+/* ---- Vazio / erro ---- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.errorMsg {
+  color: #f04438;
+  font-size: 13px;
+  max-width: 420px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+    padding-top: 0;
+  }
+  .row {
+    flex-wrap: wrap;
+  }
+}

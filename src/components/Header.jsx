@@ -33,7 +33,7 @@ export default function Header({
     contentPlan: { enabled: contentPlanEnabled, key: 'contentPlan', label: 'Content Plan' },
     influencers: { enabled: influencersEnabled, key: 'influencers', label: 'Influencers' },
     notes: { enabled: notesEnabled, key: 'notes', label: 'Anotações' },
-    shopping: { enabled: shoppingListEnabled, key: 'shopping', label: 'Lista de Compras' },
+    shopping: { enabled: shoppingListEnabled, key: 'shopping', label: 'Compras' },
     ideas: {
       enabled: ideasEnabled,
       key: 'ideas',
