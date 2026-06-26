@@ -79,8 +79,9 @@ export default function ComprasView() {
   const cor = (fornecId) => FORNEC_COLORS[(colorIndex[fornecId] ?? 0) % FORNEC_COLORS.length];
 
   const validIds = [...sortedFornecedores.map((f) => f.id), ALL];
-  // Seleção de fornecedor é obrigatória: sem escolha, nada é exibido.
-  const activeId = selectedId && validIds.includes(selectedId) ? selectedId : null;
+  // Padrão: "Todos" já vem marcado (quando há mais de um fornecedor).
+  const defaultId = sortedFornecedores.length > 1 ? ALL : (sortedFornecedores[0]?.id || null);
+  const activeId = selectedId && validIds.includes(selectedId) ? selectedId : defaultId;
   const isAll = activeId === ALL;
   const activeFornec = isAll ? null : sortedFornecedores.find((f) => f.id === activeId) || null;
 
@@ -206,11 +207,11 @@ export default function ComprasView() {
 
   const submitForm = () => {
     const produto = fProduto.trim();
-    if (!produto || !activeId) return;
+    if (!produto || !formFornecId) return;
     if (formMode === 'edit' && formId) {
-      updateItem(formId, { produto, marca: fMarca, unid: fUnid });
+      updateItem(formId, { produto, marca: fMarca, unid: fUnid, fornecedorId: formFornecId });
     } else {
-      addItem(activeId, { produto, marca: fMarca, unid: fUnid, qty: 0 });
+      addItem(formFornecId, { produto, marca: fMarca, unid: fUnid, qty: 0 });
     }
     closeForm();
   };
@@ -405,7 +406,6 @@ export default function ComprasView() {
             onChange={(e) => { setSelectedId(e.target.value); setQuery(''); }}
             required
           >
-            <option value="">Selecione o fornecedor</option>
             {sortedFornecedores.length > 1 && <option value={ALL}>Todos</option>}
             {sortedFornecedores.map((f) => (
               <option key={f.id} value={f.id}>{f.name}</option>
@@ -417,17 +417,6 @@ export default function ComprasView() {
                 {resetting ? 'Zerando...' : 'Zerar'}
               </button>
               <select
-                className={`${styles.daySelect} ${!day ? styles.selectEmpty : ''}`}
-                value={day}
-                onChange={(e) => setDay(e.target.value)}
-                required
-              >
-                <option value="">Entrega</option>
-                {WEEKDAYS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-              <select
                 className={`${styles.daySelect} ${!loja ? styles.selectEmpty : ''}`}
                 value={loja}
                 onChange={(e) => setLoja(e.target.value)}
@@ -438,8 +427,19 @@ export default function ComprasView() {
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
+              <select
+                className={`${styles.daySelect} ${!day ? styles.selectEmpty : ''}`}
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+                required
+              >
+                <option value="">Entrega</option>
+                {WEEKDAYS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
               <button className={styles.copyBtn} onClick={copyOrder}>
-                {copied ? 'Copiado!' : 'Copiar pedido'}
+                {copied ? 'Copiado!' : '+ Copiar'}
               </button>
             </div>
           )}
@@ -478,6 +478,18 @@ export default function ComprasView() {
               onChange={(e) => setFUnid(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submitForm()}
             />
+            <label className={styles.itemFormLabel}>
+              Fornecedor
+              <select
+                className={styles.daySelect}
+                value={formFornecId || ''}
+                onChange={(e) => setFormFornecId(e.target.value)}
+              >
+                {sortedFornecedores.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </label>
             <button className={styles.smallBtn} onClick={submitForm}>
               {formMode === 'add' ? 'Adicionar' : 'Salvar'}
             </button>

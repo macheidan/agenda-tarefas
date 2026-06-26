@@ -94,6 +94,7 @@ export function useCompras() {
     if (typeof updates?.marca === 'string') clean.marca = updates.marca.trim();
     if (typeof updates?.unid === 'string') clean.unid = updates.unid.trim();
     if (updates && 'qty' in updates) clean.qty = Number(updates.qty) || 0;
+    if (updates?.fornecedorId) clean.fornecedorId = updates.fornecedorId;
     if (Object.keys(clean).length) {
       await updateDoc(doc(db, 'comprasItens', id), clean);
     }
