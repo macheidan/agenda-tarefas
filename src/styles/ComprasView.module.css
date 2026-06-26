@@ -154,18 +154,18 @@
 }
 
 .manageBtn {
-  padding: 6px 12px;
-  border: 1px dashed var(--border);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--text-secondary);
-  font-size: 12px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .manageBtn:hover {
-  background: var(--bg-secondary);
+  background: var(--border-light);
 }
 
 .manageBox {
@@ -511,8 +511,18 @@
     padding: 16px;
     padding-top: 0;
   }
+  /* Mantém produto (esquerda) e quantidade/ações (direita) na mesma linha;
+     o texto longo do produto quebra dentro da própria coluna. */
   .row {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .rowInfo {
+    flex: 1;
+    min-width: 0;
+  }
+  .rowActions {
+    flex-shrink: 0;
   }
   /* Zerar · Entrega · Loja · Copiar na mesma linha (sem quebrar). */
   .toolbar {
