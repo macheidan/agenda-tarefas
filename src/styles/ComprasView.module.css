@@ -349,11 +349,15 @@
   padding: 8px 16px;
   border: 1px solid var(--accent);
   border-radius: 6px;
-  background: var(--card);
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.copyBtn:hover {
+  filter: brightness(0.95);
 }
 
 .newBtn {
@@ -393,6 +397,15 @@
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.itemFormLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 /* ---- Lista ---- */
