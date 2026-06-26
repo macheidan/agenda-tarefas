@@ -26,6 +26,13 @@
   color: var(--text);
 }
 
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 /* ---- Busca ---- */
 .searchRow {
   display: flex;
@@ -127,6 +134,23 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+}
+
+.fornecSelect {
+  padding: 9px 12px;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 220px;
+  max-width: 100%;
+}
+
+.fornecSelect:focus {
+  outline: none;
 }
 
 .manageBtn {
@@ -282,8 +306,8 @@
   font-weight: 600;
 }
 
-/* Entrega ainda não escolhida (obrigatória): destaca o seletor. */
-.daySelectEmpty {
+/* Campo obrigatório ainda não escolhido (entrega/loja): destaca o seletor. */
+.selectEmpty {
   border-color: var(--accent);
   color: var(--text-secondary);
 }
@@ -489,5 +513,27 @@
   }
   .row {
     flex-wrap: wrap;
+  }
+  /* Zerar · Entrega · Loja · Copiar na mesma linha (sem quebrar). */
+  .toolbar {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .toolbarActions {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .toolbar .resetBtn,
+  .toolbar .copyBtn,
+  .toolbar .daySelect {
+    padding: 8px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .fornecSelect {
+    min-width: 0;
+    width: 100%;
   }
 }
