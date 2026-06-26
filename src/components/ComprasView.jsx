@@ -155,7 +155,7 @@ export default function ComprasView() {
                 }}
                 title="Apagar item"
               >
-                🗑
+                ✕
               </button>
             </>
           )}
