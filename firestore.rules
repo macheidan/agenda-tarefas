@@ -116,6 +116,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Preços Insumos: config global (ex.: fornecedores ocultos).
+    // Qualquer logado lê/escreve — a visibilidade vale para todos os usuários
+    // com acesso à seção (controlada pelo toggle de feature do usuário).
+    match /precosConfig/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
     // Departamento Pessoal (lojas, funcionários e escala de faltas):
     // qualquer logado lê/cria/edita/deleta (acesso controlado pelo toggle de visibilidade).
     match /dpStores/{storeId} {

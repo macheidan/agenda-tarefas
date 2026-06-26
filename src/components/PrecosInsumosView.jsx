@@ -1,5 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
+import { doc, onSnapshot, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { db } from '../firebase';
 import { supabase } from '../utils/supabase';
+
+// Fornecedores ocultos sao globais: ficam num unico doc do Firestore e valem
+// para todos os usuarios com acesso a esta secao (nao e por usuario).
+const OCULTOS_REF = ['precosConfig', 'fornecedoresOcultos'];
 
 function formatDate(d) {
   if (!d) return '';
@@ -51,8 +57,37 @@ export default function PrecosInsumosView() {
   // Mapa produto_id -> fator (Regra3). Compartilhado entre todas as linhas do
   // mesmo produto bruto: editar uma reflete em todas, persiste em produtos.fator_regra3.
   const [fatores, setFatores] = useState({});
+  // Nomes de fornecedores ocultos (global, vindo do Firestore) + painel de gestao.
+  const [hiddenFornecedores, setHiddenFornecedores] = useState([]);
+  const [showGerenciador, setShowGerenciador] = useState(false);
 
   useEffect(() => { loadData(); }, []);
+
+  // Ouve em tempo real o doc global de fornecedores ocultos: qualquer usuario
+  // que oculte/exiba um fornecedor reflete na hora para todos os outros.
+  useEffect(() => {
+    const ref = doc(db, ...OCULTOS_REF);
+    const unsub = onSnapshot(
+      ref,
+      snap => setHiddenFornecedores(snap.exists() ? (snap.data().nomes || []) : []),
+      err => console.error('[precos] erro ao ouvir fornecedores ocultos:', err)
+    );
+    return unsub;
+  }, []);
+
+  async function toggleFornecedorOculto(nome) {
+    const ref = doc(db, ...OCULTOS_REF);
+    const oculto = hiddenFornecedores.includes(nome);
+    try {
+      await setDoc(
+        ref,
+        { nomes: oculto ? arrayRemove(nome) : arrayUnion(nome) },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error('[precos] erro ao salvar fornecedor oculto:', e);
+    }
+  }
 
   function handleFatorChange(produtoId, raw) {
     setFatores(prev => ({ ...prev, [produtoId]: raw }));
@@ -130,10 +165,24 @@ export default function PrecosInsumosView() {
     setLoading(false);
   }
 
-  const fornecedoresUnicos = useMemo(() =>
+  const hiddenSet = useMemo(() => new Set(hiddenFornecedores), [hiddenFornecedores]);
+
+  // Todos os fornecedores carregados (inclui ocultos) — usado no painel de gestao.
+  const fornecedoresTodos = useMemo(() =>
     [...new Set(precos.map(p => p.fornecedor))].filter(Boolean).sort(),
     [precos]
   );
+
+  // Apenas os visiveis — usado no dropdown de filtro e na contagem.
+  const fornecedoresUnicos = useMemo(() =>
+    fornecedoresTodos.filter(f => !hiddenSet.has(f)),
+    [fornecedoresTodos, hiddenSet]
+  );
+
+  // Se o fornecedor atualmente filtrado for ocultado, limpa o filtro.
+  useEffect(() => {
+    if (filtroFornecedor && hiddenSet.has(filtroFornecedor)) setFiltroFornecedor('');
+  }, [hiddenSet, filtroFornecedor]);
 
   const lojasUnicas = useMemo(() =>
     [...new Set(precos.map(p => p.loja))].filter(Boolean).sort(),
@@ -142,6 +191,7 @@ export default function PrecosInsumosView() {
 
   const filtrados = useMemo(() => {
     return precos.filter(p => {
+      if (hiddenSet.has(p.fornecedor)) return false;
       if (dataInicio && p.data < dataInicio) return false;
       if (dataFim && p.data > dataFim) return false;
       if (filtroFornecedor && p.fornecedor !== filtroFornecedor) return false;
@@ -152,7 +202,7 @@ export default function PrecosInsumosView() {
       }
       return true;
     });
-  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim]);
+  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim, hiddenSet]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
   const paginaSegura = Math.min(paginaAtual, totalPaginas);
@@ -213,7 +263,58 @@ export default function PrecosInsumosView() {
         <select value={porPagina} onChange={e => setPorPagina(Number(e.target.value))} style={{ ...inputS, width: 75 }}>
           {PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}/pag</option>)}
         </select>
+        <button
+          type="button"
+          onClick={() => setShowGerenciador(v => !v)}
+          style={{ ...btnS, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          title="Ocultar ou exibir fornecedores (vale para todos os usuarios)"
+        >
+          <EyeOffIcon />
+          {showGerenciador ? 'Fechar' : 'Fornecedores'}
+          {hiddenFornecedores.length > 0 && (
+            <span style={{ background: 'var(--accent, #2962ff)', color: '#fff', borderRadius: 999, padding: '0 6px', fontSize: 11 }}>
+              {hiddenFornecedores.length}
+            </span>
+          )}
+        </button>
       </div>
+
+      {/* Painel de gestao de visibilidade de fornecedores (global) */}
+      {showGerenciador && (
+        <div style={{ marginBottom: 12, padding: 12, background: 'var(--card-bg, #fff)', border: '1px solid var(--border, #e5e5e5)', borderRadius: 8 }}>
+          <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>
+            Clique no olho para ocultar ou exibir um fornecedor. A alteração fica salva no banco e vale para <strong>todos os usuários</strong> com acesso a esta seção.
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {fornecedoresTodos.length === 0 && (
+              <span style={{ fontSize: 12, color: '#888' }}>Nenhum fornecedor carregado.</span>
+            )}
+            {fornecedoresTodos.map(f => {
+              const oculto = hiddenSet.has(f);
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => toggleFornecedorOculto(f)}
+                  title={oculto ? 'Exibir fornecedor' : 'Ocultar fornecedor'}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '5px 10px', borderRadius: 999,
+                    border: '1px solid var(--border, #e5e5e5)',
+                    background: 'var(--bg, #f5f5f5)', cursor: 'pointer', fontSize: 12,
+                    color: oculto ? '#999' : 'var(--text, #222)',
+                    textDecoration: oculto ? 'line-through' : 'none',
+                    opacity: oculto ? 0.7 : 1,
+                  }}
+                >
+                  {oculto ? <EyeOffIcon /> : <EyeIcon />}
+                  <span>{f}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {filtrados.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum registro encontrado ({precos.length} total, filtro removeu todos)</p>
@@ -278,6 +379,26 @@ export default function PrecosInsumosView() {
         </>
       )}
     </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+      <line x1="2" x2="22" y1="2" y2="22" />
+    </svg>
   );
 }
 
