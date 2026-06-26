@@ -78,12 +78,8 @@ export default function ComprasView() {
   const cor = (fornecId) => FORNEC_COLORS[(colorIndex[fornecId] ?? 0) % FORNEC_COLORS.length];
 
   const validIds = [...sortedFornecedores.map((f) => f.id), ALL];
-  // Padrão: "Todos" quando há mais de um fornecedor; senão, o único existente.
-  const defaultId = sortedFornecedores.length > 1 ? ALL : (sortedFornecedores[0]?.id || null);
-  const activeId =
-    selectedId && validIds.includes(selectedId)
-      ? selectedId
-      : defaultId;
+  // Seleção de fornecedor é obrigatória: sem escolha, nada é exibido.
+  const activeId = selectedId && validIds.includes(selectedId) ? selectedId : null;
   const isAll = activeId === ALL;
   const activeFornec = isAll ? null : sortedFornecedores.find((f) => f.id === activeId) || null;
 
@@ -341,11 +337,13 @@ export default function ComprasView() {
       {fornecedores.length > 0 && (
         <div className={styles.fornecBar}>
           <select
-            className={styles.fornecSelect}
-            style={{ borderColor: isAll ? 'var(--text-secondary)' : cor(activeId) }}
+            className={`${styles.fornecSelect} ${!activeId ? styles.selectEmpty : ''}`}
+            style={{ borderColor: !activeId ? 'var(--accent)' : (isAll ? 'var(--text-secondary)' : cor(activeId)) }}
             value={isAll ? ALL : (activeId || '')}
             onChange={(e) => { setSelectedId(e.target.value); setQuery(''); }}
+            required
           >
+            <option value="">Selecione o fornecedor</option>
             {sortedFornecedores.length > 1 && <option value={ALL}>Todos</option>}
             {sortedFornecedores.map((f) => (
               <option key={f.id} value={f.id}>{f.name}</option>
@@ -515,6 +513,8 @@ export default function ComprasView() {
             {searchGroups.map((g) => renderGroup(g, matchesQuery))}
           </div>
         )
+      ) : !activeId ? (
+        <p className={styles.empty}>Selecione um fornecedor para ver os itens.</p>
       ) : isAll ? (
         <div className={styles.searchResults}>
           {allGroups.map((g) => renderGroup(g))}
