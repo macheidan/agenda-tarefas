@@ -480,12 +480,17 @@
   border-radius: 6px;
 }
 
+.iconBtnDanger {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 .iconBtn:hover {
   background: var(--bg-secondary);
 }
 
 .iconBtnDanger:hover {
-  background: rgba(240, 68, 56, 0.12);
+  background: var(--danger-bg);
 }
 
 /* ---- Vazio / erro ---- */
