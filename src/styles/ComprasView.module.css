@@ -26,6 +26,85 @@
   color: var(--text);
 }
 
+/* ---- Busca ---- */
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+}
+
+.searchRow:focus-within {
+  border-color: var(--accent);
+}
+
+.searchIcon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  min-width: 0;
+}
+
+.clearSearch {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.clearSearch:hover {
+  background: var(--bg-secondary);
+}
+
+.searchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.searchInfo {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.groupHead {
+  align-self: flex-start;
+  padding: 5px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rowMatch {
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
 /* ---- Fornecedores ---- */
 .fornecBar {
   display: flex;

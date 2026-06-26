@@ -7,6 +7,9 @@ import styles from '../styles/ComprasView.module.css';
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 const FORNEC_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab', '#0d9488'];
 
+// Normaliza para busca: minúsculas e sem acentos.
+const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
 export default function ComprasView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
@@ -32,6 +35,7 @@ export default function ComprasView() {
   const [day, setDay] = useState('Segunda');
   const [copied, setCopied] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [query, setQuery] = useState('');
 
   // Gerência de fornecedores.
   const [managing, setManaging] = useState(false);
@@ -59,6 +63,72 @@ export default function ComprasView() {
     () => itens.filter((i) => i.fornecedorId === activeId),
     [itens, activeId]
   );
+
+  // Busca por produto (em todos os fornecedores). Ao digitar, mostra a lista
+  // inteira de cada fornecedor que tem algum produto correspondente.
+  const searching = query.trim().length > 0;
+  const matchesQuery = (item) => {
+    const nq = norm(query.trim());
+    return norm(item.produto).includes(nq) || norm(item.marca).includes(nq);
+  };
+  const searchGroups = useMemo(() => {
+    if (!searching) return [];
+    const nq = norm(query.trim());
+    return fornecedores
+      .map((f, idx) => ({ fornec: f, idx, items: itens.filter((i) => i.fornecedorId === f.id) }))
+      .filter((g) => g.items.some((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)));
+  }, [searching, query, fornecedores, itens]);
+  const matchCount = useMemo(() => {
+    if (!searching) return 0;
+    const nq = norm(query.trim());
+    return itens.filter((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)).length;
+  }, [searching, query, itens]);
+
+  // Renderiza uma linha de item, reaproveitada na lista normal e na busca.
+  const renderItem = (item, fIdx, highlight = false) => {
+    const ativo = Number(item.qty) > 0;
+    return (
+      <div
+        key={item.id}
+        className={`${styles.row} ${ativo ? styles.rowActive : ''} ${highlight ? styles.rowMatch : ''}`}
+      >
+        <div className={styles.rowInfo}>
+          <span className={styles.produto}>{item.produto}</span>
+          <span className={styles.meta}>
+            {item.marca && <span className={styles.marca}>{item.marca}</span>}
+            {item.unid && <span className={styles.unid}>{item.unid}</span>}
+          </span>
+        </div>
+        <div className={styles.rowActions}>
+          <input
+            className={styles.qtyInput}
+            type="number"
+            min="0"
+            step="any"
+            value={item.qty ?? 0}
+            onChange={(e) => updateItem(item.id, { qty: e.target.value })}
+            style={{ borderColor: cor(fIdx) }}
+          />
+          {canEdit && (
+            <>
+              <button className={styles.iconBtn} onClick={() => openEdit(item)} title="Editar item">✎</button>
+              <button
+                className={styles.iconBtnDanger}
+                onClick={() => {
+                  if (window.confirm(`Tem certeza que deseja apagar o item "${item.produto}"? Esta ação não pode ser desfeita.`)) {
+                    deleteItem(item.id);
+                  }
+                }}
+                title="Apagar item"
+              >
+                🗑
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const closeForm = () => setFormMode(null);
 
@@ -131,6 +201,24 @@ export default function ComprasView() {
         <h2>🛒 Compras</h2>
       </div>
 
+      {fornecedores.length > 0 && (
+        <div className={styles.searchRow}>
+          <span className={styles.searchIcon}>🔎</span>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Buscar produto em todos os fornecedores..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {searching && (
+            <button className={styles.clearSearch} onClick={() => setQuery('')} title="Limpar busca">
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Abas de fornecedores + gerenciar */}
       <div className={styles.fornecBar}>
         <div className={styles.fornecTabs}>
@@ -191,7 +279,7 @@ export default function ComprasView() {
                     <button
                       className={styles.smallBtnDanger}
                       onClick={() => {
-                        if (window.confirm(`Remover o fornecedor "${f.name}"? Todos os itens dele serão apagados.`)) deleteFornecedor(f.id);
+                        if (window.confirm(`Tem certeza que deseja remover o fornecedor "${f.name}"? Todos os itens dele serão apagados. Esta ação não pode ser desfeita.`)) deleteFornecedor(f.id);
                       }}
                     >
                       Remover
@@ -301,6 +389,34 @@ export default function ComprasView() {
             </p>
           )}
         </div>
+      ) : searching ? (
+        searchGroups.length === 0 ? (
+          <p className={styles.empty}>
+            Nenhum produto encontrado para &quot;<strong>{query.trim()}</strong>&quot;.
+          </p>
+        ) : (
+          <div className={styles.searchResults}>
+            <p className={styles.searchInfo}>
+              {matchCount} {matchCount === 1 ? 'produto encontrado' : 'produtos encontrados'} em{' '}
+              {searchGroups.length} {searchGroups.length === 1 ? 'fornecedor' : 'fornecedores'}
+            </p>
+            {searchGroups.map(({ fornec, idx, items }) => (
+              <div key={fornec.id} className={styles.group}>
+                <button
+                  className={styles.groupHead}
+                  style={{ borderColor: cor(idx), color: cor(idx) }}
+                  onClick={() => { setSelectedId(fornec.id); setQuery(''); }}
+                  title="Abrir fornecedor"
+                >
+                  {fornec.name}
+                </button>
+                <div className={styles.list}>
+                  {items.map((item) => renderItem(item, idx, matchesQuery(item)))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : fornecItems.length === 0 ? (
         <p className={styles.empty}>
           Nenhum item em <strong>{activeFornec?.name}</strong>.
@@ -308,45 +424,7 @@ export default function ComprasView() {
         </p>
       ) : (
         <div className={styles.list}>
-          {fornecItems.map((item) => {
-            const ativo = Number(item.qty) > 0;
-            return (
-              <div key={item.id} className={`${styles.row} ${ativo ? styles.rowActive : ''}`}>
-                <div className={styles.rowInfo}>
-                  <span className={styles.produto}>{item.produto}</span>
-                  <span className={styles.meta}>
-                    {item.marca && <span className={styles.marca}>{item.marca}</span>}
-                    {item.unid && <span className={styles.unid}>{item.unid}</span>}
-                  </span>
-                </div>
-                <div className={styles.rowActions}>
-                  <input
-                    className={styles.qtyInput}
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={item.qty ?? 0}
-                    onChange={(e) => updateItem(item.id, { qty: e.target.value })}
-                    style={{ borderColor: cor(activeIdx) }}
-                  />
-                  {canEdit && (
-                    <>
-                      <button className={styles.iconBtn} onClick={() => openEdit(item)} title="Editar item">✎</button>
-                      <button
-                        className={styles.iconBtnDanger}
-                        onClick={() => {
-                          if (window.confirm(`Apagar o item "${item.produto}"?`)) deleteItem(item.id);
-                        }}
-                        title="Apagar item"
-                      >
-                        🗑
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {fornecItems.map((item) => renderItem(item, activeIdx))}
         </div>
       )}
     </div>
