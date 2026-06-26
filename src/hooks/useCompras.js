@@ -103,6 +103,16 @@ export function useCompras() {
     await deleteDoc(doc(db, 'comprasItens', id));
   }, []);
 
+  // Zera a quantidade de TODOS os itens (de todos os fornecedores).
+  // Só grava nos que não estão zerados, pra minimizar escritas.
+  const resetAllQuantities = useCallback(async () => {
+    const toReset = itensRef.current.filter((i) => Number(i.qty) !== 0);
+    await Promise.all(
+      toReset.map((i) => updateDoc(doc(db, 'comprasItens', i.id), { qty: 0 }))
+    );
+    return toReset.length;
+  }, []);
+
   // ---- Importação única (dados migrados do app antigo) ----
   // Grava os fornecedores + itens do seed embutido no Firestore. Pensado para
   // rodar uma vez, com a seção ainda vazia (botão só aparece nesse estado).
@@ -147,6 +157,7 @@ export function useCompras() {
     addItem,
     updateItem,
     deleteItem,
+    resetAllQuantities,
     seedInitialData,
   };
 }

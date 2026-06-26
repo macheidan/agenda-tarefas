@@ -6,6 +6,7 @@ import styles from '../styles/ComprasView.module.css';
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 const FORNEC_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab', '#0d9488'];
+const ALL = '__all__';
 
 // Normaliza para busca: minúsculas e sem acentos.
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -28,13 +29,15 @@ export default function ComprasView() {
     addItem,
     updateItem,
     deleteItem,
+    resetAllQuantities,
     seedInitialData,
   } = useCompras();
 
   const [selectedId, setSelectedId] = useState(null);
-  const [day, setDay] = useState('Segunda');
+  const [day, setDay] = useState(''); // '' = não selecionado (entrega obrigatória)
   const [copied, setCopied] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [query, setQuery] = useState('');
 
   // Gerência de fornecedores.
@@ -52,16 +55,24 @@ export default function ComprasView() {
 
   const cor = (idx) => FORNEC_COLORS[idx % FORNEC_COLORS.length];
 
+  const validIds = [...fornecedores.map((f) => f.id), ALL];
   const activeId =
-    selectedId && fornecedores.some((f) => f.id === selectedId)
+    selectedId && validIds.includes(selectedId)
       ? selectedId
       : fornecedores[0]?.id || null;
-  const activeFornec = fornecedores.find((f) => f.id === activeId) || null;
+  const isAll = activeId === ALL;
+  const activeFornec = isAll ? null : fornecedores.find((f) => f.id === activeId) || null;
   const activeIdx = fornecedores.findIndex((f) => f.id === activeId);
 
   const fornecItems = useMemo(
     () => itens.filter((i) => i.fornecedorId === activeId),
     [itens, activeId]
+  );
+
+  // Todos os fornecedores com seus itens (para a aba "Todos").
+  const allGroups = useMemo(
+    () => fornecedores.map((f, idx) => ({ fornec: f, idx, items: itens.filter((i) => i.fornecedorId === f.id) })),
+    [fornecedores, itens]
   );
 
   // Busca por produto (em todos os fornecedores). Ao digitar, mostra a lista
@@ -130,6 +141,28 @@ export default function ComprasView() {
     );
   };
 
+  // Renderiza o bloco de um fornecedor (cabeçalho clicável + lista de itens),
+  // usado na busca e na aba "Todos". highlightFn opcional destaca os que casam.
+  const renderGroup = ({ fornec, idx, items }, highlightFn) => (
+    <div key={fornec.id} className={styles.group}>
+      <button
+        className={styles.groupHead}
+        style={{ borderColor: cor(idx), color: cor(idx) }}
+        onClick={() => { setSelectedId(fornec.id); setQuery(''); }}
+        title="Abrir fornecedor"
+      >
+        {fornec.name}
+      </button>
+      <div className={styles.list}>
+        {items.length === 0 ? (
+          <p className={styles.emptyGroup}>Sem itens.</p>
+        ) : (
+          items.map((item) => renderItem(item, idx, highlightFn ? highlightFn(item) : false))
+        )}
+      </div>
+    </div>
+  );
+
   const closeForm = () => setFormMode(null);
 
   const openAdd = () => {
@@ -169,10 +202,11 @@ export default function ComprasView() {
     }
   };
 
-  // Texto do pedido (somente itens com quantidade > 0).
-  const copyOrder = () => {
-    if (!activeFornec) return;
-    const ativos = fornecItems.filter((i) => Number(i.qty) > 0);
+  // Monta o bloco de pedido de um fornecedor (só itens com quantidade > 0).
+  // Retorna null se o fornecedor não tem nenhum item selecionado.
+  const buildBlock = (fornec, items) => {
+    const ativos = items.filter((i) => Number(i.qty) > 0);
+    if (!ativos.length) return null;
     const linhas = ativos.map((i) => {
       const qty = Number(i.qty);
       const q = Number.isInteger(qty) ? qty : qty.toString().replace('.', ',');
@@ -180,18 +214,57 @@ export default function ComprasView() {
       const unid = i.unid ? ` (${i.unid})` : '';
       return `${q}x ${i.produto}${marca}${unid}`;
     });
-    const txt = [
-      `*PEDIDO ${activeFornec.name}*`,
+    return [
+      `*PEDIDO ${fornec.name}*`,
       '*Dáme & Lov*',
       `*Entrega ${day} após 16:30*`,
       '',
-      ...(linhas.length ? linhas : ['(nenhum item selecionado)']),
+      ...linhas,
     ].join('\n');
+  };
+
+  // Copia o pedido. A seleção do dia de entrega é obrigatória.
+  const copyOrder = () => {
+    if (!day) {
+      window.alert('Selecione o dia da entrega antes de copiar o pedido.');
+      return;
+    }
+    let txt;
+    if (isAll) {
+      const blocks = allGroups.map((g) => buildBlock(g.fornec, g.items)).filter(Boolean);
+      if (!blocks.length) {
+        window.alert('Nenhum item selecionado em nenhum fornecedor.');
+        return;
+      }
+      txt = blocks.join('\n\n———\n\n');
+    } else {
+      if (!activeFornec) return;
+      txt = buildBlock(activeFornec, fornecItems);
+      if (!txt) {
+        window.alert(`Nenhum item selecionado em ${activeFornec.name}.`);
+        return;
+      }
+    }
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(txt).then(
         () => { setCopied(true); setTimeout(() => setCopied(false), 1500); },
         () => {}
       );
+    }
+  };
+
+  // Zera todas as quantidades de todos os fornecedores (com confirmação).
+  const handleReset = async () => {
+    if (!window.confirm('Tem certeza que deseja ZERAR todas as quantidades de TODOS os fornecedores? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+    setResetting(true);
+    try {
+      await resetAllQuantities();
+    } catch (e) {
+      window.alert(`Erro ao zerar: ${e?.message || e}`);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -240,6 +313,19 @@ export default function ComprasView() {
               </button>
             );
           })}
+          {fornecedores.length > 1 && (
+            <button
+              className={styles.fornecTab}
+              style={{
+                borderColor: 'var(--text-secondary)',
+                background: isAll ? 'var(--text-secondary)' : 'var(--card)',
+                color: isAll ? '#fff' : 'var(--text-secondary)',
+              }}
+              onClick={() => setSelectedId(ALL)}
+            >
+              Todos
+            </button>
+          )}
           {canEdit && (
             <button
               className={styles.manageBtn}
@@ -312,20 +398,28 @@ export default function ComprasView() {
       {/* Barra de ações */}
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
-          <label className={styles.dayLabel}>
-            Entrega
-            <select className={styles.daySelect} value={day} onChange={(e) => setDay(e.target.value)}>
-              {WEEKDAYS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </label>
+          <button className={styles.resetBtn} onClick={handleReset} disabled={resetting}>
+            {resetting ? 'Zerando...' : 'Zerar'}
+          </button>
         </div>
         <div className={styles.toolbarActions}>
-          {activeFornec && (
-            <button className={styles.copyBtn} onClick={copyOrder}>
-              {copied ? 'Copiado!' : 'Copiar pedido'}
-            </button>
+          {(activeFornec || isAll) && (
+            <>
+              <select
+                className={`${styles.daySelect} ${!day ? styles.daySelectEmpty : ''}`}
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+                required
+              >
+                <option value="">Entrega</option>
+                {WEEKDAYS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <button className={styles.copyBtn} onClick={copyOrder}>
+                {copied ? 'Copiado!' : 'Copiar pedido'}
+              </button>
+            </>
           )}
           {canEdit && activeFornec && (
             <button className={styles.newBtn} onClick={openAdd}>
@@ -400,23 +494,13 @@ export default function ComprasView() {
               {matchCount} {matchCount === 1 ? 'produto encontrado' : 'produtos encontrados'} em{' '}
               {searchGroups.length} {searchGroups.length === 1 ? 'fornecedor' : 'fornecedores'}
             </p>
-            {searchGroups.map(({ fornec, idx, items }) => (
-              <div key={fornec.id} className={styles.group}>
-                <button
-                  className={styles.groupHead}
-                  style={{ borderColor: cor(idx), color: cor(idx) }}
-                  onClick={() => { setSelectedId(fornec.id); setQuery(''); }}
-                  title="Abrir fornecedor"
-                >
-                  {fornec.name}
-                </button>
-                <div className={styles.list}>
-                  {items.map((item) => renderItem(item, idx, matchesQuery(item)))}
-                </div>
-              </div>
-            ))}
+            {searchGroups.map((g) => renderGroup(g, matchesQuery))}
           </div>
         )
+      ) : isAll ? (
+        <div className={styles.searchResults}>
+          {allGroups.map((g) => renderGroup(g))}
+        </div>
       ) : fornecItems.length === 0 ? (
         <p className={styles.empty}>
           Nenhum item em <strong>{activeFornec?.name}</strong>.
