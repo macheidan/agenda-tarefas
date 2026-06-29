@@ -85,6 +85,8 @@ export default function PrecosInsumosView() {
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroLoja, setFiltroLoja] = useState('');
+  // Quando ativo, mostra somente linhas cujo produto ainda nao tem Fator preenchido.
+  const [filtroSemFator, setFiltroSemFator] = useState(false);
   const [dataInicio, setDataInicio] = useState(daysAgo(30));
   const [dataFim, setDataFim] = useState(new Date().toISOString().slice(0, 10));
   const [porPagina, setPorPagina] = useState(50);
@@ -262,20 +264,24 @@ export default function PrecosInsumosView() {
       if (dataFim && p.data > dataFim) return false;
       if (filtroFornecedor && p.fornecedor !== filtroFornecedor) return false;
       if (filtroLoja && p.loja !== filtroLoja) return false;
+      if (filtroSemFator) {
+        const fator = fatores[p.produto_id];
+        if (fator != null && String(fator).trim() !== '') return false;
+      }
       if (filtroTexto) {
         const f = filtroTexto.toLowerCase();
         if (!p.produto.toLowerCase().includes(f) && !p.fornecedor.toLowerCase().includes(f)) return false;
       }
       return true;
     });
-  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim, ocultosSet]);
+  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, filtroSemFator, fatores, dataInicio, dataFim, ocultosSet]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
   const paginaSegura = Math.min(paginaAtual, totalPaginas);
   const inicio = (paginaSegura - 1) * porPagina;
   const paginados = filtrados.slice(inicio, inicio + porPagina);
 
-  useEffect(() => { setPaginaAtual(1); }, [filtroTexto, filtroFornecedor, filtroLoja, dataInicio, dataFim, porPagina]);
+  useEffect(() => { setPaginaAtual(1); }, [filtroTexto, filtroFornecedor, filtroLoja, filtroSemFator, dataInicio, dataFim, porPagina]);
 
   const totalProdutos = new Set(filtrados.map(p => p.produto)).size;
 
@@ -356,6 +362,10 @@ export default function PrecosInsumosView() {
             {lojasUnicas.map(l => <option key={l} value={l}>{l}</option>)}
           </select>
         )}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text, #222)', cursor: 'pointer', whiteSpace: 'nowrap' }} title="Mostra só os produtos sem Fator preenchido">
+          <input type="checkbox" checked={filtroSemFator} onChange={e => setFiltroSemFator(e.target.checked)} style={{ cursor: 'pointer' }} />
+          Fator
+        </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 260px' }}>
           <span style={{ fontSize: 11, color: '#888' }}>De</span>
           <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={{ ...inputS, flex: 1 }} />
@@ -384,8 +394,8 @@ export default function PrecosInsumosView() {
                   <th style={thS}>Produto (planilha)</th>
                   <th style={thS}>Fornecedor</th>
                   <th style={thS}>Data</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>Preço Item</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>Regra3</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Preço Nota</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Fator</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
                   <th style={{ ...thS, textAlign: 'right' }}>Compara</th>
                 </tr>
