@@ -94,6 +94,10 @@ export default function PrecosInsumosView() {
   // Mapa produto_id -> fator (Regra3). Compartilhado entre todas as linhas do
   // mesmo produto bruto: editar uma reflete em todas, persiste em produtos.fator_regra3.
   const [fatores, setFatores] = useState({});
+  // Valor "commitado" do fator (so muda no blur / Enter). O filtro "sem Fator"
+  // usa este, e nao o que esta sendo digitado, pra que a linha nao suma da lista
+  // no meio da digitacao — so depois de confirmar (Enter ou clicar fora).
+  const [fatoresSalvos, setFatoresSalvos] = useState({});
   // Produtos cuja edicao da Regra3 ja foi confirmada nesta sessao de foco. Um
   // campo ja preenchido pede confirmacao antes de aceitar a 1a alteracao.
   const [fatoresDesbloqueados, setFatoresDesbloqueados] = useState({});
@@ -122,24 +126,24 @@ export default function PrecosInsumosView() {
     return atual != null && String(atual).trim() !== '';
   }
 
-  // Clique num campo travado: pede confirmacao antes de liberar e focar.
-  function handleFatorMouseDown(e, produtoId) {
-    if (!fatorTravado(produtoId)) return;
-    e.preventDefault();
-    const el = e.currentTarget;
-    if (confirmaEdicaoFator(produtoId)) {
-      // Foca/seleciona apos o desbloqueio aplicar (input deixa de ser readOnly).
-      setTimeout(() => { el.focus(); el.select(); }, 0);
-    }
-  }
-
-  // Tecla de edicao (digito ou apagar) num campo travado: confirma antes de aceitar.
+  // Campo preenchido fica travado (readOnly). A confirmacao para liberar a
+  // edicao so dispara ao apertar ENTER — digitar/clicar nao abre o popup. Apos
+  // confirmar, o campo destrava e seleciona o conteudo pra sobrescrever direto.
   function handleFatorKeyDown(e, produtoId) {
-    if (!fatorTravado(produtoId)) return;
-    const editKey = e.key.length === 1 ? !e.ctrlKey && !e.metaKey && !e.altKey : (e.key === 'Backspace' || e.key === 'Delete');
-    if (!editKey) return; // deixa Tab, setas, etc. passarem
-    e.preventDefault();
-    confirmaEdicaoFator(produtoId);
+    if (e.key !== 'Enter') return;
+    if (fatorTravado(produtoId)) {
+      // Campo preenchido + travado: Enter pede confirmacao pra destravar.
+      e.preventDefault();
+      const el = e.currentTarget;
+      if (confirmaEdicaoFator(produtoId)) {
+        // Seleciona apos destravar (input deixa de ser readOnly) pra editar na hora.
+        setTimeout(() => { el.focus(); el.select(); }, 0);
+      }
+    } else {
+      // Campo em edicao: Enter "commita" (tira o foco -> dispara o blur, que
+      // salva e atualiza o filtro "sem Fator").
+      e.currentTarget.blur();
+    }
   }
 
   function handleFatorChange(produtoId, raw) {
@@ -157,6 +161,8 @@ export default function PrecosInsumosView() {
     const raw = fatores[produtoId];
     // Guarda o texto exato (ex: "2" ou "/2") pra preservar a operacao escolhida.
     const val = raw === '' || raw == null ? null : String(raw).trim();
+    // Commita o valor pro filtro "sem Fator" so agora (no blur/Enter), nao durante a digitacao.
+    setFatoresSalvos(prev => ({ ...prev, [produtoId]: val }));
     const { error } = await supabase
       .from('produtos')
       .update({ fator_regra3: val })
@@ -215,6 +221,7 @@ export default function PrecosInsumosView() {
         }
       }
       setFatores(fmap);
+      setFatoresSalvos(fmap);
 
       const datas = mapped.map(m => m.data).filter(Boolean).sort();
       console.log('[precos] datas min->max:', datas[0], '->', datas[datas.length - 1], '| mapeadas:', mapped.length);
@@ -265,7 +272,8 @@ export default function PrecosInsumosView() {
       if (filtroFornecedor && p.fornecedor !== filtroFornecedor) return false;
       if (filtroLoja && p.loja !== filtroLoja) return false;
       if (filtroSemFator) {
-        const fator = fatores[p.produto_id];
+        // Usa o valor commitado (fatoresSalvos), nao o digitado, pra linha nao sumir no meio da digitacao.
+        const fator = fatoresSalvos[p.produto_id];
         if (fator != null && String(fator).trim() !== '') return false;
       }
       if (filtroTexto) {
@@ -274,7 +282,7 @@ export default function PrecosInsumosView() {
       }
       return true;
     });
-  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, filtroSemFator, fatores, dataInicio, dataFim, ocultosSet]);
+  }, [precos, filtroTexto, filtroFornecedor, filtroLoja, filtroSemFator, fatoresSalvos, dataInicio, dataFim, ocultosSet]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
   const paginaSegura = Math.min(paginaAtual, totalPaginas);
@@ -426,7 +434,6 @@ export default function PrecosInsumosView() {
                         title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)"
                         value={fatores[p.produto_id] ?? ''}
                         readOnly={fatorTravado(p.produto_id)}
-                        onMouseDown={e => handleFatorMouseDown(e, p.produto_id)}
                         onKeyDown={e => handleFatorKeyDown(e, p.produto_id)}
                         onChange={e => handleFatorChange(p.produto_id, e.target.value)}
                         onBlur={() => handleFatorBlur(p.produto_id)}
