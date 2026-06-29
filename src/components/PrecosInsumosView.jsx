@@ -299,6 +299,7 @@ export default function PrecosInsumosView() {
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={tabBtnS(subPage === 'precos')} onClick={() => setSubPage('precos')}>Preços</button>
         <button style={tabBtnS(subPage === 'fornecedores')} onClick={() => setSubPage('fornecedores')}>Fornecedores</button>
+        <button style={tabBtnS(subPage === 'cadastrar', '#43a047')} onClick={() => setSubPage('cadastrar')}>Cadastrar</button>
         <button style={tabBtnS(subPage === 'subiram', '#e53935')} onClick={() => setSubPage('subiram')}>Subiram</button>
       </div>
     </div>
@@ -316,6 +317,15 @@ export default function PrecosInsumosView() {
       <div>
         {header}
         <FornecedoresView precos={precos} ocultos={ocultosSet} ocultosList={ocultos} toggleOculto={toggleOculto} />
+      </div>
+    );
+  }
+
+  if (subPage === 'cadastrar') {
+    return (
+      <div>
+        {header}
+        <CadastrarView onSaved={loadData} />
       </div>
     );
   }
@@ -824,6 +834,257 @@ function SubiramView({ precos, ocultos }) {
     </div>
   );
 }
+
+// Converte texto do usuario (aceita virgula decimal) em numero, ou null se vazio/invalido.
+function parseNum(s) {
+  if (s === '' || s == null) return null;
+  const n = Number(String(s).replace(',', '.').trim());
+  return Number.isNaN(n) ? null : n;
+}
+
+// Sub-pagina "Cadastrar": insere manualmente um registro de preco (linha em
+// `precos`). Permite criar um produto novo (ou reusar um existente pelo nome),
+// puxar o "Produto (planilha)" / nome_padrao da lista ja cadastrada, e escolher
+// um fornecedor existente ou cadastrar um novo na hora. Cobre todas as colunas
+// editaveis da nota. Apos salvar, recarrega os dados da pagina (onSaved).
+function CadastrarView({ onSaved }) {
+  const [produtos, setProdutos] = useState([]);       // {id, nome, nome_padrao}
+  const [fornecedores, setFornecedores] = useState([]); // {id, nome, nome_curto}
+  const [loadingLists, setLoadingLists] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [msg, setMsg] = useState(null); // { tipo: 'ok' | 'err', texto }
+
+  const vazio = {
+    produto: '', nome_padrao: '', fornecedorId: '', novoFornecedor: '',
+    loja: '', data: new Date().toISOString().slice(0, 10),
+    preco_bruto: '', qtd_embalagem: '', unidade_embalagem: '',
+    preco_normalizado: '', unidade_normalizada: '', fator: '',
+  };
+  const [form, setForm] = useState(vazio);
+  const [criandoFornecedor, setCriandoFornecedor] = useState(false);
+
+  const set = (campo, valor) => setForm(prev => ({ ...prev, [campo]: valor }));
+
+  useEffect(() => { carregarListas(); }, []);
+
+  async function carregarListas() {
+    setLoadingLists(true);
+    const [{ data: prod }, { data: forn }] = await Promise.all([
+      supabase.from('produtos').select('id, nome, nome_padrao').order('nome'),
+      supabase.from('fornecedores').select('id, nome, nome_curto').order('nome'),
+    ]);
+    setProdutos(prod || []);
+    setFornecedores(forn || []);
+    setLoadingLists(false);
+  }
+
+  // nome_padrao distintos ja cadastrados (pra datalist do "Produto (planilha)").
+  const nomesPadrao = useMemo(
+    () => [...new Set(produtos.map(p => p.nome_padrao).filter(Boolean))].sort(),
+    [produtos]
+  );
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setMsg(null);
+
+    const produtoNome = form.produto.trim();
+    const precoNorm = parseNum(form.preco_normalizado);
+    if (!produtoNome) return setMsg({ tipo: 'err', texto: 'Informe o nome do produto.' });
+    if (!criandoFornecedor && !form.fornecedorId) return setMsg({ tipo: 'err', texto: 'Selecione um fornecedor (ou cadastre um novo).' });
+    if (criandoFornecedor && !form.novoFornecedor.trim()) return setMsg({ tipo: 'err', texto: 'Informe o nome do novo fornecedor.' });
+    if (!form.data) return setMsg({ tipo: 'err', texto: 'Informe a data.' });
+    if (precoNorm == null) return setMsg({ tipo: 'err', texto: 'Informe o Preço Nota (R$/un).' });
+
+    setSalvando(true);
+    try {
+      // 1) Fornecedor: novo ou existente.
+      let fornecedorId = form.fornecedorId ? Number(form.fornecedorId) : null;
+      if (criandoFornecedor) {
+        const nome = form.novoFornecedor.trim();
+        const { data, error } = await supabase
+          .from('fornecedores')
+          .insert({ nome, nome_curto: nome })
+          .select('id')
+          .single();
+        if (error) throw new Error('fornecedor: ' + error.message);
+        fornecedorId = data.id;
+      }
+
+      // 2) Produto: reusa se ja existe pelo nome (case-insensitive), senao cria.
+      const fatorVal = form.fator.trim() === '' ? null : form.fator.trim();
+      const padraoVal = form.nome_padrao.trim() === '' ? null : form.nome_padrao.trim();
+      const existente = produtos.find(p => (p.nome || '').trim().toLowerCase() === produtoNome.toLowerCase());
+      let produtoId;
+      if (existente) {
+        produtoId = existente.id;
+        // Atualiza nome_padrao/fator se o usuario preencheu (nao apaga o que ja existe).
+        const upd = {};
+        if (padraoVal != null) upd.nome_padrao = padraoVal;
+        if (fatorVal != null) upd.fator_regra3 = fatorVal;
+        if (Object.keys(upd).length) {
+          const { error } = await supabase.from('produtos').update(upd).eq('id', produtoId);
+          if (error) throw new Error('produto (update): ' + error.message);
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('produtos')
+          .insert({ nome: produtoNome, nome_padrao: padraoVal, fator_regra3: fatorVal })
+          .select('id')
+          .single();
+        if (error) throw new Error('produto: ' + error.message);
+        produtoId = data.id;
+      }
+
+      // 3) Registro de preco (a nota em si).
+      const { error: errPreco } = await supabase.from('precos').insert({
+        produto_id: produtoId,
+        fornecedor_id: fornecedorId,
+        data: form.data,
+        preco_bruto: parseNum(form.preco_bruto),
+        qtd_embalagem: parseNum(form.qtd_embalagem),
+        unidade_embalagem: form.unidade_embalagem.trim() || null,
+        preco_normalizado: precoNorm,
+        unidade_normalizada: form.unidade_normalizada.trim() || null,
+        loja: form.loja || null,
+      });
+      if (errPreco) throw new Error('preço: ' + errPreco.message);
+
+      setMsg({ tipo: 'ok', texto: `Registro de "${produtoNome}" cadastrado com sucesso.` });
+      // Limpa o formulario mantendo a data (geralmente cadastra varios da mesma nota).
+      setForm({ ...vazio, data: form.data });
+      setCriandoFornecedor(false);
+      await carregarListas();
+      onSaved?.();
+    } catch (err) {
+      console.error('[precos] erro ao cadastrar:', err);
+      setMsg({ tipo: 'err', texto: 'Erro ao salvar: ' + err.message });
+    }
+    setSalvando(false);
+  }
+
+  if (loadingLists) return <p style={{ padding: 20, textAlign: 'center' }}>Carregando listas...</p>;
+
+  return (
+    <form onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
+      <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
+        Cadastre manualmente um registro de preço. Se o produto já existir (mesmo nome), ele é reaproveitado.
+      </p>
+
+      <datalist id="dl-produtos">
+        {produtos.map(p => <option key={p.id} value={p.nome} />)}
+      </datalist>
+      <datalist id="dl-nome-padrao">
+        {nomesPadrao.map(n => <option key={n} value={n} />)}
+      </datalist>
+      <datalist id="dl-unidade-norm">
+        {['kg', 'g', 'lt', 'ml', 'un'].map(u => <option key={u} value={u} />)}
+      </datalist>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <Campo label="Produto *">
+          <input list="dl-produtos" value={form.produto} onChange={e => set('produto', e.target.value)}
+            placeholder="Nome do produto (ex: AZEITE BORGES 500ML)" style={cadInputS} />
+        </Campo>
+
+        <Campo label="Produto (planilha)">
+          <input list="dl-nome-padrao" value={form.nome_padrao} onChange={e => set('nome_padrao', e.target.value)}
+            placeholder="Nome padronizado" style={cadInputS} />
+        </Campo>
+
+        <Campo label="Fornecedor *" full>
+          {!criandoFornecedor ? (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <select value={form.fornecedorId} onChange={e => set('fornecedorId', e.target.value)} style={{ ...cadInputS, flex: 1 }}>
+                <option value="">Selecione...</option>
+                {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome_curto || f.nome}</option>)}
+              </select>
+              <button type="button" onClick={() => { setCriandoFornecedor(true); set('fornecedorId', ''); }} style={btnS}>+ Novo</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input value={form.novoFornecedor} onChange={e => set('novoFornecedor', e.target.value)}
+                placeholder="Nome do novo fornecedor" autoFocus style={{ ...cadInputS, flex: 1 }} />
+              <button type="button" onClick={() => { setCriandoFornecedor(false); set('novoFornecedor', ''); }} style={btnS}>Cancelar</button>
+            </div>
+          )}
+        </Campo>
+
+        <Campo label="Loja">
+          <select value={form.loja} onChange={e => set('loja', e.target.value)} style={cadInputS}>
+            <option value="">—</option>
+            <option value="dame">Dame</option>
+            <option value="lov">Lov</option>
+          </select>
+        </Campo>
+
+        <Campo label="Data *">
+          <input type="date" value={form.data} onChange={e => set('data', e.target.value)} style={cadInputS} />
+        </Campo>
+
+        <Campo label="Preço Nota (R$/un) *">
+          <input inputMode="decimal" value={form.preco_normalizado} onChange={e => set('preco_normalizado', e.target.value)}
+            placeholder="6,79" style={cadInputS} />
+        </Campo>
+
+        <Campo label="Unidade (kg/lt/un)">
+          <input list="dl-unidade-norm" value={form.unidade_normalizada} onChange={e => set('unidade_normalizada', e.target.value)}
+            placeholder="kg" style={cadInputS} />
+        </Campo>
+
+        <Campo label="Preço bruto (R$ da nota)">
+          <input inputMode="decimal" value={form.preco_bruto} onChange={e => set('preco_bruto', e.target.value)}
+            placeholder="331,76" style={cadInputS} />
+        </Campo>
+
+        <Campo label="Fator (Regra3)">
+          <input value={form.fator} onChange={e => set('fator', e.target.value)}
+            placeholder="2 ou /2" title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)" style={cadInputS} />
+        </Campo>
+
+        <Campo label="Qtd embalagem">
+          <input inputMode="decimal" value={form.qtd_embalagem} onChange={e => set('qtd_embalagem', e.target.value)}
+            placeholder="48,86" style={cadInputS} />
+        </Campo>
+
+        <Campo label="Unidade embalagem">
+          <input value={form.unidade_embalagem} onChange={e => set('unidade_embalagem', e.target.value)}
+            placeholder="LT" style={cadInputS} />
+        </Campo>
+      </div>
+
+      {msg && (
+        <div style={{ marginTop: 14, padding: '8px 12px', borderRadius: 6, fontSize: 13,
+          background: msg.tipo === 'ok' ? '#e8f5e9' : '#ffebee',
+          color: msg.tipo === 'ok' ? '#2e7d32' : '#c62828',
+          border: `1px solid ${msg.tipo === 'ok' ? '#a5d6a7' : '#ef9a9a'}` }}>
+          {msg.texto}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        <button type="submit" disabled={salvando}
+          style={{ ...btnS, background: '#43a047', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600, opacity: salvando ? 0.6 : 1 }}>
+          {salvando ? 'Salvando...' : 'Cadastrar'}
+        </button>
+        <button type="button" onClick={() => { setForm(vazio); setCriandoFornecedor(false); setMsg(null); }} style={{ ...btnS, padding: '8px 18px' }}>
+          Limpar
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function Campo({ label, full, children }) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: full ? '1 / -1' : 'auto' }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary, #555)' }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+const cadInputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box', width: '100%' };
 
 const headerS = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 0', marginBottom: 12, borderBottom: '1px solid var(--border, #e5e5e5)' };
 const headerTitleS = { fontSize: 18, fontWeight: 700, color: 'var(--text, #222)' };
