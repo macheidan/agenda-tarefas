@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { supabase } from '../utils/supabase';
 
 const OCULTOS_KEY = 'precos_fornecedores_ocultos';
@@ -848,11 +848,15 @@ function parseNum(s) {
 // um fornecedor existente ou cadastrar um novo na hora. Cobre todas as colunas
 // editaveis da nota. Apos salvar, recarrega os dados da pagina (onSaved).
 function CadastrarView({ onSaved }) {
-  const [produtos, setProdutos] = useState([]);       // {id, nome, nome_padrao}
+  const [produtos, setProdutos] = useState([]);       // {id, nome, nome_padrao, fator_regra3}
   const [fornecedores, setFornecedores] = useState([]); // {id, nome, nome_curto}
+  const [precosRaw, setPrecosRaw] = useState([]);     // {produto_id, fornecedor_id, nfe_id} (p/ detectar manuais)
   const [loadingLists, setLoadingLists] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState(null); // { tipo: 'ok' | 'err', texto }
+  // Edicao inline nas listas de manuais.
+  const [editProd, setEditProd] = useState(null);   // { id, nome, nome_padrao, fator }
+  const [editForn, setEditForn] = useState(null);   // { id, nome, nome_curto }
 
   const vazio = {
     produto: '', nome_padrao: '', fornecedorId: '', novoFornecedor: '',
@@ -862,19 +866,65 @@ function CadastrarView({ onSaved }) {
   };
   const [form, setForm] = useState(vazio);
   const [criandoFornecedor, setCriandoFornecedor] = useState(false);
+  const formRef = useRef(null);
 
   const set = (campo, valor) => setForm(prev => ({ ...prev, [campo]: valor }));
+
+  // Replica um produto manual no formulario: puxa o ULTIMO lancamento dele e
+  // preenche tudo, deixando a data = hoje. Util pra recadastrar o mesmo item
+  // (mesma embalagem/preco) mudando so a data, sem redigitar.
+  async function replicarProduto(p) {
+    const { data, error } = await supabase
+      .from('precos').select('*')
+      .eq('produto_id', p.id).is('nfe_id', null)
+      .order('data', { ascending: false }).limit(1);
+    if (error) console.error('[precos] erro ao replicar:', error);
+    const last = data && data[0];
+    setCriandoFornecedor(false);
+    setForm({
+      produto: p.nome || '',
+      nome_padrao: p.nome_padrao || '',
+      fornecedorId: last?.fornecedor_id != null ? String(last.fornecedor_id) : '',
+      novoFornecedor: '',
+      loja: last?.loja || '',
+      data: new Date().toISOString().slice(0, 10),
+      preco_bruto: last?.preco_bruto != null ? String(last.preco_bruto) : '',
+      qtd_embalagem: last?.qtd_embalagem != null ? String(last.qtd_embalagem) : '',
+      unidade_embalagem: last?.unidade_embalagem || '',
+      preco_normalizado: last?.preco_normalizado != null ? String(last.preco_normalizado) : '',
+      unidade_normalizada: last?.unidade_normalizada || '',
+      fator: p.fator_regra3 || '',
+    });
+    setEditProd(null);
+    setMsg({ tipo: 'ok', texto: `Dados de "${p.nome}" replicados no formulário — ajuste a data (ou o que precisar) e clique em Cadastrar.` });
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   useEffect(() => { carregarListas(); }, []);
 
   async function carregarListas() {
     setLoadingLists(true);
-    const [{ data: prod }, { data: forn }] = await Promise.all([
-      supabase.from('produtos').select('id, nome, nome_padrao').order('nome'),
+    // Pagina precos pra nao parar no limite de ~1000 linhas do PostgREST.
+    async function fetchPrecos() {
+      const PAGE = 1000; let all = [];
+      for (let i = 0; i < 30; i++) {
+        const { data, error } = await supabase
+          .from('precos').select('produto_id, fornecedor_id, nfe_id')
+          .range(i * PAGE, i * PAGE + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
+      }
+      return all;
+    }
+    const [{ data: prod }, { data: forn }, pr] = await Promise.all([
+      supabase.from('produtos').select('id, nome, nome_padrao, fator_regra3').order('nome'),
       supabase.from('fornecedores').select('id, nome, nome_curto').order('nome'),
+      fetchPrecos(),
     ]);
     setProdutos(prod || []);
     setFornecedores(forn || []);
+    setPrecosRaw(pr || []);
     setLoadingLists(false);
   }
 
@@ -883,6 +933,76 @@ function CadastrarView({ onSaved }) {
     () => [...new Set(produtos.map(p => p.nome_padrao).filter(Boolean))].sort(),
     [produtos]
   );
+
+  // Estatistica de lancamentos por produto/fornecedor: quantos manuais (nfe_id
+  // null) vs vindos de NFe. "Manual" = tem ao menos 1 lancamento e NENHUM de NFe.
+  const { byProd, byForn } = useMemo(() => {
+    const bp = {}, bf = {};
+    for (const p of precosRaw) {
+      const k = p.nfe_id == null ? 'manual' : 'nfe';
+      (bp[p.produto_id] ||= { manual: 0, nfe: 0 })[k]++;
+      (bf[p.fornecedor_id] ||= { manual: 0, nfe: 0 })[k]++;
+    }
+    return { byProd: bp, byForn: bf };
+  }, [precosRaw]);
+
+  const produtosManuais = useMemo(
+    () => produtos.filter(p => { const s = byProd[p.id]; return s && s.manual > 0 && s.nfe === 0; }),
+    [produtos, byProd]
+  );
+  const fornecedoresManuais = useMemo(
+    () => fornecedores.filter(f => { const s = byForn[f.id]; return s && s.manual > 0 && s.nfe === 0; }),
+    [fornecedores, byForn]
+  );
+
+  // --- Edicao / exclusao de produtos manuais ---
+  async function salvarEdicaoProduto() {
+    const e = editProd;
+    if (!e || !e.nome.trim()) return;
+    const { error } = await supabase.from('produtos').update({
+      nome: e.nome.trim(),
+      nome_padrao: e.nome_padrao.trim() || null,
+      fator_regra3: e.fator.trim() || null,
+    }).eq('id', e.id);
+    if (error) { setMsg({ tipo: 'err', texto: 'Erro ao editar produto: ' + error.message }); return; }
+    setEditProd(null);
+    await carregarListas(); onSaved?.();
+  }
+
+  async function excluirProduto(p) {
+    const n = (byProd[p.id]?.manual) || 0;
+    if (!window.confirm(`Excluir o produto "${p.nome}" e seus ${n} lançamento(s)?`)) return;
+    const d1 = await supabase.from('precos').delete().eq('produto_id', p.id);
+    if (d1.error) { setMsg({ tipo: 'err', texto: 'Erro ao excluir lançamentos: ' + d1.error.message }); return; }
+    const d2 = await supabase.from('produtos').delete().eq('id', p.id);
+    if (d2.error) { setMsg({ tipo: 'err', texto: 'Erro ao excluir produto: ' + d2.error.message }); return; }
+    setMsg({ tipo: 'ok', texto: `Produto "${p.nome}" excluído.` });
+    await carregarListas(); onSaved?.();
+  }
+
+  // --- Edicao / exclusao de fornecedores manuais ---
+  async function salvarEdicaoFornecedor() {
+    const e = editForn;
+    if (!e || !e.nome.trim()) return;
+    const { error } = await supabase.from('fornecedores').update({
+      nome: e.nome.trim(),
+      nome_curto: e.nome_curto.trim() || null,
+    }).eq('id', e.id);
+    if (error) { setMsg({ tipo: 'err', texto: 'Erro ao editar fornecedor: ' + error.message }); return; }
+    setEditForn(null);
+    await carregarListas(); onSaved?.();
+  }
+
+  async function excluirFornecedor(f) {
+    const n = (byForn[f.id]?.manual) || 0;
+    if (!window.confirm(`Excluir o fornecedor "${f.nome_curto || f.nome}" e seus ${n} lançamento(s)?`)) return;
+    const d1 = await supabase.from('precos').delete().eq('fornecedor_id', f.id);
+    if (d1.error) { setMsg({ tipo: 'err', texto: 'Erro ao excluir lançamentos: ' + d1.error.message }); return; }
+    const d2 = await supabase.from('fornecedores').delete().eq('id', f.id);
+    if (d2.error) { setMsg({ tipo: 'err', texto: 'Erro ao excluir fornecedor: ' + d2.error.message }); return; }
+    setMsg({ tipo: 'ok', texto: `Fornecedor "${f.nome_curto || f.nome}" excluído.` });
+    await carregarListas(); onSaved?.();
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -966,7 +1086,8 @@ function CadastrarView({ onSaved }) {
   if (loadingLists) return <p style={{ padding: 20, textAlign: 'center' }}>Carregando listas...</p>;
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
+   <div>
+    <form ref={formRef} onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
       <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
         Cadastre manualmente um registro de preço. Se o produto já existir (mesmo nome), ele é reaproveitado.
       </p>
@@ -1072,6 +1193,110 @@ function CadastrarView({ onSaved }) {
         </button>
       </div>
     </form>
+
+    {/* Listas do que foi cadastrado manualmente (sem origem em NFe). */}
+    <div style={{ marginTop: 28 }}>
+      <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>Produtos cadastrados manualmente ({produtosManuais.length})</h3>
+      {produtosManuais.length === 0 ? (
+        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum produto cadastrado manualmente ainda.</p>
+      ) : (
+        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                <th style={thS}>Produto</th>
+                <th style={thS}>Produto (planilha)</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Fator</th>
+                <th style={{ ...thS, textAlign: 'center' }}>Lanç.</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {produtosManuais.map(p => {
+                const emEdicao = editProd?.id === p.id;
+                return (
+                  <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                    {emEdicao ? (
+                      <>
+                        <td style={tdS}><input value={editProd.nome} onChange={e => setEditProd({ ...editProd, nome: e.target.value })} style={cadInputS} /></td>
+                        <td style={tdS}><input list="dl-nome-padrao" value={editProd.nome_padrao} onChange={e => setEditProd({ ...editProd, nome_padrao: e.target.value })} style={cadInputS} /></td>
+                        <td style={{ ...tdS, textAlign: 'right' }}><input value={editProd.fator} onChange={e => setEditProd({ ...editProd, fator: e.target.value })} placeholder="2 ou /2" style={fatorInputS} /></td>
+                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
+                        <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button type="button" onClick={salvarEdicaoProduto} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
+                          <button type="button" onClick={() => setEditProd(null)} style={btnS}>Cancelar</button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ ...tdS, fontWeight: 500, fontSize: 12 }}>{p.nome}</td>
+                        <td style={{ ...tdS, color: p.nome_padrao ? 'inherit' : '#bbb' }}>{p.nome_padrao || '—'}</td>
+                        <td style={{ ...tdS, textAlign: 'right' }}>{p.fator_regra3 || '—'}</td>
+                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
+                        <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button type="button" onClick={() => replicarProduto(p)} style={{ ...btnS, marginRight: 6, color: '#1565c0', borderColor: '#90caf9' }} title="Copiar este item para o formulário (ex: mudar só a data)">Replicar</button>
+                          <button type="button" onClick={() => setEditProd({ id: p.id, nome: p.nome || '', nome_padrao: p.nome_padrao || '', fator: p.fator_regra3 || '' })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
+                          <button type="button" onClick={() => excluirProduto(p)} style={{ ...btnS, color: '#c62828', borderColor: '#ef9a9a' }}>Excluir</button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h3 style={{ fontSize: 15, fontWeight: 700, margin: '24px 0 8px' }}>Fornecedores cadastrados manualmente ({fornecedoresManuais.length})</h3>
+      {fornecedoresManuais.length === 0 ? (
+        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum fornecedor cadastrado manualmente ainda.</p>
+      ) : (
+        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                <th style={thS}>Nome</th>
+                <th style={thS}>Nome curto</th>
+                <th style={{ ...thS, textAlign: 'center' }}>Lanç.</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fornecedoresManuais.map(f => {
+                const emEdicao = editForn?.id === f.id;
+                return (
+                  <tr key={f.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                    {emEdicao ? (
+                      <>
+                        <td style={tdS}><input value={editForn.nome} onChange={e => setEditForn({ ...editForn, nome: e.target.value })} style={cadInputS} /></td>
+                        <td style={tdS}><input value={editForn.nome_curto} onChange={e => setEditForn({ ...editForn, nome_curto: e.target.value })} style={cadInputS} /></td>
+                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byForn[f.id]?.manual || 0}</td>
+                        <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button type="button" onClick={salvarEdicaoFornecedor} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
+                          <button type="button" onClick={() => setEditForn(null)} style={btnS}>Cancelar</button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ ...tdS, fontWeight: 500 }}>{f.nome}</td>
+                        <td style={{ ...tdS, color: f.nome_curto ? 'inherit' : '#bbb' }}>{f.nome_curto || '—'}</td>
+                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byForn[f.id]?.manual || 0}</td>
+                        <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button type="button" onClick={() => setEditForn({ id: f.id, nome: f.nome || '', nome_curto: f.nome_curto || '' })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
+                          <button type="button" onClick={() => excluirFornecedor(f)} style={{ ...btnS, color: '#c62828', borderColor: '#ef9a9a' }}>Excluir</button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+   </div>
   );
 }
 
