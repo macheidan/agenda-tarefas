@@ -311,7 +311,7 @@ export default function PrecosInsumosView() {
     return (
       <div>
         {header}
-        <CadastrarView onSaved={loadData} />
+        <CadastrarView onSaved={loadData} ocultos={ocultosSet} />
       </div>
     );
   }
@@ -831,7 +831,8 @@ function parseNum(s) {
 // puxar o "Produto (planilha)" / nome_padrao da lista ja cadastrada, e escolher
 // um fornecedor existente ou cadastrar um novo na hora. Cobre todas as colunas
 // editaveis da nota. Apos salvar, recarrega os dados da pagina (onSaved).
-function CadastrarView({ onSaved }) {
+function CadastrarView({ onSaved, ocultos }) {
+  const ocultosSet = useMemo(() => ocultos || new Set(), [ocultos]);
   const [produtos, setProdutos] = useState([]);       // {id, nome, nome_padrao, fator_regra3}
   const [fornecedores, setFornecedores] = useState([]); // {id, nome, nome_curto}
   const [precosRaw, setPrecosRaw] = useState([]);     // {produto_id, fornecedor_id, nfe_id} (p/ detectar manuais)
@@ -918,6 +919,13 @@ function CadastrarView({ onSaved }) {
     [produtos]
   );
 
+  // Fornecedores ocultos (escondidos na sub-pagina Fornecedores) somem de todas
+  // as listagens aqui tambem — usa o mesmo nome normalizado pra casar com o set.
+  const fornecedoresVisiveis = useMemo(
+    () => fornecedores.filter(f => !ocultosSet.has(normalizeFornecedor(f.nome_curto, f.nome))),
+    [fornecedores, ocultosSet]
+  );
+
   // Estatistica de lancamentos por produto/fornecedor: quantos manuais (nfe_id
   // null) vs vindos de NFe. "Manual" = tem ao menos 1 lancamento e NENHUM de NFe.
   const { byProd, byForn } = useMemo(() => {
@@ -935,8 +943,8 @@ function CadastrarView({ onSaved }) {
     [produtos, byProd]
   );
   const fornecedoresManuais = useMemo(
-    () => fornecedores.filter(f => { const s = byForn[f.id]; return s && s.manual > 0 && s.nfe === 0; }),
-    [fornecedores, byForn]
+    () => fornecedoresVisiveis.filter(f => { const s = byForn[f.id]; return s && s.manual > 0 && s.nfe === 0; }),
+    [fornecedoresVisiveis, byForn]
   );
 
   // --- Edicao / exclusao de produtos manuais ---
@@ -1102,7 +1110,7 @@ function CadastrarView({ onSaved }) {
             <div style={{ display: 'flex', gap: 6 }}>
               <select value={form.fornecedorId} onChange={e => set('fornecedorId', e.target.value)} style={{ ...cadInputS, flex: 1 }}>
                 <option value="">Selecione...</option>
-                {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nome_curto || f.nome}</option>)}
+                {fornecedoresVisiveis.map(f => <option key={f.id} value={f.id}>{f.nome_curto || f.nome}</option>)}
               </select>
               <button type="button" onClick={() => { setCriandoFornecedor(true); set('fornecedorId', ''); }} style={btnS}>+ Novo</button>
             </div>
