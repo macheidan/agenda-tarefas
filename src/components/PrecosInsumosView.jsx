@@ -98,78 +98,41 @@ export default function PrecosInsumosView() {
   // usa este, e nao o que esta sendo digitado, pra que a linha nao suma da lista
   // no meio da digitacao — so depois de confirmar (Enter ou clicar fora).
   const [fatoresSalvos, setFatoresSalvos] = useState({});
-  // Produtos cuja edicao da Regra3 ja foi confirmada nesta sessao de foco. Um
-  // campo ja preenchido pede confirmacao antes de aceitar a 1a alteracao.
-  const [fatoresDesbloqueados, setFatoresDesbloqueados] = useState({});
-
   useEffect(() => { loadData(); }, []);
-
-  // Confirma a intencao de editar um campo da Regra3 ja preenchido. Retorna true
-  // se a edicao esta liberada (campo vazio, ja desbloqueado, ou usuario confirmou
-  // agora). A confirmacao roda na ACAO de editar (clique/tecla), nao no foco: usar
-  // window.confirm dentro de onFocus criava um loop de popup (o dialog tira o foco,
-  // o blur reseta o desbloqueio e ao voltar o foco a confirmacao reaparecia).
-  function confirmaEdicaoFator(produtoId) {
-    if (fatoresDesbloqueados[produtoId]) return true;
-    // Usa o valor SALVO (nao o que esta sendo digitado): so pede confirmacao
-    // se ja havia um fator gravado no banco.
-    const salvo = fatoresSalvos[produtoId];
-    const preenchido = salvo != null && String(salvo).trim() !== '';
-    if (!preenchido) return true;
-    const ok = window.confirm('A Regra3 deste produto já está preenchida. Tem certeza que deseja editar?');
-    if (ok) setFatoresDesbloqueados(prev => ({ ...prev, [produtoId]: true }));
-    return ok;
-  }
-
-  // Campo travado (somente leitura) enquanto tiver valor JA SALVO e ainda nao
-  // confirmado. Baseia no valor salvo, nao no digitado — senao o campo travaria
-  // ao digitar o 1o caractere num campo vazio.
-  function fatorTravado(produtoId) {
-    if (fatoresDesbloqueados[produtoId]) return false;
-    const salvo = fatoresSalvos[produtoId];
-    return salvo != null && String(salvo).trim() !== '';
-  }
-
-  // Campo preenchido fica travado (readOnly). A confirmacao para liberar a
-  // edicao so dispara ao apertar ENTER — digitar/clicar nao abre o popup. Apos
-  // confirmar, o campo destrava e seleciona o conteudo pra sobrescrever direto.
-  function handleFatorKeyDown(e, produtoId) {
-    if (e.key !== 'Enter') return;
-    if (fatorTravado(produtoId)) {
-      // Campo preenchido + travado: Enter pede confirmacao pra destravar.
-      e.preventDefault();
-      const el = e.currentTarget;
-      if (confirmaEdicaoFator(produtoId)) {
-        // Seleciona apos destravar (input deixa de ser readOnly) pra editar na hora.
-        setTimeout(() => { el.focus(); el.select(); }, 0);
-      }
-    } else {
-      // Campo em edicao: Enter "commita" (tira o foco -> dispara o blur, que
-      // salva e atualiza o filtro "sem Fator").
-      e.currentTarget.blur();
-    }
-  }
 
   function handleFatorChange(produtoId, raw) {
     setFatores(prev => ({ ...prev, [produtoId]: raw }));
   }
 
+  // Enter so "commita" tirando o foco -> dispara o blur (mesma logica de clicar fora).
+  function handleFatorKeyDown(e) {
+    if (e.key === 'Enter') e.currentTarget.blur();
+  }
+
+  // Commit do fator: roda ao clicar fora (blur) ou ao apertar Enter. Se o campo
+  // JA tinha um valor salvo e ele mudou, pede confirmacao antes de gravar; se o
+  // usuario cancelar, reverte pro valor salvo. Campo vazio salva sem perguntar.
   async function handleFatorBlur(produtoId) {
-    // Reseta o desbloqueio: o proximo foco num campo preenchido pede confirmacao de novo.
-    setFatoresDesbloqueados(prev => {
-      if (!prev[produtoId]) return prev;
-      const next = { ...prev };
-      delete next[produtoId];
-      return next;
-    });
     const raw = fatores[produtoId];
-    // Guarda o texto exato (ex: "2" ou "/2") pra preservar a operacao escolhida.
-    const val = raw === '' || raw == null ? null : String(raw).trim();
-    // Commita o valor pro filtro "sem Fator" so agora (no blur/Enter), nao durante a digitacao.
-    setFatoresSalvos(prev => ({ ...prev, [produtoId]: val }));
+    const novo = raw === '' || raw == null ? null : String(raw).trim();
+    const salvoRaw = fatoresSalvos[produtoId];
+    const salvo = salvoRaw === '' || salvoRaw == null ? null : String(salvoRaw).trim();
+    if (novo === salvo) return; // nada mudou — nao pergunta nem grava
+
+    if (salvo != null) {
+      const ok = window.confirm('A Regra3 deste produto já está preenchida. Tem certeza que deseja editar?');
+      if (!ok) {
+        setFatores(prev => ({ ...prev, [produtoId]: salvoRaw ?? '' })); // reverte
+        return;
+      }
+    }
+
+    // Commita o valor (texto exato, ex: "2" ou "/2") pro display, filtro e banco.
+    setFatoresSalvos(prev => ({ ...prev, [produtoId]: novo }));
+    setFatores(prev => ({ ...prev, [produtoId]: novo ?? '' }));
     const { error } = await supabase
       .from('produtos')
-      .update({ fator_regra3: val })
+      .update({ fator_regra3: novo })
       .eq('id', produtoId);
     if (error) console.error('[precos] erro ao salvar fator:', error);
   }
@@ -437,8 +400,7 @@ export default function PrecosInsumosView() {
                         placeholder="2 ou /2"
                         title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)"
                         value={fatores[p.produto_id] ?? ''}
-                        readOnly={fatorTravado(p.produto_id)}
-                        onKeyDown={e => handleFatorKeyDown(e, p.produto_id)}
+                        onKeyDown={handleFatorKeyDown}
                         onChange={e => handleFatorChange(p.produto_id, e.target.value)}
                         onBlur={() => handleFatorBlur(p.produto_id)}
                         style={fatorInputS}
