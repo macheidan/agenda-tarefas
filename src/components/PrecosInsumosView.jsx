@@ -947,6 +947,24 @@ function CadastrarView({ onSaved, ocultos }) {
     [fornecedoresVisiveis, byForn]
   );
 
+  // Lista pro dropdown: deduplicada por nome (case-insensitive, ja normalizado).
+  // Duplicatas tipo "DISTRIMAR"/"Distrimar" colapsam num so; mantem o cadastro
+  // que TEM lancamento (senao o de menor id) pra atribuir ao fornecedor certo.
+  // Fornecedores unicos sem lancamento continuam aparecendo (cadastro manual).
+  const fornecedoresDropdown = useMemo(() => {
+    const porChave = new Map();
+    for (const f of fornecedoresVisiveis) {
+      const chave = normalizeFornecedor(f.nome_curto, f.nome).toLowerCase();
+      const temLanc = !!byForn[f.id];
+      const atual = porChave.get(chave);
+      if (!atual) { porChave.set(chave, f); continue; }
+      const atualTem = !!byForn[atual.id];
+      if ((temLanc && !atualTem) || (temLanc === atualTem && f.id < atual.id)) porChave.set(chave, f);
+    }
+    return [...porChave.values()].sort((a, b) =>
+      (a.nome_curto || a.nome || '').localeCompare(b.nome_curto || b.nome || ''));
+  }, [fornecedoresVisiveis, byForn]);
+
   // --- Edicao / exclusao de produtos manuais ---
   async function salvarEdicaoProduto() {
     const e = editProd;
@@ -1110,7 +1128,7 @@ function CadastrarView({ onSaved, ocultos }) {
             <div style={{ display: 'flex', gap: 6 }}>
               <select value={form.fornecedorId} onChange={e => set('fornecedorId', e.target.value)} style={{ ...cadInputS, flex: 1 }}>
                 <option value="">Selecione...</option>
-                {fornecedoresVisiveis.map(f => <option key={f.id} value={f.id}>{f.nome_curto || f.nome}</option>)}
+                {fornecedoresDropdown.map(f => <option key={f.id} value={f.id}>{f.nome_curto || f.nome}</option>)}
               </select>
               <button type="button" onClick={() => { setCriandoFornecedor(true); set('fornecedorId', ''); }} style={btnS}>+ Novo</button>
             </div>
