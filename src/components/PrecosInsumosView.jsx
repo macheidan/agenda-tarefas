@@ -111,19 +111,23 @@ export default function PrecosInsumosView() {
   // o blur reseta o desbloqueio e ao voltar o foco a confirmacao reaparecia).
   function confirmaEdicaoFator(produtoId) {
     if (fatoresDesbloqueados[produtoId]) return true;
-    const atual = fatores[produtoId];
-    const preenchido = atual != null && String(atual).trim() !== '';
+    // Usa o valor SALVO (nao o que esta sendo digitado): so pede confirmacao
+    // se ja havia um fator gravado no banco.
+    const salvo = fatoresSalvos[produtoId];
+    const preenchido = salvo != null && String(salvo).trim() !== '';
     if (!preenchido) return true;
     const ok = window.confirm('A Regra3 deste produto já está preenchida. Tem certeza que deseja editar?');
     if (ok) setFatoresDesbloqueados(prev => ({ ...prev, [produtoId]: true }));
     return ok;
   }
 
-  // Campo travado (somente leitura) enquanto estiver preenchido e ainda nao confirmado.
+  // Campo travado (somente leitura) enquanto tiver valor JA SALVO e ainda nao
+  // confirmado. Baseia no valor salvo, nao no digitado — senao o campo travaria
+  // ao digitar o 1o caractere num campo vazio.
   function fatorTravado(produtoId) {
     if (fatoresDesbloqueados[produtoId]) return false;
-    const atual = fatores[produtoId];
-    return atual != null && String(atual).trim() !== '';
+    const salvo = fatoresSalvos[produtoId];
+    return salvo != null && String(salvo).trim() !== '';
   }
 
   // Campo preenchido fica travado (readOnly). A confirmacao para liberar a
