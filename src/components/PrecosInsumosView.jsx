@@ -63,6 +63,17 @@ function calcResultado(precoNorm, raw) {
   return precoNorm * n;
 }
 
+// Alias de fornecedores que sao o mesmo negocio com CNPJ diferente. "Conservas
+// do Porto" e o mesmo fornecedor que a Distrimar — toda nota da Conservas do
+// Porto (atual ou futura, com qualquer CNPJ) e tratada como Distrimar na
+// exibicao, no filtro e em todas as agregacoes.
+function normalizeFornecedor(nomeCurto, nome) {
+  const display = (nomeCurto || nome || '').trim();
+  const hay = (display + ' ' + (nome || '')).toLowerCase();
+  if (hay.includes('conserva') && hay.includes('porto')) return 'Distrimar';
+  return display;
+}
+
 // Normaliza o identificador da loja (pizzaria) para exibicao: 'lov' -> 'Lov', 'dame' -> 'Dame'.
 function normalizeLoja(raw) {
   if (!raw) return '';
@@ -175,7 +186,7 @@ export default function PrecosInsumosView() {
         produto: r.produtos?.nome || '',
         produto_padrao: r.produtos?.nome_padrao || '',
         fator_regra3: r.produtos?.fator_regra3 ?? null,
-        fornecedor: r.fornecedores?.nome_curto || r.fornecedores?.nome || '',
+        fornecedor: normalizeFornecedor(r.fornecedores?.nome_curto, r.fornecedores?.nome),
         loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
       }));
 
