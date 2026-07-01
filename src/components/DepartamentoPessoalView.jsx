@@ -13,9 +13,9 @@ const MONTHS = [
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const STORE_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab'];
 const ALL_STORES = '__all__';
-// Folga semanal permitida: segunda a quinta.
-const FOLGA_WEEK = [[1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta']];
-const FOLGA_WEEK_NAME = { 1: 'Segunda', 2: 'Terça', 3: 'Quarta', 4: 'Quinta' };
+// Folga semanal: qualquer dia da semana (getDay: 0=Domingo ... 6=Sábado).
+const FOLGA_WEEK = [[1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta'], [5, 'Sexta'], [6, 'Sábado'], [0, 'Domingo']];
+const FOLGA_WEEK_NAME = { 0: 'Domingo', 1: 'Segunda', 2: 'Terça', 3: 'Quarta', 4: 'Quinta', 5: 'Sexta', 6: 'Sábado' };
 
 const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
