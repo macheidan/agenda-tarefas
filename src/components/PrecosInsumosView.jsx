@@ -220,6 +220,29 @@ export default function PrecosInsumosView() {
     [precos]
   );
 
+  // nome_padrao ("Produto (planilha)") distintos ja usados — opcoes do dropdown
+  // que aparece quando a linha vem sem "Produto (planilha)".
+  const nomesPadrao = useMemo(() =>
+    [...new Set(precos.map(p => p.produto_padrao).filter(Boolean))].sort(),
+    [precos]
+  );
+
+  // Define o "Produto (planilha)" (nome_padrao) manualmente para um produto sem
+  // ele. Como o nome_padrao mora em produtos (por produto_id), a escolha vale
+  // pra TODAS as linhas do mesmo produto na listagem. Persiste no banco e
+  // atualiza o estado local pra refletir na hora.
+  async function handleProdutoPadraoChange(produtoId, valor) {
+    const novo = valor || null;
+    setPrecos(prev => prev.map(p =>
+      p.produto_id === produtoId ? { ...p, produto_padrao: novo || '' } : p
+    ));
+    const { error } = await supabase
+      .from('produtos')
+      .update({ nome_padrao: novo })
+      .eq('id', produtoId);
+    if (error) console.error('[precos] erro ao salvar nome_padrao:', error);
+  }
+
   // Mapa id-da-linha -> preco_normalizado da compra IMEDIATAMENTE anterior do
   // mesmo produto. Usa todos os registros carregados (ignora filtros) pra que a
   // "ultima compra" seja a real, e nao a anterior dentro do recorte filtrado.
@@ -400,7 +423,19 @@ export default function PrecosInsumosView() {
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{p.produto}</td>
-                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>{p.produto_padrao || '—'}</td>
+                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>
+                      {p.produto_padrao ? p.produto_padrao : (
+                        <select
+                          value=""
+                          onChange={e => handleProdutoPadraoChange(p.produto_id, e.target.value)}
+                          title="Selecionar Produto (planilha) — vale para todos os itens do mesmo produto"
+                          style={produtoPadraoSelectS}
+                        >
+                          <option value="" disabled>Selecionar…</option>
+                          {nomesPadrao.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                      )}
+                    </td>
                     <td style={tdS}>{p.fornecedor}</td>
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
@@ -1329,4 +1364,5 @@ const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
 const fatorInputS = { width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--border, #e5e5e5)', textAlign: 'right', fontSize: 12, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
+const produtoPadraoSelectS = { minWidth: 140, maxWidth: 200, padding: '5px 24px 5px 8px', borderRadius: 6, border: '1px solid var(--accent, #465fff)', fontSize: 12, fontWeight: 600, background: 'var(--accent-light, #eef2ff)', color: 'var(--accent, #465fff)', cursor: 'pointer', boxSizing: 'border-box', appearance: 'auto' };
 const btnS = { padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', cursor: 'pointer', fontSize: 12 };
