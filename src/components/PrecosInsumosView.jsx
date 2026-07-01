@@ -50,6 +50,37 @@ function useFornecedoresOcultos() {
   return { ocultos, toggle };
 }
 
+// Produtos ocultos na aba Cadastrar/Planilha — mesmo padrao dos fornecedores
+// ocultos (settings/global.precosProdutosOcultos, compartilhado entre computadores).
+// Guarda ids de produto (produtos.id). So esconde da listagem da Planilha.
+function useProdutosOcultos() {
+  const [ocultos, setOcultos] = useState([]);
+
+  useEffect(() => {
+    const ref = doc(db, 'settings', 'global');
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const saved = snap.data()?.precosProdutosOcultos;
+        setOcultos(Array.isArray(saved) ? saved : []);
+      },
+      () => setOcultos([])
+    );
+    return unsub;
+  }, []);
+
+  const toggle = useCallback((id) => {
+    setOcultos(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      setDoc(doc(db, 'settings', 'global'), { precosProdutosOcultos: next }, { merge: true })
+        .catch(e => console.error('[precos] erro ao salvar produtos ocultos:', e));
+      return next;
+    });
+  }, []);
+
+  return { ocultos, toggle };
+}
+
 function formatDate(d) {
   if (!d) return '';
   const [, m, day] = d.split('-');
@@ -922,6 +953,9 @@ function CadastrarView({ onSaved, ocultos }) {
   const [buscaForn, setBuscaForn] = useState('');
   const [buscaPlanilha, setBuscaPlanilha] = useState('');
   const [soSemVinculo, setSoSemVinculo] = useState(false);
+  // Produtos ocultos na Planilha (compartilhado via Firestore, por id de produto).
+  const { ocultos: produtosOcultos, toggle: toggleProdutoOculto } = useProdutosOcultos();
+  const produtosOcultosSet = useMemo(() => new Set(produtosOcultos), [produtosOcultos]);
 
   const set = (campo, valor) => setForm(prev => ({ ...prev, [campo]: valor }));
 
@@ -1012,10 +1046,6 @@ function CadastrarView({ onSaved, ocultos }) {
     () => produtos.filter(p => { const s = byProd[p.id]; return s && s.manual > 0 && s.nfe === 0; }),
     [produtos, byProd]
   );
-  const fornecedoresManuais = useMemo(
-    () => fornecedoresVisiveis.filter(f => { const s = byForn[f.id]; return s && s.manual > 0 && s.nfe === 0; }),
-    [fornecedoresVisiveis, byForn]
-  );
 
   // Lista pro dropdown: IGUAL a lista de fornecedores do filtro em Preços —
   // somente fornecedores que TEM lancamento, com o nome ja normalizado (ex:
@@ -1047,15 +1077,22 @@ function CadastrarView({ onSaved, ocultos }) {
   }, [fornecedores, byForn, buscaForn]);
 
   // Aba Planilha: produtos com lancamento, mostrando nome da nota x nome_padrao.
-  // Filtra por busca e, opcionalmente, so os que ainda nao tem vinculo.
+  // Filtra por busca, oculta os marcados e, opcionalmente, mostra so sem vinculo.
   const produtosPlanilha = useMemo(() => {
     const q = buscaPlanilha.trim().toLowerCase();
     return produtos
       .filter(p => byProd[p.id])
+      .filter(p => !produtosOcultosSet.has(p.id))
       .filter(p => !soSemVinculo || !p.nome_padrao)
       .filter(p => !q || (p.nome || '').toLowerCase().includes(q) || (p.nome_padrao || '').toLowerCase().includes(q))
       .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-  }, [produtos, byProd, buscaPlanilha, soSemVinculo]);
+  }, [produtos, byProd, buscaPlanilha, soSemVinculo, produtosOcultosSet]);
+
+  // Produtos ocultos que ainda existem (pra secao de restaurar na Planilha).
+  const produtosOcultosLista = useMemo(
+    () => produtos.filter(p => produtosOcultosSet.has(p.id)),
+    [produtos, produtosOcultosSet]
+  );
 
   // --- Edicao / exclusao de produtos manuais ---
   async function salvarEdicaoProduto() {
@@ -1086,10 +1123,13 @@ function CadastrarView({ onSaved, ocultos }) {
   async function salvarEdicaoFornecedor() {
     const e = editForn;
     if (!e || !e.nome.trim()) return;
-    const { error } = await supabase.from('fornecedores').update({
-      nome: e.nome.trim(),
-      nome_curto: e.nome_curto.trim() || null,
-    }).eq('id', e.id);
+    // "nome da nota" e a chave que a integracao SEFAZ usa pra casar o fornecedor
+    // (.eq('nome', ...)). Editar isso num fornecedor que vem de NFe faria a proxima
+    // nota nao reconhecer e criar duplicado — por isso so grava o nome quando o
+    // fornecedor e 100% manual (lockNome=false). Nome curto pode sempre editar.
+    const upd = { nome_curto: e.nome_curto.trim() || null };
+    if (!e.lockNome) upd.nome = e.nome.trim();
+    const { error } = await supabase.from('fornecedores').update(upd).eq('id', e.id);
     if (error) { setMsg({ tipo: 'err', texto: 'Erro ao editar fornecedor: ' + error.message }); return; }
     setEditForn(null);
     await carregarListas(); onSaved?.();
@@ -1430,8 +1470,16 @@ function CadastrarView({ onSaved, ocultos }) {
                   <tr key={f.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     {emEdicao ? (
                       <>
-                        <td style={tdS}><input value={editForn.nome} onChange={e => setEditForn({ ...editForn, nome: e.target.value })} style={cadInputS} /></td>
-                        <td style={tdS}><input value={editForn.nome_curto} onChange={e => setEditForn({ ...editForn, nome_curto: e.target.value })} style={cadInputS} /></td>
+                        <td style={tdS}>
+                          {editForn.lockNome ? (
+                            <span title="Nome da nota não pode ser alterado (a integração casa o fornecedor por ele)" style={{ color: 'var(--text-secondary, #555)' }}>
+                              {editForn.nome} 🔒
+                            </span>
+                          ) : (
+                            <input value={editForn.nome} onChange={e => setEditForn({ ...editForn, nome: e.target.value })} style={cadInputS} />
+                          )}
+                        </td>
+                        <td style={tdS}><input value={editForn.nome_curto} onChange={e => setEditForn({ ...editForn, nome_curto: e.target.value })} autoFocus placeholder="Nome curto" style={cadInputS} /></td>
                         <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{stats.manual + stats.nfe}</td>
                         <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <button type="button" onClick={salvarEdicaoFornecedor} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
@@ -1444,7 +1492,7 @@ function CadastrarView({ onSaved, ocultos }) {
                         <td style={{ ...tdS, color: f.nome_curto ? 'inherit' : '#bbb' }}>{f.nome_curto || '—'}</td>
                         <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{stats.manual + stats.nfe}</td>
                         <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <button type="button" onClick={() => setEditForn({ id: f.id, nome: f.nome || '', nome_curto: f.nome_curto || '' })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
+                          <button type="button" onClick={() => setEditForn({ id: f.id, nome: f.nome || '', nome_curto: f.nome_curto || '', lockNome: !soManual })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
                           {soManual && (
                             <button type="button" onClick={() => excluirFornecedor(f)} style={{ ...btnS, color: '#c62828', borderColor: '#ef9a9a' }}>Excluir</button>
                           )}
@@ -1459,7 +1507,7 @@ function CadastrarView({ onSaved, ocultos }) {
         </div>
       )}
       <p style={{ fontSize: 11, color: '#888', margin: '8px 0 0' }}>
-        Só é possível excluir fornecedores cadastrados manualmente (sem notas fiscais importadas). Os demais podem ter o nome convertido editado.
+        Fornecedores que vêm de nota fiscal: o <strong>nome da nota</strong> fica travado (🔒) — a integração usa ele pra reconhecer o fornecedor; alterá-lo criaria um duplicado na próxima importação. Edite só o <strong>nome convertido</strong>. Excluir só é possível nos 100% manuais.
       </p>
      </div>
     )}
@@ -1488,6 +1536,7 @@ function CadastrarView({ onSaved, ocultos }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                <th style={{ ...thS, width: 34 }}></th>
                 <th style={thS}>Produto (nota)</th>
                 <th style={thS}>Produto (planilha)</th>
               </tr>
@@ -1495,6 +1544,16 @@ function CadastrarView({ onSaved, ocultos }) {
             <tbody>
               {produtosPlanilha.map(p => (
                 <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                  <td style={{ ...tdS, textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleProdutoOculto(p.id)}
+                      title={`Ocultar "${p.nome}" da planilha`}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#888', padding: 0, lineHeight: 0, verticalAlign: 'middle' }}
+                    >
+                      <EyeOffIcon />
+                    </button>
+                  </td>
                   <td style={{ ...tdS, fontWeight: 500, fontSize: 12 }}>{p.nome}</td>
                   <td style={tdS}>
                     <input
@@ -1511,6 +1570,28 @@ function CadastrarView({ onSaved, ocultos }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Produtos ocultos — restaurar com 1 clique. */}
+      {produtosOcultosLista.length > 0 && (
+        <div style={{ marginTop: 16, padding: 12, border: '1px dashed var(--border, #e5e5e5)', borderRadius: 8, background: 'var(--bg, #f9fafb)' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8 }}>
+            Produtos ocultos ({produtosOcultosLista.length}) — não aparecem nesta lista
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {produtosOcultosLista.slice().sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).map(p => (
+              <button
+                key={p.id}
+                onClick={() => toggleProdutoOculto(p.id)}
+                title="Mostrar este produto novamente"
+                style={{ ...btnS, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <span>{p.nome}</span>
+                <span style={{ color: 'var(--accent)', fontWeight: 700 }}>↺ Mostrar</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
      </div>
