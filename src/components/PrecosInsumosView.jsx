@@ -1,24 +1,52 @@
-import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react';
 import { supabase } from '../utils/supabase';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const OCULTOS_KEY = 'precos_fornecedores_ocultos';
 
-// Fornecedores ocultados pelo usuario (ex: fornecedores eventuais sem relacao
-// com insumos). Some das listas de Preços, Fornecedores e Subiram. Persistido em
-// localStorage — preferencia simples, sem depender de schema no banco.
+// Fornecedores ocultados (ex: fornecedores eventuais sem relacao com insumos).
+// Somem das listas de Preços, Fornecedores, Cadastrar e Subiram. Persistido no
+// Firestore em settings/global.precosFornecedoresOcultos, pra valer em qualquer
+// computador (antes era localStorage, preso a um navegador). Leitura liberada a
+// qualquer logado; escrita so admin (mesma regra do settings/global).
 function useFornecedoresOcultos() {
-  const [ocultos, setOcultos] = useState(() => {
-    try {
-      const raw = localStorage.getItem(OCULTOS_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr : [];
-    } catch { return []; }
-  });
+  const [ocultos, setOcultos] = useState([]);
+  const seededRef = useRef(false);
+
   useEffect(() => {
-    try { localStorage.setItem(OCULTOS_KEY, JSON.stringify(ocultos)); } catch { /* ignora quota/privado */ }
-  }, [ocultos]);
-  const toggle = (nome) =>
-    setOcultos(prev => prev.includes(nome) ? prev.filter(n => n !== nome) : [...prev, nome]);
+    const ref = doc(db, 'settings', 'global');
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const saved = snap.data()?.precosFornecedoresOcultos;
+        if (Array.isArray(saved)) { setOcultos(saved); return; }
+        // Ainda nao migrado: usa a lista antiga do localStorage e sobe pro banco 1x.
+        let legacy = [];
+        try {
+          const arr = JSON.parse(localStorage.getItem(OCULTOS_KEY) || '[]');
+          if (Array.isArray(arr)) legacy = arr;
+        } catch { /* ignora */ }
+        setOcultos(legacy);
+        if (legacy.length && !seededRef.current) {
+          seededRef.current = true;
+          setDoc(ref, { precosFornecedoresOcultos: legacy }, { merge: true }).catch(() => {});
+        }
+      },
+      () => setOcultos([])
+    );
+    return unsub;
+  }, []);
+
+  const toggle = useCallback((nome) => {
+    setOcultos(prev => {
+      const next = prev.includes(nome) ? prev.filter(n => n !== nome) : [...prev, nome];
+      setDoc(doc(db, 'settings', 'global'), { precosFornecedoresOcultos: next }, { merge: true })
+        .catch(e => console.error('[precos] erro ao salvar fornecedores ocultos:', e));
+      return next;
+    });
+  }, []);
+
   return { ocultos, toggle };
 }
 
@@ -614,7 +642,6 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   const prevAno = () => { if (anoIdx > 0) setAno(anos[anoIdx - 1]); };
   const nextAno = () => { if (anoIdx >= 0 && anoIdx < anos.length - 1) setAno(anos[anoIdx + 1]); };
 
-  const totalAno = porFornecedor.reduce((s, r) => s + r.total, 0);
   const nFornecedores = porFornecedor.length;
   const nProdutos = new Set(doAno.map(p => p.produto).filter(Boolean)).size;
 
@@ -705,8 +732,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
           <strong style={{ fontSize: 16, minWidth: 56, textAlign: 'center' }}>{ano}</strong>
           <button onClick={nextAno} disabled={anoIdx < 0 || anoIdx >= anos.length - 1} style={btnS} aria-label="Próximo ano">›</button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(110px, 1fr))', gap: 8, flex: 1 }}>
-          <StatCard label="Total no ano" value={formatBRL(totalAno)} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(110px, 1fr))', gap: 8, flex: 1 }}>
           <StatCard label="Fornecedores" value={nFornecedores} />
           <StatCard label="Produtos" value={nProdutos} />
         </div>
