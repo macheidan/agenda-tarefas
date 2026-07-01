@@ -242,6 +242,30 @@
   color: var(--text-muted);
 }
 
+/* Chips de seleção de dias de folga (múltiplos) */
+.folgaDaysRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.folgaDay {
+  padding: 5px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.folgaDayOn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .folgaTag {
   display: inline-flex;
   align-items: center;

@@ -129,6 +129,7 @@ export function useDepartamentoPessoal() {
       active: true,
       createdAt: Timestamp.now(),
       createdBy: author?.uid || '',
+      folgaWeekdays: extra.folgaWeekdays ?? null,
       folgaWeekday: extra.folgaWeekday ?? null,
       folgaMonthN: extra.folgaMonthN ?? null,
     });
@@ -143,6 +144,7 @@ export function useDepartamentoPessoal() {
     const clean = {};
     if (typeof updates?.name === 'string') clean.name = updates.name.trim();
     if (updates?.store) clean.store = updates.store;
+    if (updates && 'folgaWeekdays' in updates) clean.folgaWeekdays = updates.folgaWeekdays;
     if (updates && 'folgaWeekday' in updates) clean.folgaWeekday = updates.folgaWeekday;
     if (updates && 'folgaMonthN' in updates) clean.folgaMonthN = updates.folgaMonthN;
     if (Object.keys(clean).length) {

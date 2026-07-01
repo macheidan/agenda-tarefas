@@ -17,6 +17,15 @@ const ALL_STORES = '__all__';
 const FOLGA_WEEK = [[1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta'], [5, 'Sexta'], [6, 'Sábado'], [0, 'Domingo']];
 const FOLGA_WEEK_NAME = { 0: 'Domingo', 1: 'Segunda', 2: 'Terça', 3: 'Quarta', 4: 'Quinta', 5: 'Sexta', 6: 'Sábado' };
 
+// Dias de folga fixa da semana do funcionario (pode ser mais de um). Aceita o
+// novo campo folgaWeekdays (array) e cai pro antigo folgaWeekday (1 dia) por
+// retrocompatibilidade com funcionarios ja cadastrados.
+function empFolgaWeekdays(emp) {
+  if (Array.isArray(emp.folgaWeekdays)) return emp.folgaWeekdays;
+  if (emp.folgaWeekday != null) return [emp.folgaWeekday];
+  return [];
+}
+
 const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
 
@@ -78,7 +87,7 @@ export default function DepartamentoPessoalView() {
   const [formId, setFormId] = useState(null);
   const [fName, setFName] = useState('');
   const [fStore, setFStore] = useState('');
-  const [fWeekday, setFWeekday] = useState(''); // '' | 1..4 (seg-qui)
+  const [fWeekdays, setFWeekdays] = useState([]); // dias fixos de folga (0=Dom..6=Sáb)
   const [fMonthN, setFMonthN] = useState(''); // '' | 1..5 (domingo do mês)
   const [popover, setPopover] = useState(null);
   const [selectedEmp, setSelectedEmp] = useState(null); // funcionário escolhido no mobile
@@ -171,7 +180,7 @@ export default function DepartamentoPessoalView() {
     setFormId(null);
     setFName('');
     setFStore(isAmbas ? (visibleStores[0]?.id || '') : activeStore || '');
-    setFWeekday('');
+    setFWeekdays([]);
     setFMonthN('');
   };
 
@@ -180,19 +189,23 @@ export default function DepartamentoPessoalView() {
     setFormId(emp.id);
     setFName(emp.name || '');
     setFStore(emp.store || '');
-    setFWeekday(emp.folgaWeekday != null ? String(emp.folgaWeekday) : '');
+    setFWeekdays(empFolgaWeekdays(emp));
     setFMonthN(emp.folgaMonthN != null ? String(emp.folgaMonthN) : '');
   };
+
+  const toggleFWeekday = (v) =>
+    setFWeekdays((prev) => (prev.includes(v) ? prev.filter((d) => d !== v) : [...prev, v]));
 
   const submitForm = () => {
     const name = fName.trim();
     if (!name || !fStore) return;
-    const wd = fWeekday === '' ? null : Number(fWeekday);
+    const wds = fWeekdays.slice().sort((a, b) => a - b);
     const mn = fMonthN === '' ? null : Number(fMonthN);
     if (formMode === 'edit' && formId) {
-      updateEmployee(formId, { name, store: fStore, folgaWeekday: wd, folgaMonthN: mn });
+      // Zera o campo antigo (1 dia) pra nao conflitar com o novo array.
+      updateEmployee(formId, { name, store: fStore, folgaWeekdays: wds, folgaWeekday: null, folgaMonthN: mn });
     } else {
-      addEmployee(name, fStore, user, { folgaWeekday: wd, folgaMonthN: mn });
+      addEmployee(name, fStore, user, { folgaWeekdays: wds, folgaMonthN: mn });
     }
     closeForm();
   };
@@ -210,13 +223,14 @@ export default function DepartamentoPessoalView() {
   // Dia é folga (derivado da config do funcionário): dia fixo da semana OU o Nº domingo do mês.
   const isFolgaDay = (emp, d) => {
     const wd = new Date(year, month, d).getDay();
-    if (emp.folgaWeekday != null && wd === emp.folgaWeekday) return true;
+    if (empFolgaWeekdays(emp).includes(wd)) return true;
     if (emp.folgaMonthN != null && wd === 0 && nthSundayOfMonth(d) === emp.folgaMonthN) return true;
     return false;
   };
   const folgaDesc = (emp) => {
     const p = [];
-    if (emp.folgaWeekday != null) p.push(FOLGA_WEEK_NAME[emp.folgaWeekday] || '');
+    const wds = empFolgaWeekdays(emp);
+    if (wds.length) p.push(FOLGA_WEEK.filter(([v]) => wds.includes(v)).map(([, n]) => n).join(', '));
     if (emp.folgaMonthN != null) p.push(`${emp.folgaMonthN}º domingo`);
     return p.filter(Boolean).join(' • ');
   };
@@ -254,7 +268,7 @@ export default function DepartamentoPessoalView() {
       const real = absences.find((a) => a.employeeId === emp.id && a.date === ds);
       if (real) return real.type === 'folga';
       const wd = dt.getDay();
-      if (emp.folgaWeekday != null && wd === emp.folgaWeekday) return true;
+      if (empFolgaWeekdays(emp).includes(wd)) return true;
       if (emp.folgaMonthN != null && wd === 0 && nthSundayOf(dt) === emp.folgaMonthN) return true;
       return false;
     };
@@ -472,13 +486,17 @@ export default function DepartamentoPessoalView() {
               </select>
             </label>
             <label className={styles.fieldLabel}>
-              Folga da semana
-              <select className={styles.storeSelect} value={fWeekday} onChange={(e) => setFWeekday(e.target.value)}>
-                <option value="">—</option>
+              Folgas da semana
+              <div className={styles.folgaDaysRow}>
                 {FOLGA_WEEK.map(([v, n]) => (
-                  <option key={v} value={v}>{n}</option>
+                  <button
+                    type="button"
+                    key={v}
+                    className={fWeekdays.includes(v) ? `${styles.folgaDay} ${styles.folgaDayOn}` : styles.folgaDay}
+                    onClick={() => toggleFWeekday(v)}
+                  >{n.slice(0, 3)}</button>
                 ))}
-              </select>
+              </div>
             </label>
             <label className={styles.fieldLabel}>
               Folga do mês
