@@ -431,7 +431,7 @@ export default function PrecosInsumosView() {
                           title="Selecionar Produto (planilha) — vale para todos os itens do mesmo produto"
                           style={produtoPadraoSelectS}
                         >
-                          <option value="">—</option>
+                          <option value="" disabled>Selecionar…</option>
                           {nomesPadrao.map(n => <option key={n} value={n}>{n}</option>)}
                         </select>
                       )}
@@ -1364,5 +1364,5 @@ const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
 const fatorInputS = { width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--border, #e5e5e5)', textAlign: 'right', fontSize: 12, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
-const produtoPadraoSelectS = { maxWidth: 180, padding: '4px 6px', borderRadius: 4, border: '1px dashed var(--border, #c9c9c9)', fontSize: 12, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', cursor: 'pointer', boxSizing: 'border-box' };
+const produtoPadraoSelectS = { minWidth: 140, maxWidth: 200, padding: '5px 24px 5px 8px', borderRadius: 6, border: '1px solid var(--accent, #465fff)', fontSize: 12, fontWeight: 600, background: 'var(--accent-light, #eef2ff)', color: 'var(--accent, #465fff)', cursor: 'pointer', boxSizing: 'border-box', appearance: 'auto' };
 const btnS = { padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', cursor: 'pointer', fontSize: 12 };
