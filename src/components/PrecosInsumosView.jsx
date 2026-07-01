@@ -115,6 +115,22 @@ export default function PrecosInsumosView() {
     setFatores(prev => ({ ...prev, [produtoId]: raw }));
   }
 
+  // Preenche o "Produto (planilha)" (nome_padrao) de um produto sem valor via
+  // dropdown na tabela. Vale por produto_id: atualiza TODAS as linhas do mesmo
+  // produto na listagem (otimista) e persiste em produtos.nome_padrao.
+  async function handleProdutoPadraoChange(produtoId, novoValor) {
+    const val = novoValor.trim() === '' ? null : novoValor.trim();
+    if (val == null) return; // "— selecionar —" nao faz nada
+    setPrecos(prev => prev.map(p =>
+      p.produto_id === produtoId ? { ...p, produto_padrao: val } : p
+    ));
+    const { error } = await supabase
+      .from('produtos')
+      .update({ nome_padrao: val })
+      .eq('id', produtoId);
+    if (error) console.error('[precos] erro ao salvar nome_padrao:', error);
+  }
+
   // Enter so "commita" tirando o foco -> dispara o blur (mesma logica de clicar fora).
   function handleFatorKeyDown(e) {
     if (e.key === 'Enter') e.currentTarget.blur();
@@ -217,6 +233,13 @@ export default function PrecosInsumosView() {
 
   const lojasUnicas = useMemo(() =>
     [...new Set(precos.map(p => p.loja))].filter(Boolean).sort(),
+    [precos]
+  );
+
+  // Valores de "Produto (planilha)" (nome_padrao) ja cadastrados, distintos e
+  // ordenados — populam o dropdown das linhas cujo nome_padrao esta em branco.
+  const nomesPadraoUnicos = useMemo(() =>
+    [...new Set(precos.map(p => p.produto_padrao).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
     [precos]
   );
 
@@ -400,7 +423,19 @@ export default function PrecosInsumosView() {
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{p.produto}</td>
-                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>{p.produto_padrao || '—'}</td>
+                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>
+                      {p.produto_padrao ? p.produto_padrao : (
+                        <select
+                          value=""
+                          onChange={e => handleProdutoPadraoChange(p.produto_id, e.target.value)}
+                          title="Selecionar o Produto (planilha) — vale para todos os itens do mesmo produto"
+                          style={{ ...inputS, padding: '4px 6px', fontSize: 12, maxWidth: 220, color: 'var(--text, #222)' }}
+                        >
+                          <option value="">— selecionar —</option>
+                          {nomesPadraoUnicos.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                      )}
+                    </td>
                     <td style={tdS}>{p.fornecedor}</td>
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
