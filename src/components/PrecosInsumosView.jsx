@@ -913,6 +913,15 @@ function CadastrarView({ onSaved, ocultos }) {
   const [form, setForm] = useState(vazio);
   const [criandoFornecedor, setCriandoFornecedor] = useState(false);
   const formRef = useRef(null);
+  // Sub-abas do Cadastrar: 'produto' (registro de preco), 'fornecedor' (cadastro/
+  // edicao de fornecedores) e 'planilha' (vinculo produto da nota -> nome padrao).
+  const [cadTab, setCadTab] = useState('produto');
+  // Cadastro de fornecedor novo (aba Fornecedor): nome (como vem na nota) + nome
+  // convertido (nome_curto, o que aparece nas listas).
+  const [novoForn, setNovoForn] = useState({ nome: '', nome_curto: '' });
+  const [buscaForn, setBuscaForn] = useState('');
+  const [buscaPlanilha, setBuscaPlanilha] = useState('');
+  const [soSemVinculo, setSoSemVinculo] = useState(false);
 
   const set = (campo, valor) => setForm(prev => ({ ...prev, [campo]: valor }));
 
@@ -1027,6 +1036,27 @@ function CadastrarView({ onSaved, ocultos }) {
     return [...porChave.values()].sort((a, b) => a.label.localeCompare(b.label));
   }, [fornecedoresVisiveis, byForn]);
 
+  // Aba Fornecedor: todos os fornecedores que tem ao menos 1 lancamento (nota ou
+  // manual), pra editar o "nome convertido" (nome_curto). Filtra pela busca.
+  const fornecedoresLista = useMemo(() => {
+    const q = buscaForn.trim().toLowerCase();
+    return fornecedores
+      .filter(f => byForn[f.id])
+      .filter(f => !q || (f.nome || '').toLowerCase().includes(q) || (f.nome_curto || '').toLowerCase().includes(q))
+      .sort((a, b) => (a.nome_curto || a.nome || '').localeCompare(b.nome_curto || b.nome || ''));
+  }, [fornecedores, byForn, buscaForn]);
+
+  // Aba Planilha: produtos com lancamento, mostrando nome da nota x nome_padrao.
+  // Filtra por busca e, opcionalmente, so os que ainda nao tem vinculo.
+  const produtosPlanilha = useMemo(() => {
+    const q = buscaPlanilha.trim().toLowerCase();
+    return produtos
+      .filter(p => byProd[p.id])
+      .filter(p => !soSemVinculo || !p.nome_padrao)
+      .filter(p => !q || (p.nome || '').toLowerCase().includes(q) || (p.nome_padrao || '').toLowerCase().includes(q))
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+  }, [produtos, byProd, buscaPlanilha, soSemVinculo]);
+
   // --- Edicao / exclusao de produtos manuais ---
   async function salvarEdicaoProduto() {
     const e = editProd;
@@ -1074,6 +1104,28 @@ function CadastrarView({ onSaved, ocultos }) {
     if (d2.error) { setMsg({ tipo: 'err', texto: 'Erro ao excluir fornecedor: ' + d2.error.message }); return; }
     setMsg({ tipo: 'ok', texto: `Fornecedor "${f.nome_curto || f.nome}" excluído.` });
     await carregarListas(); onSaved?.();
+  }
+
+  // Aba Fornecedor: cadastra um fornecedor novo (nome da nota + nome convertido).
+  async function salvarNovoFornecedor() {
+    const nome = novoForn.nome.trim();
+    if (!nome) { setMsg({ tipo: 'err', texto: 'Informe o nome do fornecedor (como vem na nota).' }); return; }
+    const nomeCurto = novoForn.nome_curto.trim() || nome;
+    const { error } = await supabase.from('fornecedores').insert({ nome, nome_curto: nomeCurto });
+    if (error) { setMsg({ tipo: 'err', texto: 'Erro ao cadastrar fornecedor: ' + error.message }); return; }
+    setMsg({ tipo: 'ok', texto: `Fornecedor "${nomeCurto}" cadastrado.` });
+    setNovoForn({ nome: '', nome_curto: '' });
+    await carregarListas(); onSaved?.();
+  }
+
+  // Aba Planilha: troca o vinculo de um produto da nota para um "Produto
+  // (planilha)" (nome_padrao). Vazio desvincula. Atualiza estado local + banco.
+  async function salvarNomePadrao(produtoId, valor) {
+    const novo = (valor || '').trim() === '' ? null : valor.trim();
+    setProdutos(prev => prev.map(p => p.id === produtoId ? { ...p, nome_padrao: novo } : p));
+    const { error } = await supabase.from('produtos').update({ nome_padrao: novo }).eq('id', produtoId);
+    if (error) setMsg({ tipo: 'err', texto: 'Erro ao salvar vínculo: ' + error.message });
+    else onSaved?.();
   }
 
   async function handleSubmit(e) {
@@ -1157,193 +1209,230 @@ function CadastrarView({ onSaved, ocultos }) {
 
   if (loadingLists) return <p style={{ padding: 20, textAlign: 'center' }}>Carregando listas...</p>;
 
+  const msgBox = msg && (
+    <div style={{ marginBottom: 14, padding: '8px 12px', borderRadius: 6, fontSize: 13,
+      background: msg.tipo === 'ok' ? '#e8f5e9' : '#ffebee',
+      color: msg.tipo === 'ok' ? '#2e7d32' : '#c62828',
+      border: `1px solid ${msg.tipo === 'ok' ? '#a5d6a7' : '#ef9a9a'}` }}>
+      {msg.texto}
+    </div>
+  );
+
   return (
    <div>
-    <form ref={formRef} onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
+    {/* Datalists compartilhadas pelas sub-abas. */}
+    <datalist id="dl-produtos">
+      {produtos.map(p => <option key={p.id} value={p.nome} />)}
+    </datalist>
+    <datalist id="dl-nome-padrao">
+      {nomesPadrao.map(n => <option key={n} value={n} />)}
+    </datalist>
+    <datalist id="dl-unidade-norm">
+      {['kg', 'g', 'lt', 'ml', 'un'].map(u => <option key={u} value={u} />)}
+    </datalist>
+
+    {/* Sub-abas: Produto / Fornecedor / Planilha. */}
+    <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <button style={subTabBtnS(cadTab === 'produto')} onClick={() => { setCadTab('produto'); setMsg(null); }}>Produto</button>
+      <button style={subTabBtnS(cadTab === 'fornecedor')} onClick={() => { setCadTab('fornecedor'); setMsg(null); }}>Fornecedor</button>
+      <button style={subTabBtnS(cadTab === 'planilha')} onClick={() => { setCadTab('planilha'); setMsg(null); }}>Planilha</button>
+    </div>
+
+    {msgBox}
+
+    {/* ---------- Aba PRODUTO: registro de preço (fornecedor só seleção) ---------- */}
+    {cadTab === 'produto' && (
+     <>
+      <form ref={formRef} onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
+        <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
+          Cadastre manualmente um registro de preço. Se o produto já existir (mesmo nome), ele é reaproveitado.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          <Campo label="Produto *">
+            <input list="dl-produtos" value={form.produto} onChange={e => set('produto', e.target.value)}
+              placeholder="Nome do produto (ex: AZEITE BORGES 500ML)" style={cadInputS} />
+          </Campo>
+
+          <Campo label="Produto (planilha)">
+            <input list="dl-nome-padrao" value={form.nome_padrao} onChange={e => set('nome_padrao', e.target.value)}
+              placeholder="Nome padronizado" style={cadInputS} />
+          </Campo>
+
+          <Campo label="Fornecedor *" full>
+            <select value={form.fornecedorId} onChange={e => set('fornecedorId', e.target.value)} style={{ ...cadInputS }}>
+              <option value="">Selecione...</option>
+              {fornecedoresDropdown.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+            </select>
+            <span style={{ fontSize: 11, color: '#888' }}>
+              Não achou o fornecedor? Cadastre na aba <strong>Fornecedor</strong>.
+            </span>
+          </Campo>
+
+          <Campo label="Loja">
+            <select value={form.loja} onChange={e => set('loja', e.target.value)} style={cadInputS}>
+              <option value="">—</option>
+              <option value="dame">Dame</option>
+              <option value="lov">Lov</option>
+            </select>
+          </Campo>
+
+          <Campo label="Data *">
+            <input type="date" value={form.data} onChange={e => set('data', e.target.value)} style={cadInputS} />
+          </Campo>
+
+          <Campo label="Preço Nota (R$/un) *">
+            <input inputMode="decimal" value={form.preco_normalizado} onChange={e => set('preco_normalizado', e.target.value)}
+              placeholder="6,79" style={cadInputS} />
+          </Campo>
+
+          <Campo label="Unidade (kg/lt/un)">
+            <input list="dl-unidade-norm" value={form.unidade_normalizada} onChange={e => set('unidade_normalizada', e.target.value)}
+              placeholder="kg" style={cadInputS} />
+          </Campo>
+
+          <Campo label="Preço bruto (R$ da nota)">
+            <input inputMode="decimal" value={form.preco_bruto} onChange={e => set('preco_bruto', e.target.value)}
+              placeholder="331,76" style={cadInputS} />
+          </Campo>
+
+          <Campo label="Fator (Regra3)">
+            <input value={form.fator} onChange={e => set('fator', e.target.value)}
+              placeholder="2 ou /2" title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)" style={cadInputS} />
+          </Campo>
+
+          <Campo label="Qtd embalagem">
+            <input inputMode="decimal" value={form.qtd_embalagem} onChange={e => set('qtd_embalagem', e.target.value)}
+              placeholder="48,86" style={cadInputS} />
+          </Campo>
+
+          <Campo label="Unidade embalagem">
+            <input value={form.unidade_embalagem} onChange={e => set('unidade_embalagem', e.target.value)}
+              placeholder="LT" style={cadInputS} />
+          </Campo>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <button type="submit" disabled={salvando}
+            style={{ ...btnS, background: '#43a047', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600, opacity: salvando ? 0.6 : 1 }}>
+            {salvando ? 'Salvando...' : 'Cadastrar'}
+          </button>
+          <button type="button" onClick={() => { setForm(vazio); setCriandoFornecedor(false); setMsg(null); }} style={{ ...btnS, padding: '8px 18px' }}>
+            Limpar
+          </button>
+        </div>
+      </form>
+
+      {/* Produtos cadastrados manualmente (sem origem em NFe). */}
+      <div style={{ marginTop: 28 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>Produtos cadastrados manualmente ({produtosManuais.length})</h3>
+        {produtosManuais.length === 0 ? (
+          <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum produto cadastrado manualmente ainda.</p>
+        ) : (
+          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                  <th style={thS}>Produto</th>
+                  <th style={thS}>Produto (planilha)</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Fator</th>
+                  <th style={{ ...thS, textAlign: 'center' }}>Lanç.</th>
+                  <th style={{ ...thS, textAlign: 'right' }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {produtosManuais.map(p => {
+                  const emEdicao = editProd?.id === p.id;
+                  return (
+                    <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                      {emEdicao ? (
+                        <>
+                          <td style={tdS}><input value={editProd.nome} onChange={e => setEditProd({ ...editProd, nome: e.target.value })} style={cadInputS} /></td>
+                          <td style={tdS}><input list="dl-nome-padrao" value={editProd.nome_padrao} onChange={e => setEditProd({ ...editProd, nome_padrao: e.target.value })} style={cadInputS} /></td>
+                          <td style={{ ...tdS, textAlign: 'right' }}><input value={editProd.fator} onChange={e => setEditProd({ ...editProd, fator: e.target.value })} placeholder="2 ou /2" style={fatorInputS} /></td>
+                          <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
+                          <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <button type="button" onClick={salvarEdicaoProduto} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
+                            <button type="button" onClick={() => setEditProd(null)} style={btnS}>Cancelar</button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td style={{ ...tdS, fontWeight: 500, fontSize: 12 }}>{p.nome}</td>
+                          <td style={{ ...tdS, color: p.nome_padrao ? 'inherit' : '#bbb' }}>{p.nome_padrao || '—'}</td>
+                          <td style={{ ...tdS, textAlign: 'right' }}>{p.fator_regra3 || '—'}</td>
+                          <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
+                          <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <button type="button" onClick={() => replicarProduto(p)} style={{ ...btnS, marginRight: 6, color: '#1565c0', borderColor: '#90caf9' }} title="Copiar este item para o formulário (ex: mudar só a data)">Replicar</button>
+                            <button type="button" onClick={() => setEditProd({ id: p.id, nome: p.nome || '', nome_padrao: p.nome_padrao || '', fator: p.fator_regra3 || '' })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
+                            <button type="button" onClick={() => excluirProduto(p)} style={{ ...btnS, color: '#c62828', borderColor: '#ef9a9a' }}>Excluir</button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+     </>
+    )}
+
+    {/* ---------- Aba FORNECEDOR: cadastro + edição de fornecedores ---------- */}
+    {cadTab === 'fornecedor' && (
+     <div style={{ maxWidth: 760 }}>
       <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
-        Cadastre manualmente um registro de preço. Se o produto já existir (mesmo nome), ele é reaproveitado.
+        Cadastre um fornecedor novo ou edite os existentes. O <strong>nome da nota</strong> é como vem no documento fiscal; o <strong>nome convertido</strong> é o nome curto que aparece nas listas (editável).
       </p>
 
-      <datalist id="dl-produtos">
-        {produtos.map(p => <option key={p.id} value={p.nome} />)}
-      </datalist>
-      <datalist id="dl-nome-padrao">
-        {nomesPadrao.map(n => <option key={n} value={n} />)}
-      </datalist>
-      <datalist id="dl-unidade-norm">
-        {['kg', 'g', 'lt', 'ml', 'un'].map(u => <option key={u} value={u} />)}
-      </datalist>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-        <Campo label="Produto *">
-          <input list="dl-produtos" value={form.produto} onChange={e => set('produto', e.target.value)}
-            placeholder="Nome do produto (ex: AZEITE BORGES 500ML)" style={cadInputS} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+        <Campo label="Nome da nota *">
+          <input value={novoForn.nome} onChange={e => setNovoForn({ ...novoForn, nome: e.target.value })}
+            placeholder="Como vem na nota fiscal" style={cadInputS} />
         </Campo>
-
-        <Campo label="Produto (planilha)">
-          <input list="dl-nome-padrao" value={form.nome_padrao} onChange={e => set('nome_padrao', e.target.value)}
-            placeholder="Nome padronizado" style={cadInputS} />
-        </Campo>
-
-        <Campo label="Fornecedor *" full>
-          {!criandoFornecedor ? (
-            <div style={{ display: 'flex', gap: 6 }}>
-              <select value={form.fornecedorId} onChange={e => set('fornecedorId', e.target.value)} style={{ ...cadInputS, flex: 1 }}>
-                <option value="">Selecione...</option>
-                {fornecedoresDropdown.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
-              </select>
-              <button type="button" onClick={() => { setCriandoFornecedor(true); set('fornecedorId', ''); }} style={btnS}>+ Novo</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input value={form.novoFornecedor} onChange={e => set('novoFornecedor', e.target.value)}
-                placeholder="Nome do novo fornecedor" autoFocus style={{ ...cadInputS, flex: 1 }} />
-              <button type="button" onClick={() => { setCriandoFornecedor(false); set('novoFornecedor', ''); }} style={btnS}>Cancelar</button>
-            </div>
-          )}
-        </Campo>
-
-        <Campo label="Loja">
-          <select value={form.loja} onChange={e => set('loja', e.target.value)} style={cadInputS}>
-            <option value="">—</option>
-            <option value="dame">Dame</option>
-            <option value="lov">Lov</option>
-          </select>
-        </Campo>
-
-        <Campo label="Data *">
-          <input type="date" value={form.data} onChange={e => set('data', e.target.value)} style={cadInputS} />
-        </Campo>
-
-        <Campo label="Preço Nota (R$/un) *">
-          <input inputMode="decimal" value={form.preco_normalizado} onChange={e => set('preco_normalizado', e.target.value)}
-            placeholder="6,79" style={cadInputS} />
-        </Campo>
-
-        <Campo label="Unidade (kg/lt/un)">
-          <input list="dl-unidade-norm" value={form.unidade_normalizada} onChange={e => set('unidade_normalizada', e.target.value)}
-            placeholder="kg" style={cadInputS} />
-        </Campo>
-
-        <Campo label="Preço bruto (R$ da nota)">
-          <input inputMode="decimal" value={form.preco_bruto} onChange={e => set('preco_bruto', e.target.value)}
-            placeholder="331,76" style={cadInputS} />
-        </Campo>
-
-        <Campo label="Fator (Regra3)">
-          <input value={form.fator} onChange={e => set('fator', e.target.value)}
-            placeholder="2 ou /2" title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)" style={cadInputS} />
-        </Campo>
-
-        <Campo label="Qtd embalagem">
-          <input inputMode="decimal" value={form.qtd_embalagem} onChange={e => set('qtd_embalagem', e.target.value)}
-            placeholder="48,86" style={cadInputS} />
-        </Campo>
-
-        <Campo label="Unidade embalagem">
-          <input value={form.unidade_embalagem} onChange={e => set('unidade_embalagem', e.target.value)}
-            placeholder="LT" style={cadInputS} />
+        <Campo label="Nome convertido">
+          <input value={novoForn.nome_curto} onChange={e => setNovoForn({ ...novoForn, nome_curto: e.target.value })}
+            placeholder="Nome curto (opcional — usa o da nota se vazio)" style={cadInputS} />
         </Campo>
       </div>
+      <button type="button" onClick={salvarNovoFornecedor}
+        style={{ ...btnS, background: '#43a047', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600 }}>
+        + Cadastrar fornecedor
+      </button>
 
-      {msg && (
-        <div style={{ marginTop: 14, padding: '8px 12px', borderRadius: 6, fontSize: 13,
-          background: msg.tipo === 'ok' ? '#e8f5e9' : '#ffebee',
-          color: msg.tipo === 'ok' ? '#2e7d32' : '#c62828',
-          border: `1px solid ${msg.tipo === 'ok' ? '#a5d6a7' : '#ef9a9a'}` }}>
-          {msg.texto}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-        <button type="submit" disabled={salvando}
-          style={{ ...btnS, background: '#43a047', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600, opacity: salvando ? 0.6 : 1 }}>
-          {salvando ? 'Salvando...' : 'Cadastrar'}
-        </button>
-        <button type="button" onClick={() => { setForm(vazio); setCriandoFornecedor(false); setMsg(null); }} style={{ ...btnS, padding: '8px 18px' }}>
-          Limpar
-        </button>
+      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, flex: '1 1 auto' }}>Fornecedores existentes ({fornecedoresLista.length})</h3>
+        <input type="search" placeholder="Buscar fornecedor..." value={buscaForn} onChange={e => setBuscaForn(e.target.value)}
+          style={{ ...inputS, flex: '0 1 240px' }} />
       </div>
-    </form>
 
-    {/* Listas do que foi cadastrado manualmente (sem origem em NFe). */}
-    <div style={{ marginTop: 28 }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>Produtos cadastrados manualmente ({produtosManuais.length})</h3>
-      {produtosManuais.length === 0 ? (
-        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum produto cadastrado manualmente ainda.</p>
+      {fornecedoresLista.length === 0 ? (
+        <p style={{ fontSize: 12, color: '#888', margin: '8px 0 0' }}>Nenhum fornecedor encontrado.</p>
       ) : (
-        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+        <div style={{ marginTop: 8, background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
-                <th style={thS}>Produto</th>
-                <th style={thS}>Produto (planilha)</th>
-                <th style={{ ...thS, textAlign: 'right' }}>Fator</th>
+                <th style={thS}>Nome da nota</th>
+                <th style={thS}>Nome convertido</th>
                 <th style={{ ...thS, textAlign: 'center' }}>Lanç.</th>
                 <th style={{ ...thS, textAlign: 'right' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {produtosManuais.map(p => {
-                const emEdicao = editProd?.id === p.id;
-                return (
-                  <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-                    {emEdicao ? (
-                      <>
-                        <td style={tdS}><input value={editProd.nome} onChange={e => setEditProd({ ...editProd, nome: e.target.value })} style={cadInputS} /></td>
-                        <td style={tdS}><input list="dl-nome-padrao" value={editProd.nome_padrao} onChange={e => setEditProd({ ...editProd, nome_padrao: e.target.value })} style={cadInputS} /></td>
-                        <td style={{ ...tdS, textAlign: 'right' }}><input value={editProd.fator} onChange={e => setEditProd({ ...editProd, fator: e.target.value })} placeholder="2 ou /2" style={fatorInputS} /></td>
-                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
-                        <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <button type="button" onClick={salvarEdicaoProduto} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
-                          <button type="button" onClick={() => setEditProd(null)} style={btnS}>Cancelar</button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td style={{ ...tdS, fontWeight: 500, fontSize: 12 }}>{p.nome}</td>
-                        <td style={{ ...tdS, color: p.nome_padrao ? 'inherit' : '#bbb' }}>{p.nome_padrao || '—'}</td>
-                        <td style={{ ...tdS, textAlign: 'right' }}>{p.fator_regra3 || '—'}</td>
-                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
-                        <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <button type="button" onClick={() => replicarProduto(p)} style={{ ...btnS, marginRight: 6, color: '#1565c0', borderColor: '#90caf9' }} title="Copiar este item para o formulário (ex: mudar só a data)">Replicar</button>
-                          <button type="button" onClick={() => setEditProd({ id: p.id, nome: p.nome || '', nome_padrao: p.nome_padrao || '', fator: p.fator_regra3 || '' })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
-                          <button type="button" onClick={() => excluirProduto(p)} style={{ ...btnS, color: '#c62828', borderColor: '#ef9a9a' }}>Excluir</button>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <h3 style={{ fontSize: 15, fontWeight: 700, margin: '24px 0 8px' }}>Fornecedores cadastrados manualmente ({fornecedoresManuais.length})</h3>
-      {fornecedoresManuais.length === 0 ? (
-        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum fornecedor cadastrado manualmente ainda.</p>
-      ) : (
-        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
-                <th style={thS}>Nome</th>
-                <th style={thS}>Nome curto</th>
-                <th style={{ ...thS, textAlign: 'center' }}>Lanç.</th>
-                <th style={{ ...thS, textAlign: 'right' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {fornecedoresManuais.map(f => {
+              {fornecedoresLista.map(f => {
                 const emEdicao = editForn?.id === f.id;
+                const stats = byForn[f.id] || { manual: 0, nfe: 0 };
+                const soManual = stats.manual > 0 && stats.nfe === 0;
                 return (
                   <tr key={f.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     {emEdicao ? (
                       <>
                         <td style={tdS}><input value={editForn.nome} onChange={e => setEditForn({ ...editForn, nome: e.target.value })} style={cadInputS} /></td>
                         <td style={tdS}><input value={editForn.nome_curto} onChange={e => setEditForn({ ...editForn, nome_curto: e.target.value })} style={cadInputS} /></td>
-                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byForn[f.id]?.manual || 0}</td>
+                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{stats.manual + stats.nfe}</td>
                         <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <button type="button" onClick={salvarEdicaoFornecedor} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
                           <button type="button" onClick={() => setEditForn(null)} style={btnS}>Cancelar</button>
@@ -1353,10 +1442,12 @@ function CadastrarView({ onSaved, ocultos }) {
                       <>
                         <td style={{ ...tdS, fontWeight: 500 }}>{f.nome}</td>
                         <td style={{ ...tdS, color: f.nome_curto ? 'inherit' : '#bbb' }}>{f.nome_curto || '—'}</td>
-                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byForn[f.id]?.manual || 0}</td>
+                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{stats.manual + stats.nfe}</td>
                         <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <button type="button" onClick={() => setEditForn({ id: f.id, nome: f.nome || '', nome_curto: f.nome_curto || '' })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
-                          <button type="button" onClick={() => excluirFornecedor(f)} style={{ ...btnS, color: '#c62828', borderColor: '#ef9a9a' }}>Excluir</button>
+                          {soManual && (
+                            <button type="button" onClick={() => excluirFornecedor(f)} style={{ ...btnS, color: '#c62828', borderColor: '#ef9a9a' }}>Excluir</button>
+                          )}
                         </td>
                       </>
                     )}
@@ -1367,7 +1458,63 @@ function CadastrarView({ onSaved, ocultos }) {
           </table>
         </div>
       )}
-    </div>
+      <p style={{ fontSize: 11, color: '#888', margin: '8px 0 0' }}>
+        Só é possível excluir fornecedores cadastrados manualmente (sem notas fiscais importadas). Os demais podem ter o nome convertido editado.
+      </p>
+     </div>
+    )}
+
+    {/* ---------- Aba PLANILHA: vínculo produto da nota -> Produto (planilha) ---------- */}
+    {cadTab === 'planilha' && (
+     <div>
+      <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
+        Nome do produto como vem na nota × nome do produto na planilha. Troque o vínculo escolhendo (ou digitando) um <strong>Produto (planilha)</strong> diferente — vale para todas as compras do mesmo produto.
+      </p>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+        <input type="search" placeholder="Buscar produto..." value={buscaPlanilha} onChange={e => setBuscaPlanilha(e.target.value)}
+          style={{ ...inputS, flex: '1 1 240px', maxWidth: 320 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text, #222)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <input type="checkbox" checked={soSemVinculo} onChange={e => setSoSemVinculo(e.target.checked)} style={{ cursor: 'pointer' }} />
+          Só sem vínculo
+        </label>
+        <span style={{ fontSize: 12, color: '#888' }}>{produtosPlanilha.length} produto(s)</span>
+      </div>
+
+      {produtosPlanilha.length === 0 ? (
+        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum produto encontrado.</p>
+      ) : (
+        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                <th style={thS}>Produto (nota)</th>
+                <th style={thS}>Produto (planilha)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {produtosPlanilha.map(p => (
+                <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                  <td style={{ ...tdS, fontWeight: 500, fontSize: 12 }}>{p.nome}</td>
+                  <td style={tdS}>
+                    <input
+                      list="dl-nome-padrao"
+                      defaultValue={p.nome_padrao || ''}
+                      placeholder="— sem vínculo —"
+                      title="Selecione ou digite o Produto (planilha). Vazio remove o vínculo."
+                      onBlur={e => { if ((e.target.value || '').trim() !== (p.nome_padrao || '')) salvarNomePadrao(p.id, e.target.value); }}
+                      onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                      style={{ ...cadInputS, maxWidth: 320 }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+     </div>
+    )}
    </div>
   );
 }
@@ -1386,6 +1533,8 @@ const cadInputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var
 const headerS = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 0', marginBottom: 12, borderBottom: '1px solid var(--border, #e5e5e5)' };
 const headerTitleS = { fontSize: 18, fontWeight: 700, color: 'var(--text, #222)' };
 const tabBtnS = (active, color = 'var(--accent, #465fff)') => ({ padding: '8px 14px', border: `2px solid ${color}`, borderRadius: 6, background: active ? color : 'var(--card-bg, #fff)', color: active ? '#fff' : color, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
+// Sub-abas internas do Cadastrar (Produto / Fornecedor / Planilha) — visual mais leve que as abas principais.
+const subTabBtnS = (active) => ({ padding: '6px 14px', border: '1px solid var(--border, #e5e5e5)', borderRadius: 20, background: active ? 'var(--accent, #465fff)' : 'var(--card-bg, #fff)', color: active ? '#fff' : 'var(--text-secondary, #555)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
 const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
