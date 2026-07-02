@@ -362,8 +362,8 @@ export default function PrecosInsumosView() {
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={tabBtnS(subPage === 'precos')} onClick={() => setSubPage('precos')}>Preços</button>
         <button style={tabBtnS(subPage === 'fornecedores')} onClick={() => setSubPage('fornecedores')}>Fornecedores</button>
-        <button style={tabBtnS(subPage === 'cadastrar', '#43a047')} onClick={() => setSubPage('cadastrar')}>Cadastrar</button>
-        <button style={tabBtnS(subPage === 'subiram', '#e53935')} onClick={() => setSubPage('subiram')}>Subiram</button>
+        <button style={tabBtnS(subPage === 'cadastrar', 'var(--success)')} onClick={() => setSubPage('cadastrar')}>Cadastrar</button>
+        <button style={tabBtnS(subPage === 'subiram', 'var(--danger)')} onClick={() => setSubPage('subiram')}>Subiram</button>
       </div>
     </div>
   );
@@ -413,7 +413,7 @@ export default function PrecosInsumosView() {
       </div>
 
       {/* Diagnostico de carregamento do banco (todos os registros, sem filtro) */}
-      <div style={{ fontSize: 11, color: '#888', marginBottom: 10, padding: '6px 10px', background: 'var(--bg, #f5f5f5)', borderRadius: 6 }}>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, padding: '6px 10px', background: 'var(--bg, #f5f5f5)', borderRadius: 6 }}>
         Banco: <strong>{precos.length}</strong> registros carregados · datas no banco: <strong>{dataMin}</strong> → <strong>{dataMax}</strong>
         {semData > 0 && <> · <strong>{semData}</strong> sem data válida</>}
       </div>
@@ -440,9 +440,9 @@ export default function PrecosInsumosView() {
           Fator
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 260px' }}>
-          <span style={{ fontSize: 11, color: '#888' }}>De</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>De</span>
           <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={{ ...inputS, flex: 1 }} />
-          <span style={{ fontSize: 11, color: '#888' }}>Ate</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ate</span>
           <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={{ ...inputS, flex: 1 }} />
         </div>
         <select value={porPagina} onChange={e => setPorPagina(Number(e.target.value))} style={{ ...inputS, width: 75 }}>
@@ -451,7 +451,7 @@ export default function PrecosInsumosView() {
       </div>
 
       {filtrados.length === 0 ? (
-        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum registro encontrado ({precos.length} total, filtro removeu todos)</p>
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum registro encontrado ({precos.length} total, filtro removeu todos)</p>
       ) : (
         <>
           {/* Tabela */}
@@ -477,7 +477,7 @@ export default function PrecosInsumosView() {
                 {paginados.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                     <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{p.produto}</td>
-                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : '#bbb' }}>
+                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : 'var(--text-muted)' }}>
                       {p.produto_padrao ? p.produto_padrao : (
                         <select
                           value=""
@@ -512,10 +512,10 @@ export default function PrecosInsumosView() {
                     })()}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
                       const ant = precoAnteriorPorId[p.id];
-                      if (ant == null) return <span style={{ color: '#bbb' }}>—</span>;
+                      if (ant == null) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
                       const subiu = p.preco_normalizado > ant + 1e-9;
                       const desceu = p.preco_normalizado < ant - 1e-9;
-                      const cor = subiu ? '#e53935' : desceu ? '#43a047' : '#888';
+                      const cor = subiu ? 'var(--danger)' : desceu ? 'var(--success)' : 'var(--text-muted)';
                       const seta = subiu ? '▲' : desceu ? '▼' : '=';
                       return (
                         <span style={{ color: cor, fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
@@ -531,7 +531,7 @@ export default function PrecosInsumosView() {
 
           {/* Paginacao */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, fontSize: 12 }}>
-            <span style={{ color: '#888' }}>{inicio + 1}-{Math.min(inicio + porPagina, filtrados.length)} de {filtrados.length}</span>
+            <span style={{ color: 'var(--text-muted)' }}>{inicio + 1}-{Math.min(inicio + porPagina, filtrados.length)} de {filtrados.length}</span>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <button onClick={() => setPaginaAtual(p => Math.max(1, p - 1))} disabled={paginaSegura <= 1} style={btnS}>Ant</button>
               <strong>{paginaSegura}/{totalPaginas}</strong>
@@ -547,7 +547,7 @@ export default function PrecosInsumosView() {
 function StatCard({ label, value }) {
   return (
     <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', padding: '8px 12px' }}>
-      <div style={{ fontSize: 11, color: '#888' }}>{label}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
     </div>
   );
@@ -701,7 +701,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleOculto(r.fornecedor); }}
                         title={`Ocultar "${r.fornecedor}" das listas`}
-                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#888', marginRight: 8, padding: 0, lineHeight: 0, verticalAlign: 'middle' }}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', marginRight: 8, padding: 0, lineHeight: 0, verticalAlign: 'middle' }}
                       >
                         <EyeOffIcon />
                       </button>
@@ -765,7 +765,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
       </div>
 
       {doAno.length === 0 ? (
-        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhuma compra registrada em {ano}.</p>
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma compra registrada em {ano}.</p>
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 8px', flexWrap: 'wrap' }}>
@@ -776,12 +776,12 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
               onChange={e => setBusca(e.target.value)}
               style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
             />
-            <p style={{ fontSize: 12, color: '#888', margin: 0, flex: '1 1 240px' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, flex: '1 1 240px' }}>
               Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para expandir os produtos, ou no ícone de olho cortado para ocultá-lo das listas.
             </p>
           </div>
           {fornecedoresFiltrados.length === 0 ? (
-            <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum fornecedor encontrado para "{busca}".</p>
+            <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum fornecedor encontrado para "{busca}".</p>
           ) : (
             <Matriz rows={fornecedoresFiltrados} />
           )}
@@ -791,7 +791,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
       {/* Fornecedores ocultos — restaurar com 1 clique. */}
       {ocultosList.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, border: '1px dashed var(--border, #e5e5e5)', borderRadius: 8, background: 'var(--bg, #f9fafb)' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
             Fornecedores ocultos ({ocultosList.length}) — não aparecem em Preços, Fornecedores nem Subiram
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -869,9 +869,9 @@ function SubiramView({ precos, ocultos }) {
         </div>
       </div>
       {itens.length === 0 ? (
-        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum item subiu em relação à última compra.</p>
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum item subiu em relação à última compra.</p>
       ) : filtrados.length === 0 ? (
-        <p style={{ padding: 20, textAlign: 'center', color: '#888' }}>Nenhum item encontrado para "{busca}".</p>
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum item encontrado para "{busca}".</p>
       ) : (
         <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
           <table className="subiuTable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -893,7 +893,7 @@ function SubiramView({ precos, ocultos }) {
                   <td style={tdS}>{formatDate(i.row.data)}</td>
                   <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {i.anterior.toFixed(2)}/{i.row.unidade_normalizada}</td>
                   <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {i.row.preco_normalizado.toFixed(2)}/{i.row.unidade_normalizada}</td>
-                  <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: '#e53935', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--danger)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     ▲ +R$ {i.diff.toFixed(2)} (+{i.pct.toFixed(1)}%)
                   </td>
                 </tr>
@@ -1279,7 +1279,7 @@ function CadastrarView({ onSaved, ocultos }) {
     {cadTab === 'produto' && (
      <>
       <form ref={formRef} onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
-        <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px' }}>
           Cadastre manualmente um registro de preço. Se o produto já existir (mesmo nome), ele é reaproveitado.
         </p>
 
@@ -1299,7 +1299,7 @@ function CadastrarView({ onSaved, ocultos }) {
               <option value="">Selecione...</option>
               {fornecedoresDropdown.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
             </select>
-            <span style={{ fontSize: 11, color: '#888' }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
               Não achou o fornecedor? Cadastre na aba <strong>Fornecedor</strong>.
             </span>
           </Campo>
@@ -1349,7 +1349,7 @@ function CadastrarView({ onSaved, ocultos }) {
 
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <button type="submit" disabled={salvando}
-            style={{ ...btnS, background: '#43a047', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600, opacity: salvando ? 0.6 : 1 }}>
+            style={{ ...btnS, background: 'var(--success)', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600, opacity: salvando ? 0.6 : 1 }}>
             {salvando ? 'Salvando...' : 'Cadastrar'}
           </button>
           <button type="button" onClick={() => { setForm(vazio); setCriandoFornecedor(false); setMsg(null); }} style={{ ...btnS, padding: '8px 18px' }}>
@@ -1362,7 +1362,7 @@ function CadastrarView({ onSaved, ocultos }) {
       <div style={{ marginTop: 28 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>Produtos cadastrados manualmente ({produtosManuais.length})</h3>
         {produtosManuais.length === 0 ? (
-          <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum produto cadastrado manualmente ainda.</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Nenhum produto cadastrado manualmente ainda.</p>
         ) : (
           <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -1385,7 +1385,7 @@ function CadastrarView({ onSaved, ocultos }) {
                           <td style={tdS}><input value={editProd.nome} onChange={e => setEditProd({ ...editProd, nome: e.target.value })} style={cadInputS} /></td>
                           <td style={tdS}><input list="dl-nome-padrao" value={editProd.nome_padrao} onChange={e => setEditProd({ ...editProd, nome_padrao: e.target.value })} style={cadInputS} /></td>
                           <td style={{ ...tdS, textAlign: 'right' }}><input value={editProd.fator} onChange={e => setEditProd({ ...editProd, fator: e.target.value })} placeholder="2 ou /2" style={fatorInputS} /></td>
-                          <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
+                          <td style={{ ...tdS, textAlign: 'center', color: 'var(--text-muted)' }}>{byProd[p.id]?.manual || 0}</td>
                           <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
                             <button type="button" onClick={salvarEdicaoProduto} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
                             <button type="button" onClick={() => setEditProd(null)} style={btnS}>Cancelar</button>
@@ -1394,9 +1394,9 @@ function CadastrarView({ onSaved, ocultos }) {
                       ) : (
                         <>
                           <td style={{ ...tdS, fontWeight: 500, fontSize: 12 }}>{p.nome}</td>
-                          <td style={{ ...tdS, color: p.nome_padrao ? 'inherit' : '#bbb' }}>{p.nome_padrao || '—'}</td>
+                          <td style={{ ...tdS, color: p.nome_padrao ? 'inherit' : 'var(--text-muted)' }}>{p.nome_padrao || '—'}</td>
                           <td style={{ ...tdS, textAlign: 'right' }}>{p.fator_regra3 || '—'}</td>
-                          <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{byProd[p.id]?.manual || 0}</td>
+                          <td style={{ ...tdS, textAlign: 'center', color: 'var(--text-muted)' }}>{byProd[p.id]?.manual || 0}</td>
                           <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
                             <button type="button" onClick={() => replicarProduto(p)} style={{ ...btnS, marginRight: 6, color: '#1565c0', borderColor: '#90caf9' }} title="Copiar este item para o formulário (ex: mudar só a data)">Replicar</button>
                             <button type="button" onClick={() => setEditProd({ id: p.id, nome: p.nome || '', nome_padrao: p.nome_padrao || '', fator: p.fator_regra3 || '' })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
@@ -1418,7 +1418,7 @@ function CadastrarView({ onSaved, ocultos }) {
     {/* ---------- Aba FORNECEDOR: cadastro + edição de fornecedores ---------- */}
     {cadTab === 'fornecedor' && (
      <div style={{ maxWidth: 760 }}>
-      <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px' }}>
         Cadastre um fornecedor novo ou edite os existentes. O <strong>nome da nota</strong> é como vem no documento fiscal; o <strong>nome convertido</strong> é o nome curto que aparece nas listas (editável).
       </p>
 
@@ -1433,7 +1433,7 @@ function CadastrarView({ onSaved, ocultos }) {
         </Campo>
       </div>
       <button type="button" onClick={salvarNovoFornecedor}
-        style={{ ...btnS, background: '#43a047', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600 }}>
+        style={{ ...btnS, background: 'var(--success)', color: '#fff', border: '1px solid #43a047', padding: '8px 18px', fontWeight: 600 }}>
         + Cadastrar fornecedor
       </button>
 
@@ -1444,7 +1444,7 @@ function CadastrarView({ onSaved, ocultos }) {
       </div>
 
       {fornecedoresLista.length === 0 ? (
-        <p style={{ fontSize: 12, color: '#888', margin: '8px 0 0' }}>Nenhum fornecedor encontrado.</p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '8px 0 0' }}>Nenhum fornecedor encontrado.</p>
       ) : (
         <div style={{ marginTop: 8, background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -1475,7 +1475,7 @@ function CadastrarView({ onSaved, ocultos }) {
                           )}
                         </td>
                         <td style={tdS}><input value={editForn.nome_curto} onChange={e => setEditForn({ ...editForn, nome_curto: e.target.value })} autoFocus placeholder="Nome curto" style={cadInputS} /></td>
-                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{stats.manual + stats.nfe}</td>
+                        <td style={{ ...tdS, textAlign: 'center', color: 'var(--text-muted)' }}>{stats.manual + stats.nfe}</td>
                         <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <button type="button" onClick={salvarEdicaoFornecedor} style={{ ...btnS, marginRight: 6 }}>Salvar</button>
                           <button type="button" onClick={() => setEditForn(null)} style={btnS}>Cancelar</button>
@@ -1484,8 +1484,8 @@ function CadastrarView({ onSaved, ocultos }) {
                     ) : (
                       <>
                         <td style={{ ...tdS, fontWeight: 500 }}>{f.nome}</td>
-                        <td style={{ ...tdS, color: f.nome_curto ? 'inherit' : '#bbb' }}>{f.nome_curto || '—'}</td>
-                        <td style={{ ...tdS, textAlign: 'center', color: '#888' }}>{stats.manual + stats.nfe}</td>
+                        <td style={{ ...tdS, color: f.nome_curto ? 'inherit' : 'var(--text-muted)' }}>{f.nome_curto || '—'}</td>
+                        <td style={{ ...tdS, textAlign: 'center', color: 'var(--text-muted)' }}>{stats.manual + stats.nfe}</td>
                         <td style={{ ...tdS, textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <button type="button" onClick={() => setEditForn({ id: f.id, nome: f.nome || '', nome_curto: f.nome_curto || '', lockNome: !soManual })} style={{ ...btnS, marginRight: 6 }}>Editar</button>
                           {soManual && (
@@ -1501,7 +1501,7 @@ function CadastrarView({ onSaved, ocultos }) {
           </table>
         </div>
       )}
-      <p style={{ fontSize: 11, color: '#888', margin: '8px 0 0' }}>
+      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0' }}>
         Fornecedores que vêm de nota fiscal: o <strong>nome da nota</strong> fica travado (🔒) — a integração usa ele pra reconhecer o fornecedor; alterá-lo criaria um duplicado na próxima importação. Edite só o <strong>nome convertido</strong>. Excluir só é possível nos 100% manuais.
       </p>
      </div>
@@ -1510,7 +1510,7 @@ function CadastrarView({ onSaved, ocultos }) {
     {/* ---------- Aba PLANILHA: vínculo produto da nota -> Produto (planilha) ---------- */}
     {cadTab === 'planilha' && (
      <div>
-      <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px' }}>
         Nome do produto como vem na nota × nome do produto na planilha. Troque o vínculo escolhendo (ou digitando) um <strong>Produto (planilha)</strong> diferente — vale para todas as compras do mesmo produto.
       </p>
 
@@ -1521,11 +1521,11 @@ function CadastrarView({ onSaved, ocultos }) {
           <input type="checkbox" checked={soSemVinculo} onChange={e => setSoSemVinculo(e.target.checked)} style={{ cursor: 'pointer' }} />
           Só sem vínculo
         </label>
-        <span style={{ fontSize: 12, color: '#888' }}>{produtosPlanilha.length} produto(s)</span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{produtosPlanilha.length} produto(s)</span>
       </div>
 
       {produtosPlanilha.length === 0 ? (
-        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nenhum produto encontrado.</p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Nenhum produto encontrado.</p>
       ) : (
         <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -1544,7 +1544,7 @@ function CadastrarView({ onSaved, ocultos }) {
                       type="button"
                       onClick={() => toggleProdutoOculto(p.id)}
                       title={`Ocultar "${p.nome}" da planilha`}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#888', padding: 0, lineHeight: 0, verticalAlign: 'middle' }}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, lineHeight: 0, verticalAlign: 'middle' }}
                     >
                       <EyeOffIcon />
                     </button>
@@ -1571,7 +1571,7 @@ function CadastrarView({ onSaved, ocultos }) {
       {/* Produtos ocultos — restaurar com 1 clique. */}
       {produtosOcultosLista.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, border: '1px dashed var(--border, #e5e5e5)', borderRadius: 8, background: 'var(--bg, #f9fafb)' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
             Produtos ocultos ({produtosOcultosLista.length}) — não aparecem nesta lista
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>

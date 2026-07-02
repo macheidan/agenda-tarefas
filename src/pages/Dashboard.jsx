@@ -15,6 +15,7 @@ import { useReviews } from '../hooks/useReviews';
 import { useCompletedTasks } from '../hooks/useCompletedTasks';
 import { useAllSettings } from '../hooks/useAllSettings';
 import Header from '../components/Header';
+import BottomNav from '../components/BottomNav';
 import NoteModal from '../components/NoteModal';
 import AdminMessageModal from '../components/AdminMessageModal';
 import MessageOverlay from '../components/MessageOverlay';
@@ -116,6 +117,28 @@ export default function Dashboard() {
     setInitialDate(null);
     setModalOpen(true);
   };
+
+  // Abas para a barra de navegação mobile (rótulos curtos). Segue a mesma
+  // ordem/visibilidade do menu; as 4 primeiras ficam fixas, o resto vai em "Mais".
+  const NAV_LABELS = {
+    calendar: 'Agenda', reels: 'Instagram', contentPlan: 'Conteúdo', influencers: 'Influencers',
+    notes: 'Notas', shopping: 'Compras', ideas: 'Ideias', reviews: 'Avaliações',
+    knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
+  };
+  const NAV_ENABLED = {
+    calendar: calendarEnabled, reels: reelsEnabled, contentPlan: contentPlanEnabled,
+    influencers: influencersEnabled, notes: notesEnabled, shopping: shoppingListEnabled,
+    ideas: ideasEnabled, reviews: reviewsEnabled, knowledge: knowledgeEnabled,
+    precosInsumos: precosInsumosEnabled, departamentoPessoal: departamentoPessoalEnabled,
+  };
+  const navDot = <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block' }} />;
+  const bottomTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(NAV_LABELS))
+    .filter((k) => NAV_ENABLED[k])
+    .map((k) => ({
+      key: k,
+      label: NAV_LABELS[k] || k,
+      badge: (k === 'ideas' && ideasUnread > 0) || (k === 'reviews' && reviewsUnread > 0) ? navDot : null,
+    }));
 
   return (
     <div className={styles.container}>
@@ -270,6 +293,8 @@ export default function Dashboard() {
         {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} geminiKey={kbGeminiKey} updateGeminiKey={updateGeminiKey} tabsOrder={tabsOrder} updateTabsOrder={updateTabsOrder} />}
         </Suspense>
       </main>
+
+      {isMobile && <BottomNav tabs={bottomTabs} activeTab={activeTab} onTabChange={setActiveTab} />}
 
       {modalOpen && (
         <TaskModal

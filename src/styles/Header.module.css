@@ -215,25 +215,28 @@
 }
 
 .tab {
-  padding: 12px 20px;
+  padding: 10px 16px;
+  margin: 6px 2px;
   border: none;
   background: none;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  border-radius: var(--radius-md);
+  transition: color 0.15s, background 0.15s;
   position: relative;
 }
 
 .tab:hover {
   color: var(--text);
+  background: var(--card-hover);
 }
 
 .tab.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+  font-weight: 600;
 }
 
 .bellBadge {
@@ -283,9 +286,9 @@
 }
 
 @media (max-width: 768px) {
+  /* No mobile a navegação vira a barra inferior de ícones (BottomNav) */
   .nav {
-    padding: 0;
-    overflow: hidden;
+    display: none;
   }
 
   .nav::before,

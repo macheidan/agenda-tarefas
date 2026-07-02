@@ -22,9 +22,17 @@
   overflow-x: hidden;
 }
 
+/* Espaço para a barra de navegação inferior (fixa) no mobile */
+@media (max-width: 768px) {
+  .main {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
 @media (max-width: 640px) {
   .main {
     padding: 16px;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
 }
 

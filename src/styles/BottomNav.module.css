@@ -1,0 +1,124 @@
+/* Barra inferior — só aparece no mobile (<=768px); escondida no desktop. */
+.bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 400;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 12px var(--shadow);
+  }
+
+  .item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 2px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  .item .label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .icon {
+    position: relative;
+    display: inline-flex;
+  }
+  .icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .on {
+    color: var(--accent);
+  }
+
+  /* badges (emoji) reposicionados sobre o ícone */
+  .icon > :global(span) {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  /* Folha "Mais" */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay);
+    z-index: 401;
+  }
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 402;
+    background: var(--card);
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    box-shadow: 0 -6px 28px var(--shadow-hover);
+    padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
+    animation: sheetUp 0.18s ease-out;
+  }
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .sheetGrip {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    margin: 4px auto 14px;
+  }
+  .sheetGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .sheetItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sheetItemOn {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .sheetIcon svg {
+    width: 24px;
+    height: 24px;
+  }
+}

@@ -168,7 +168,7 @@ export default function ContentPlanModal({ editing, isAdmin, onSave, onUpdate, o
         />
 
         <div className={styles.field} style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
             Descrição
           </label>
           <RichTextEditor
@@ -185,7 +185,7 @@ export default function ContentPlanModal({ editing, isAdmin, onSave, onUpdate, o
         </div>
 
         <div className={styles.field} style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
             * Pasta
             <button
               type="button"

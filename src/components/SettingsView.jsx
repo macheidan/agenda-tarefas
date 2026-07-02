@@ -414,7 +414,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                       autoFocus
                       onKeyDown={(e) => e.key === 'Enter' && saveRename(u.uid)}
                     />
-                    <button className={styles.cancelBtn} style={{ background: '#4caf50', color: '#fff', border: 'none' }} onClick={() => saveRename(u.uid)}>
+                    <button className={styles.cancelBtn} style={{ background: 'var(--success)', color: '#fff', border: 'none' }} onClick={() => saveRename(u.uid)}>
                       Salvar
                     </button>
                     <button className={styles.cancelBtn} onClick={() => setEditingNameUid(null)}>

@@ -44,7 +44,7 @@ function TaskCard({ task, onArchive }) {
       <div className={styles.cardMain}>
         <div className={styles.cardInfo}>
           <p className={styles.cardTitle}>{task.title}</p>
-          <span className={styles.cardDate} style={{ fontWeight: 600, color: '#555' }}>
+          <span className={styles.cardDate} style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
             {task.userName}
           </span>
           {task.description && (
@@ -71,7 +71,7 @@ function TaskCard({ task, onArchive }) {
         <div className={styles.cardActions}>
           <button
             className={styles.unarchiveBtn}
-            style={{ background: '#4caf50', color: '#fff', border: 'none' }}
+            style={{ background: 'var(--success)', color: '#fff', border: 'none' }}
             onClick={() => onArchive(task.uid, task.id)}
           >
             Concluir

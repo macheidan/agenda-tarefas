@@ -55,7 +55,7 @@ export default function NoteModal({ note, onSave, onUpdate, onDelete, onClose })
         />
 
         <div className={styles.field} style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 13, fontWeight: 500, color: '#888', marginBottom: 4, display: 'block' }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
             Conteúdo
           </label>
           <RichTextEditor value={content} onChange={setContent} placeholder="Escreva sua anotação..." resizable />
