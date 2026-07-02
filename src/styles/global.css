@@ -6,54 +6,54 @@
   padding: 0;
 }
 
-/* ===== TailAdmin LIGHT (default) ===== */
+/* ===== Design System "Sereno" — LIGHT (default) ===== */
 :root,
 [data-theme="notion"],
 [data-theme="clean"],
 [data-theme="light"] {
-  --bg: #f9fafb;
-  --bg-secondary: #fcfcfd;
+  --bg: #f6f7f9;
+  --bg-secondary: #fbfbfc;
   --card: #ffffff;
-  --card-hover: #f9fafb;
-  --text: #101828;
-  --text-secondary: #475467;
-  --text-muted: #667085;
-  --border: #e4e7ec;
-  --border-light: #f2f4f7;
-  --accent: #465fff;
-  --accent-hover: #3641f5;
-  --accent-light: #ecf3ff;
-  --input-bg: #ffffff;
-  --input-border: #d0d5dd;
-  --input-focus: #465fff;
-  --badge-bg: #f2f4f7;
+  --card-hover: #f6f7f9;
+  --text: #1a1d26;
+  --text-secondary: #454b58;
+  --text-muted: #6a7280;
+  --border: #e7eaef;
+  --border-light: #eef1f5;
+  --accent: #3a53d0;
+  --accent-hover: #2f45b8;
+  --accent-light: #eaeefb;
+  --input-bg: #fbfbfc;
+  --input-border: #d6dae2;
+  --input-focus: #3a53d0;
+  --badge-bg: #eef1f5;
   --shadow: rgba(16, 24, 40, 0.05);
   --shadow-hover: rgba(16, 24, 40, 0.1);
   --overlay: rgba(16, 24, 40, 0.4);
-  --danger: #f04438;
-  --danger-bg: #fef3f2;
-  --success: #12b76a;
-  --success-bg: #ecfdf3;
-  --warning-bg: #fffaeb;
-  --warning-text: #b54708;
-  --warning-border: #fedf89;
-  --overdue-bg: #fef3f2;
+  --danger: #d23f4a;
+  --danger-bg: #fbe9ea;
+  --success: #1a8f52;
+  --success-bg: #e6f5ec;
+  --warning-bg: #fbf1de;
+  --warning-text: #8a5807;
+  --warning-border: #f2d9a8;
+  --overdue-bg: #fbe9ea;
   --status-not-started: #98a2b3;
-  --status-in-progress: #465fff;
-  --status-done: #12b76a;
-  --task-not-started-bg: #f9fafb;
-  --task-in-progress-bg: #ecf3ff;
-  --task-done-bg: #ecfdf3;
-  --sent-bubble: #465fff;
+  --status-in-progress: #3a53d0;
+  --status-done: #1a8f52;
+  --task-not-started-bg: #f6f7f9;
+  --task-in-progress-bg: #eaeefb;
+  --task-done-bg: #e6f5ec;
+  --sent-bubble: #3a53d0;
   --sent-text: #ffffff;
-  --received-bubble: #f2f4f7;
-  --received-text: #101828;
-  --drag-over: #ecf3ff;
-  --today-bg: #fffaeb;
+  --received-bubble: #eef1f5;
+  --received-text: #1a1d26;
+  --drag-over: #eaeefb;
+  --today-bg: #fbf1de;
   --modal-bg: #ffffff;
-  --toolbar-bg: #f9fafb;
-  --toolbar-border: #e4e7ec;
-  --scrollbar-thumb: #d0d5dd;
+  --toolbar-bg: #f6f7f9;
+  --toolbar-border: #e7eaef;
+  --scrollbar-thumb: #d6dae2;
 
   /* Calendar event chips */
   --event-not-started-bg: rgba(16, 24, 40, 0.05);
@@ -76,8 +76,8 @@
   --cp-store-lov-border: #ff9800;
   --cp-store-dame-border: #3949ab;
 
-  /* Tipografia (TailAdmin) */
-  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Tipografia (Sereno — Inter) */
+  --font-family: 'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --text-xs: 12px;
   --text-sm: 14px;
   --text-base: 16px;
@@ -86,64 +86,64 @@
   --text-2xl: 24px;
   --text-3xl: 30px;
 
-  /* Bordas / raio */
-  --radius-sm: 6px;
+  /* Bordas / raio (Sereno) */
+  --radius-sm: 8px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  /* Sombras (TailAdmin theme shadows) */
+  /* Sombras (Sereno) */
   --shadow-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
-  --shadow-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --shadow-sm: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0px 4px 12px 0px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0px 12px 28px 0px rgba(16, 24, 40, 0.12);
 }
 
-/* ===== TailAdmin DARK ===== */
+/* ===== Design System "Sereno" — DARK ===== */
 [data-theme="dark"] {
-  --bg: #101828;
-  --bg-secondary: #1a2231;
-  --card: #1d2939;
-  --card-hover: #344054;
-  --text: #f2f4f7;
-  --text-secondary: #98a2b3;
-  --text-muted: #667085;
-  --border: #344054;
-  --border-light: #1d2939;
-  --accent: #465fff;
-  --accent-hover: #7592ff;
-  --accent-light: #161950;
-  --input-bg: #1d2939;
-  --input-border: #344054;
-  --input-focus: #7592ff;
-  --badge-bg: #344054;
+  --bg: #0f1218;
+  --bg-secondary: #12161d;
+  --card: #171b23;
+  --card-hover: #1e2431;
+  --text: #e6e9f0;
+  --text-secondary: #b6bcc8;
+  --text-muted: #8a92a1;
+  --border: #262c37;
+  --border-light: #1d2129;
+  --accent: #6d82ff;
+  --accent-hover: #8598ff;
+  --accent-light: #1e2a4d;
+  --input-bg: #12161d;
+  --input-border: #333b48;
+  --input-focus: #6d82ff;
+  --badge-bg: #262c37;
   --shadow: rgba(0, 0, 0, 0.3);
   --shadow-hover: rgba(0, 0, 0, 0.5);
   --overlay: rgba(0, 0, 0, 0.6);
-  --danger: #f97066;
-  --danger-bg: #2e1a1a;
-  --success: #32d583;
-  --success-bg: #053321;
-  --warning-bg: #4e1d09;
-  --warning-text: #fdb022;
-  --warning-border: #93370d;
-  --overdue-bg: #2e1a1a;
+  --danger: #f4737d;
+  --danger-bg: #2e1a1c;
+  --success: #34d07f;
+  --success-bg: #06301f;
+  --warning-bg: #3a2a12;
+  --warning-text: #f0bd6b;
+  --warning-border: #5a4320;
+  --overdue-bg: #2e1a1c;
   --status-not-started: #667085;
-  --status-in-progress: #7592ff;
-  --status-done: #32d583;
-  --task-not-started-bg: #1d2939;
-  --task-in-progress-bg: #161950;
-  --task-done-bg: #053321;
-  --sent-bubble: #465fff;
-  --sent-text: #ffffff;
-  --received-bubble: #344054;
-  --received-text: #f2f4f7;
-  --drag-over: #161950;
+  --status-in-progress: #6d82ff;
+  --status-done: #34d07f;
+  --task-not-started-bg: #171b23;
+  --task-in-progress-bg: #1e2a4d;
+  --task-done-bg: #06301f;
+  --sent-bubble: #6d82ff;
+  --sent-text: #0f1218;
+  --received-bubble: #262c37;
+  --received-text: #e6e9f0;
+  --drag-over: #1e2a4d;
   --today-bg: #1a2231;
-  --modal-bg: #1d2939;
-  --toolbar-bg: #1a2231;
-  --toolbar-border: #344054;
+  --modal-bg: #171b23;
+  --toolbar-bg: #12161d;
+  --toolbar-border: #262c37;
   --scrollbar-thumb: #475467;
 
   --event-not-started-bg: rgba(255, 255, 255, 0.06);
@@ -167,9 +167,9 @@
   --cp-store-dame-border: #7592ff;
 
   --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.35), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0px 4px 8px -2px rgba(0, 0, 0, 0.4), 0px 2px 4px -2px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0px 12px 16px -4px rgba(0, 0, 0, 0.45), 0px 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0px 4px 12px 0px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0px 12px 28px 0px rgba(0, 0, 0, 0.5);
 }
 
 body {
