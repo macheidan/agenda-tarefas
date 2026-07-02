@@ -1,6 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useUsers } from '../hooks/useUsers';
-import { useSettings } from '../hooks/useSettings';
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -301,8 +300,11 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
       </div>
 
       <div className={styles.section}>
-        <h3>Visibilidade de Seções</h3>
-        <p className={styles.sectionDesc}>Escolha quais seções cada usuário pode ver.</p>
+        <h3>Visibilidade e Permissões</h3>
+        <p className={styles.sectionDesc}>
+          Para cada usuário: escolha as seções que ele vê e, em Depto Pessoal e Compras,
+          se ele é apenas leitor ou editor. Só editores (e o admin) alteram esses dados.
+        </p>
 
         <div className={styles.userList}>
           {allVisibleUsers.filter((u) => u.uid === user.uid || u.approved === true).map((u) => {
@@ -319,6 +321,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                     {u.uid === user.uid ? `${u.displayName || u.email} (você)` : u.displayName || u.email}
                   </span>
                 </div>
+                <span className={styles.subGroupLabel}>Seções visíveis</span>
                 <div className={styles.sectionToggles}>
                   {SECTIONS.map((sec) => (
                     <label
@@ -334,46 +337,51 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                     </label>
                   ))}
                 </div>
-                {s.departamentoPessoalEnabled === true && (
-                  <div className={styles.dpStoresRow}>
-                    <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
-                      <input
-                        type="checkbox"
-                        checked={s.dpEditor === true}
-                        onChange={(e) => toggleSection(u.uid, 'dpEditor', e.target.checked)}
-                      />
-                      <span className={styles.sectionLabel}>Editor (gerencia funcionários e lojas)</span>
-                    </label>
-                    {dpStores.length > 0 && (
-                      <>
-                        <span className={styles.dpStoresLabel}>Lojas visíveis (Depto Pessoal):</span>
-                        <div className={styles.sectionToggles}>
-                          {dpStores.map((store) => (
-                            <label key={store.id} className={styles.sectionToggle}>
-                              <input
-                                type="checkbox"
-                                checked={!(s.dpHiddenStores || []).includes(store.id)}
-                                onChange={(e) => toggleStoreVisibility(u.uid, store.id, e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>{store.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
+
+                {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false) && (
+                  <>
+                    <span className={styles.subGroupLabel}>Permissões de edição</span>
+                    <div className={styles.permGroup}>
+                      {s.departamentoPessoalEnabled === true && (
+                        <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
+                          <input
+                            type="checkbox"
+                            checked={s.dpEditor === true}
+                            onChange={(e) => toggleSection(u.uid, 'dpEditor', e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>Depto Pessoal — gerencia funcionários, lojas e marca faltas</span>
+                        </label>
+                      )}
+                      {s.shoppingListEnabled !== false && (
+                        <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
+                          <input
+                            type="checkbox"
+                            checked={s.comprasEditor === true}
+                            onChange={(e) => toggleSection(u.uid, 'comprasEditor', e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>Compras — gerencia fornecedores e o catálogo de itens</span>
+                        </label>
+                      )}
+                    </div>
+                  </>
                 )}
-                {s.shoppingListEnabled !== false && (
-                  <div className={styles.dpStoresRow}>
-                    <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
-                      <input
-                        type="checkbox"
-                        checked={s.comprasEditor === true}
-                        onChange={(e) => toggleSection(u.uid, 'comprasEditor', e.target.checked)}
-                      />
-                      <span className={styles.sectionLabel}>Editor (gerencia fornecedores e itens de Compras)</span>
-                    </label>
-                  </div>
+
+                {s.departamentoPessoalEnabled === true && dpStores.length > 0 && (
+                  <>
+                    <span className={styles.subGroupLabel}>Lojas visíveis (Depto Pessoal)</span>
+                    <div className={styles.sectionToggles}>
+                      {dpStores.map((store) => (
+                        <label key={store.id} className={styles.sectionToggle}>
+                          <input
+                            type="checkbox"
+                            checked={!(s.dpHiddenStores || []).includes(store.id)}
+                            onChange={(e) => toggleStoreVisibility(u.uid, store.id, e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>{store.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             );

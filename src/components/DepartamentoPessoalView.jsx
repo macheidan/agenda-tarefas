@@ -160,6 +160,7 @@ export default function DepartamentoPessoalView() {
   };
 
   const handleCellClick = (e, emp, day) => {
+    if (!canEdit) return; // só editores/admin marcam faltas
     const date = `${year}-${pad(month + 1)}-${pad(day)}`;
     const rect = e.currentTarget.getBoundingClientRect();
     setPopover({ employeeId: emp.id, store: emp.store, date, x: rect.left, y: rect.bottom });

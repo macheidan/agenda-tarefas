@@ -14,6 +14,22 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
 
+    // Flag booleana no doc settings/{uid} do próprio usuário (ex.: dpEditor,
+    // comprasEditor). Só admin escreve settings, então a flag é confiável.
+    function hasSettingFlag(flag) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/settings/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/settings/$(request.auth.uid)).data.get(flag, false) == true;
+    }
+
+    function isDpEditor() {
+      return isAdmin() || hasSettingFlag('dpEditor');
+    }
+
+    function isComprasEditor() {
+      return isAdmin() || hasSettingFlag('comprasEditor');
+    }
+
     // Usuários: qualquer logado lê. Cada um cria o seu (sem se auto-aprovar)
     // e atualiza só perfil; admin pode tudo (aprovar/rejeitar/deletar).
     match /users/{uid} {
@@ -117,25 +133,36 @@ service cloud.firestore {
     }
 
     // Departamento Pessoal (lojas, funcionários e escala de faltas):
-    // qualquer logado lê/cria/edita/deleta (acesso controlado pelo toggle de visibilidade).
+    // qualquer logado lê (visibilidade controlada por toggle/loja no cliente);
+    // só admin ou editor (settings.dpEditor) escreve.
     match /dpStores/{storeId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isDpEditor();
     }
     match /dpEmployees/{employeeId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isDpEditor();
     }
     match /dpAbsences/{absenceId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isDpEditor();
     }
 
-    // Compras (fornecedores e itens da lista de pedidos):
-    // qualquer logado lê/cria/edita/deleta (acesso controlado pelo toggle de
-    // visibilidade; quem gerencia o catálogo é controlado no cliente por comprasEditor).
+    // Compras: qualquer logado lê. O catálogo (fornecedores e cadastro de itens)
+    // é só de admin/editor; mas qualquer logado pode ajustar a quantidade do
+    // pedido (campo qty) — por isso update de comprasItens libera alteração
+    // exclusiva de qty para não-editores.
     match /comprasFornecedores/{fornecedorId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isComprasEditor();
     }
     match /comprasItens/{itemId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create, delete: if isComprasEditor();
+      allow update: if isComprasEditor() || (
+        isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
+      );
     }
   }
 }
