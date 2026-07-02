@@ -310,7 +310,7 @@ export default function DepartamentoPessoalView() {
   );
 
   const copySummary = () => {
-    // Formato agrupado: por loja → tipo de falta → só quem tem falta.
+    // Formato agrupado: *Loja* → -Falta (com linha em branco entre seções) → só quem tem falta.
     // Datas dd/mm; dias seguidos viram "dd/mm a dd/mm". Nomes alinhados por seção.
     const dm = (iso) => { const [, mm, dd] = iso.split('-'); return `${dd}/${mm}`; };
     const fmtRanges = (isoDates) => {
@@ -327,9 +327,9 @@ export default function DepartamentoPessoalView() {
       return groups.map(([a, b]) => (a === b ? dm(a) : `${dm(a)} a ${dm(b)}`)).join(', ');
     };
     const section = (title, entries) => {
-      if (!entries.length) return [];
+      if (!entries.length) return null;
       const w = Math.max(...entries.map((e) => e.name.length));
-      return [title, ...entries.map((e) => `${e.name.padEnd(w)}  - ${fmtRanges(e.dates)}`)];
+      return [`-${title}`, ...entries.map((e) => `${e.name.padEnd(w)}  - ${fmtRanges(e.dates)}`)].join('\n');
     };
     // agrupa por loja preservando a ordem de aparição
     const order = [];
@@ -342,11 +342,11 @@ export default function DepartamentoPessoalView() {
     const blocks = order
       .map((store) => {
         const g = byStore[store];
-        const lines = [
-          ...section('Falta Não Justificada', g.naoJust),
-          ...section('Falta Justificada', g.just),
-        ];
-        return lines.length ? [g.name, ...lines].join('\n') : '';
+        const secs = [
+          section('Falta Não Justificada', g.naoJust),
+          section('Falta Justificada', g.just),
+        ].filter(Boolean);
+        return secs.length ? `*${g.name}*\n${secs.join('\n\n')}` : '';
       })
       .filter(Boolean);
     const text = blocks.join('\n\n');
