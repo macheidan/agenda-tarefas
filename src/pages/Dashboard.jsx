@@ -58,10 +58,11 @@ export default function Dashboard() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
-  const { tasks, archivedTasks, addTask, updateTask, updateTaskGroup, deleteTask, deleteTaskAndFuture, archiveTask, unarchiveTask } =
+  const { tasks, archivedTasks, addTask, updateTask, updateTaskGroup, deleteTask, deleteTaskAndFuture, unarchiveTask } =
     useTasks(selectedUid);
-  const { conversations, totalUnread, sendMessage, markAsRead, clearChat, clearAllChats } =
-    useChat(user, isAdmin);
+  // Só clearAllChats é usado aqui (ArchivedView); a UI de chat não é montada.
+  // subscribe:false evita abrir 1+N listeners de mensagens no login.
+  const { clearAllChats } = useChat(user, isAdmin, { subscribe: false });
   const { settings } = useSettings(user.uid);
   useTaskAlarm(tasks);
   const { messages: adminMessages, sendMessage: sendAdminMessage, markAsRead: markMessageRead, getUnreadForUser, deleteMessage: deleteAdminMessage } =

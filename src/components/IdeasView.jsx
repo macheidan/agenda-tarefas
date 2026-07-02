@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import RichTextEditor from './RichTextEditor';
 import RichContent from './RichContent';
@@ -73,9 +73,12 @@ export default function IdeasView({ ideas, addIdea, addComment, deleteComment, d
       .map((c, i) => ({ ...c, _index: i }))
       .filter((c) => c.parentIndex === parentIdx);
 
-  const filteredIdeas = isAdmin && filterUid !== 'all'
-    ? ideas.filter((i) => i.targetUid === filterUid)
-    : ideas;
+  const filteredIdeas = useMemo(
+    () => (isAdmin && filterUid !== 'all'
+      ? ideas.filter((i) => i.targetUid === filterUid)
+      : ideas),
+    [isAdmin, filterUid, ideas]
+  );
 
   return (
     <div className={styles.container}>

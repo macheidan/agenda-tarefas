@@ -230,9 +230,6 @@ export default function PrecosInsumosView() {
         if (data.length < PAGE) break;
       }
 
-      console.log('[precos] total rows:', all.length);
-      if (all[0]) console.log('[precos] colunas da tabela precos:', Object.keys(all[0]));
-
       const mapped = all.map(r => ({
         id: r.id,
         produto_id: r.produto_id,
@@ -260,8 +257,6 @@ export default function PrecosInsumosView() {
       setFatores(fmap);
       setFatoresSalvos(fmap);
 
-      const datas = mapped.map(m => m.data).filter(Boolean).sort();
-      console.log('[precos] datas min->max:', datas[0], '->', datas[datas.length - 1], '| mapeadas:', mapped.length);
       setPrecos(mapped);
     } catch (e) {
       console.error('[precos] catch:', e);

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/ReelsView.module.css';
 
@@ -53,14 +53,17 @@ export default function ReelsView({
     setEditDescText('');
   };
 
-  const pending = reels.filter((r) => (r.status === 'pending' || !r.status) && (r.type || 'reel') === 'reel');
-  const approved = reels.filter((r) => r.status === 'approved' && (r.type || 'reel') === 'reel');
-  const archived = reels.filter((r) => r.status === 'archived');
+  // Derivações memoizadas: sem isto, cada tecla digitada em qualquer form
+  // (são ~20 estados locais) recomputa 6 filtros sobre reels/scripts inteiros.
+  const pending = useMemo(() => reels.filter((r) => (r.status === 'pending' || !r.status) && (r.type || 'reel') === 'reel'), [reels]);
+  const approved = useMemo(() => reels.filter((r) => r.status === 'approved' && (r.type || 'reel') === 'reel'), [reels]);
+  const archived = useMemo(() => reels.filter((r) => r.status === 'archived'), [reels]);
 
-  const archivedScripts = scripts.filter((s) => s.archived);
+  const archivedScripts = useMemo(() => scripts.filter((s) => s.archived), [scripts]);
+  const activeScripts = useMemo(() => scripts.filter((s) => !s.archived), [scripts]);
 
-  const pendingStories = reels.filter((r) => (r.status === 'pending' || !r.status) && r.type === 'story');
-  const approvedStories = reels.filter((r) => r.status === 'approved' && r.type === 'story');
+  const pendingStories = useMemo(() => reels.filter((r) => (r.status === 'pending' || !r.status) && r.type === 'story'), [reels]);
+  const approvedStories = useMemo(() => reels.filter((r) => r.status === 'approved' && r.type === 'story'), [reels]);
 
   const formatDate = (ts) => {
     if (!ts?.seconds) return '';
@@ -396,7 +399,7 @@ export default function ReelsView({
           className={`${styles.scriptBtn} ${activeSection === 'scripts' ? styles.scriptBtnActive : ''}`}
           onClick={() => goToSection('scripts')}
         >
-          Roteiros ({scripts.filter((s) => !s.archived).length})
+          Roteiros ({activeScripts.length})
         </button>
         <button
           className={`${styles.archivedBtn} ${activeSection === 'archived' ? styles.archivedBtnActive : ''}`}
@@ -767,7 +770,7 @@ export default function ReelsView({
           </form>
         )}
 
-        {scripts.filter((s) => !s.archived).length === 0 && !scriptForm ? (
+        {activeScripts.length === 0 && !scriptForm ? (
           <div className={styles.empty}>Nenhum roteiro criado.</div>
         ) : (
           <div className={styles.tableWrap}>
@@ -782,7 +785,7 @@ export default function ReelsView({
                 </tr>
               </thead>
               <tbody>
-                {scripts.filter((s) => !s.archived).map((s) => {
+                {activeScripts.map((s) => {
                   const isExpanded = expandedScript === s.id;
                   return (
                     <Fragment key={s.id}>

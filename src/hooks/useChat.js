@@ -26,21 +26,21 @@ function playPlim() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.4);
-  } catch (e) {
+  } catch {
     // Audio not available
   }
 }
 
-export function useChat(currentUser, isAdmin) {
+export function useChat(currentUser, isAdmin, { subscribe = true } = {}) {
   const [conversations, setConversations] = useState({});
   const [unreadMap, setUnreadMap] = useState({});
   const prevMessagesCount = useRef({});
 
   // For admin: listen to all chat rooms. For user: listen to own chat room only.
+  // subscribe=false evita abrir 1+N listeners quando só se precisa das ações
+  // (ex.: clearAllChats no Dashboard, sem UI de chat montada).
   useEffect(() => {
-    if (!currentUser) return;
-
-    const chatRoomIds = isAdmin ? null : [currentUser.uid];
+    if (!currentUser || !subscribe) return;
 
     if (!isAdmin) {
       // User: subscribe to their own chat room
@@ -118,7 +118,7 @@ export function useChat(currentUser, isAdmin) {
       unsubUsers();
       roomUnsubscribes.forEach((unsub) => unsub());
     };
-  }, [currentUser, isAdmin]);
+  }, [currentUser, isAdmin, subscribe]);
 
   const sendMessage = useCallback(
     async (roomId, text) => {
@@ -160,7 +160,10 @@ export function useChat(currentUser, isAdmin) {
   }, []);
 
   const clearAllChats = useCallback(async () => {
-    const roomIds = Object.keys(conversations);
+    // Deriva as salas dos usuários (roomId = uid) via consulta pontual, sem
+    // depender de assinatura viva — funciona mesmo com subscribe=false.
+    const usersSnap = await getDocs(collection(db, 'users'));
+    const roomIds = usersSnap.docs.map((d) => d.id);
     await Promise.all(
       roomIds.map(async (roomId) => {
         const messagesRef = collection(db, 'chats', roomId, 'messages');
@@ -168,7 +171,7 @@ export function useChat(currentUser, isAdmin) {
         await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
       })
     );
-  }, [conversations]);
+  }, []);
 
   const totalUnread = Object.values(unreadMap).reduce((sum, n) => sum + n, 0);
 
