@@ -22,23 +22,25 @@
   overflow-x: hidden;
 }
 
-/* Espaço para a barra de navegação inferior (fixa) no mobile */
+/* Espaço para a barra de navegação inferior (fixa) no mobile.
+   O padding-bottom vem DEPOIS do shorthand em cada bloco pra não ser sobrescrito. */
 @media (max-width: 768px) {
   .main {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 }
 
 @media (max-width: 640px) {
   .main {
     padding: 16px;
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 }
 
 @media (max-width: 480px) {
   .main {
     padding: 10px;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
   .banner {
