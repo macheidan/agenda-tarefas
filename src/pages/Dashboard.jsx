@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../hooks/useTasks';
 import { useUsers } from '../hooks/useUsers';
@@ -15,30 +15,34 @@ import { useReviews } from '../hooks/useReviews';
 import { useCompletedTasks } from '../hooks/useCompletedTasks';
 import { useAllSettings } from '../hooks/useAllSettings';
 import Header from '../components/Header';
-import NotesView from '../components/NotesView';
 import NoteModal from '../components/NoteModal';
 import AdminMessageModal from '../components/AdminMessageModal';
 import MessageOverlay from '../components/MessageOverlay';
-import CalendarView from '../components/CalendarView';
 import MobileCalendarView from '../components/MobileCalendarView';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useTabsOrder } from '../hooks/useTabsOrder';
-import ArchivedView from '../components/ArchivedView';
-import CompletedView from '../components/CompletedView';
-import SettingsView from '../components/SettingsView';
-import IdeasView from '../components/IdeasView';
-import ReelsView from '../components/ReelsView';
-import ContentPlanView from '../components/ContentPlanView';
-import InfluencersView from '../components/InfluencersView';
 import { useInfluencers } from '../hooks/useInfluencers';
-import ReviewsView from '../components/ReviewsView';
-import KnowledgeView from '../components/KnowledgeView';
 import { useKnowledge } from '../hooks/useKnowledge';
 import TaskModal from '../components/TaskModal';
-import PrecosInsumosView from '../components/PrecosInsumosView';
-import DepartamentoPessoalView from '../components/DepartamentoPessoalView';
-import ComprasView from '../components/ComprasView';
 import styles from '../styles/Dashboard.module.css';
+
+// Views carregadas sob demanda (code splitting por aba). Reduz o bundle inicial:
+// FullCalendar (Calendar/ContentPlan), Supabase (Preços) e views grandes só
+// baixam quando a aba é aberta.
+const CalendarView = lazy(() => import('../components/CalendarView'));
+const NotesView = lazy(() => import('../components/NotesView'));
+const ArchivedView = lazy(() => import('../components/ArchivedView'));
+const CompletedView = lazy(() => import('../components/CompletedView'));
+const SettingsView = lazy(() => import('../components/SettingsView'));
+const IdeasView = lazy(() => import('../components/IdeasView'));
+const ReelsView = lazy(() => import('../components/ReelsView'));
+const ContentPlanView = lazy(() => import('../components/ContentPlanView'));
+const InfluencersView = lazy(() => import('../components/InfluencersView'));
+const ReviewsView = lazy(() => import('../components/ReviewsView'));
+const KnowledgeView = lazy(() => import('../components/KnowledgeView'));
+const PrecosInsumosView = lazy(() => import('../components/PrecosInsumosView'));
+const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPessoalView'));
+const ComprasView = lazy(() => import('../components/ComprasView'));
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -147,6 +151,7 @@ export default function Dashboard() {
       )}
 
       <main className={styles.main}>
+        <Suspense fallback={<div className={styles.suspenseFallback}>Carregando…</div>}>
         {activeTab === 'calendar' && calendarEnabled && (
           isMobile ? (
             <MobileCalendarView
@@ -262,6 +267,7 @@ export default function Dashboard() {
           />
         )}
         {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} geminiKey={kbGeminiKey} updateGeminiKey={updateGeminiKey} tabsOrder={tabsOrder} updateTabsOrder={updateTabsOrder} />}
+        </Suspense>
       </main>
 
       {modalOpen && (

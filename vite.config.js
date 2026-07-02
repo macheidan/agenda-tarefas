@@ -5,4 +5,18 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/',
+  build: {
+    rollupOptions: {
+      output: {
+        // Separa libs grandes em chunks próprios para melhor cache entre deploys.
+        // rolldown (Vite 8) exige manualChunks como função.
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@fullcalendar')) return 'fullcalendar';
+            if (id.includes('/firebase/') || id.includes('@firebase')) return 'firebase';
+          }
+        },
+      },
+    },
+  },
 })

@@ -38,3 +38,12 @@
     font-size: 13px;
   }
 }
+
+.suspenseFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  color: var(--text-muted);
+  font-size: 14px;
+}

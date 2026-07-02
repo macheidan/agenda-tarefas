@@ -1,3 +1,14 @@
+import DOMPurify from 'dompurify';
+
+// Reforça abertura segura de links em toda saída sanitizada: alvo em nova aba
+// e rel anti-tabnabbing. Registrado uma única vez no load do módulo.
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A') {
+    node.setAttribute('target', '_blank');
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
+
 const URL_REGEX = /\b(https?:\/\/[^\s<>"']+)/g;
 
 export function processLinks(html) {
@@ -47,5 +58,8 @@ export function processLinks(html) {
     textNode.parentNode.replaceChild(fragment, textNode);
   }
 
-  return root.innerHTML;
+  // Sanitiza contra XSS armazenado: conteúdo é gravado por qualquer usuário e
+  // lido por todos (inclusive admin). Remove <script>, handlers on*, javascript:,
+  // <img onerror>, <svg onload> etc. O hook acima reimpõe target/rel nos links.
+  return DOMPurify.sanitize(root.innerHTML, { ADD_ATTR: ['target'] });
 }
