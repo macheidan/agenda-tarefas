@@ -1,0 +1,39 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--ds-text-xs);
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--ds-radius-pill);
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.neutral {
+  background: color-mix(in srgb, var(--ds-muted) 15%, var(--ds-surface));
+  color: var(--ds-ink-soft);
+}
+.accent {
+  background: var(--ds-accent-soft);
+  color: var(--ds-accent-soft-fg);
+}
+.ok {
+  background: var(--ds-ok-soft);
+  color: var(--ds-ok-fg);
+}
+.warn {
+  background: var(--ds-warn-soft);
+  color: var(--ds-warn-fg);
+}
+.bad {
+  background: var(--ds-bad-soft);
+  color: var(--ds-bad-fg);
+}
