@@ -276,13 +276,12 @@ export default function DepartamentoPessoalView() {
       const monthAbs = absences.filter(
         (a) => a.employeeId === emp.id && a.date && a.date.startsWith(monthPrefix)
       );
-      const fmtDay = (iso) => { const [, mm, dd] = iso.split('-'); return `${dd}/${mm}`; };
       const datesOf = (type) =>
-        monthAbs.filter((a) => a.type === type).map((a) => a.date).sort().map(fmtDay);
-      const faltaJustDates = datesOf('falta_justificada');
-      const faltaNaoJustDates = datesOf('falta_injustificada');
-      const faltaJust = faltaJustDates.length;
-      const faltaNaoJust = faltaNaoJustDates.length;
+        monthAbs.filter((a) => a.type === type).map((a) => a.date).sort();
+      const faltaJustDatesISO = datesOf('falta_justificada');
+      const faltaNaoJustDatesISO = datesOf('falta_injustificada');
+      const faltaJust = faltaJustDatesISO.length;
+      const faltaNaoJust = faltaNaoJustDatesISO.length;
       const feriadoTrab = monthAbs.filter((a) => a.type === 'feriado_trabalhado').length;
       let folgas = 0;
       const dt = new Date(winStart);
@@ -291,7 +290,7 @@ export default function DepartamentoPessoalView() {
         dt.setDate(dt.getDate() + 1);
       }
       const diasTrab = Math.max(0, daysInM - folgas - faltaJust - faltaNaoJust);
-      return { id: emp.id, name: emp.name, store: emp.store, faltaJust, faltaNaoJust, faltaJustDates, faltaNaoJustDates, feriadoTrab, folgas, diasTrab };
+      return { id: emp.id, name: emp.name, store: emp.store, faltaJust, faltaNaoJust, faltaJustDatesISO, faltaNaoJustDatesISO, feriadoTrab, folgas, diasTrab };
     });
   }, [canEdit, storeEmployees, absences, year, month]);
 
@@ -311,22 +310,46 @@ export default function DepartamentoPessoalView() {
   );
 
   const copySummary = () => {
-    // Formato: colunas alinhadas (monospace), valores embaixo dos títulos.
-    // Célula vazia quando não há faltas. Datas em dd/mm.
-    const head = isAmbas
-      ? ['Loja', 'Nome', 'Falta não justificada', 'Falta justificada']
-      : ['Nome', 'Falta não justificada', 'Falta justificada'];
-    const rows = monthSummary.map((r) => {
-      const cells = [r.name, r.faltaNaoJustDates.join(', '), r.faltaJustDates.join(', ')];
-      if (isAmbas) cells.unshift(storeMeta[r.store]?.name || '');
-      return cells;
+    // Formato agrupado: por loja → tipo de falta → só quem tem falta.
+    // Datas dd/mm; dias seguidos viram "dd/mm a dd/mm". Nomes alinhados por seção.
+    const dm = (iso) => { const [, mm, dd] = iso.split('-'); return `${dd}/${mm}`; };
+    const fmtRanges = (isoDates) => {
+      if (!isoDates.length) return '';
+      const sorted = [...isoDates].sort();
+      const dayDiff = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+      const groups = [];
+      let start = sorted[0], prev = sorted[0];
+      for (let i = 1; i < sorted.length; i++) {
+        if (dayDiff(prev, sorted[i]) === 1) { prev = sorted[i]; }
+        else { groups.push([start, prev]); start = prev = sorted[i]; }
+      }
+      groups.push([start, prev]);
+      return groups.map(([a, b]) => (a === b ? dm(a) : `${dm(a)} a ${dm(b)}`)).join(', ');
+    };
+    const section = (title, entries) => {
+      if (!entries.length) return [];
+      const w = Math.max(...entries.map((e) => e.name.length));
+      return [title, ...entries.map((e) => `${e.name.padEnd(w)}  - ${fmtRanges(e.dates)}`)];
+    };
+    // agrupa por loja preservando a ordem de aparição
+    const order = [];
+    const byStore = {};
+    monthSummary.forEach((r) => {
+      if (!byStore[r.store]) { byStore[r.store] = { name: storeMeta[r.store]?.name || '', naoJust: [], just: [] }; order.push(r.store); }
+      if (r.faltaNaoJustDatesISO.length) byStore[r.store].naoJust.push({ name: r.name, dates: r.faltaNaoJustDatesISO });
+      if (r.faltaJustDatesISO.length) byStore[r.store].just.push({ name: r.name, dates: r.faltaJustDatesISO });
     });
-    const widths = head.map((h, i) =>
-      Math.max(h.length, ...rows.map((row) => row[i].length), 0)
-    );
-    const fmtRow = (cells) =>
-      cells.map((c, i) => String(c).padEnd(widths[i])).join('   ').replace(/\s+$/, '');
-    const text = [fmtRow(head), ...rows.map(fmtRow)].join('\n');
+    const blocks = order
+      .map((store) => {
+        const g = byStore[store];
+        const lines = [
+          ...section('Falta Não Justificada', g.naoJust),
+          ...section('Falta Justificada', g.just),
+        ];
+        return lines.length ? [g.name, ...lines].join('\n') : '';
+      })
+      .filter(Boolean);
+    const text = blocks.join('\n\n');
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text).then(
         () => { setCopied(true); setTimeout(() => setCopied(false), 1500); },
