@@ -95,7 +95,8 @@ export default function Header({
   // espaço disponível e o número de itens.
   useEffect(() => {
     const el = tabsRef.current;
-    if (!el) return;
+    if (!el) return undefined;
+    let raf = 0;
     const fit = () => {
       let fs = 14;
       el.style.fontSize = fs + 'px';
@@ -106,10 +107,19 @@ export default function Header({
         guard += 1;
       }
     };
-    fit();
-    const ro = new ResizeObserver(fit);
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(fit);
+    };
+    schedule();
+    const ro = new ResizeObserver(schedule);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener('resize', schedule);
+    };
   }, [orderedTabs.length]);
 
   useEffect(() => {
