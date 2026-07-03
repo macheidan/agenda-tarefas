@@ -530,10 +530,22 @@
     padding-top: 0;
   }
   /* Mantém produto (esquerda) e quantidade/ações (direita) na mesma linha;
-     o texto longo do produto quebra dentro da própria coluna. */
+     o texto longo do produto quebra dentro da própria coluna.
+     Linhas mais compactas no mobile pra caber mais itens na tela. */
+  .list {
+    gap: 5px;
+  }
   .row {
     flex-wrap: nowrap;
     gap: 8px;
+    padding: 6px 10px;
+  }
+  .produto {
+    font-size: 13px;
+  }
+  .meta {
+    font-size: 11px;
+    gap: 6px;
   }
   .rowInfo {
     flex: 1;
@@ -541,6 +553,18 @@
   }
   .rowActions {
     flex-shrink: 0;
+    gap: 4px;
+  }
+  .qtyInput {
+    width: 54px;
+    padding: 5px 6px;
+    font-size: 13px;
+    border-width: 1px;
+  }
+  .iconBtn,
+  .iconBtnDanger {
+    padding: 3px 5px;
+    font-size: 14px;
   }
   /* Mobile: fornecedor em cima (linha cheia), depois Zerar · Entrega · Loja · Copiar. */
   .toolbar {
