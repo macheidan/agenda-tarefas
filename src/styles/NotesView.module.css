@@ -51,7 +51,7 @@
 .newBtn {
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   color: #fff;
   font-size: 14px;

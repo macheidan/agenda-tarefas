@@ -156,7 +156,7 @@
 .manageBtn {
   padding: 8px 16px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
   color: var(--text);
   font-size: 13px;
@@ -214,7 +214,7 @@
 .inlineInput {
   padding: 7px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text);
   font-size: 14px;
@@ -225,7 +225,7 @@
 .inlineInputSm {
   padding: 7px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text);
   font-size: 14px;
@@ -241,7 +241,7 @@
 .smallBtn {
   padding: 7px 14px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   color: #fff;
   font-size: 13px;
@@ -252,7 +252,7 @@
 .smallBtnGhost {
   padding: 7px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text-secondary);
   font-size: 13px;
@@ -263,7 +263,7 @@
 .smallBtnDanger {
   padding: 7px 12px;
   border: 1px solid var(--danger);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--danger);
   font-size: 13px;
@@ -299,7 +299,7 @@
 .daySelect {
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text);
   font-size: 13px;
@@ -315,7 +315,7 @@
 .resetBtn {
   padding: 8px 16px;
   border: 1px solid var(--danger);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--danger);
   color: #fff;
   font-size: 13px;
@@ -348,7 +348,7 @@
 .copyBtn {
   padding: 8px 16px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   color: #fff;
   font-size: 13px;
@@ -363,7 +363,7 @@
 .newBtn {
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   color: #fff;
   font-size: 13px;
@@ -471,7 +471,7 @@
   width: 72px;
   padding: 7px 8px;
   border: 2px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text);
   font-size: 14px;
@@ -490,7 +490,7 @@
   cursor: pointer;
   font-size: 15px;
   padding: 4px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 
 .iconBtnDanger {

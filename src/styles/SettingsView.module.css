@@ -53,7 +53,7 @@
 .approveBtn {
   padding: 6px 14px;
   border: 1px solid var(--success);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--success);
   color: #fff;
   font-size: 13px;
@@ -70,7 +70,7 @@
 .rejectBtn {
   padding: 6px 14px;
   border: 1px solid var(--danger);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--danger);
   font-size: 13px;
@@ -149,7 +149,7 @@
   width: 32px;
   height: 32px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text-secondary);
   font-size: 16px;
@@ -342,7 +342,7 @@
 .removeBtn {
   padding: 6px 12px;
   border: 1px solid var(--danger);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: none;
   color: var(--danger);
   font-size: 13px;
@@ -378,7 +378,7 @@
 .confirmInput {
   padding: 5px 8px;
   border: 1px solid var(--danger);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   background: var(--input-bg);
   color: var(--text);
@@ -393,7 +393,7 @@
 .cancelBtn {
   padding: 6px 12px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: none;
   color: var(--text-secondary);
   font-size: 13px;

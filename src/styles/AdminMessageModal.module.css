@@ -62,7 +62,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 14px;
 }
@@ -91,7 +91,7 @@
 .cancelBtn {
   padding: 8px 16px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text-secondary);
   font-size: 14px;
@@ -106,7 +106,7 @@
 .sendBtn {
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   color: #fff;
   font-size: 14px;

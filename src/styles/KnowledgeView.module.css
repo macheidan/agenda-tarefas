@@ -24,7 +24,7 @@
 .adminBtn {
   padding: 6px 14px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--accent);
   font-size: 13px;
@@ -191,7 +191,7 @@
 .uploadBtn {
   padding: 8px 16px;
   border: 1px dashed var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--accent);
   font-size: 13px;
   cursor: pointer;
@@ -237,7 +237,7 @@
 .personaInput {
   padding: 8px 10px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   background: var(--bg);
   color: var(--text);
@@ -251,7 +251,7 @@
 .personaTextarea {
   padding: 8px 10px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   background: var(--bg);
   color: var(--text);

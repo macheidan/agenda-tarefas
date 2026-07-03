@@ -40,7 +40,7 @@
 .userSelect {
   padding: 6px 10px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   background: var(--input-bg);
   color: var(--text);
@@ -76,7 +76,7 @@
   width: 34px;
   height: 34px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text-muted);
   cursor: pointer;
@@ -184,7 +184,7 @@
   font-size: 13px;
   color: var(--text);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   transition: background 0.15s;
 }
 

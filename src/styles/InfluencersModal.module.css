@@ -35,7 +35,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   line-height: 1;
 }
 
@@ -114,7 +114,7 @@
 .fieldSmall select {
   padding: 8px 12px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   color: var(--text);
   background: var(--input-bg);
@@ -146,7 +146,7 @@
 .addInline {
   padding: 4px 12px;
   border: 1px dashed var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--accent);
   font-size: 12px;
@@ -170,7 +170,7 @@
   width: 36px;
   height: 36px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text-muted);
   font-size: 20px;
@@ -222,7 +222,7 @@
 .saveBtn {
   padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   color: #fff;
   font-size: 14px;
@@ -243,7 +243,7 @@
 .cancelBtn {
   padding: 10px 16px;
   border: 1px solid var(--input-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text-secondary);
   font-size: 14px;
@@ -258,7 +258,7 @@
 .deleteBtn {
   padding: 10px 16px;
   border: 1px solid var(--danger);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: none;
   color: var(--danger);
   font-size: 14px;
