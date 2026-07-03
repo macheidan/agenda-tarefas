@@ -96,7 +96,6 @@ export default function Header({
   useEffect(() => {
     const el = tabsRef.current;
     if (!el) return undefined;
-    let raf = 0;
     const fit = () => {
       let fs = 14;
       el.style.fontSize = fs + 'px';
@@ -107,18 +106,13 @@ export default function Header({
         guard += 1;
       }
     };
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(fit);
-    };
-    schedule();
-    const ro = new ResizeObserver(schedule);
+    fit();
+    const ro = new ResizeObserver(fit);
     ro.observe(el);
-    window.addEventListener('resize', schedule);
+    window.addEventListener('resize', fit);
     return () => {
-      cancelAnimationFrame(raf);
       ro.disconnect();
-      window.removeEventListener('resize', schedule);
+      window.removeEventListener('resize', fit);
     };
   }, [orderedTabs.length]);
 
