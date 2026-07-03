@@ -328,7 +328,8 @@
 .fab {
   position: fixed;
   right: 18px;
-  bottom: 22px;
+  /* acima da barra de navegação inferior (fixa) */
+  bottom: calc(84px + env(safe-area-inset-bottom));
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -380,7 +381,7 @@
   .fab {
     width: 52px;
     height: 52px;
-    bottom: 18px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
     right: 14px;
   }
 }
