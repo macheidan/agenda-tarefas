@@ -1,7 +1,7 @@
 .container {
   background: var(--card);
-  border-radius: 10px;
-  box-shadow: 0 1px 4px var(--shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: 24px;
   padding-top: 0;
   max-width: 100%;
@@ -786,7 +786,7 @@
 
 .mEmpCard {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--card);
   padding: 12px;
 }

@@ -1,8 +1,8 @@
 .container {
   display: flex;
   background: var(--card);
-  border-radius: 10px;
-  box-shadow: 0 1px 4px var(--shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   height: calc(100vh - 180px);
   min-height: 400px;
   overflow: hidden;
@@ -87,7 +87,7 @@
   font-weight: 600;
   min-width: 20px;
   height: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;

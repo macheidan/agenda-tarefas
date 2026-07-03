@@ -240,7 +240,7 @@
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
-  background: #e53935;
+  background: var(--danger);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
@@ -249,7 +249,7 @@
 }
 
 .changesBtn:hover {
-  background: #c62828;
+  background: var(--danger);
 }
 
 .changesBtn:disabled {
@@ -290,7 +290,7 @@
 
   .modal {
     padding: 16px;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
   }
 
   .closeBtn {

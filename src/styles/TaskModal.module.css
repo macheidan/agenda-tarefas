@@ -300,7 +300,7 @@
   position: absolute;
   inset: 0;
   background: var(--overlay);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -399,7 +399,7 @@
 
   .modal {
     padding: 16px;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     max-height: calc(100vh - 32px);
   }
 

@@ -118,7 +118,7 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 8px;
-  background: #e53935;
+  background: var(--danger);
   color: #fff;
   font-size: 10px;
   font-weight: 700;

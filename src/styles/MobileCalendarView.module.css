@@ -261,7 +261,7 @@
   padding: 10px 12px;
   background: var(--bg-secondary);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   font-family: inherit;
   text-align: left;
