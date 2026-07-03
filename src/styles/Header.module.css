@@ -4,6 +4,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
+  /* Topo com a mesma família do site de referência (Geologica, como a Nintendo) */
+  font-family: 'Geologica', var(--font-family);
 }
 
 .top {
@@ -23,6 +25,23 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+.logoMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.logoMark svg {
+  width: 18px;
+  height: 18px;
 }
 
 .logoText {
@@ -219,9 +238,10 @@
   margin: 6px 2px;
   border: none;
   background: none;
+  font-family: 'Geologica', var(--font-family);
   font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text-secondary);
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: color 0.15s, background 0.15s;
