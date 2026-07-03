@@ -24,7 +24,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .logoMark {
@@ -54,6 +54,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .userSelect {
@@ -233,19 +234,47 @@
   scroll-behavior: smooth;
 }
 
+/* Menu no topo (mesma linha do logo). O JS controla o font-size do container
+   pra caber sem colidir com os controles da direita; itens herdam essa fonte. */
+.tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 14px; /* base; ajustado por JS */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
 .tab {
-  padding: 10px 16px;
-  margin: 6px 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  flex-shrink: 0;
+  padding: 0.6em 0.8em;
   border: none;
   background: none;
   font-family: 'Geologica', var(--font-family);
-  font-size: 14px;
+  font-size: inherit;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: color 0.15s, background 0.15s;
   position: relative;
+  white-space: nowrap;
+}
+
+.tabIcon {
+  display: inline-flex;
+}
+.tabIcon svg {
+  width: 1.25em;
+  height: 1.25em;
 }
 
 .tab:hover {
@@ -289,68 +318,13 @@
   }
 }
 
-@media (max-width: 640px) {
-  .top {
-    flex-wrap: wrap;
-    padding: 12px 16px;
-  }
-
-  .nav {
-    padding: 0 16px;
-  }
-
-  .tab {
-    padding: 10px 14px;
-    font-size: 13px;
-  }
-}
-
 @media (max-width: 768px) {
-  /* No mobile a navegação vira a barra inferior de ícones (BottomNav) */
-  .nav {
-    display: none;
-  }
-
-  .nav::before,
-  .nav::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 24px;
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  .nav::before {
-    left: 0;
-    background: linear-gradient(to right, var(--card), transparent);
-  }
-
-  .nav::after {
-    right: 0;
-    background: linear-gradient(to left, var(--card), transparent);
-  }
-
+  /* No mobile o menu do topo some — a navegação vira a barra inferior (BottomNav) */
   .tabs {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    width: 100%;
-    padding: 0 16px;
-    scroll-padding: 0 24px;
-  }
-
-  .tabs::-webkit-scrollbar {
     display: none;
   }
-
-  .tab {
+  .top {
     padding: 12px 16px;
-    font-size: 13px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    min-height: 44px;
   }
 }
 

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { TabIcon } from './tabIcons';
 import styles from '../styles/Header.module.css';
 
 export default function Header({
@@ -89,6 +90,28 @@ export default function Header({
     }
   };
 
+  // Ajusta a fonte do menu do topo pra caber sem colidir com os controles da
+  // direita ("Minha agenda"). Reduz de 14px até no mínimo 10.5px conforme o
+  // espaço disponível e o número de itens.
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const fit = () => {
+      let fs = 14;
+      el.style.fontSize = fs + 'px';
+      let guard = 0;
+      while (el.scrollWidth > el.clientWidth + 1 && fs > 10.5 && guard < 20) {
+        fs -= 0.5;
+        el.style.fontSize = fs + 'px';
+        guard += 1;
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [orderedTabs.length]);
+
   useEffect(() => {
     const container = tabsRef.current;
     if (!container) return;
@@ -102,14 +125,23 @@ export default function Header({
     <header className={styles.header}>
       <div className={styles.top}>
         <h1 className={styles.logo}>
-          <span className={styles.logoMark} aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 11h.01M11 15h.01M16 16h.01M2 16l20 6-6-20A20 20 0 0 0 2 16" />
-              <path d="M5.71 17.11a17.04 17.04 0 0 1 11.4-11.4" />
-            </svg>
-          </span>
           <span className={styles.logoText}>Dáme &amp; Lov</span>
         </h1>
+
+        <nav className={styles.tabs} ref={tabsRef}>
+          {orderedTabs.map((t) => (
+            <button
+              key={t.key}
+              className={`${styles.tab} ${activeTab === t.key ? styles.active : ''}`}
+              onClick={() => onTabChange(t.key)}
+            >
+              <span className={styles.tabIcon}><TabIcon k={t.key} /></span>
+              <span className={styles.tabLabel}>{t.label}</span>
+              {t.badge}
+            </button>
+          ))}
+        </nav>
+
         <div className={styles.userArea}>
           {isAdmin && users.length > 0 && (
             <select
@@ -198,21 +230,6 @@ export default function Header({
           </div>
         </div>
       </div>
-
-      <nav className={styles.nav}>
-        <div className={styles.tabs} ref={tabsRef}>
-          {orderedTabs.map((t) => (
-            <button
-              key={t.key}
-              className={`${styles.tab} ${activeTab === t.key ? styles.active : ''}`}
-              onClick={() => onTabChange(t.key)}
-            >
-              {t.label}
-              {t.badge}
-            </button>
-          ))}
-        </div>
-      </nav>
     </header>
   );
 }
