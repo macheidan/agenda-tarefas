@@ -250,19 +250,23 @@ export default function DepartamentoPessoalView() {
     return { date, mark, t, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
   };
 
-  // Resumo do mês (só para editores). Tudo apurado no ciclo da folha:
-  // 06 do mês exibido → 05 do mês seguinte (fecha no dia do pagamento).
-  // Dias, folgas e faltas usam esse mesmo período; Transporte a Pagar =
-  // dias do período − folgas − faltas.
+  // Resumo do mês (só para editores). Transporte a Pagar mistura DOIS ciclos:
+  //  • dias corridos + folgas → ciclo a pagar: 06 do mês exibido → 05 do seguinte
+  //    (adiantado no fechamento do dia do pagamento).
+  //  • faltas + feriado trabalhado → ciclo anterior já apurado: 06 do mês
+  //    anterior → 05 do mês exibido (ocorrências que só se conhecem depois).
+  // Transporte a Pagar = dias − folgas − faltas.
   const monthSummary = useMemo(() => {
     if (!canEdit) return [];
     const winStart = new Date(year, month, 6);
     const winEnd = new Date(year, month + 1, 5);
+    const absStart = new Date(year, month - 1, 6);
+    const absEnd = new Date(year, month, 5);
     const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-    const winStartISO = toISO(winStart);
-    const winEndISO = toISO(winEnd);
+    const absStartISO = toISO(absStart);
+    const absEndISO = toISO(absEnd);
     // Datas ISO (YYYY-MM-DD) comparam cronologicamente como string.
-    const inWindow = (iso) => iso >= winStartISO && iso <= winEndISO;
+    const inAbsWindow = (iso) => iso >= absStartISO && iso <= absEndISO;
     const daysInWindow = Math.round((winEnd - winStart) / 86400000) + 1;
     const nthSundayOf = (dt) => {
       let c = 0;
@@ -280,16 +284,17 @@ export default function DepartamentoPessoalView() {
       return false;
     };
     return storeEmployees.map((emp) => {
-      const winAbs = absences.filter(
-        (a) => a.employeeId === emp.id && a.date && inWindow(a.date)
+      // Faltas e feriado trabalhado: ciclo anterior já apurado (06 mês anterior → 05 mês atual).
+      const occAbs = absences.filter(
+        (a) => a.employeeId === emp.id && a.date && inAbsWindow(a.date)
       );
       const datesOf = (type) =>
-        winAbs.filter((a) => a.type === type).map((a) => a.date).sort();
+        occAbs.filter((a) => a.type === type).map((a) => a.date).sort();
       const faltaJustDatesISO = datesOf('falta_justificada');
       const faltaNaoJustDatesISO = datesOf('falta_injustificada');
       const faltaJust = faltaJustDatesISO.length;
       const faltaNaoJust = faltaNaoJustDatesISO.length;
-      const feriadoTrab = winAbs.filter((a) => a.type === 'feriado_trabalhado').length;
+      const feriadoTrab = occAbs.filter((a) => a.type === 'feriado_trabalhado').length;
       let folgas = 0;
       const dt = new Date(winStart);
       while (dt <= winEnd) {
@@ -366,6 +371,10 @@ export default function DepartamentoPessoalView() {
   };
 
   const activeStoreObj = stores.find((s) => s.id === activeStore);
+  // Rótulos de mês (MM) para a nota do resumo: anterior, atual e seguinte.
+  const mmAtual = pad(month + 1);
+  const mmSeg = pad(((month + 1) % 12) + 1);
+  const mmAnt = pad(((month + 11) % 12) + 1);
 
   return (
     <div className={styles.container}>
@@ -758,9 +767,9 @@ export default function DepartamentoPessoalView() {
             </button>
           </div>
           <p className={styles.summaryNote}>
-            Transporte a pagar de <strong>{MONTHS[month]}</strong>, pago em 05/{pad(((month + 1) % 12) + 1)}.
-            Apuração de 06/{pad(month + 1)} a 05/{pad(((month + 1) % 12) + 1)}: dias do período − folgas − faltas
-            (tudo no mesmo ciclo, que fecha no dia do pagamento).
+            <strong>Transporte a pagar</strong> de {MONTHS[month]} (pago em 05/{mmSeg}) = dias − folgas − faltas.
+            Dias corridos e folgas contam de 06/{mmAtual} a 05/{mmSeg} (ciclo a pagar);
+            faltas e feriados do ciclo anterior já apurado, de 06/{mmAnt} a 05/{mmAtual}.
           </p>
           <div className={styles.summaryWrap}>
             <table className={styles.summaryTable}>
