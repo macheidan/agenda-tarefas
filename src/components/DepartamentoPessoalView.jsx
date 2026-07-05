@@ -5,7 +5,6 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { getNamedHolidays } from '../utils/holidays';
 import { useDepartamentoPessoal, ABSENCE_TYPES } from '../hooks/useDepartamentoPessoal';
 import { transporteDetalhe, empFolgaWeekdays } from '../utils/transporte';
-import FuncionariosView from './FuncionariosView';
 import SalariosView from './SalariosView';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
@@ -54,7 +53,8 @@ export default function DepartamentoPessoalView() {
   } = useDepartamentoPessoal();
 
   // Sem acesso a Salários, a seção efetiva é sempre a Escala (fallback em render).
-  const effectiveSection = canSalarios ? dpSection : 'escala';
+  // 'funcionarios' foi fundido em 'salarios' — normaliza legado.
+  const effectiveSection = canSalarios ? (dpSection === 'escala' ? 'escala' : 'salarios') : 'escala';
 
   // Lojas escondidas para este usuário (configurado pelo admin em Settings).
   const hiddenSet = useMemo(
@@ -366,33 +366,15 @@ export default function DepartamentoPessoalView() {
             Escala
           </button>
           {canSalarios && (
-            <>
-              <button
-                className={`${styles.sectionTab} ${effectiveSection === 'funcionarios' ? styles.sectionTabActive : ''}`}
-                onClick={() => setDpSection('funcionarios')}
-              >
-                Funcionários
-              </button>
-              <button
-                className={`${styles.sectionTab} ${effectiveSection === 'salarios' ? styles.sectionTabActive : ''}`}
-                onClick={() => setDpSection('salarios')}
-              >
-                Salários
-              </button>
-            </>
+            <button
+              className={`${styles.sectionTab} ${effectiveSection === 'salarios' ? styles.sectionTabActive : ''}`}
+              onClick={() => setDpSection('salarios')}
+            >
+              Salários
+            </button>
           )}
         </div>
       </div>
-
-      {effectiveSection === 'funcionarios' && (
-        <FuncionariosView
-          visibleStores={visibleStores}
-          storeMeta={storeMeta}
-          employees={employees}
-          updateEmployee={updateEmployee}
-          isAdmin={isAdmin}
-        />
-      )}
 
       {effectiveSection === 'salarios' && (
         <SalariosView
@@ -402,6 +384,7 @@ export default function DepartamentoPessoalView() {
           absences={absences}
           salarios={salarios}
           setSalario={setSalario}
+          updateEmployee={updateEmployee}
           isAdmin={isAdmin}
         />
       )}
