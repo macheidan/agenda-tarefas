@@ -21,10 +21,9 @@
  * serviceAccount*.json está no .gitignore — NUNCA commitar.
  */
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { transporteDiasNoMes } from '../src/utils/transporte.js';
-
-const require = createRequire(import.meta.url);
 
 const MONTHS_PT = {
   janeiro: 0, fevereiro: 1, 'março': 2, marco: 2, abril: 3, maio: 4, junho: 5,
@@ -36,15 +35,15 @@ const norm = (s) =>
   (s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase();
 const firstName = (s) => norm(s).split(/\s+/)[0] || '';
 
-// loja do PDF (por CNPJ) → id da loja no Firestore (seed default).
-const LOJA_TO_STORE = { LOV: 'lov', DAME: 'dame' };
+// loja do PDF (por CNPJ) → NOME normalizado da loja (resolvido p/ id via dpStores).
+const LOJA_LABEL = { LOV: 'lov', DAME: 'dame' };
 
 // Divergências conhecidas (casar por LOCAL de trabalho, não pelo CNPJ do PDF).
-// Chave = trecho do nome completo (normalizado). Valor = { store, first }.
+// Chave = trecho do nome completo (normalizado). storeName = nome normalizado da loja.
 const OVERRIDES = [
-  { match: 'birkheuer', store: 'lov', first: 'sergio' }, // Sergio: PDF Dame → aba Lov
-  { match: 'trenntini', store: 'lov', first: 'julio' },  // Julio Trenntini → Lov
-  { match: 'medina', store: 'dame', first: 'julio' },    // Julio Medina → Dame
+  { match: 'birkheuer', storeName: 'lov', first: 'sergio' }, // Sergio: PDF Dame → aba Lov
+  { match: 'trenntini', storeName: 'lov', first: 'julio' },  // Julio Trenntini → Lov
+  { match: 'medina', storeName: 'dame', first: 'julio' },    // Julio Medina → Dame
 ];
 
 function parseArgs(argv) {
@@ -60,13 +59,12 @@ function parseArgs(argv) {
 }
 
 function initFirestore() {
-  const admin = require('firebase-admin');
   const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || './serviceAccount.json';
   const svc = JSON.parse(readFileSync(credPath, 'utf8'));
-  if (!admin.apps.length) {
-    admin.initializeApp({ credential: admin.credential.cert(svc) });
+  if (!getApps().length) {
+    initializeApp({ credential: cert(svc) });
   }
-  return admin.firestore();
+  return getFirestore();
 }
 
 async function main() {
@@ -79,24 +77,29 @@ async function main() {
   const rows = JSON.parse(readFileSync(args.file, 'utf8'));
   const db = initFirestore();
 
-  // Carrega funcionários e faltas uma vez (pra casar nomes e calcular Flash).
-  const [empSnap, absSnap] = await Promise.all([
+  // Carrega lojas, funcionários e faltas uma vez (casar nomes, resolver loja, calcular Flash).
+  const [empSnap, absSnap, storeSnap] = await Promise.all([
     db.collection('dpEmployees').get(),
     db.collection('dpAbsences').get(),
+    db.collection('dpStores').get(),
   ]);
   const employees = empSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
   const absences = absSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // Nome normalizado da loja → id (ex.: 'lov' → 'loja1', 'dame' → 'loja2').
+  const storeByName = {};
+  storeSnap.docs.forEach((d) => { storeByName[norm(d.data().name)] = d.id; });
 
   let ok = 0, skipped = 0;
   for (const r of rows) {
     if (r.socio || r.rescisao) { console.log(`skip ${r.nome} (socio/rescisao)`); skipped++; continue; }
 
-    // Resolve loja + primeiro nome (aplica overrides).
-    let store = LOJA_TO_STORE[r.loja] || null;
+    // Resolve loja (nome→id) + primeiro nome (aplica overrides).
+    let storeName = LOJA_LABEL[r.loja] || null;
     let fname = firstName(r.nome);
     const ov = OVERRIDES.find((o) => norm(r.nome).includes(o.match));
-    if (ov) { store = ov.store; fname = ov.first; }
-    if (!store) { console.warn(`skip ${r.nome}: loja desconhecida (${r.loja})`); skipped++; continue; }
+    if (ov) { storeName = ov.storeName; fname = ov.first; }
+    const store = storeName ? storeByName[storeName] : null;
+    if (!store) { console.warn(`skip ${r.nome}: loja não encontrada (${r.loja})`); skipped++; continue; }
 
     // Casa com o funcionário (store + primeiro nome).
     const cands = employees.filter((e) => e.store === store && firstName(e.name) === fname && e.active !== false);
