@@ -781,7 +781,10 @@ export default function DepartamentoPessoalView() {
                   <th>Falta Não Just.</th>
                   <th>Feriado Trab.</th>
                   <th>Folgas</th>
-                  <th>Transporte a Pagar</th>
+                  <th>
+                    Transporte a Pagar
+                    <span className={styles.colPeriod}>ciclo 06/{mmAtual} a 05/{mmSeg}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
