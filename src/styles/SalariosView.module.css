@@ -2,6 +2,15 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* Cores espelhando as planilhas — mescladas com o fundo do tema (claro/escuro). */
+  --ch-banco: color-mix(in srgb, #ff9a3c 16%, var(--card));
+  --ch-flash: color-mix(in srgb, #d16ba5 15%, var(--card));
+  --ch-dinheiro: color-mix(in srgb, #52c234 18%, var(--card));
+  --ch-total: color-mix(in srgb, var(--text-secondary) 10%, var(--card));
+  --font-in: #2f6fef; /* entra (azul) */
+}
+:global(:root[data-theme='dark']) .container {
+  --font-in: #6aa3ff;
 }
 
 /* ---- Barra de seleção: lojas + dropdown de funcionário ---- */
@@ -257,13 +266,28 @@
 
 .calcRow td {
   font-weight: 700;
-  background: var(--bg-secondary);
 }
+
+/* Fundo por canal de pagamento (espelha o bg das planilhas).
+   Nas linhas editáveis a cor vai no próprio input (ele cobre a célula);
+   nas linhas calculadas (Dinheiro/Total) vai na td. */
+.chDinheiro { background: var(--ch-dinheiro); }
+.chTotal { background: var(--ch-total); }
+.moneyInput.chBanco { background: var(--ch-banco); }
+.moneyInput.chFlash { background: var(--ch-flash); }
 
 .risk {
   color: var(--danger);
   font-weight: 700;
 }
+
+/* Cor de fonte por natureza: entra (azul), sai/negativo (vermelho).
+   Declaradas após .moneyInput:disabled pra vencer no modo leitura. */
+.fontIn { color: var(--font-in); }
+.fontOut, .neg { color: var(--danger); }
+.moneyInput.fontIn { color: var(--font-in); }
+.moneyInput.fontOut, .moneyInput.neg { color: var(--danger); }
+.chDinheiro.neg, .chTotal.neg { color: var(--danger); font-weight: 700; }
 
 .warnCell {
   background: color-mix(in srgb, var(--danger) 14%, transparent);

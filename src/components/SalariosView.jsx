@@ -25,6 +25,12 @@ const FIELDS = [
   ['liquidoFolha', 'Líq. folha'],
 ];
 
+// Cores espelhando o bg/fonte das planilhas: canal de pagamento (fundo) e
+// natureza entra/sai (fonte). Banco=pêssego, Flash=rosa, Dinheiro=verde.
+const ROW_BG = { banco: 'chBanco', flash: 'chFlash' };
+// Entrada = entra (azul); Adianta/Empréstimo = sai (vermelho).
+const ROW_FONT = { entrada: 'fontIn', adianta: 'fontOut', empres: 'fontOut' };
+
 const num = (l, f) => Number(l?.[f]) || 0;
 // Σ(B:G) = valor devido ao funcionário na linha.
 const somaBG = (l) =>
@@ -242,35 +248,43 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                   </tr>
                 </thead>
                 <tbody>
-                  {FIELDS.map(([f, label]) => (
-                    <tr key={f}>
-                      <td className={styles.rowHead}>{label}</td>
-                      {LINES.map(([line]) => {
-                        const l = doc?.[line] || {};
-                        const bancoWarn = f === 'banco' && l.liquidoFolha != null && l.liquidoFolha !== '' && num(l, 'banco') !== Number(l.liquidoFolha);
-                        const flashWarn = f === 'flash' && line === 'dia5' && dias > 0 && num(l, 'flash') !== flashEsperado;
-                        const warn = bancoWarn || flashWarn;
-                        return (
-                          <td key={line} className={warn ? styles.warnCell : ''} title={
-                            bancoWarn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})`
-                              : flashWarn ? `Esperado ${formatBRL(flashEsperado)} (transporte × R$12)` : ''
-                          }>
-                            <MoneyInput className={styles.moneyInput} value={l[f]} disabled={!isAdmin} onCommit={(v) => commit(line, f, v)} />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                  {FIELDS.map(([f, label]) => {
+                    const bgCls = ROW_BG[f] ? styles[ROW_BG[f]] : '';
+                    const fontCls = ROW_FONT[f] ? styles[ROW_FONT[f]] : '';
+                    return (
+                      <tr key={f}>
+                        <td className={styles.rowHead}>{label}</td>
+                        {LINES.map(([line]) => {
+                          const l = doc?.[line] || {};
+                          const v = num(l, f);
+                          const bancoWarn = f === 'banco' && l.liquidoFolha != null && l.liquidoFolha !== '' && num(l, 'banco') !== Number(l.liquidoFolha);
+                          const flashWarn = f === 'flash' && line === 'dia5' && dias > 0 && num(l, 'flash') !== flashEsperado;
+                          const warn = bancoWarn || flashWarn;
+                          return (
+                            <td key={line} className={warn ? styles.warnCell : ''} title={
+                              bancoWarn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})`
+                                : flashWarn ? `Esperado ${formatBRL(flashEsperado)} (transporte × R$12)` : ''
+                            }>
+                              <MoneyInput className={`${styles.moneyInput} ${bgCls} ${fontCls} ${v < 0 ? styles.neg : ''}`} value={l[f]} disabled={!isAdmin} onCommit={(nv) => commit(line, f, nv)} />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                   <tr className={styles.calcRow}>
                     <td className={styles.rowHead}>Dinheiro</td>
                     {LINES.map(([line]) => {
                       const d = dinheiroDe(doc?.[line] || {});
-                      return <td key={line} className={d !== 0 ? styles.risk : ''} title={d !== 0 ? 'Pago por fora' : ''}>{formatBRL(d) || 'R$ 0,00'}</td>;
+                      return <td key={line} className={`${styles.chDinheiro} ${d < 0 ? styles.neg : ''}`} title="Pago por fora">{formatBRL(d) || 'R$ 0,00'}</td>;
                     })}
                   </tr>
                   <tr className={styles.calcRow}>
                     <td className={styles.rowHead}>Total</td>
-                    {LINES.map(([line]) => <td key={line}>{formatBRL(totalDe(doc?.[line] || {})) || 'R$ 0,00'}</td>)}
+                    {LINES.map(([line]) => {
+                      const t = totalDe(doc?.[line] || {});
+                      return <td key={line} className={`${styles.chTotal} ${t < 0 ? styles.neg : ''}`}>{formatBRL(t) || 'R$ 0,00'}</td>;
+                    })}
                   </tr>
                 </tbody>
               </table>
