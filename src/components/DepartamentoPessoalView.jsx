@@ -250,14 +250,20 @@ export default function DepartamentoPessoalView() {
     return { date, mark, t, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
   };
 
-  // Resumo do mês (só para editores). Folga conta no ciclo dia 6 → dia 5;
-  // faltas/feriado no mês exibido; Transporte a Pagar = dias do mês − folgas − faltas.
+  // Resumo do mês (só para editores). Tudo apurado no ciclo da folha:
+  // 06 do mês exibido → 05 do mês seguinte (fecha no dia do pagamento).
+  // Dias, folgas e faltas usam esse mesmo período; Transporte a Pagar =
+  // dias do período − folgas − faltas.
   const monthSummary = useMemo(() => {
     if (!canEdit) return [];
-    const daysInM = new Date(year, month + 1, 0).getDate();
-    const monthPrefix = `${year}-${pad(month + 1)}-`;
     const winStart = new Date(year, month, 6);
     const winEnd = new Date(year, month + 1, 5);
+    const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+    const winStartISO = toISO(winStart);
+    const winEndISO = toISO(winEnd);
+    // Datas ISO (YYYY-MM-DD) comparam cronologicamente como string.
+    const inWindow = (iso) => iso >= winStartISO && iso <= winEndISO;
+    const daysInWindow = Math.round((winEnd - winStart) / 86400000) + 1;
     const nthSundayOf = (dt) => {
       let c = 0;
       const y = dt.getFullYear(), m = dt.getMonth(), d = dt.getDate();
@@ -274,23 +280,23 @@ export default function DepartamentoPessoalView() {
       return false;
     };
     return storeEmployees.map((emp) => {
-      const monthAbs = absences.filter(
-        (a) => a.employeeId === emp.id && a.date && a.date.startsWith(monthPrefix)
+      const winAbs = absences.filter(
+        (a) => a.employeeId === emp.id && a.date && inWindow(a.date)
       );
       const datesOf = (type) =>
-        monthAbs.filter((a) => a.type === type).map((a) => a.date).sort();
+        winAbs.filter((a) => a.type === type).map((a) => a.date).sort();
       const faltaJustDatesISO = datesOf('falta_justificada');
       const faltaNaoJustDatesISO = datesOf('falta_injustificada');
       const faltaJust = faltaJustDatesISO.length;
       const faltaNaoJust = faltaNaoJustDatesISO.length;
-      const feriadoTrab = monthAbs.filter((a) => a.type === 'feriado_trabalhado').length;
+      const feriadoTrab = winAbs.filter((a) => a.type === 'feriado_trabalhado').length;
       let folgas = 0;
       const dt = new Date(winStart);
       while (dt <= winEnd) {
         if (isFolgaOn(emp, dt)) folgas++;
         dt.setDate(dt.getDate() + 1);
       }
-      const diasTrab = Math.max(0, daysInM - folgas - faltaJust - faltaNaoJust);
+      const diasTrab = Math.max(0, daysInWindow - folgas - faltaJust - faltaNaoJust);
       return { id: emp.id, name: emp.name, store: emp.store, faltaJust, faltaNaoJust, faltaJustDatesISO, faltaNaoJustDatesISO, feriadoTrab, folgas, diasTrab };
     });
   }, [canEdit, storeEmployees, absences, year, month]);
@@ -752,7 +758,9 @@ export default function DepartamentoPessoalView() {
             </button>
           </div>
           <p className={styles.summaryNote}>
-            Folgas contadas de 06/{pad(month + 1)} a 05/{pad(((month + 1) % 12) + 1)}. Transporte a Pagar = dias do mês − folgas − faltas.
+            Transporte a pagar de <strong>{MONTHS[month]}</strong>, pago em 05/{pad(((month + 1) % 12) + 1)}.
+            Apuração de 06/{pad(month + 1)} a 05/{pad(((month + 1) % 12) + 1)}: dias do período − folgas − faltas
+            (tudo no mesmo ciclo, que fecha no dia do pagamento).
           </p>
           <div className={styles.summaryWrap}>
             <table className={styles.summaryTable}>
