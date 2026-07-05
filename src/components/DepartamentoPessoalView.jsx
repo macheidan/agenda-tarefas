@@ -4,6 +4,9 @@ import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { getNamedHolidays } from '../utils/holidays';
 import { useDepartamentoPessoal, ABSENCE_TYPES } from '../hooks/useDepartamentoPessoal';
+import { transporteDetalhe, empFolgaWeekdays } from '../utils/transporte';
+import FuncionariosView from './FuncionariosView';
+import SalariosView from './SalariosView';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
 const MONTHS = [
@@ -17,14 +20,7 @@ const ALL_STORES = '__all__';
 const FOLGA_WEEK = [[1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta'], [5, 'Sexta'], [6, 'Sábado'], [0, 'Domingo']];
 const FOLGA_WEEK_NAME = { 0: 'Domingo', 1: 'Segunda', 2: 'Terça', 3: 'Quarta', 4: 'Quinta', 5: 'Sexta', 6: 'Sábado' };
 
-// Dias de folga fixa da semana do funcionario (pode ser mais de um). Aceita o
-// novo campo folgaWeekdays (array) e cai pro antigo folgaWeekday (1 dia) por
-// retrocompatibilidade com funcionarios ja cadastrados.
-function empFolgaWeekdays(emp) {
-  if (Array.isArray(emp.folgaWeekdays)) return emp.folgaWeekdays;
-  if (emp.folgaWeekday != null) return [emp.folgaWeekday];
-  return [];
-}
+// empFolgaWeekdays vem de utils/transporte (fonte única, usada também por Salários).
 
 const pad = (n) => String(n).padStart(2, '0');
 const typeByKey = (key) => ABSENCE_TYPES.find((t) => t.key === key);
@@ -36,6 +32,9 @@ export default function DepartamentoPessoalView() {
   // Editores (e o admin) gerenciam lojas/funcionários. Qualquer usuário com a
   // seção visível pode trabalhar no calendário (marcar todos os tipos).
   const canEdit = isAdmin || settings?.dpEditor === true;
+  // Salários é dado sensível: só admin ou quem o admin liberou (dpSalariosVisible).
+  const canSalarios = isAdmin || settings?.dpSalariosVisible === true;
+  const [dpSection, setDpSection] = useState('escala'); // escala | funcionarios | salarios
   const {
     stores,
     loadingStores,
@@ -43,6 +42,8 @@ export default function DepartamentoPessoalView() {
     seedDefaultStores,
     employees,
     absences,
+    salarios,
+    setSalario,
     addStore,
     renameStore,
     deleteStore,
@@ -51,6 +52,9 @@ export default function DepartamentoPessoalView() {
     deleteEmployee,
     setAbsence,
   } = useDepartamentoPessoal();
+
+  // Sem acesso a Salários, a seção efetiva é sempre a Escala (fallback em render).
+  const effectiveSection = canSalarios ? dpSection : 'escala';
 
   // Lojas escondidas para este usuário (configurado pelo admin em Settings).
   const hiddenSet = useMemo(
@@ -258,31 +262,11 @@ export default function DepartamentoPessoalView() {
   // Transporte a Pagar = dias − folgas − faltas.
   const monthSummary = useMemo(() => {
     if (!canEdit) return [];
-    const winStart = new Date(year, month, 6);
-    const winEnd = new Date(year, month + 1, 5);
-    const absStart = new Date(year, month - 1, 6);
-    const absEnd = new Date(year, month, 5);
     const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-    const absStartISO = toISO(absStart);
-    const absEndISO = toISO(absEnd);
+    const absStartISO = toISO(new Date(year, month - 1, 6));
+    const absEndISO = toISO(new Date(year, month, 5));
     // Datas ISO (YYYY-MM-DD) comparam cronologicamente como string.
     const inAbsWindow = (iso) => iso >= absStartISO && iso <= absEndISO;
-    const daysInWindow = Math.round((winEnd - winStart) / 86400000) + 1;
-    const nthSundayOf = (dt) => {
-      let c = 0;
-      const y = dt.getFullYear(), m = dt.getMonth(), d = dt.getDate();
-      for (let i = 1; i <= d; i++) if (new Date(y, m, i).getDay() === 0) c++;
-      return c;
-    };
-    const isFolgaOn = (emp, dt) => {
-      const ds = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-      const real = absences.find((a) => a.employeeId === emp.id && a.date === ds);
-      if (real) return real.type === 'folga';
-      const wd = dt.getDay();
-      if (empFolgaWeekdays(emp).includes(wd)) return true;
-      if (emp.folgaMonthN != null && wd === 0 && nthSundayOf(dt) === emp.folgaMonthN) return true;
-      return false;
-    };
     return storeEmployees.map((emp) => {
       // Faltas e feriado trabalhado: ciclo anterior já apurado (06 mês anterior → 05 mês atual).
       const occAbs = absences.filter(
@@ -292,16 +276,10 @@ export default function DepartamentoPessoalView() {
         occAbs.filter((a) => a.type === type).map((a) => a.date).sort();
       const faltaJustDatesISO = datesOf('falta_justificada');
       const faltaNaoJustDatesISO = datesOf('falta_injustificada');
-      const faltaJust = faltaJustDatesISO.length;
-      const faltaNaoJust = faltaNaoJustDatesISO.length;
       const feriadoTrab = occAbs.filter((a) => a.type === 'feriado_trabalhado').length;
-      let folgas = 0;
-      const dt = new Date(winStart);
-      while (dt <= winEnd) {
-        if (isFolgaOn(emp, dt)) folgas++;
-        dt.setDate(dt.getDate() + 1);
-      }
-      const diasTrab = Math.max(0, daysInWindow - folgas - faltaJust - faltaNaoJust);
+      // Folgas (ciclo a pagar) e dias de transporte vêm do helper compartilhado.
+      const { dias: diasTrab, folgas, faltaJust, faltaNaoJust } =
+        transporteDetalhe(emp, absences, year, month);
       return { id: emp.id, name: emp.name, store: emp.store, faltaJust, faltaNaoJust, faltaJustDatesISO, faltaNaoJustDatesISO, feriadoTrab, folgas, diasTrab };
     });
   }, [canEdit, storeEmployees, absences, year, month]);
@@ -381,12 +359,54 @@ export default function DepartamentoPessoalView() {
       <div className={styles.header}>
         <h2>👥 Departamento Pessoal</h2>
         <div className={styles.headerActions}>
-          <button className={`${styles.sectionTab} ${styles.sectionTabActive}`}>
+          <button
+            className={`${styles.sectionTab} ${effectiveSection === 'escala' ? styles.sectionTabActive : ''}`}
+            onClick={() => setDpSection('escala')}
+          >
             Escala
           </button>
+          {canSalarios && (
+            <>
+              <button
+                className={`${styles.sectionTab} ${effectiveSection === 'funcionarios' ? styles.sectionTabActive : ''}`}
+                onClick={() => setDpSection('funcionarios')}
+              >
+                Funcionários
+              </button>
+              <button
+                className={`${styles.sectionTab} ${effectiveSection === 'salarios' ? styles.sectionTabActive : ''}`}
+                onClick={() => setDpSection('salarios')}
+              >
+                Salários
+              </button>
+            </>
+          )}
         </div>
       </div>
 
+      {effectiveSection === 'funcionarios' && (
+        <FuncionariosView
+          visibleStores={visibleStores}
+          storeMeta={storeMeta}
+          employees={employees}
+          updateEmployee={updateEmployee}
+          isAdmin={isAdmin}
+        />
+      )}
+
+      {effectiveSection === 'salarios' && (
+        <SalariosView
+          visibleStores={visibleStores}
+          storeMeta={storeMeta}
+          employees={employees}
+          absences={absences}
+          salarios={salarios}
+          setSalario={setSalario}
+          isAdmin={isAdmin}
+        />
+      )}
+
+      {effectiveSection === 'escala' && (<>
       {/* Abas de lojas (+ Ambas) + gerenciar */}
       <div className={styles.storeBar}>
         <div className={styles.storeTabs}>
@@ -833,6 +853,7 @@ export default function DepartamentoPessoalView() {
           <button className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
         </div>
       )}
+      </>)}
     </div>
   );
 }

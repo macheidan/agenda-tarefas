@@ -352,6 +352,16 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                           <span className={styles.sectionLabel}>Depto Pessoal — gerencia funcionários, lojas e marca faltas</span>
                         </label>
                       )}
+                      {s.departamentoPessoalEnabled === true && (
+                        <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
+                          <input
+                            type="checkbox"
+                            checked={s.dpSalariosVisible === true}
+                            onChange={(e) => toggleSection(u.uid, 'dpSalariosVisible', e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>Depto Pessoal — vê Salários e Funcionários (dado sensível; só admin edita)</span>
+                        </label>
+                      )}
                       {s.shoppingListEnabled !== false && (
                         <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
                           <input

@@ -147,6 +147,13 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isDpEditor();
     }
+    // Salários (dado sensível): leitura só para admin ou quem tem a flag
+    // dpSalariosVisible; escrita só admin (inclui o script de importação, que
+    // usa o Firebase Admin SDK e ignora estas regras).
+    match /dpSalarios/{salarioId} {
+      allow read: if isAdmin() || hasSettingFlag('dpSalariosVisible');
+      allow write: if isAdmin();
+    }
 
     // Compras: qualquer logado lê. O catálogo (fornecedores e cadastro de itens)
     // é só de admin/editor; mas qualquer logado pode ajustar a quantidade do

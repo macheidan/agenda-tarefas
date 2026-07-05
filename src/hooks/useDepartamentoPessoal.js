@@ -25,12 +25,22 @@ const DEFAULT_STORES = [
   { id: 'lov', name: 'Lov', order: 1 },
 ];
 
+const pad = (n) => String(n).padStart(2, '0');
+
+// Campos do perfil salarial (resumo O1:P4 das planilhas) guardados no funcionário.
+const SALARY_FIELDS = ['salaryMode', 'salaryBase', 'transporteRef', 'feriadoUnit', 'adiantamento'];
+
+// ID determinístico do doc de salário (1 por funcionário/mês) → upsert idempotente.
+export const salarioDocId = (employeeId, year, month) =>
+  `${employeeId}_${year}-${pad(month + 1)}`;
+
 export function useDepartamentoPessoal() {
   const [stores, setStores] = useState([]);
   const [loadingStores, setLoadingStores] = useState(true);
   const [storesError, setStoresError] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [absences, setAbsences] = useState([]);
+  const [salarios, setSalarios] = useState([]);
 
   // Lojas (com seed das duas lojas padrão se a coleção estiver vazia).
   useEffect(() => {
@@ -87,6 +97,15 @@ export function useDepartamentoPessoal() {
     return unsub;
   }, []);
 
+  // Lançamentos de salário (1 doc por funcionário/mês; contém dia5/dia20/extra).
+  useEffect(() => {
+    const ref = collection(db, 'dpSalarios');
+    const unsub = onSnapshot(ref, (snap) => {
+      setSalarios(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
+
   // ---- Lojas ----
   // Cria as duas lojas padrão (botão manual de fallback).
   const seedDefaultStores = useCallback(async () => {
@@ -123,6 +142,8 @@ export function useDepartamentoPessoal() {
   const addEmployee = useCallback(async (name, storeId, author, extra = {}) => {
     const trimmed = (name || '').trim();
     if (!trimmed || !storeId) return;
+    const salaryExtra = {};
+    SALARY_FIELDS.forEach((k) => { if (k in extra) salaryExtra[k] = extra[k]; });
     await addDoc(collection(db, 'dpEmployees'), {
       name: trimmed,
       store: storeId,
@@ -132,6 +153,7 @@ export function useDepartamentoPessoal() {
       folgaWeekdays: extra.folgaWeekdays ?? null,
       folgaWeekday: extra.folgaWeekday ?? null,
       folgaMonthN: extra.folgaMonthN ?? null,
+      ...salaryExtra,
     });
   }, []);
 
@@ -139,7 +161,7 @@ export function useDepartamentoPessoal() {
     await updateDoc(doc(db, 'dpEmployees', employeeId), { name: (name || '').trim() });
   }, []);
 
-  // Edita nome, loja e/ou configuração de folga do funcionário.
+  // Edita nome, loja, configuração de folga e/ou perfil salarial do funcionário.
   const updateEmployee = useCallback(async (employeeId, updates) => {
     const clean = {};
     if (typeof updates?.name === 'string') clean.name = updates.name.trim();
@@ -147,6 +169,7 @@ export function useDepartamentoPessoal() {
     if (updates && 'folgaWeekdays' in updates) clean.folgaWeekdays = updates.folgaWeekdays;
     if (updates && 'folgaWeekday' in updates) clean.folgaWeekday = updates.folgaWeekday;
     if (updates && 'folgaMonthN' in updates) clean.folgaMonthN = updates.folgaMonthN;
+    SALARY_FIELDS.forEach((k) => { if (updates && k in updates) clean[k] = updates[k]; });
     if (Object.keys(clean).length) {
       await updateDoc(doc(db, 'dpEmployees', employeeId), clean);
     }
@@ -165,6 +188,29 @@ export function useDepartamentoPessoal() {
   const deleteEmployee = useCallback(async (employeeId) => {
     await deleteDoc(doc(db, 'dpEmployees', employeeId));
   }, []);
+
+  // ---- Salários ----
+  // Upsert de uma linha (dia5|dia20|extra) do doc mensal do funcionário.
+  // patch é um objeto parcial com as colunas (salario, banco, flash, ...).
+  const setSalario = useCallback(
+    async (employeeId, storeId, year, month, line, patch, author) => {
+      const id = salarioDocId(employeeId, year, month);
+      await setDoc(
+        doc(db, 'dpSalarios', id),
+        {
+          employeeId,
+          store: storeId,
+          year,
+          month,
+          [line]: patch,
+          updatedAt: Timestamp.now(),
+          updatedBy: author?.uid || '',
+        },
+        { merge: true }
+      );
+    },
+    []
+  );
 
   // ---- Faltas ----
   // type === null limpa a célula; senão cria/atualiza a ocorrência do dia.
@@ -197,6 +243,8 @@ export function useDepartamentoPessoal() {
     seedDefaultStores,
     employees,
     absences,
+    salarios,
+    setSalario,
     addStore,
     renameStore,
     deleteStore,
