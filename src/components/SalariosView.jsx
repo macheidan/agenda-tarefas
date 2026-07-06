@@ -31,6 +31,14 @@ const ROW_BG = { banco: 'chBanco', flash: 'chFlash' };
 // Entrada = entra (azul); Adianta/Empréstimo = sai (vermelho).
 const ROW_FONT = { entrada: 'fontIn', adianta: 'fontOut', empres: 'fontOut' };
 
+// Ícone "copiar" (feather copy), herda a cor via currentColor.
+const CopyIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
 const num = (l, f) => Number(l?.[f]) || 0;
 // Σ(B:G) = valor devido ao funcionário na linha.
 const somaBG = (l) =>
@@ -49,6 +57,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   const [selectedEmpId, setSelectedEmpId] = useState(null);
   const [view, setView] = useState('func'); // 'func' (por funcionário) | 'resumo' (mensal por equipe)
   const [copied, setCopied] = useState(false);
+  const [copiedCell, setCopiedCell] = useState(null);
 
   const activeStore = visibleStores.some((s) => s.id === selectedStore) || selectedStore === ALL_STORES
     ? selectedStore
@@ -114,7 +123,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
       if (s.year === year && s.month === month) docByEmp[s.employeeId] = s;
     }
     const storeIds = isAmbas ? visibleStores.map((s) => s.id) : [activeStore];
-    const zero = { dia5: 0, dia20: 0, extra: 0, total: 0 };
+    const zero = { dia5: 0, dia20: 0, extra: 0, flash5: 0, flash20: 0, total: 0 };
     const groups = [];
     for (const sid of storeIds) {
       const emps = employees
@@ -126,10 +135,15 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
         const dia5 = num(d?.dia5, 'banco');
         const dia20 = num(d?.dia20, 'banco');
         const extra = num(d?.extra, 'banco');
-        return { id: e.id, name: e.name, dia5, dia20, extra, total: dia5 + dia20 + extra };
+        const flash5 = num(d?.dia5, 'flash');
+        const flash20 = num(d?.dia20, 'flash');
+        return { id: e.id, name: e.name, dia5, dia20, extra, flash5, flash20, total: dia5 + dia20 + extra };
       });
       const subtotal = rows.reduce(
-        (t, r) => ({ dia5: t.dia5 + r.dia5, dia20: t.dia20 + r.dia20, extra: t.extra + r.extra, total: t.total + r.total }),
+        (t, r) => ({
+          dia5: t.dia5 + r.dia5, dia20: t.dia20 + r.dia20, extra: t.extra + r.extra,
+          flash5: t.flash5 + r.flash5, flash20: t.flash20 + r.flash20, total: t.total + r.total,
+        }),
         { ...zero }
       );
       groups.push({ storeId: sid, storeName: storeMeta[sid]?.name || '', rows, subtotal });
@@ -139,9 +153,23 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
 
   const hasExtra = resumo.some((g) => g.subtotal.extra !== 0);
   const grandTotal = resumo.reduce(
-    (t, g) => ({ dia5: t.dia5 + g.subtotal.dia5, dia20: t.dia20 + g.subtotal.dia20, extra: t.extra + g.subtotal.extra, total: t.total + g.subtotal.total }),
-    { dia5: 0, dia20: 0, extra: 0, total: 0 }
+    (t, g) => ({
+      dia5: t.dia5 + g.subtotal.dia5, dia20: t.dia20 + g.subtotal.dia20, extra: t.extra + g.subtotal.extra,
+      flash5: t.flash5 + g.subtotal.flash5, flash20: t.flash20 + g.subtotal.flash20, total: t.total + g.subtotal.total,
+    }),
+    { dia5: 0, dia20: 0, extra: 0, flash5: 0, flash20: 0, total: 0 }
   );
+
+  // Copia um valor único (formato colável em banco: "1234,56", sem R$ nem milhar).
+  const copyValue = (key, n) => {
+    const text = (Number(n) || 0).toFixed(2).replace('.', ',');
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => { setCopiedCell(key); setTimeout(() => setCopiedCell((k) => (k === key ? null : k)), 1200); },
+        () => {}
+      );
+    }
+  };
 
   const copyResumo = () => {
     const lines = [`Depósitos ${MONTHS[month]} ${year}`];
@@ -278,8 +306,10 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                 <thead>
                   <tr>
                     <th className={styles.resumoNameCol}>Funcionário</th>
-                    <th>Dia 5</th>
-                    <th>Dia 20</th>
+                    <th>Banco 5</th>
+                    <th>Banco 20</th>
+                    <th>Flash 5</th>
+                    <th>Flash 20</th>
                     {hasExtra && <th>Extra</th>}
                     <th>Total</th>
                   </tr>
@@ -289,7 +319,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                     <Fragment key={g.storeId}>
                       {isAmbas && (
                         <tr className={styles.resumoStoreRow}>
-                          <td colSpan={hasExtra ? 5 : 4}>
+                          <td colSpan={hasExtra ? 7 : 6}>
                             <span className={styles.storeTag} style={{ background: storeMeta[g.storeId]?.color || 'var(--text-secondary)' }}>
                               {(g.storeName || '?').slice(0, 1)}
                             </span>
@@ -300,8 +330,36 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                       {g.rows.map((r) => (
                         <tr key={r.id}>
                           <td className={styles.resumoNameCol}>{r.name}</td>
-                          <td className={styles.chBancoCell}>{r.dia5 ? formatBRL(r.dia5) : '—'}</td>
-                          <td className={styles.chBancoCell}>{r.dia20 ? formatBRL(r.dia20) : '—'}</td>
+                          <td className={styles.chBancoCell}>
+                            {r.dia5 ? (
+                              <span className={styles.copyCell}>
+                                <span>{formatBRL(r.dia5)}</span>
+                                <button
+                                  className={styles.copyBtn}
+                                  title="Copiar valor"
+                                  onClick={() => copyValue(`${r.id}_b5`, r.dia5)}
+                                >
+                                  {copiedCell === `${r.id}_b5` ? '✓' : <CopyIcon />}
+                                </button>
+                              </span>
+                            ) : '—'}
+                          </td>
+                          <td className={styles.chBancoCell}>
+                            {r.dia20 ? (
+                              <span className={styles.copyCell}>
+                                <span>{formatBRL(r.dia20)}</span>
+                                <button
+                                  className={styles.copyBtn}
+                                  title="Copiar valor"
+                                  onClick={() => copyValue(`${r.id}_b20`, r.dia20)}
+                                >
+                                  {copiedCell === `${r.id}_b20` ? '✓' : <CopyIcon />}
+                                </button>
+                              </span>
+                            ) : '—'}
+                          </td>
+                          <td className={styles.chFlashCell}>{r.flash5 ? formatBRL(r.flash5) : '—'}</td>
+                          <td className={styles.chFlashCell}>{r.flash20 ? formatBRL(r.flash20) : '—'}</td>
                           {hasExtra && <td className={styles.chBancoCell}>{r.extra ? formatBRL(r.extra) : '—'}</td>}
                           <td className={styles.resumoRowTotal}>{r.total ? formatBRL(r.total) : '—'}</td>
                         </tr>
@@ -310,6 +368,8 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                         <td className={styles.resumoNameCol}>Total {g.storeName}</td>
                         <td>{formatBRL(g.subtotal.dia5) || 'R$ 0,00'}</td>
                         <td>{formatBRL(g.subtotal.dia20) || 'R$ 0,00'}</td>
+                        <td>{formatBRL(g.subtotal.flash5) || 'R$ 0,00'}</td>
+                        <td>{formatBRL(g.subtotal.flash20) || 'R$ 0,00'}</td>
                         {hasExtra && <td>{formatBRL(g.subtotal.extra) || 'R$ 0,00'}</td>}
                         <td>{formatBRL(g.subtotal.total) || 'R$ 0,00'}</td>
                       </tr>
@@ -320,6 +380,8 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                       <td className={styles.resumoNameCol}>Total geral</td>
                       <td>{formatBRL(grandTotal.dia5) || 'R$ 0,00'}</td>
                       <td>{formatBRL(grandTotal.dia20) || 'R$ 0,00'}</td>
+                      <td>{formatBRL(grandTotal.flash5) || 'R$ 0,00'}</td>
+                      <td>{formatBRL(grandTotal.flash20) || 'R$ 0,00'}</td>
                       {hasExtra && <td>{formatBRL(grandTotal.extra) || 'R$ 0,00'}</td>}
                       <td>{formatBRL(grandTotal.total) || 'R$ 0,00'}</td>
                     </tr>

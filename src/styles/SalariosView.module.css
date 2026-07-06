@@ -437,6 +437,40 @@
   background: var(--ch-banco);
 }
 
+.chFlashCell {
+  background: var(--ch-flash);
+}
+
+/* Valor + botão de copiar lado a lado na célula de Banco. */
+.copyCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.copyBtn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .resumoRowTotal {
   font-weight: 700;
 }
