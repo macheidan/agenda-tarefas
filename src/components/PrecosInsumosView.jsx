@@ -1064,7 +1064,7 @@ function SubiramView({ precos, ocultos }) {
                       <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>{formatDate(i.atualData)}</span>
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--danger)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      ▲ +R$ {i.diff.toFixed(2)}<span style={{ display: 'block', fontSize: 11 }}>+{i.pct.toFixed(1)}%</span>
+                      +R$ {i.diff.toFixed(2)}<span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>+{i.pct.toFixed(1)}%</span>
                     </td>
                     <td style={{ ...tdS, textAlign: 'center' }}>
                       <button
