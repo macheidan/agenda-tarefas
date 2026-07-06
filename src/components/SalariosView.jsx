@@ -171,6 +171,12 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     const existing = doc?.[line] || {};
     setSalario(emp.id, emp.store, year, month, line, { ...existing, [field]: value }, user);
   };
+  // Observações do mês (campo livre no doc dpSalarios, fora das linhas dia5/dia20/extra).
+  const commitObs = (value) => {
+    if (!isAdmin || !emp) return;
+    if ((doc?.obs || '') === value) return;
+    setSalario(emp.id, emp.store, year, month, 'obs', value, user);
+  };
   const setProfile = (field, value) => {
     if (!isAdmin || !emp) return;
     updateEmployee(emp.id, { [field]: value });
@@ -442,6 +448,23 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                   </tr>
                 </tbody>
               </table>
+
+              {/* Observações do mês (após a linha Total) */}
+              <label className={styles.obsField}>
+                <span className={styles.obsLabel}>Observações</span>
+                {isAdmin ? (
+                  <textarea
+                    key={`${emp.id}_${year}_${month}`}
+                    className={styles.obsInput}
+                    rows={3}
+                    defaultValue={doc?.obs || ''}
+                    placeholder="Anotações sobre a folha deste mês…"
+                    onBlur={(e) => commitObs(e.target.value)}
+                  />
+                ) : (
+                  <p className={styles.obsRo}>{doc?.obs || '—'}</p>
+                )}
+              </label>
             </div>
 
             {/* Histórico do ano (todos os pagamentos) */}

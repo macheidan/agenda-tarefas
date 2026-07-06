@@ -462,3 +462,48 @@
   font-weight: 800;
   background: color-mix(in srgb, var(--accent) 12%, var(--card));
 }
+
+/* ---- Observações do mês (detalhe por funcionário) ---- */
+.obsField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.obsLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+}
+
+.obsInput {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.obsInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.obsRo {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
