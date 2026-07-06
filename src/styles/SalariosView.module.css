@@ -441,6 +441,11 @@
   background: var(--ch-flash);
 }
 
+/* Destaque no hover da linha do funcionário (ignora loja/subtotal/total). */
+.resumoTable tbody tr:not(.resumoStoreRow):not(.resumoSubtotal):not(.resumoGrand):hover td {
+  background: color-mix(in srgb, var(--accent) 14%, var(--card));
+}
+
 /* Valor + botão de copiar lado a lado na célula de Banco. */
 .copyCell {
   display: inline-flex;
