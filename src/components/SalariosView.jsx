@@ -358,8 +358,34 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                               </span>
                             ) : '—'}
                           </td>
-                          <td className={styles.chFlashCell}>{r.flash5 ? formatBRL(r.flash5) : '—'}</td>
-                          <td className={styles.chFlashCell}>{r.flash20 ? formatBRL(r.flash20) : '—'}</td>
+                          <td className={styles.chFlashCell}>
+                            {r.flash5 ? (
+                              <span className={styles.copyCell}>
+                                <span>{formatBRL(r.flash5)}</span>
+                                <button
+                                  className={styles.copyBtn}
+                                  title="Copiar valor"
+                                  onClick={() => copyValue(`${r.id}_f5`, r.flash5)}
+                                >
+                                  {copiedCell === `${r.id}_f5` ? '✓' : <CopyIcon />}
+                                </button>
+                              </span>
+                            ) : '—'}
+                          </td>
+                          <td className={styles.chFlashCell}>
+                            {r.flash20 ? (
+                              <span className={styles.copyCell}>
+                                <span>{formatBRL(r.flash20)}</span>
+                                <button
+                                  className={styles.copyBtn}
+                                  title="Copiar valor"
+                                  onClick={() => copyValue(`${r.id}_f20`, r.flash20)}
+                                >
+                                  {copiedCell === `${r.id}_f20` ? '✓' : <CopyIcon />}
+                                </button>
+                              </span>
+                            ) : '—'}
+                          </td>
                           {hasExtra && <td className={styles.chBancoCell}>{r.extra ? formatBRL(r.extra) : '—'}</td>}
                           <td className={styles.resumoRowTotal}>{r.total ? formatBRL(r.total) : '—'}</td>
                         </tr>
