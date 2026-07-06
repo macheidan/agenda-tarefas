@@ -64,7 +64,7 @@ export default function Dashboard() {
   // Só clearAllChats é usado aqui (ArchivedView); a UI de chat não é montada.
   // subscribe:false evita abrir 1+N listeners de mensagens no login.
   const { clearAllChats } = useChat(user, isAdmin, { subscribe: false });
-  const { settings } = useSettings(user.uid);
+  const { settings, loading: settingsLoading } = useSettings(user.uid);
   useTaskAlarm(tasks);
   const { messages: adminMessages, sendMessage: sendAdminMessage, markAsRead: markMessageRead, getUnreadForUser, deleteMessage: deleteAdminMessage } =
     useAdminMessages(user);
@@ -74,18 +74,21 @@ export default function Dashboard() {
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
   const allSettings = useAllSettings(users);
 
-  const calendarEnabled = settings.calendarEnabled !== false;
-  const ideasEnabled = settings.ideasEnabled !== false;
-  const reelsEnabled = settings.reelsEnabled !== false;
-  const contentPlanEnabled = settings.contentPlanEnabled !== false;
-  const notesEnabled = settings.notesEnabled !== false;
-  const shoppingListEnabled = settings.shoppingListEnabled !== false;
-  const reviewsEnabled = settings.reviewsEnabled !== false;
-  const knowledgeEnabled = settings.knowledgeEnabled !== false;
-  const influencersEnabled = settings.influencersEnabled !== false;
-  const precosInsumosEnabled = settings.precosInsumosEnabled !== false;
+  // Enquanto o doc de settings ainda carrega, `settings` está vazio e todos os
+  // `xEnabled !== false` dariam `true` — isso fazia o menu piscar com TODAS as
+  // abas antes de o filtro real chegar. Segura tudo desabilitado até carregar.
+  const calendarEnabled = !settingsLoading && settings.calendarEnabled !== false;
+  const ideasEnabled = !settingsLoading && settings.ideasEnabled !== false;
+  const reelsEnabled = !settingsLoading && settings.reelsEnabled !== false;
+  const contentPlanEnabled = !settingsLoading && settings.contentPlanEnabled !== false;
+  const notesEnabled = !settingsLoading && settings.notesEnabled !== false;
+  const shoppingListEnabled = !settingsLoading && settings.shoppingListEnabled !== false;
+  const reviewsEnabled = !settingsLoading && settings.reviewsEnabled !== false;
+  const knowledgeEnabled = !settingsLoading && settings.knowledgeEnabled !== false;
+  const influencersEnabled = !settingsLoading && settings.influencersEnabled !== false;
+  const precosInsumosEnabled = !settingsLoading && settings.precosInsumosEnabled !== false;
   // Departamento Pessoal: desmarcado por padrão (default OFF).
-  const departamentoPessoalEnabled = settings.departamentoPessoalEnabled === true;
+  const departamentoPessoalEnabled = !settingsLoading && settings.departamentoPessoalEnabled === true;
   const {
     influencers,
     addInfluencer,
