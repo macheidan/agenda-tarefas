@@ -108,6 +108,72 @@ function parseDataISO(raw) {
 
 const PAGE_OPTIONS = [50, 100, 200];
 
+// Janela de dados: por padrao a tela abre nos ultimos 30 dias (paint rapido) e
+// completa ate 12 meses em background. Nunca puxa alem de 12 meses — antes o
+// loadData baixava a tabela `precos` inteira (varios anos) a cada visita, o que
+// deixava a aba lenta pra carregar.
+const RECENT_DAYS = 30;
+const MAX_MONTHS_DAYS = 365;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+// Cache em memoria (modulo) do ultimo carregamento completo (12 meses). Faz a
+// revisita da aba ser instantanea enquanto revalida em background.
+let precosCache = null; // { rows, fmap, ts }
+
+// Puxa linhas de `precos` desde `fromISO` (inclusive), paginando pra nao esbarrar
+// no limite padrao (~1000) do PostgREST. Sem fromISO, puxa tudo.
+async function fetchPrecosSince(fromISO) {
+  const PAGE = 1000;
+  let all = [];
+  for (let p = 0; p < 30; p++) {
+    let q = supabase
+      .from('precos')
+      .select('*, produtos(nome, nome_padrao, categoria, medida_padrao, fator_regra3), fornecedores(nome, nome_curto, categoria)')
+      .order('data', { ascending: false })
+      .range(p * PAGE, p * PAGE + PAGE - 1);
+    if (fromISO) q = q.gte('data', fromISO);
+    const { data, error } = await q;
+    if (error) {
+      console.error('[precos] supabase error:', error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < PAGE) break;
+  }
+  return all;
+}
+
+function mapPrecos(all) {
+  return all.map(r => ({
+    id: r.id,
+    produto_id: r.produto_id,
+    data: parseDataISO(r.data),
+    preco_bruto: Number(r.preco_bruto) || 0,
+    preco_normalizado: Number(r.preco_normalizado) || 0,
+    unidade_normalizada: r.unidade_normalizada || '',
+    qtd_embalagem: Number(r.qtd_embalagem) || 0,
+    unidade_embalagem: r.unidade_embalagem || '',
+    produto: r.produtos?.nome || '',
+    produto_padrao: r.produtos?.nome_padrao || '',
+    fator_regra3: r.produtos?.fator_regra3 ?? null,
+    fornecedor: normalizeFornecedor(r.fornecedores?.nome_curto, r.fornecedores?.nome),
+    loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
+  }));
+}
+
+// Fator (Regra3) e por produto bruto (produto_id): mapa produto_id -> fator
+// inicializado a partir do que ja esta salvo no banco.
+function buildFatores(mapped) {
+  const fmap = {};
+  for (const m of mapped) {
+    if (m.fator_regra3 != null && fmap[m.produto_id] === undefined) {
+      fmap[m.produto_id] = m.fator_regra3;
+    }
+  }
+  return fmap;
+}
+
 // Regra3: o fator multiplica o preco/kg por padrao (ex: "2" -> x2). Com o
 // prefixo "/" ele divide (ex: "/2" -> dividido por 2). Aceita virgula decimal.
 // Retorna o resultado numerico ou null se o campo estiver vazio/invalido.
@@ -168,6 +234,8 @@ export default function PrecosInsumosView() {
   // usa este, e nao o que esta sendo digitado, pra que a linha nao suma da lista
   // no meio da digitacao — so depois de confirmar (Enter ou clicar fora).
   const [fatoresSalvos, setFatoresSalvos] = useState({});
+  // Evita disparar dois carregamentos completos (12 meses) simultaneos.
+  const loadingFullRef = useRef(false);
   useEffect(() => { loadData(); }, []);
 
   function handleFatorChange(produtoId, raw) {
@@ -207,61 +275,53 @@ export default function PrecosInsumosView() {
     if (error) console.error('[precos] erro ao salvar fator:', error);
   }
 
-  async function loadData() {
+  // Aplica um conjunto de linhas ja mapeadas ao estado (precos + fatores).
+  function aplicarPrecos(mapped) {
+    const fmap = buildFatores(mapped);
+    setFatores(fmap);
+    setFatoresSalvos(fmap);
+    setPrecos(mapped);
+  }
+
+  // Carrega os 12 meses completos e atualiza o cache. Roda em background depois
+  // da pintura rapida (30 dias) e na revalidacao do cache.
+  async function carregarCompleto() {
+    if (loadingFullRef.current) return;
+    loadingFullRef.current = true;
+    try {
+      const mapped = mapPrecos(await fetchPrecosSince(daysAgo(MAX_MONTHS_DAYS)));
+      precosCache = { rows: mapped, fmap: buildFatores(mapped), ts: Date.now() };
+      aplicarPrecos(mapped);
+    } catch (e) {
+      console.error('[precos] catch (completo):', e);
+    } finally {
+      loadingFullRef.current = false;
+    }
+  }
+
+  async function loadData(force = false) {
+    // Cache quente: mostra na hora e revalida em background (12 meses).
+    if (!force && precosCache && Date.now() - precosCache.ts < CACHE_TTL_MS) {
+      setPrecos(precosCache.rows);
+      setFatores(precosCache.fmap);
+      setFatoresSalvos(precosCache.fmap);
+      setLoading(false);
+      carregarCompleto();
+      return;
+    }
+
     setLoading(true);
     try {
-      // Pagina pra nao esbarrar no limite padrao de linhas do PostgREST (~1000),
-      // que poderia esconder parte das notas.
-      const PAGE = 1000;
-      let all = [];
-      for (let p = 0; p < 30; p++) {
-        const { data, error } = await supabase
-          .from('precos')
-          .select('*, produtos(nome, nome_padrao, categoria, medida_padrao, fator_regra3), fornecedores(nome, nome_curto, categoria)')
-          .order('data', { ascending: false })
-          .range(p * PAGE, p * PAGE + PAGE - 1);
-
-        if (error) {
-          console.error('[precos] supabase error:', error);
-          break;
-        }
-        if (!data || data.length === 0) break;
-        all = all.concat(data);
-        if (data.length < PAGE) break;
-      }
-
-      const mapped = all.map(r => ({
-        id: r.id,
-        produto_id: r.produto_id,
-        data: parseDataISO(r.data),
-        preco_bruto: Number(r.preco_bruto) || 0,
-        preco_normalizado: Number(r.preco_normalizado) || 0,
-        unidade_normalizada: r.unidade_normalizada || '',
-        qtd_embalagem: Number(r.qtd_embalagem) || 0,
-        unidade_embalagem: r.unidade_embalagem || '',
-        produto: r.produtos?.nome || '',
-        produto_padrao: r.produtos?.nome_padrao || '',
-        fator_regra3: r.produtos?.fator_regra3 ?? null,
-        fornecedor: normalizeFornecedor(r.fornecedores?.nome_curto, r.fornecedores?.nome),
-        loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
-      }));
-
-      // Fator (Regra3) e por produto bruto (produto_id), nao por linha de preco.
-      // Inicializa o mapa produto_id -> fator a partir do que ja esta salvo no banco.
-      const fmap = {};
-      for (const m of mapped) {
-        if (m.fator_regra3 != null && fmap[m.produto_id] === undefined) {
-          fmap[m.produto_id] = m.fator_regra3;
-        }
-      }
-      setFatores(fmap);
-      setFatoresSalvos(fmap);
-
-      setPrecos(mapped);
+      // Fase 1: ultimos 30 dias -> paint rapido (bem menos linhas que a tabela toda).
+      const recentes = mapPrecos(await fetchPrecosSince(daysAgo(RECENT_DAYS)));
+      aplicarPrecos(recentes);
+      setLoading(false);
+      // Fase 2: completa ate 12 meses sem travar a tela.
+      await carregarCompleto();
     } catch (e) {
       console.error('[precos] catch:', e);
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const fornecedoresUnicos = useMemo(() =>
@@ -388,7 +448,7 @@ export default function PrecosInsumosView() {
     return (
       <div>
         {header}
-        <CadastrarView onSaved={loadData} ocultos={ocultosSet} />
+        <CadastrarView onSaved={() => loadData(true)} ocultos={ocultosSet} />
       </div>
     );
   }
@@ -414,7 +474,7 @@ export default function PrecosInsumosView() {
 
       {/* Diagnostico de carregamento do banco (todos os registros, sem filtro) */}
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, padding: '6px 10px', background: 'var(--bg, #f5f5f5)', borderRadius: 6 }}>
-        Banco: <strong>{precos.length}</strong> registros carregados · datas no banco: <strong>{dataMin}</strong> → <strong>{dataMax}</strong>
+        Banco: <strong>{precos.length}</strong> registros carregados (ultimos 12 meses) · datas: <strong>{dataMin}</strong> → <strong>{dataMax}</strong>
         {semData > 0 && <> · <strong>{semData}</strong> sem data válida</>}
       </div>
 
@@ -441,9 +501,9 @@ export default function PrecosInsumosView() {
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 260px' }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>De</span>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={{ ...inputS, flex: 1 }} />
+          <input type="date" value={dataInicio} min={daysAgo(MAX_MONTHS_DAYS)} max={dataFim || undefined} onChange={e => setDataInicio(e.target.value)} title="Dados carregados dos ultimos 12 meses" style={{ ...inputS, flex: 1 }} />
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ate</span>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} style={{ ...inputS, flex: 1 }} />
+          <input type="date" value={dataFim} min={daysAgo(MAX_MONTHS_DAYS)} onChange={e => setDataFim(e.target.value)} style={{ ...inputS, flex: 1 }} />
         </div>
         <select value={porPagina} onChange={e => setPorPagina(Number(e.target.value))} style={{ ...inputS, width: 75 }}>
           {PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}/pag</option>)}
