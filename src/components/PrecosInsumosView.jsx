@@ -566,20 +566,22 @@ export default function PrecosInsumosView() {
                         style={fatorInputS}
                       />
                     </td>
-                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>{(() => {
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)' }}>{(() => {
                       const res = calcResultado(p.preco_normalizado, fatores[p.produto_id]);
                       return res == null ? '—' : 'R$ ' + res.toFixed(2);
                     })()}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
                       const ant = precoAnteriorPorId[p.id];
                       if (ant == null) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
-                      const subiu = p.preco_normalizado > ant + 1e-9;
-                      const desceu = p.preco_normalizado < ant - 1e-9;
-                      const cor = subiu ? 'var(--danger)' : desceu ? 'var(--success)' : 'var(--text-muted)';
-                      const seta = subiu ? '▲' : desceu ? '▼' : '=';
+                      const diff = p.preco_normalizado - ant;
+                      if (Math.abs(diff) < 1e-9) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+                      const subiu = diff > 0;
+                      const cor = subiu ? 'var(--danger)' : 'var(--success)';
+                      const seta = subiu ? '▲' : '▼';
+                      const sinal = subiu ? '+' : '−';
                       return (
-                        <span style={{ color: cor, fontSize: 12, whiteSpace: 'nowrap' }} title="Preço da última compra">
-                          {seta} R$ {ant.toFixed(2)}
+                        <span style={{ color: cor, fontSize: 12, whiteSpace: 'nowrap' }} title={`Última compra: R$ ${ant.toFixed(2)}`}>
+                          {seta} {sinal}R$ {Math.abs(diff).toFixed(2)}
                         </span>
                       );
                     })()}</td>
