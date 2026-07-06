@@ -353,3 +353,112 @@
   font-weight: 700;
   background: var(--bg-secondary);
 }
+
+/* ---- Toggle de visão: por funcionário / resumo mensal ---- */
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.viewBtn {
+  padding: 7px 14px;
+  border: none;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.viewBtn + .viewBtn {
+  border-left: 1px solid var(--border);
+}
+
+.viewBtnActive {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---- Resumo mensal por equipe ---- */
+.resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resumoBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.resumoNote {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.resumoWrap {
+  overflow-x: auto;
+}
+
+.resumoTable {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.resumoTable th,
+.resumoTable td {
+  border: 1px solid var(--border-light);
+  padding: 7px 10px;
+  text-align: right;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.resumoTable th {
+  background: var(--toolbar-bg);
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.resumoNameCol {
+  text-align: left !important;
+  font-weight: 600;
+}
+
+.chBancoCell {
+  background: var(--ch-banco);
+}
+
+.resumoRowTotal {
+  font-weight: 700;
+}
+
+.resumoStoreRow td {
+  text-align: left !important;
+  font-weight: 700;
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+.resumoStoreRow .storeTag {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.resumoSubtotal td {
+  font-weight: 700;
+  background: var(--toolbar-bg);
+}
+
+.resumoGrand td {
+  font-weight: 800;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
 import { formatBRL } from '../utils/money';
@@ -47,6 +47,8 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   const [month, setMonth] = useState(today.getMonth());
   const [selectedStore, setSelectedStore] = useState(visibleStores[0]?.id || ALL_STORES);
   const [selectedEmpId, setSelectedEmpId] = useState(null);
+  const [view, setView] = useState('func'); // 'func' (por funcionário) | 'resumo' (mensal por equipe)
+  const [copied, setCopied] = useState(false);
 
   const activeStore = visibleStores.some((s) => s.id === selectedStore) || selectedStore === ALL_STORES
     ? selectedStore
@@ -102,6 +104,68 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   );
   const anoTotais = anual.reduce((t, a) => ({ pago: t.pago + a.pago, fora: t.fora + a.fora }), { pago: 0, fora: 0 });
 
+  // ---- Resumo mensal por equipe ----
+  // Foco: quanto depositar no BANCO de cada funcionário no dia 5 e no dia 20.
+  // Agrupa por loja (equipe), com subtotais e total geral. Só lê o campo `banco`
+  // de cada linha (dia5/dia20/extra) do doc de salário do mês selecionado.
+  const resumo = useMemo(() => {
+    const docByEmp = {};
+    for (const s of salarios) {
+      if (s.year === year && s.month === month) docByEmp[s.employeeId] = s;
+    }
+    const storeIds = isAmbas ? visibleStores.map((s) => s.id) : [activeStore];
+    const zero = { dia5: 0, dia20: 0, extra: 0, total: 0 };
+    const groups = [];
+    for (const sid of storeIds) {
+      const emps = employees
+        .filter((e) => e.store === sid && e.active !== false)
+        .sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
+      if (!emps.length) continue;
+      const rows = emps.map((e) => {
+        const d = docByEmp[e.id];
+        const dia5 = num(d?.dia5, 'banco');
+        const dia20 = num(d?.dia20, 'banco');
+        const extra = num(d?.extra, 'banco');
+        return { id: e.id, name: e.name, dia5, dia20, extra, total: dia5 + dia20 + extra };
+      });
+      const subtotal = rows.reduce(
+        (t, r) => ({ dia5: t.dia5 + r.dia5, dia20: t.dia20 + r.dia20, extra: t.extra + r.extra, total: t.total + r.total }),
+        { ...zero }
+      );
+      groups.push({ storeId: sid, storeName: storeMeta[sid]?.name || '', rows, subtotal });
+    }
+    return groups;
+  }, [salarios, employees, year, month, isAmbas, visibleStores, activeStore, storeMeta]);
+
+  const hasExtra = resumo.some((g) => g.subtotal.extra !== 0);
+  const grandTotal = resumo.reduce(
+    (t, g) => ({ dia5: t.dia5 + g.subtotal.dia5, dia20: t.dia20 + g.subtotal.dia20, extra: t.extra + g.subtotal.extra, total: t.total + g.subtotal.total }),
+    { dia5: 0, dia20: 0, extra: 0, total: 0 }
+  );
+
+  const copyResumo = () => {
+    const lines = [`Depósitos ${MONTHS[month]} ${year}`];
+    for (const g of resumo) {
+      lines.push('', `*${g.storeName}*`);
+      for (const r of g.rows) {
+        if (!r.total) continue;
+        const parts = [];
+        if (r.dia5) parts.push(`dia 5: ${formatBRL(r.dia5)}`);
+        if (r.dia20) parts.push(`dia 20: ${formatBRL(r.dia20)}`);
+        if (r.extra) parts.push(`extra: ${formatBRL(r.extra)}`);
+        lines.push(`${r.name} — ${parts.join(' · ')}`);
+      }
+      lines.push(`_Total ${g.storeName}: dia 5 ${formatBRL(g.subtotal.dia5)} · dia 20 ${formatBRL(g.subtotal.dia20)}_`);
+    }
+    const text = lines.join('\n');
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => { setCopied(true); setTimeout(() => setCopied(false), 1500); },
+        () => {}
+      );
+    }
+  };
+
   const commit = (line, field, value) => {
     if (!isAdmin || !emp) return;
     const existing = doc?.[line] || {};
@@ -155,21 +219,111 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
             </button>
           </div>
         )}
-        <select
-          className={styles.empSelect}
-          value={emp?.id || ''}
-          onChange={(e) => setSelectedEmpId(e.target.value)}
-        >
-          {list.length === 0 && <option value="">Nenhum funcionário</option>}
-          {list.map((e) => (
-            <option key={e.id} value={e.id}>
-              {isAmbas && storeMeta[e.store] ? `${storeMeta[e.store].name} — ${e.name}` : e.name}
-            </option>
-          ))}
-        </select>
+        <div className={styles.viewToggle}>
+          <button
+            className={`${styles.viewBtn} ${view === 'func' ? styles.viewBtnActive : ''}`}
+            onClick={() => setView('func')}
+          >
+            Por funcionário
+          </button>
+          <button
+            className={`${styles.viewBtn} ${view === 'resumo' ? styles.viewBtnActive : ''}`}
+            onClick={() => setView('resumo')}
+          >
+            Resumo mensal
+          </button>
+        </div>
+        {view === 'func' && (
+          <select
+            className={styles.empSelect}
+            value={emp?.id || ''}
+            onChange={(e) => setSelectedEmpId(e.target.value)}
+          >
+            {list.length === 0 && <option value="">Nenhum funcionário</option>}
+            {list.map((e) => (
+              <option key={e.id} value={e.id}>
+                {isAmbas && storeMeta[e.store] ? `${storeMeta[e.store].name} — ${e.name}` : e.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
-      {!emp ? (
+      {view === 'resumo' ? (
+        <div className={styles.resumo}>
+          <div className={styles.resumoBar}>
+            <div className={styles.monthNav}>
+              <button className={styles.navBtn} onClick={prevMonth} aria-label="Mês anterior">‹</button>
+              <span className={styles.monthLabel}>{MONTHS[month]} {year}</span>
+              <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
+            </div>
+            <button className={styles.applyBtn} onClick={copyResumo}>
+              {copied ? 'Copiado!' : 'Copiar lista'}
+            </button>
+          </div>
+          <p className={styles.resumoNote}>
+            Valor a <strong>depositar no banco</strong> de cada funcionário — dia 5 e dia 20.
+          </p>
+          {resumo.length === 0 ? (
+            <p className={styles.empty}>Nenhum funcionário para exibir.</p>
+          ) : (
+            <div className={styles.resumoWrap}>
+              <table className={styles.resumoTable}>
+                <thead>
+                  <tr>
+                    <th className={styles.resumoNameCol}>Funcionário</th>
+                    <th>Dia 5</th>
+                    <th>Dia 20</th>
+                    {hasExtra && <th>Extra</th>}
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resumo.map((g) => (
+                    <Fragment key={g.storeId}>
+                      {isAmbas && (
+                        <tr className={styles.resumoStoreRow}>
+                          <td colSpan={hasExtra ? 5 : 4}>
+                            <span className={styles.storeTag} style={{ background: storeMeta[g.storeId]?.color || 'var(--text-secondary)' }}>
+                              {(g.storeName || '?').slice(0, 1)}
+                            </span>
+                            {g.storeName}
+                          </td>
+                        </tr>
+                      )}
+                      {g.rows.map((r) => (
+                        <tr key={r.id}>
+                          <td className={styles.resumoNameCol}>{r.name}</td>
+                          <td className={styles.chBancoCell}>{r.dia5 ? formatBRL(r.dia5) : '—'}</td>
+                          <td className={styles.chBancoCell}>{r.dia20 ? formatBRL(r.dia20) : '—'}</td>
+                          {hasExtra && <td className={styles.chBancoCell}>{r.extra ? formatBRL(r.extra) : '—'}</td>}
+                          <td className={styles.resumoRowTotal}>{r.total ? formatBRL(r.total) : '—'}</td>
+                        </tr>
+                      ))}
+                      <tr className={styles.resumoSubtotal}>
+                        <td className={styles.resumoNameCol}>Total {g.storeName}</td>
+                        <td>{formatBRL(g.subtotal.dia5) || 'R$ 0,00'}</td>
+                        <td>{formatBRL(g.subtotal.dia20) || 'R$ 0,00'}</td>
+                        {hasExtra && <td>{formatBRL(g.subtotal.extra) || 'R$ 0,00'}</td>}
+                        <td>{formatBRL(g.subtotal.total) || 'R$ 0,00'}</td>
+                      </tr>
+                    </Fragment>
+                  ))}
+                  {isAmbas && resumo.length > 1 && (
+                    <tr className={styles.resumoGrand}>
+                      <td className={styles.resumoNameCol}>Total geral</td>
+                      <td>{formatBRL(grandTotal.dia5) || 'R$ 0,00'}</td>
+                      <td>{formatBRL(grandTotal.dia20) || 'R$ 0,00'}</td>
+                      {hasExtra && <td>{formatBRL(grandTotal.extra) || 'R$ 0,00'}</td>}
+                      <td>{formatBRL(grandTotal.total) || 'R$ 0,00'}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : !emp ? (
         <p className={styles.empty}>Nenhum funcionário. Cadastre na aba <strong>Escala</strong>.</p>
       ) : (
         <>
