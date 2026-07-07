@@ -295,14 +295,14 @@ export default function DepartamentoPessoalViewV2() {
       {/* Cabeçalho editorial */}
       <div className={styles.hero}>
         <div className={styles.heroLeft}>
-          <span className={styles.kicker}>Dáme &amp; Lov · Turno</span>
+          <span className={styles.kicker}>Dáme &amp; Lov · Escala</span>
           <h2 className={styles.title}>Departamento <em>Pessoal</em></h2>
           <p className={styles.subtitle}>
             Escala de faltas, folgas e feriados trabalhados — e o transporte a pagar do ciclo.
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
-          <span className={styles.seal}><span className={styles.sealDot} /> Visual V2 · Brasa</span>
+          <span className={styles.seal}><span className={styles.sealDot} /> Visual V2 · Papel</span>
           {sectionTabs}
         </div>
       </div>
@@ -464,7 +464,7 @@ export default function DepartamentoPessoalViewV2() {
 
         {/* Grade / estados */}
         {loadingStores ? (
-          <p className={styles.empty}>Acendendo o forno…</p>
+          <p className={styles.empty}>Carregando a escala…</p>
         ) : stores.length === 0 ? (
           <div className={styles.empty}>
             <p>Nenhuma loja cadastrada ainda.</p>

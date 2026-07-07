@@ -153,7 +153,7 @@ export default function Header({
           {showDpV2Toggle && (
             <button
               onClick={onToggleDpV2}
-              title={dpV2 ? 'Voltar ao visual clássico' : 'Experimentar o novo visual (V2 · Brasa)'}
+              title={dpV2 ? 'Voltar ao visual clássico' : 'Experimentar o novo visual (V2 · Papel)'}
               aria-pressed={dpV2}
               style={{
                 display: 'inline-flex',
@@ -167,11 +167,9 @@ export default function Header({
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 border: dpV2 ? '1px solid transparent' : '1px solid var(--border)',
-                background: dpV2
-                  ? 'linear-gradient(180deg, #f6a723, #ec6a3e)'
-                  : 'var(--card-bg, transparent)',
-                color: dpV2 ? '#1a120d' : 'var(--text-secondary)',
-                boxShadow: dpV2 ? '0 4px 14px -6px rgba(236,106,62,0.9)' : 'none',
+                background: dpV2 ? '#1f6b4f' : 'var(--card-bg, transparent)',
+                color: dpV2 ? '#fff' : 'var(--text-secondary)',
+                boxShadow: dpV2 ? '0 4px 14px -6px rgba(31,107,79,0.8)' : 'none',
                 transition: 'all 0.16s ease',
               }}
             >
@@ -180,8 +178,8 @@ export default function Header({
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  background: dpV2 ? '#1a120d' : '#ec6a3e',
-                  boxShadow: dpV2 ? 'none' : '0 0 8px 1px rgba(236,106,62,0.7)',
+                  background: dpV2 ? '#fff' : '#1f6b4f',
+                  boxShadow: 'none',
                 }}
               />
               V2
