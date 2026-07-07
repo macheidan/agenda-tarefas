@@ -27,37 +27,30 @@
   min-width: 0;
 }
 
-/* Aba do calendário em telas largas (>=1500px): .main abre mão do teto de
-   1200px pra manter o calendário no tamanho ORIGINAL (1152px) centralizado e
-   encaixar um lembrete em cada gutter lateral. O calendário tem prioridade de
-   largura (minmax fixo em 1152); as laterais (1fr) é que encolhem pra caber. */
-@media (min-width: 1500px) {
-  .mainCalendar {
-    max-width: none;
-    overflow-x: visible;
-  }
-  .calendarLayout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1152px) minmax(0, 1fr);
-    align-items: start;
-    gap: 24px;
-  }
-  .calendarLayout > :first-child {
-    justify-self: end;
-  }
-  .calendarLayout > :last-child {
-    justify-self: start;
-  }
+/* Aba do calendário: .main abre mão do teto de 1200px pra manter o calendário
+   largo (até 1152px, com PRIORIDADE de largura) e ainda mostrar SEMPRE um
+   lembrete em cada lado. As laterais têm largura mínima garantida (150px, nunca
+   somem no desktop) e máxima de 200px; o calendário fica com o restante,
+   encolhendo só quando não há espaço pras duas coisas juntas. No mobile
+   (<=768px) o calendário usa o MobileCalendarView e este layout nem renderiza. */
+.mainCalendar {
+  max-width: none;
+  overflow-x: visible;
 }
 
-/* Abaixo de 1500px (tablets e mobile): não sobra largura confortável pras
-   laterais sem espremer o calendário — escondemos os lembretes e mantemos o
-   calendário na largura normal. No mobile (<=768px) nem chega aqui, pois usa
-   o MobileCalendarView. */
-@media (max-width: 1499px) {
-  .calendarLayout > aside {
-    display: none;
-  }
+.calendarLayout {
+  display: grid;
+  grid-template-columns: minmax(150px, 200px) minmax(0, 1152px) minmax(150px, 200px);
+  justify-content: center;
+  align-items: start;
+  gap: 24px;
+}
+
+.calendarLayout > :first-child {
+  justify-self: end;
+}
+.calendarLayout > :last-child {
+  justify-self: start;
 }
 
 /* Espaço para a barra de navegação inferior (fixa) no mobile.
