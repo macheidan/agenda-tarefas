@@ -18,7 +18,7 @@ const MONTHS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-const STORE_COLORS = ['#ec6a3e', '#f6a723', '#5ab27a', '#9c6ade', '#f04438', '#3aa0c4'];
+const STORE_COLORS = ['#4f46e5', '#0ea5e9', '#059669', '#9333ea', '#e11d48', '#d97706'];
 const ALL_STORES = '__all__';
 const FOLGA_WEEK = [[1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta'], [5, 'Sexta'], [6, 'Sábado'], [0, 'Domingo']];
 
@@ -302,7 +302,7 @@ export default function DepartamentoPessoalViewV2() {
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
-          <span className={styles.seal}><span className={styles.sealDot} /> Visual V2 · Papel</span>
+          <span className={styles.seal}><span className={styles.sealDot} /> Visual V2 · Clean</span>
           {sectionTabs}
         </div>
       </div>
@@ -327,13 +327,12 @@ export default function DepartamentoPessoalViewV2() {
         <div className={styles.controlBar}>
           <div className={styles.storeChips}>
             {visibleStores.map((s) => {
-              const color = storeMeta[s.id]?.color || 'var(--v2-ember)';
+              const color = storeMeta[s.id]?.color || 'var(--v2-accent)';
               const active = s.id === activeStore;
               return (
                 <button
                   key={s.id}
                   className={`${styles.chip} ${active ? styles.chipActive : ''}`}
-                  style={active ? { background: color } : undefined}
                   onClick={() => setSelectedStore(s.id)}
                 >
                   <span className={styles.chipDot} style={{ background: active ? '#fff' : color }} />
@@ -344,7 +343,6 @@ export default function DepartamentoPessoalViewV2() {
             {visibleStores.length > 1 && (
               <button
                 className={`${styles.chip} ${isAmbas ? styles.chipActive : ''}`}
-                style={isAmbas ? { background: 'var(--v2-cream-faint)' } : undefined}
                 onClick={() => setSelectedStore(ALL_STORES)}
               >Ambas</button>
             )}

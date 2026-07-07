@@ -153,7 +153,7 @@ export default function Header({
           {showDpV2Toggle && (
             <button
               onClick={onToggleDpV2}
-              title={dpV2 ? 'Voltar ao visual clássico' : 'Experimentar o novo visual (V2 · Papel)'}
+              title={dpV2 ? 'Voltar ao visual clássico' : 'Experimentar o novo visual (V2 · Clean)'}
               aria-pressed={dpV2}
               style={{
                 display: 'inline-flex',
@@ -166,10 +166,10 @@ export default function Header({
                 letterSpacing: '0.02em',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                border: dpV2 ? '1px solid transparent' : '1px solid var(--border)',
-                background: dpV2 ? '#1f6b4f' : 'var(--card-bg, transparent)',
+                border: dpV2 ? '1px solid #18181b' : '1px solid var(--border)',
+                background: dpV2 ? '#18181b' : 'var(--card-bg, transparent)',
                 color: dpV2 ? '#fff' : 'var(--text-secondary)',
-                boxShadow: dpV2 ? '0 4px 14px -6px rgba(31,107,79,0.8)' : 'none',
+                boxShadow: 'none',
                 transition: 'all 0.16s ease',
               }}
             >
@@ -178,7 +178,7 @@ export default function Header({
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  background: dpV2 ? '#fff' : '#1f6b4f',
+                  background: dpV2 ? '#fff' : '#18181b',
                   boxShadow: 'none',
                 }}
               />
