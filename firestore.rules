@@ -60,6 +60,13 @@ service cloud.firestore {
       allow update, delete: if resource.data.uid == request.auth.uid || isAdmin();
     }
 
+    // Lembretes (post-its do calendário): dono lê/escreve os seus, admin todos
+    match /stickyNotes/{noteId} {
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn();
+      allow update, delete: if resource.data.uid == request.auth.uid || isAdmin();
+    }
+
     // Ideias: qualquer logado lê e cria, admin pode tudo
     match /ideas/{ideaId} {
       allow read: if isSignedIn();

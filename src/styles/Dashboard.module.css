@@ -22,6 +22,24 @@
   overflow-x: hidden;
 }
 
+/* Calendário + painel de post-its lado a lado. */
+.calendarLayout {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.calendarMain {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .calendarLayout {
+    flex-direction: column;
+  }
+}
+
 /* Espaço para a barra de navegação inferior (fixa) no mobile.
    O padding-bottom vem DEPOIS do shorthand em cada bloco pra não ser sobrescrito. */
 @media (max-width: 768px) {

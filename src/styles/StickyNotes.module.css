@@ -1,0 +1,214 @@
+/* Painel de post-its ao lado do calendário (estilo Microsoft Sticky Notes). */
+.panel {
+  flex: 0 0 268px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.addBtn {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.addBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Card do post-it */
+.note {
+  border-radius: 4px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* leve inclinação orgânica */
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.note:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+}
+
+.noteBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 0 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.note:hover .noteBar,
+.note:focus-within .noteBar {
+  opacity: 1;
+}
+
+.barBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(40, 30, 10, 0.55);
+  line-height: 0;
+}
+
+.barBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(40, 30, 10, 0.9);
+}
+
+.paletteWrap {
+  position: relative;
+}
+
+.colorDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(40, 30, 10, 0.45);
+  display: block;
+}
+
+.palette {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px;
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.swatchActive {
+  border-color: var(--text);
+}
+
+.noteText {
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  width: 100%;
+  padding: 6px 14px 16px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #2b2417;
+  overflow: hidden;
+  min-height: 64px;
+}
+
+.noteText::placeholder {
+  color: rgba(43, 36, 23, 0.4);
+}
+
+/* Estado vazio */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 12px;
+  border: 1.5px dashed var(--border-light);
+  border-radius: var(--radius-lg);
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.empty:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.emptyPlus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* --- Cores dos post-its (fixas, estilo MS Sticky Notes) --- */
+.yellow { background: #fef3a6; }
+.green { background: #cdeeb6; }
+.pink { background: #ffcfe0; }
+.blue { background: #c5e4ff; }
+.purple { background: #e4d3f6; }
+.gray { background: #e6e8ec; }
+
+/* Swatch usa a mesma cor de fundo */
+.swatch.yellow { background: #fef3a6; }
+.swatch.green { background: #cdeeb6; }
+.swatch.pink { background: #ffcfe0; }
+.swatch.blue { background: #c5e4ff; }
+.swatch.purple { background: #e4d3f6; }
+.swatch.gray { background: #e6e8ec; }
+
+/* Dot da barra herda a cor do card via mix — mantém tinta escura legível */
+.yellow .colorDot { background: #f4d23a; }
+.green .colorDot { background: #7fc45c; }
+.pink .colorDot { background: #ff8ab3; }
+.blue .colorDot { background: #6fb6f5; }
+.purple .colorDot { background: #b189e0; }
+.gray .colorDot { background: #b7bcc4; }
+
+/* No tema escuro, os post-its permanecem coloridos e a tinta escura garante
+   contraste — apenas suavizamos um pouco a luminosidade pra não estourar. */
+:global([data-theme='dark']) .note {
+  filter: brightness(0.95) saturate(0.95);
+}
+
+/* Empilha abaixo do calendário em telas estreitas */
+@media (max-width: 900px) {
+  .panel {
+    flex-basis: auto;
+  }
+}

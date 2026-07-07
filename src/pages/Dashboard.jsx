@@ -11,6 +11,7 @@ import { useScripts } from '../hooks/useScripts';
 import { useContentPlan } from '../hooks/useContentPlan';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
+import { useStickyNotes } from '../hooks/useStickyNotes';
 import { useReviews } from '../hooks/useReviews';
 import { useCompletedTasks } from '../hooks/useCompletedTasks';
 import { useAllSettings } from '../hooks/useAllSettings';
@@ -31,6 +32,7 @@ import styles from '../styles/Dashboard.module.css';
 // FullCalendar (Calendar/ContentPlan), Supabase (Preços) e views grandes só
 // baixam quando a aba é aberta.
 const CalendarView = lazy(() => import('../components/CalendarView'));
+const StickyNotes = lazy(() => import('../components/StickyNotes'));
 const NotesView = lazy(() => import('../components/NotesView'));
 const ArchivedView = lazy(() => import('../components/ArchivedView'));
 const CompletedView = lazy(() => import('../components/CompletedView'));
@@ -71,6 +73,8 @@ export default function Dashboard() {
   const unreadMessage = getUnreadForUser(user.uid);
 
   const { notes, addNote, updateNote, deleteNote } = useNotes(selectedUid);
+  const { stickyNotes, addStickyNote, updateStickyNote, deleteStickyNote } =
+    useStickyNotes(selectedUid);
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
   const allSettings = useAllSettings(users);
 
@@ -187,11 +191,21 @@ export default function Dashboard() {
               onTaskClick={handleTaskClick}
             />
           ) : (
-            <CalendarView
-              tasks={tasks}
-              onDateClick={handleDateClick}
-              onTaskClick={handleTaskClick}
-            />
+            <div className={styles.calendarLayout}>
+              <div className={styles.calendarMain}>
+                <CalendarView
+                  tasks={tasks}
+                  onDateClick={handleDateClick}
+                  onTaskClick={handleTaskClick}
+                />
+              </div>
+              <StickyNotes
+                stickyNotes={stickyNotes}
+                addStickyNote={addStickyNote}
+                updateStickyNote={updateStickyNote}
+                deleteStickyNote={deleteStickyNote}
+              />
+            </div>
           )
         )}
         {activeTab === 'ideas' && ideasEnabled && (
