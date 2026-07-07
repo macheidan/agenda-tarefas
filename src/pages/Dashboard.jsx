@@ -43,7 +43,6 @@ const ReviewsView = lazy(() => import('../components/ReviewsView'));
 const KnowledgeView = lazy(() => import('../components/KnowledgeView'));
 const PrecosInsumosView = lazy(() => import('../components/PrecosInsumosView'));
 const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPessoalView'));
-const DepartamentoPessoalViewV2 = lazy(() => import('../components/DepartamentoPessoalViewV2'));
 const ComprasView = lazy(() => import('../components/ComprasView'));
 
 export default function Dashboard() {
@@ -54,15 +53,6 @@ export default function Dashboard() {
 
   const [selectedUid, setSelectedUid] = useState(user.uid);
   const [activeTab, setActiveTab] = useState('calendar');
-  // Toggle do redesenho (V2 "Brasa") do Depto Pessoal, lembrado no navegador.
-  const [dpV2, setDpV2] = useState(() => {
-    try { return localStorage.getItem('dpV2') === '1'; } catch { return false; }
-  });
-  const toggleDpV2 = () => setDpV2((v) => {
-    const next = !v;
-    try { localStorage.setItem('dpV2', next ? '1' : '0'); } catch { /* ignora */ }
-    return next;
-  });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [initialDate, setInitialDate] = useState(null);
@@ -179,9 +169,6 @@ export default function Dashboard() {
         customName={settings.customName}
         allSettings={allSettings}
         tabsOrder={tabsOrder}
-        showDpV2Toggle={activeTab === 'departamentoPessoal' && departamentoPessoalEnabled}
-        dpV2={dpV2}
-        onToggleDpV2={toggleDpV2}
       />
 
       {viewingOther && viewingUser && (
@@ -289,9 +276,7 @@ export default function Dashboard() {
           />
         )}
         {activeTab === 'precosInsumos' && precosInsumosEnabled && <PrecosInsumosView />}
-        {activeTab === 'departamentoPessoal' && departamentoPessoalEnabled && (
-          dpV2 ? <DepartamentoPessoalViewV2 /> : <DepartamentoPessoalView />
-        )}
+        {activeTab === 'departamentoPessoal' && departamentoPessoalEnabled && <DepartamentoPessoalView />}
         {activeTab === 'completed' && isAdmin && (
           <CompletedView
             completedTasks={completedTasks}

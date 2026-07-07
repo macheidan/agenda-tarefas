@@ -27,9 +27,6 @@ export default function Header({
   customName,
   allSettings,
   tabsOrder,
-  showDpV2Toggle,
-  dpV2,
-  onToggleDpV2,
 }) {
   const TABS_DEF = {
     calendar: { enabled: calendarEnabled, key: 'calendar', label: 'Calendário' },
@@ -150,41 +147,6 @@ export default function Header({
         </nav>
 
         <div className={styles.userArea}>
-          {showDpV2Toggle && (
-            <button
-              onClick={onToggleDpV2}
-              title={dpV2 ? 'Voltar ao visual clássico' : 'Experimentar o novo visual (V2 · Clean)'}
-              aria-pressed={dpV2}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '5px 10px',
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: '0.02em',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                border: dpV2 ? '1px solid #18181b' : '1px solid var(--border)',
-                background: dpV2 ? '#18181b' : 'var(--card-bg, transparent)',
-                color: dpV2 ? '#fff' : 'var(--text-secondary)',
-                boxShadow: 'none',
-                transition: 'all 0.16s ease',
-              }}
-            >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: dpV2 ? '#fff' : '#18181b',
-                  boxShadow: 'none',
-                }}
-              />
-              V2
-            </button>
-          )}
           {isAdmin && users.length > 0 && (
             <select
               className={styles.userSelect}
