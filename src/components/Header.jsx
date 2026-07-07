@@ -27,6 +27,9 @@ export default function Header({
   customName,
   allSettings,
   tabsOrder,
+  showDpV2Toggle,
+  dpV2,
+  onToggleDpV2,
 }) {
   const TABS_DEF = {
     calendar: { enabled: calendarEnabled, key: 'calendar', label: 'Calendário' },
@@ -147,6 +150,43 @@ export default function Header({
         </nav>
 
         <div className={styles.userArea}>
+          {showDpV2Toggle && (
+            <button
+              onClick={onToggleDpV2}
+              title={dpV2 ? 'Voltar ao visual clássico' : 'Experimentar o novo visual (V2 · Brasa)'}
+              aria-pressed={dpV2}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '5px 10px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                border: dpV2 ? '1px solid transparent' : '1px solid var(--border)',
+                background: dpV2
+                  ? 'linear-gradient(180deg, #f6a723, #ec6a3e)'
+                  : 'var(--card-bg, transparent)',
+                color: dpV2 ? '#1a120d' : 'var(--text-secondary)',
+                boxShadow: dpV2 ? '0 4px 14px -6px rgba(236,106,62,0.9)' : 'none',
+                transition: 'all 0.16s ease',
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: dpV2 ? '#1a120d' : '#ec6a3e',
+                  boxShadow: dpV2 ? 'none' : '0 0 8px 1px rgba(236,106,62,0.7)',
+                }}
+              />
+              V2
+            </button>
+          )}
           {isAdmin && users.length > 0 && (
             <select
               className={styles.userSelect}

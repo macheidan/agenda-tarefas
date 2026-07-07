@@ -1,0 +1,549 @@
+/* ============================================================================
+   Depto Pessoal — V2 "BRASA"
+   Tema próprio, auto-contido (ignora o tema global do app). Painel de turno com
+   alma de forno a lenha: carvão quente, brasa terracota, massa/creme no texto.
+   Escopo: sub-aba Escala. Salários cai no componente existente dentro do shell.
+   ============================================================================ */
+
+.root {
+  /* Paleta do tema (escopada — não vaza pro resto do app) */
+  --v2-bg: #191310;
+  --v2-panel: #221a15;
+  --v2-surface: #2a201a;
+  --v2-surface-2: #322620;
+  --v2-line: rgba(243, 233, 216, 0.10);
+  --v2-line-strong: rgba(243, 233, 216, 0.18);
+  --v2-ember: #ec6a3e;
+  --v2-ember-soft: #f2884f;
+  --v2-amber: #f6a723;
+  --v2-cream: #f4ead8;
+  --v2-cream-dim: #b7a891;
+  --v2-cream-faint: #8a7c69;
+  --v2-basil: #5ab27a;
+
+  position: relative;
+  padding: 0 4px 60px;
+  color: var(--v2-cream);
+  font-family: 'Geologica', system-ui, sans-serif;
+  /* Fundo: carvão com uma brasa radial no topo + grão sutil. */
+  background:
+    radial-gradient(120% 80% at 18% -10%, rgba(236, 106, 62, 0.16), transparent 55%),
+    radial-gradient(90% 60% at 92% 0%, rgba(246, 167, 35, 0.08), transparent 50%),
+    var(--v2-bg);
+  border-radius: 18px;
+  margin: -4px 0 0;
+  overflow: hidden;
+}
+
+/* Grão/textura por cima do fundo, sem capturar cliques. */
+.root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  z-index: 0;
+}
+.root > * { position: relative; z-index: 1; }
+
+/* ---------- Cabeçalho editorial ---------- */
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 26px 22px 20px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--v2-line);
+}
+.heroLeft { display: flex; flex-direction: column; gap: 4px; }
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--v2-ember);
+  font-weight: 600;
+}
+.title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  color: var(--v2-cream);
+  margin: 0;
+}
+.title em {
+  font-style: italic;
+  color: var(--v2-ember-soft);
+}
+.subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--v2-cream-dim);
+  max-width: 46ch;
+}
+
+/* Selo V2 */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--v2-line-strong);
+  background: linear-gradient(180deg, rgba(236, 106, 62, 0.18), rgba(236, 106, 62, 0.06));
+  color: var(--v2-cream);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.sealDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--v2-ember);
+  box-shadow: 0 0 10px 1px rgba(236, 106, 62, 0.8);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* ---------- Sub-abas Escala / Salários ---------- */
+.sectionTabs { display: flex; gap: 6px; }
+.sectionTab {
+  appearance: none;
+  border: 1px solid var(--v2-line);
+  background: transparent;
+  color: var(--v2-cream-dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.sectionTab:hover { color: var(--v2-cream); border-color: var(--v2-line-strong); }
+.sectionTabActive {
+  color: #1a120d;
+  background: linear-gradient(180deg, var(--v2-amber), var(--v2-ember));
+  border-color: transparent;
+  box-shadow: 0 6px 18px -8px rgba(236, 106, 62, 0.9);
+}
+
+/* ---------- Barra de controle (lojas + mês) ---------- */
+.controlBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  flex-wrap: wrap;
+}
+.storeChips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 11px;
+  border: 1px solid var(--v2-line-strong);
+  background: var(--v2-surface);
+  color: var(--v2-cream-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+}
+.chip:hover { color: var(--v2-cream); transform: translateY(-1px); }
+.chipActive {
+  color: var(--v2-cream);
+  border-color: transparent;
+  box-shadow: 0 8px 22px -12px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(255,255,255,0.06);
+}
+.chipDot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.chipGhost {
+  background: transparent;
+  border-style: dashed;
+  color: var(--v2-cream-faint);
+}
+.chipGhost:hover { color: var(--v2-cream); }
+
+/* Navegação de mês — mês grande em Fraunces */
+.monthNav { display: flex; align-items: center; gap: 14px; }
+.monthArrow {
+  appearance: none;
+  cursor: pointer;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--v2-line-strong);
+  background: var(--v2-surface);
+  color: var(--v2-cream);
+  font-size: 18px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: all 0.18s ease;
+}
+.monthArrow:hover { background: var(--v2-surface-2); border-color: var(--v2-ember); color: var(--v2-ember-soft); }
+.monthLabel {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  min-width: 190px;
+  text-align: center;
+  color: var(--v2-cream);
+}
+.monthLabel span { color: var(--v2-cream-faint); font-weight: 400; }
+
+/* ---------- Botões ---------- */
+.btn {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, var(--v2-amber), var(--v2-ember));
+  color: #1a120d;
+  transition: all 0.16s ease;
+  box-shadow: 0 6px 16px -8px rgba(236, 106, 62, 0.8);
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -8px rgba(236, 106, 62, 0.9); }
+.btnGhost {
+  background: transparent;
+  border-color: var(--v2-line-strong);
+  color: var(--v2-cream-dim);
+  box-shadow: none;
+}
+.btnGhost:hover { color: var(--v2-cream); border-color: var(--v2-cream-faint); transform: none; }
+.btnDanger {
+  background: transparent;
+  border-color: rgba(240, 68, 56, 0.4);
+  color: #f2897f;
+  box-shadow: none;
+}
+.btnDanger:hover { background: rgba(240, 68, 56, 0.12); }
+.manageBtn {
+  appearance: none; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  padding: 7px 12px; border-radius: 999px;
+  border: 1px dashed var(--v2-line-strong);
+  background: transparent; color: var(--v2-cream-faint);
+  transition: all 0.16s ease;
+}
+.manageBtn:hover { color: var(--v2-cream); border-color: var(--v2-cream-faint); }
+
+/* ---------- Caixa de gerenciar lojas / form funcionário ---------- */
+.panel {
+  margin: 0 22px 18px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--v2-line);
+  background: var(--v2-panel);
+}
+.panelTitle {
+  font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--v2-ember); font-weight: 600; margin: 0 0 12px;
+}
+.formGrid { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--v2-cream-dim); }
+.input, .select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--v2-line-strong);
+  background: var(--v2-surface);
+  color: var(--v2-cream);
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.input:focus, .select:focus {
+  border-color: var(--v2-ember);
+  box-shadow: 0 0 0 3px rgba(236, 106, 62, 0.18);
+}
+.select option { background: var(--v2-panel); color: var(--v2-cream); }
+.dayToggles { display: flex; gap: 5px; }
+.dayToggle {
+  appearance: none; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  width: 40px; padding: 8px 0; border-radius: 9px;
+  border: 1px solid var(--v2-line-strong);
+  background: var(--v2-surface); color: var(--v2-cream-dim);
+  transition: all 0.14s ease;
+}
+.dayToggleOn {
+  color: #1a120d;
+  background: var(--v2-amber);
+  border-color: transparent;
+}
+.manageList { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.manageRow { display: flex; align-items: center; gap: 10px; }
+.manageName { flex: 1; font-size: 14px; color: var(--v2-cream); font-weight: 500; }
+.addStoreRow { display: flex; gap: 10px; }
+
+/* ---------- Calendário (grade) ---------- */
+.gridCard {
+  margin: 0 22px;
+  border-radius: 16px;
+  border: 1px solid var(--v2-line);
+  background: linear-gradient(180deg, var(--v2-panel), var(--v2-bg));
+  overflow: hidden;
+  box-shadow: 0 24px 60px -30px rgba(0,0,0,0.9);
+}
+.gridScroll { overflow-x: auto; }
+.grid { border-collapse: collapse; width: 100%; }
+
+.grid thead th {
+  position: sticky; top: 0;
+  background: var(--v2-panel);
+  z-index: 3;
+}
+.cornerCell {
+  position: sticky; left: 0; z-index: 5;
+  background: var(--v2-panel);
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--v2-cream-faint); font-weight: 600;
+  min-width: 210px;
+  border-bottom: 1px solid var(--v2-line-strong);
+  border-right: 1px solid var(--v2-line-strong);
+}
+.dayHead {
+  padding: 8px 0 7px;
+  min-width: 34px;
+  text-align: center;
+  border-bottom: 1px solid var(--v2-line-strong);
+  border-left: 1px solid var(--v2-line);
+}
+.dayNum { display: block; font-size: 13px; font-weight: 600; color: var(--v2-cream); font-variant-numeric: tabular-nums; }
+.dayWd { display: block; font-size: 9px; color: var(--v2-cream-faint); text-transform: uppercase; margin-top: 1px; }
+.weekendHead { background: rgba(0,0,0,0.22); }
+.holidayHead .dayNum { color: var(--v2-amber); }
+.holidayHead::after {
+  content: ''; display: block; height: 2px; margin: 3px 6px 0;
+  background: var(--v2-amber); border-radius: 2px;
+}
+
+.grid tbody tr { transition: background 0.12s ease; }
+.grid tbody tr:hover td { background: rgba(236, 106, 62, 0.05); }
+.grid tbody tr:hover .nameCell { background: var(--v2-surface-2); }
+
+.nameCell {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--v2-panel);
+  padding: 9px 16px;
+  border-right: 1px solid var(--v2-line-strong);
+  border-bottom: 1px solid var(--v2-line);
+}
+.nameWrap { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.empNameWrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.empName {
+  font-size: 14px; font-weight: 500; color: var(--v2-cream);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;
+}
+.storeTag {
+  flex: none;
+  width: 20px; height: 20px; border-radius: 6px;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.folgaTag {
+  flex: none;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 2px 5px; border-radius: 5px;
+  background: rgba(90, 178, 122, 0.16);
+  color: var(--v2-basil);
+  border: 1px solid rgba(90, 178, 122, 0.3);
+}
+.rowActions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.14s ease; }
+.grid tbody tr:hover .rowActions { opacity: 1; }
+.rowActionsVisible { opacity: 1; }
+.iconBtn {
+  appearance: none; cursor: pointer;
+  width: 26px; height: 26px; border-radius: 7px;
+  border: 1px solid var(--v2-line-strong);
+  background: var(--v2-surface); color: var(--v2-cream-dim);
+  font-size: 12px; display: grid; place-items: center;
+  transition: all 0.14s ease;
+}
+.iconBtn:hover { color: var(--v2-cream); border-color: var(--v2-ember); }
+.iconBtnDanger:hover { color: #f2897f; border-color: rgba(240,68,56,0.5); background: rgba(240,68,56,0.1); }
+
+.cell {
+  min-width: 34px; height: 40px;
+  border-left: 1px solid var(--v2-line);
+  border-bottom: 1px solid var(--v2-line);
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s ease;
+}
+.cell:hover { background: rgba(246, 167, 35, 0.14) !important; box-shadow: inset 0 0 0 1px var(--v2-amber); }
+.cellWeekend { background: rgba(0,0,0,0.22); }
+.cellHoliday { background: rgba(246, 167, 35, 0.06); }
+.mark {
+  display: inline-grid; place-items: center;
+  width: 24px; height: 24px; border-radius: 7px;
+  font-size: 10px; font-weight: 700; color: #fff;
+  box-shadow: 0 3px 8px -3px rgba(0,0,0,0.7);
+  animation: markIn 0.18s ease;
+}
+@keyframes markIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Entrada suave da grade inteira (fade no container — sem transform nas <tr>,
+   que é frágil entre navegadores e cria layers que atrapalham a renderização). */
+.gridCard { animation: fadeIn 0.3s ease both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Legenda ---------- */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  padding: 18px 24px 4px;
+}
+.legendItem { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--v2-cream-dim); }
+.legendDot {
+  width: 22px; height: 22px; border-radius: 7px;
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 700; color: #fff;
+}
+.legendHoliday { background: transparent; border: 2px solid var(--v2-amber); }
+
+/* ---------- Resumo ---------- */
+.summary { margin: 22px 22px 0; }
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.statCard {
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--v2-line);
+  background: var(--v2-panel);
+  position: relative;
+  overflow: hidden;
+}
+.statCard::after {
+  content: ''; position: absolute; right: -20px; top: -20px;
+  width: 70px; height: 70px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(236,106,62,0.18), transparent 70%);
+}
+.statValue {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 30px; line-height: 1;
+  color: var(--v2-cream); font-variant-numeric: tabular-nums;
+}
+.statLabel { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--v2-cream-faint); margin-top: 6px; }
+.statAccent .statValue { color: var(--v2-ember-soft); }
+
+.summaryHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.summaryHead h3 {
+  font-family: 'Fraunces', Georgia, serif; font-weight: 500;
+  font-size: 20px; color: var(--v2-cream); margin: 0;
+}
+.summaryNote { font-size: 12px; color: var(--v2-cream-faint); margin: 0 0 12px; line-height: 1.5; max-width: 90ch; }
+.summaryNote strong { color: var(--v2-cream-dim); }
+.summaryCard {
+  border-radius: 14px; border: 1px solid var(--v2-line);
+  background: var(--v2-panel); overflow: hidden;
+}
+.summaryScroll { overflow-x: auto; }
+.summaryTable { border-collapse: collapse; width: 100%; font-size: 13px; }
+.summaryTable th {
+  text-align: right; padding: 11px 14px;
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--v2-cream-faint); font-weight: 600;
+  border-bottom: 1px solid var(--v2-line-strong);
+  white-space: nowrap;
+}
+.summaryTable td {
+  text-align: right; padding: 10px 14px;
+  color: var(--v2-cream-dim); font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--v2-line);
+}
+.summaryNameCol { text-align: left !important; color: var(--v2-cream) !important; font-weight: 500; }
+.colPeriod { display: block; font-size: 9px; color: var(--v2-cream-faint); font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 2px; }
+.summaryTotalRow td { border-top: 2px solid var(--v2-line-strong); border-bottom: none; color: var(--v2-cream); font-weight: 700; }
+.transportCell { color: var(--v2-amber) !important; font-weight: 700; }
+
+/* ---------- Popover de tipo ---------- */
+.popover {
+  position: fixed; z-index: 1000;
+  min-width: 200px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--v2-line-strong);
+  background: var(--v2-surface);
+  box-shadow: 0 30px 70px -20px rgba(0,0,0,0.95);
+  animation: popIn 0.14s ease;
+}
+@keyframes popIn { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
+.popItem {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  appearance: none; cursor: pointer; text-align: left;
+  font-family: inherit; font-size: 13px; color: var(--v2-cream);
+  padding: 9px 10px; border-radius: 9px; border: none; background: transparent;
+  transition: background 0.12s ease;
+}
+.popItem:hover { background: var(--v2-surface-2); }
+.popDot { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff; flex: none; }
+.popClear {
+  width: 100%; margin-top: 4px;
+  appearance: none; cursor: pointer;
+  font-family: inherit; font-size: 12px; color: var(--v2-cream-faint);
+  padding: 8px; border-radius: 9px; border: 1px dashed var(--v2-line-strong); background: transparent;
+  transition: all 0.12s ease;
+}
+.popClear:hover { color: var(--v2-cream); border-color: var(--v2-cream-faint); }
+
+/* ---------- Estados vazios ---------- */
+.empty { padding: 48px 24px; text-align: center; color: var(--v2-cream-dim); font-size: 14px; }
+.empty strong { color: var(--v2-cream); }
+.errorMsg { color: #f2897f; font-size: 13px; margin-top: 10px; }
+
+/* ---------- Mobile ---------- */
+.mList { padding: 6px 14px 0; display: flex; flex-direction: column; gap: 14px; }
+.mSelectRow { display: flex; align-items: center; gap: 10px; }
+.mSelectLabel { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--v2-cream-faint); }
+.mCard {
+  border-radius: 16px; border: 1px solid var(--v2-line);
+  background: var(--v2-panel); padding: 16px; overflow: hidden;
+}
+.mCardHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+.mCalGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.mWeekday { text-align: center; font-size: 10px; color: var(--v2-cream-faint); font-weight: 600; padding-bottom: 2px; }
+.mDayEmpty { aspect-ratio: 1; }
+.mDay {
+  appearance: none; cursor: pointer; position: relative;
+  aspect-ratio: 1; border-radius: 9px;
+  border: 1px solid var(--v2-line);
+  background: var(--v2-surface); color: var(--v2-cream-dim);
+  display: grid; place-items: center; font-family: inherit;
+  transition: all 0.12s ease;
+}
+.mDay:active { transform: scale(0.94); }
+.mDayWeekend { background: rgba(0,0,0,0.25); }
+.mDayHoliday { box-shadow: inset 0 2px 0 var(--v2-amber); }
+.mDayNum { font-size: 12px; font-variant-numeric: tabular-nums; }
+.mDayMark {
+  position: absolute; inset: 3px;
+  border-radius: 7px; display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+
+@media (max-width: 768px) {
+  .hero { padding: 20px 16px 16px; }
+  .controlBar { padding: 14px 16px; }
+  .gridCard, .summary, .panel { margin-left: 14px; margin-right: 14px; }
+  .monthLabel { font-size: 21px; min-width: 150px; }
+}
