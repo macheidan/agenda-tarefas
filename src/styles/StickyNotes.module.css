@@ -1,8 +1,8 @@
 /* Painel de post-its ao lado do calendário (estilo Microsoft Sticky Notes). */
 .panel {
-  flex: 0 0 236px;
+  flex: 0 0 200px;
   width: 100%;
-  max-width: 236px;
+  max-width: 200px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -140,11 +140,11 @@
   width: 100%;
   padding: 6px 14px 16px 14px;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 10px;
   line-height: 1.5;
   color: #2b2417;
   overflow: hidden;
-  min-height: 58px;
+  min-height: 48px;
 }
 
 .noteText::placeholder {

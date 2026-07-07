@@ -22,46 +22,41 @@
   overflow-x: hidden;
 }
 
-/* Na aba do calendário, .main abre mão do teto de 1200px pra caber o
-   calendário centralizado + um painel de lembretes em cada lateral. */
-.mainCalendar {
-  max-width: none;
-  overflow-x: visible;
-}
-
-/* Calendário travado no centro no tamanho original (até 1152px) e um painel
-   de post-its preenchendo cada gutter lateral. */
-.calendarLayout {
-  display: grid;
-  grid-template-columns: minmax(236px, 1fr) minmax(0, 1152px) minmax(236px, 1fr);
-  align-items: start;
-  gap: 24px;
-}
-
-/* Painéis laterais encostam no calendário. */
-.calendarLayout > :first-child {
-  justify-self: end;
-}
-.calendarLayout > :last-child {
-  justify-self: start;
-}
-
 .calendarMain {
   width: 100%;
   min-width: 0;
 }
 
-/* Abaixo de 1200px não cabe calendário + 2 colunas: empilha os lembretes
-   embaixo do calendário (em linha), mantendo o calendário na largura normal. */
-@media (max-width: 1200px) {
-  .calendarLayout {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+/* Aba do calendário em telas largas (>=1500px): .main abre mão do teto de
+   1200px pra manter o calendário no tamanho ORIGINAL (1152px) centralizado e
+   encaixar um lembrete em cada gutter lateral. O calendário tem prioridade de
+   largura (minmax fixo em 1152); as laterais (1fr) é que encolhem pra caber. */
+@media (min-width: 1500px) {
+  .mainCalendar {
+    max-width: none;
+    overflow-x: visible;
   }
-  .calendarMain {
-    flex: 1 1 100%;
-    order: -1;
+  .calendarLayout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1152px) minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+  }
+  .calendarLayout > :first-child {
+    justify-self: end;
+  }
+  .calendarLayout > :last-child {
+    justify-self: start;
+  }
+}
+
+/* Abaixo de 1500px (tablets e mobile): não sobra largura confortável pras
+   laterais sem espremer o calendário — escondemos os lembretes e mantemos o
+   calendário na largura normal. No mobile (<=768px) nem chega aqui, pois usa
+   o MobileCalendarView. */
+@media (max-width: 1499px) {
+  .calendarLayout > aside {
+    display: none;
   }
 }
 
