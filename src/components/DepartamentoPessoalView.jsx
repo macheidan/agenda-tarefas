@@ -104,11 +104,22 @@ export default function DepartamentoPessoalView() {
 
   useEffect(() => {
     if (!popover) return;
+    // Ignora os eventos do próprio toque que abriu o popover: alguns browsers
+    // mobile (webviews in-app, Android WebView) emitem mousedown/pointerdown
+    // "fantasma" logo após o click, fechando o menu no mesmo toque — dava a
+    // impressão de que o menu não abria.
+    const openedAt = Date.now();
     const onDown = (e) => {
+      if (Date.now() - openedAt < 350) return;
       if (popRef.current && !popRef.current.contains(e.target)) setPopover(null);
     };
+    // pointerdown cobre mouse + touch; mousedown como fallback p/ browsers antigos.
+    document.addEventListener('pointerdown', onDown);
     document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('mousedown', onDown);
+    };
   }, [popover]);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
