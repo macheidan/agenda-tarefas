@@ -22,21 +22,46 @@
   overflow-x: hidden;
 }
 
-/* Calendário + painel de post-its lado a lado. */
+/* Na aba do calendário, .main abre mão do teto de 1200px pra caber o
+   calendário centralizado + um painel de lembretes em cada lateral. */
+.mainCalendar {
+  max-width: none;
+  overflow-x: visible;
+}
+
+/* Calendário travado no centro no tamanho original (até 1152px) e um painel
+   de post-its preenchendo cada gutter lateral. */
 .calendarLayout {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: minmax(268px, 1fr) minmax(0, 1152px) minmax(268px, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+/* Painéis laterais encostam no calendário. */
+.calendarLayout > :first-child {
+  justify-self: end;
+}
+.calendarLayout > :last-child {
+  justify-self: start;
 }
 
 .calendarMain {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
 }
 
-@media (max-width: 900px) {
+/* Abaixo de 1200px não cabe calendário + 2 colunas: empilha os lembretes
+   embaixo do calendário (em linha), mantendo o calendário na largura normal. */
+@media (max-width: 1200px) {
   .calendarLayout {
-    flex-direction: column;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .calendarMain {
+    flex: 1 1 100%;
+    order: -1;
   }
 }
 

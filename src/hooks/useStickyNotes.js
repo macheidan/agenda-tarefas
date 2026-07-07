@@ -47,11 +47,12 @@ export function useStickyNotes(uid) {
     return unsub;
   }, [uid]);
 
-  const addStickyNote = async (color) => {
+  const addStickyNote = async (color, side) => {
     const ref = await addDoc(collection(db, 'stickyNotes'), {
       uid,
       text: '',
       color: color || 'yellow',
+      side: side || 'right',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

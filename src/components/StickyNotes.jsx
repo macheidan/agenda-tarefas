@@ -123,6 +123,7 @@ function StickyNote({ note, onUpdate, onDelete }) {
 }
 
 export default function StickyNotes({
+  side = 'right',
   stickyNotes,
   addStickyNote,
   updateStickyNote,
@@ -130,11 +131,15 @@ export default function StickyNotes({
 }) {
   const [colorIdx, setColorIdx] = useState(0);
 
+  // Notas deste lado. Notas antigas sem `side` caem no lado direito (onde o
+  // painel nasceu), pra não sumir nada.
+  const notes = stickyNotes.filter((n) => (n.side || 'right') === side);
+
   const handleAdd = () => {
     // Roda as cores da paleta a cada novo post-it, pra não ficar tudo amarelo.
     const color = STICKY_COLORS[colorIdx % STICKY_COLORS.length];
     setColorIdx((i) => i + 1);
-    addStickyNote(color);
+    addStickyNote(color, side);
   };
 
   return (
@@ -146,13 +151,13 @@ export default function StickyNotes({
         </button>
       </div>
       <div className={styles.list}>
-        {stickyNotes.length === 0 ? (
+        {notes.length === 0 ? (
           <button className={styles.empty} onClick={handleAdd}>
             <span className={styles.emptyPlus}>+</span>
             <span>Adicionar lembrete</span>
           </button>
         ) : (
-          stickyNotes.map((note) => (
+          notes.map((note) => (
             <StickyNote
               key={note.id}
               note={note}

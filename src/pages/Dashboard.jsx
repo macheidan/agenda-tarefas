@@ -181,7 +181,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <main className={styles.main}>
+      <main className={`${styles.main} ${activeTab === 'calendar' && !isMobile ? styles.mainCalendar : ''}`}>
         <Suspense fallback={<div className={styles.suspenseFallback}>Carregando…</div>}>
         {activeTab === 'calendar' && calendarEnabled && (
           isMobile ? (
@@ -192,6 +192,13 @@ export default function Dashboard() {
             />
           ) : (
             <div className={styles.calendarLayout}>
+              <StickyNotes
+                side="left"
+                stickyNotes={stickyNotes}
+                addStickyNote={addStickyNote}
+                updateStickyNote={updateStickyNote}
+                deleteStickyNote={deleteStickyNote}
+              />
               <div className={styles.calendarMain}>
                 <CalendarView
                   tasks={tasks}
@@ -200,6 +207,7 @@ export default function Dashboard() {
                 />
               </div>
               <StickyNotes
+                side="right"
                 stickyNotes={stickyNotes}
                 addStickyNote={addStickyNote}
                 updateStickyNote={updateStickyNote}

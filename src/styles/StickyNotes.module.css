@@ -1,6 +1,8 @@
 /* Painel de post-its ao lado do calendário (estilo Microsoft Sticky Notes). */
 .panel {
   flex: 0 0 268px;
+  width: 100%;
+  max-width: 268px;
   display: flex;
   flex-direction: column;
   gap: 12px;
