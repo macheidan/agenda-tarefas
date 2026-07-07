@@ -33,7 +33,7 @@
    de post-its preenchendo cada gutter lateral. */
 .calendarLayout {
   display: grid;
-  grid-template-columns: minmax(268px, 1fr) minmax(0, 1152px) minmax(268px, 1fr);
+  grid-template-columns: minmax(236px, 1fr) minmax(0, 1152px) minmax(236px, 1fr);
   align-items: start;
   gap: 24px;
 }
