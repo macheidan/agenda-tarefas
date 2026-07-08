@@ -6,6 +6,8 @@ import styles from '../styles/ComprasView.module.css';
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 const LOJAS = ['Lov', 'Dáme'];
+// Endereço de cada loja, incluído ao lado do nome na mensagem copiada.
+const LOJA_ENDERECO = { Lov: 'Anita Garibaldi 1593', Dáme: 'Carazinho 443' };
 const FORNEC_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab', '#0d9488'];
 const ALL = '__all__';
 const LOJA_KEY = 'comprasLoja';
@@ -241,7 +243,7 @@ export default function ComprasView() {
     });
     return [
       `*PEDIDO ${fornec.name}*`,
-      `*${loja}*`,
+      `*${loja}${LOJA_ENDERECO[loja] ? ` - ${LOJA_ENDERECO[loja]}` : ''}*`,
       `*Entrega ${day} após 16:30*`,
       '',
       ...linhas,
