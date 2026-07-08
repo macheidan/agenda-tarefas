@@ -592,6 +592,52 @@
   color: var(--text-secondary);
 }
 
+/* Input de data do contrato (mesmo visual do storeSelect). */
+.dateInput {
+  padding: 6px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: var(--input-focus);
+}
+
+/* Botão Arquivar: alerta (âmbar), distinto do salvar e do excluir. */
+.smallBtnWarn {
+  padding: 7px 12px;
+  border: 1px solid #d97706;
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: #d97706;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smallBtnWarn:hover {
+  background: rgba(217, 119, 6, 0.1);
+}
+
+/* Período de contrato exibido ao lado do nome na lista de arquivados. */
+.contractTag {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.archivedEmpty {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
 .empNameWrap {
   display: flex;
   align-items: center;

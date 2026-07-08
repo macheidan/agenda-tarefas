@@ -48,6 +48,8 @@ export default function DepartamentoPessoalView() {
     deleteStore,
     addEmployee,
     updateEmployee,
+    deactivateEmployee,
+    reactivateEmployee,
     deleteEmployee,
     setAbsence,
   } = useDepartamentoPessoal();
@@ -93,6 +95,9 @@ export default function DepartamentoPessoalView() {
   const [fStore, setFStore] = useState('');
   const [fWeekdays, setFWeekdays] = useState([]); // dias fixos de folga (0=Dom..6=Sáb)
   const [fMonthN, setFMonthN] = useState(''); // '' | 1..5 (domingo do mês)
+  const [fContractStart, setFContractStart] = useState(''); // YYYY-MM-DD
+  const [fContractEnd, setFContractEnd] = useState(''); // YYYY-MM-DD
+  const [showArchived, setShowArchived] = useState(false);
   const [popover, setPopover] = useState(null);
   const [selectedEmp, setSelectedEmp] = useState(null); // funcionário escolhido no mobile
   const [copied, setCopied] = useState(false);
@@ -141,8 +146,34 @@ export default function DepartamentoPessoalView() {
     return o;
   }, [stores]);
 
+  // Mês exibido no formato YYYY-MM (compara direto com o prefixo das datas ISO).
+  const curMonthKey = `${year}-${pad(month + 1)}`;
+
   const storeEmployees = useMemo(() => {
-    const list = employees.filter((e) => relevantSet.has(e.store) && e.active !== false);
+    // Funcionário aparece neste mês? Fora do intervalo de contrato (por mês), não.
+    const inContractMonth = (emp) => {
+      const start = emp.contractStart ? emp.contractStart.slice(0, 7) : null;
+      const end = emp.contractEnd ? emp.contractEnd.slice(0, 7) : null;
+      if (start && curMonthKey < start) return false;
+      if (end && curMonthKey > end) return false;
+      return true;
+    };
+    const list = employees.filter(
+      (e) => relevantSet.has(e.store) && e.active !== false && inContractMonth(e)
+    );
+    list.sort((a, b) => {
+      if (isAmbas) {
+        const so = (storeOrder[a.store] ?? 0) - (storeOrder[b.store] ?? 0);
+        if (so !== 0) return so;
+      }
+      return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+    });
+    return list;
+  }, [employees, relevantSet, isAmbas, storeOrder, curMonthKey]);
+
+  // Funcionários arquivados (active === false) da visão atual — para a seção Arquivados.
+  const archivedEmployees = useMemo(() => {
+    const list = employees.filter((e) => relevantSet.has(e.store) && e.active === false);
     list.sort((a, b) => {
       if (isAmbas) {
         const so = (storeOrder[a.store] ?? 0) - (storeOrder[b.store] ?? 0);
@@ -198,6 +229,8 @@ export default function DepartamentoPessoalView() {
     setFStore(isAmbas ? (visibleStores[0]?.id || '') : activeStore || '');
     setFWeekdays([]);
     setFMonthN('');
+    setFContractStart('');
+    setFContractEnd('');
   };
 
   const openEdit = (emp) => {
@@ -207,6 +240,8 @@ export default function DepartamentoPessoalView() {
     setFStore(emp.store || '');
     setFWeekdays(empFolgaWeekdays(emp));
     setFMonthN(emp.folgaMonthN != null ? String(emp.folgaMonthN) : '');
+    setFContractStart(emp.contractStart || '');
+    setFContractEnd(emp.contractEnd || '');
   };
 
   const toggleFWeekday = (v) =>
@@ -217,12 +252,24 @@ export default function DepartamentoPessoalView() {
     if (!name || !fStore) return;
     const wds = fWeekdays.slice().sort((a, b) => a - b);
     const mn = fMonthN === '' ? null : Number(fMonthN);
+    const cStart = fContractStart || null;
+    const cEnd = fContractEnd || null;
+    if (cStart && cEnd && cEnd < cStart) {
+      window.alert('A data final do contrato não pode ser antes da inicial.');
+      return;
+    }
     if (formMode === 'edit' && formId) {
       // Zera o campo antigo (1 dia) pra nao conflitar com o novo array.
-      updateEmployee(formId, { name, store: fStore, folgaWeekdays: wds, folgaWeekday: null, folgaMonthN: mn });
+      updateEmployee(formId, { name, store: fStore, folgaWeekdays: wds, folgaWeekday: null, folgaMonthN: mn, contractStart: cStart, contractEnd: cEnd });
     } else {
-      addEmployee(name, fStore, user, { folgaWeekdays: wds, folgaMonthN: mn });
+      addEmployee(name, fStore, user, { folgaWeekdays: wds, folgaMonthN: mn, contractStart: cStart, contractEnd: cEnd });
     }
+    closeForm();
+  };
+
+  const archiveCurrent = () => {
+    if (formMode !== 'edit' || !formId) return;
+    deactivateEmployee(formId);
     closeForm();
   };
 
@@ -512,6 +559,14 @@ export default function DepartamentoPessoalView() {
           <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
         </div>
         <div className={styles.toolbarActions}>
+          {canEdit && visibleStores.length > 0 && (
+            <button
+              className={styles.manageStoresBtn}
+              onClick={() => setShowArchived((v) => !v)}
+            >
+              {showArchived ? 'Fechar' : `Arquivados${archivedEmployees.length ? ` (${archivedEmployees.length})` : ''}`}
+            </button>
+          )}
           {canEdit && (activeStore || isAmbas) && visibleStores.length > 0 && (
             <button className={styles.newBtn} onClick={openAdd}>
               {formMode === 'add' ? 'Cancelar' : '+ Funcionário'}
@@ -519,6 +574,43 @@ export default function DepartamentoPessoalView() {
           )}
         </div>
       </div>
+
+      {showArchived && canEdit && (
+        <div className={styles.manageBox}>
+          <h4>Funcionários arquivados{isAmbas ? '' : activeStoreObj ? ` — ${activeStoreObj.name}` : ''}</h4>
+          {archivedEmployees.length === 0 ? (
+            <p className={styles.archivedEmpty}>Nenhum funcionário arquivado.</p>
+          ) : (
+            <div className={styles.manageList}>
+              {archivedEmployees.map((emp) => (
+                <div key={emp.id} className={styles.manageRow}>
+                  <span className={styles.manageName}>
+                    {isAmbas && storeMeta[emp.store] ? `${storeMeta[emp.store].name} — ${emp.name}` : emp.name}
+                    {(emp.contractStart || emp.contractEnd) && (
+                      <span className={styles.contractTag}>
+                        {emp.contractStart ? emp.contractStart.split('-').reverse().join('/') : '…'}
+                        {' – '}
+                        {emp.contractEnd ? emp.contractEnd.split('-').reverse().join('/') : '…'}
+                      </span>
+                    )}
+                  </span>
+                  <button className={styles.smallBtn} onClick={() => reactivateEmployee(emp.id)}>Reativar</button>
+                  <button
+                    className={styles.smallBtnDanger}
+                    onClick={() => {
+                      if (window.confirm(`Excluir definitivamente "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
+                        deleteEmployee(emp.id);
+                      }
+                    }}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {formMode && canEdit && (
         <div className={styles.empForm}>
@@ -564,10 +656,33 @@ export default function DepartamentoPessoalView() {
                 ))}
               </select>
             </label>
+            <label className={styles.fieldLabel}>
+              Início do contrato
+              <input
+                type="date"
+                className={styles.dateInput}
+                value={fContractStart}
+                onChange={(e) => setFContractStart(e.target.value)}
+              />
+            </label>
+            <label className={styles.fieldLabel}>
+              Fim do contrato
+              <input
+                type="date"
+                className={styles.dateInput}
+                value={fContractEnd}
+                onChange={(e) => setFContractEnd(e.target.value)}
+              />
+            </label>
             <button className={styles.smallBtn} onClick={submitForm}>
               {formMode === 'add' ? 'Adicionar' : 'Salvar'}
             </button>
             <button className={styles.smallBtnGhost} onClick={closeForm}>Cancelar</button>
+            {formMode === 'edit' && formId && (
+              <button className={styles.smallBtnWarn} onClick={archiveCurrent} title="Arquivar funcionário">
+                Arquivar
+              </button>
+            )}
           </div>
         </div>
       )}

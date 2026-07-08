@@ -153,6 +153,10 @@ export function useDepartamentoPessoal() {
       folgaWeekdays: extra.folgaWeekdays ?? null,
       folgaWeekday: extra.folgaWeekday ?? null,
       folgaMonthN: extra.folgaMonthN ?? null,
+      // Datas de contrato (YYYY-MM-DD). Fora do intervalo (por mês) o funcionário
+      // some do calendário. null = sem limite naquele lado.
+      contractStart: extra.contractStart ?? null,
+      contractEnd: extra.contractEnd ?? null,
       ...salaryExtra,
     });
   }, []);
@@ -169,6 +173,8 @@ export function useDepartamentoPessoal() {
     if (updates && 'folgaWeekdays' in updates) clean.folgaWeekdays = updates.folgaWeekdays;
     if (updates && 'folgaWeekday' in updates) clean.folgaWeekday = updates.folgaWeekday;
     if (updates && 'folgaMonthN' in updates) clean.folgaMonthN = updates.folgaMonthN;
+    if (updates && 'contractStart' in updates) clean.contractStart = updates.contractStart || null;
+    if (updates && 'contractEnd' in updates) clean.contractEnd = updates.contractEnd || null;
     SALARY_FIELDS.forEach((k) => { if (updates && k in updates) clean[k] = updates[k]; });
     if (Object.keys(clean).length) {
       await updateDoc(doc(db, 'dpEmployees', employeeId), clean);
