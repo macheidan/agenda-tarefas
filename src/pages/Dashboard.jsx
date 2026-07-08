@@ -72,7 +72,7 @@ export default function Dashboard() {
     useAdminMessages(user);
   const unreadMessage = getUnreadForUser(user.uid);
 
-  const { notes, addNote, updateNote, deleteNote } = useNotes(selectedUid);
+  const { notes, addNote, updateNote, deleteNote, reorderNotes } = useNotes(selectedUid);
   const { stickyNotes, addStickyNote, updateStickyNote, deleteStickyNote } =
     useStickyNotes(selectedUid);
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
@@ -269,6 +269,7 @@ export default function Dashboard() {
             notes={notes}
             onNewNote={() => { setEditingNote(null); setNoteModalOpen(true); }}
             onNoteClick={(note) => { setEditingNote(note); setNoteModalOpen(true); }}
+            onReorder={reorderNotes}
           />
         )}
         {activeTab === 'shopping' && shoppingListEnabled && <ComprasView />}

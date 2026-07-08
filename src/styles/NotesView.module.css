@@ -79,6 +79,39 @@
   max-width: 100%;
 }
 
+/* Alça de arraste (dnd-kit). Só ela inicia o drag; tocar no resto abre a nota. */
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-md, 6px);
+  cursor: grab;
+  touch-action: none; /* deixa o dnd-kit controlar o toque na alça */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dragHandle:hover {
+  background: var(--card-hover);
+  color: var(--text-secondary);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.cardBar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px -6px 4px 0;
+}
+
 .card {
   border: 1px solid var(--border);
   border-radius: 8px;
