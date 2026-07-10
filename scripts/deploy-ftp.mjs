@@ -57,6 +57,8 @@ const {
   FTP_SECURE = 'false',
   FTP_PORT = '21',
   FTP_CLEAN = 'false',
+  // URL publica pra checagem pos-deploy. Se vazio, o check e pulado.
+  PUBLIC_URL = '',
 } = process.env;
 
 const faltando = ['FTP_HOST', 'FTP_USER', 'FTP_PASSWORD'].filter(k => !process.env[k]);
@@ -70,8 +72,9 @@ const skipBuild = process.argv.includes('--skip-build');
 
 if (!skipBuild) {
   console.log('[deploy-ftp] Buildando com base=/intranet/ ...');
-  // shell: true e obrigatorio no Windows pra resolver o npm (.cmd) corretamente.
-  const r = spawnSync('npm', ['run', 'build:ftp'], { cwd: root, stdio: 'inherit', shell: true });
+  // shell: true e obrigatorio no Windows pra resolver o npm (.cmd). Comando como
+  // string unica (sem array de args) evita o DeprecationWarning DEP0190.
+  const r = spawnSync('npm run build:ftp', { cwd: root, stdio: 'inherit', shell: true });
   if (r.status !== 0) { console.error('[deploy-ftp] build falhou.'); process.exit(1); }
 } else {
   console.log('[deploy-ftp] --skip-build: usando dist/ existente.');
@@ -133,10 +136,39 @@ try {
   console.log(`[deploy-ftp] Enviando dist/ -> ${FTP_DIR} ...`);
   await client.uploadFromDir(distDir);
 
-  console.log('\n[deploy-ftp] ✓ Publicado em damepizza.com.br/intranet');
+  console.log('\n[deploy-ftp] ✓ Upload concluido.');
 } catch (err) {
   console.error('\n[deploy-ftp] Erro:', err.message);
   process.exitCode = 1;
 } finally {
   client.close();
+}
+
+// Checagem pos-deploy: confirma que a URL publica responde 200 e que o HTML
+// aponta os assets pro base certo. So roda se o upload foi ok e PUBLIC_URL existe.
+if (process.exitCode !== 1 && PUBLIC_URL) {
+  const url = PUBLIC_URL.endsWith('/') ? PUBLIC_URL : PUBLIC_URL + '/';
+  // Da uns segundos pro FTP/CDN assentar antes de bater na URL.
+  await new Promise(r => setTimeout(r, 3000));
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15_000);
+    const res = await fetch(url, { redirect: 'follow', signal: ctrl.signal });
+    clearTimeout(t);
+    const html = await res.text();
+    const base = FTP_DIR.split('/').filter(Boolean).pop() || '';
+    const assetsOk = html.includes(`/${base}/assets/`);
+    if (res.status === 200 && assetsOk) {
+      console.log(`[deploy-ftp] ✓ ${url} respondeu 200 e os assets apontam pra /${base}/.`);
+    } else if (res.status === 200) {
+      console.warn(`[deploy-ftp] ⚠ ${url} respondeu 200, mas nao achei "/${base}/assets/" no HTML — confira o base do build.`);
+    } else {
+      console.warn(`[deploy-ftp] ⚠ ${url} respondeu HTTP ${res.status} (esperado 200).`);
+      process.exitCode = 1;
+    }
+  } catch (e) {
+    console.warn(`[deploy-ftp] ⚠ nao consegui checar ${url}: ${e.message}`);
+  }
+} else if (process.exitCode !== 1) {
+  console.log('[deploy-ftp] (defina PUBLIC_URL no .env.ftp pra checar a URL automaticamente)');
 }
