@@ -1,14 +1,40 @@
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import styles from '../styles/Login.module.css';
 
+// Mensagens amigaveis pros erros mais comuns do signInWithPopup. Sem isso o erro
+// ia so pro console e a "janelinha que abre e fecha rapido" ficava sem explicacao.
+function mensagemErro(code) {
+  switch (code) {
+    case 'auth/unauthorized-domain':
+      return 'Este domínio não está autorizado no Firebase. Adicione-o em Authentication → Settings → Authorized domains.';
+    case 'auth/popup-blocked':
+      return 'O navegador bloqueou o popup. Libere popups para este site e tente de novo.';
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return 'A janela de login foi fechada antes de concluir. Tente novamente.';
+    case 'auth/operation-not-allowed':
+      return 'Login com Google não está habilitado no projeto Firebase.';
+    default:
+      return 'Não foi possível entrar. Tente novamente.';
+  }
+}
+
 export default function Login() {
   const { login } = useAuth();
+  const [erro, setErro] = useState('');
+  const [entrando, setEntrando] = useState(false);
 
   const handleLogin = async () => {
+    setErro('');
+    setEntrando(true);
     try {
       await login();
     } catch (error) {
       console.error('Erro ao fazer login:', error);
+      setErro(mensagemErro(error?.code));
+    } finally {
+      setEntrando(false);
     }
   };
 
@@ -17,7 +43,7 @@ export default function Login() {
       <div className={styles.card}>
         <h1 className={styles.title}>Agenda de Tarefas</h1>
         <p className={styles.subtitle}>Organize suas tarefas de forma simples e eficiente</p>
-        <button className={styles.googleBtn} onClick={handleLogin}>
+        <button className={styles.googleBtn} onClick={handleLogin} disabled={entrando}>
           <svg className={styles.googleIcon} viewBox="0 0 24 24">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -36,8 +62,9 @@ export default function Login() {
               fill="#EA4335"
             />
           </svg>
-          Entrar com Google
+          {entrando ? 'Entrando…' : 'Entrar com Google'}
         </button>
+        {erro && <p className={styles.error}>{erro}</p>}
       </div>
     </div>
   );
