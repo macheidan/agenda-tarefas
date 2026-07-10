@@ -54,7 +54,12 @@ export default function Dashboard() {
   const { order: tabsOrder, updateOrder: updateTabsOrder } = useTabsOrder();
 
   const [selectedUid, setSelectedUid] = useState(user.uid);
-  const [activeTab, setActiveTab] = useState('calendar');
+  // Deep-link por query param (?tab=...): permite abrir uma aba especifica numa
+  // nova aba do navegador (ex: clicar num item em "Subiram" abre Preços filtrado).
+  const [activeTab, setActiveTab] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('tab') || 'calendar'; }
+    catch { return 'calendar'; }
+  });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [initialDate, setInitialDate] = useState(null);

@@ -218,7 +218,12 @@ export default function PrecosInsumosView() {
   // Fornecedores ocultos (compartilhado pelas 3 sub-paginas).
   const { ocultos, toggle: toggleOculto } = useFornecedoresOcultos();
   const ocultosSet = useMemo(() => new Set(ocultos), [ocultos]);
-  const [filtroTexto, setFiltroTexto] = useState('');
+  // Deep-link: ?precoBusca=<item> pre-preenche a busca (usado ao abrir Preços numa
+  // nova aba a partir de um item da sub-pagina "Subiram").
+  const [filtroTexto, setFiltroTexto] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('precoBusca') || ''; }
+    catch { return ''; }
+  });
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroLoja, setFiltroLoja] = useState('');
   // Quando ativo, mostra somente linhas cujo produto ainda nao tem Fator preenchido.
@@ -393,7 +398,13 @@ export default function PrecosInsumosView() {
       }
       if (filtroTexto) {
         const f = filtroTexto.toLowerCase();
-        if (!p.produto.toLowerCase().includes(f) && !p.fornecedor.toLowerCase().includes(f)) return false;
+        // Casa tambem "Produto (planilha)" (nome_padrao) pra que o deep-link vindo
+        // de "Subiram" (que usa o nome padrao) encontre as linhas do produto.
+        if (
+          !p.produto.toLowerCase().includes(f) &&
+          !(p.produto_padrao || '').toLowerCase().includes(f) &&
+          !p.fornecedor.toLowerCase().includes(f)
+        ) return false;
       }
       return true;
     });
@@ -998,6 +1009,14 @@ function SubiramView({ precos, ocultos }) {
   const nVistos = Object.keys(vistos).length;
   const marcarTodos = () => marcarVarios(alertas.map(a => ({ key: a.key, preco: a.atual, data: a.atualData })));
 
+  // Abre a sub-pagina Preços numa NOVA aba do navegador, ja filtrada pelo item.
+  // Deep-link via query params (?tab=precosInsumos&precoBusca=<item>) lidos no
+  // boot (Dashboard escolhe a aba; PrecosInsumosView pre-preenche a busca).
+  function abrirPrecosDoItem(label) {
+    const url = `${window.location.pathname}?tab=precosInsumos&precoBusca=${encodeURIComponent(label)}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
   return (
     <div>
       <style>{`
@@ -1050,7 +1069,12 @@ function SubiramView({ precos, ocultos }) {
               </thead>
               <tbody>
                 {filtrados.map(i => (
-                  <tr key={i.key} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                  <tr
+                    key={i.key}
+                    onClick={() => abrirPrecosDoItem(i.label)}
+                    style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: 'pointer' }}
+                    title="Abrir a seção Preços deste item numa nova aba"
+                  >
                     <td style={{ ...tdS, fontWeight: 500 }}>{i.label}</td>
                     <td style={tdS}>{i.fornecedor}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
@@ -1068,7 +1092,7 @@ function SubiramView({ precos, ocultos }) {
                     </td>
                     <td style={{ ...tdS, textAlign: 'center' }}>
                       <button
-                        onClick={() => marcarVisto(i.key, i.atual, i.atualData)}
+                        onClick={(e) => { e.stopPropagation(); marcarVisto(i.key, i.atual, i.atualData); }}
                         style={{ ...btnS, fontSize: 11, padding: '3px 8px' }}
                         title="Fixa este preço como baseline — some da lista até subir de novo"
                       >
