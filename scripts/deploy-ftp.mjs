@@ -70,8 +70,8 @@ const skipBuild = process.argv.includes('--skip-build');
 
 if (!skipBuild) {
   console.log('[deploy-ftp] Buildando com base=/intranet/ ...');
-  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const r = spawnSync(npmCmd, ['run', 'build:ftp'], { cwd: root, stdio: 'inherit' });
+  // shell: true e obrigatorio no Windows pra resolver o npm (.cmd) corretamente.
+  const r = spawnSync('npm', ['run', 'build:ftp'], { cwd: root, stdio: 'inherit', shell: true });
   if (r.status !== 0) { console.error('[deploy-ftp] build falhou.'); process.exit(1); }
 } else {
   console.log('[deploy-ftp] --skip-build: usando dist/ existente.');
@@ -118,6 +118,10 @@ try {
     user: FTP_USER,
     password: FTP_PASSWORD,
     secure: FTP_SECURE === 'true',
+    // HostGator: FTPS explicito com cert que nao casa o hostname (ftp.dominio).
+    // TLS "loose" (nao valida o cert) — mesmo comportamento do deploy do
+    // machado-labs (security: loose) e do dame_brand (FTP_TLS_INSECURE=1).
+    secureOptions: { rejectUnauthorized: false },
   });
 
   await client.ensureDir(FTP_DIR); // cria (se preciso) e entra na pasta remota
