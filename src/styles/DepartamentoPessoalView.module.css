@@ -755,6 +755,16 @@
 }
 
 /* ---- Popover ---- */
+/* Backdrop invisível de tela cheia: fecha o menu ao tocar/clicar fora. Fica
+   logo abaixo do popover no empilhamento e só é montado enquanto o menu está
+   aberto, então não intercepta o toque que abriu o menu. */
+.popBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: transparent;
+}
+
 .popover {
   position: fixed;
   z-index: 100;

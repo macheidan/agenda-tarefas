@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -105,26 +105,18 @@ export default function DepartamentoPessoalView() {
   const [newStoreName, setNewStoreName] = useState('');
   const [editingStore, setEditingStore] = useState(null);
   const [editingStoreName, setEditingStoreName] = useState('');
-  const popRef = useRef(null);
 
+  // Fechar com Esc (teclado/desktop). O fechar-ao-tocar-fora fica por conta do
+  // backdrop renderizado junto com o popover — antes usávamos um listener global
+  // de pointerdown/mousedown com janela de tempo pra ignorar o "toque fantasma",
+  // mas a ordem dos eventos touch→mouse varia entre WebViews Android e às vezes
+  // fechava o menu no mesmo toque que o abria (parecia "não abrir"). O backdrop
+  // só existe DEPOIS do toque de abertura, então não há corrida de eventos.
   useEffect(() => {
     if (!popover) return;
-    // Ignora os eventos do próprio toque que abriu o popover: alguns browsers
-    // mobile (webviews in-app, Android WebView) emitem mousedown/pointerdown
-    // "fantasma" logo após o click, fechando o menu no mesmo toque — dava a
-    // impressão de que o menu não abria.
-    const openedAt = Date.now();
-    const onDown = (e) => {
-      if (Date.now() - openedAt < 350) return;
-      if (popRef.current && !popRef.current.contains(e.target)) setPopover(null);
-    };
-    // pointerdown cobre mouse + touch; mousedown como fallback p/ browsers antigos.
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('mousedown', onDown);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('mousedown', onDown);
-    };
+    const onKey = (e) => { if (e.key === 'Escape') setPopover(null); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [popover]);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -943,10 +935,16 @@ export default function DepartamentoPessoalView() {
         </div>
       )}
 
-      {/* Popover de seleção de tipo */}
+      {/* Popover de seleção de tipo. O backdrop (invisível, tela cheia) captura
+          o toque fora pra fechar — sem listener global nem corrida de eventos. */}
       {popover && (
         <div
-          ref={popRef}
+          className={styles.popBackdrop}
+          onClick={() => setPopover(null)}
+        />
+      )}
+      {popover && (
+        <div
           className={styles.popover}
           style={{
             top: Math.max(8, Math.min(popover.y + 4, window.innerHeight - 260)),
