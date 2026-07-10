@@ -17,6 +17,9 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Credenciais do deploy FTP (senha) — NUNCA commitar
+.env.ftp
+
 # Firebase service account (script de importação de folha) — NUNCA commitar
 serviceAccount*.json
 
