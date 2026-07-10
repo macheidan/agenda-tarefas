@@ -1,0 +1,48 @@
+name: Deploy intranet para FTP (damepizza.com.br/intranet)
+
+# A cada push na main (ou disparo manual), builda com base /intranet/ e publica
+# no FTP do HostGator. A Vercel continua com o deploy proprio dela (na raiz);
+# este workflow so cuida da copia da intranet no dominio damepizza.com.br.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Evita dois deploys FTP simultaneos (cancela o anterior se um novo push chegar).
+concurrency:
+  group: deploy-ftp
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Recriar .env (vars VITE_* pro build)
+        run: printf '%s' "$DOTENV" > .env
+        env:
+          DOTENV: ${{ secrets.DOTENV }}
+
+      # Reusa o mesmo script do deploy local: build:ftp (base /intranet/) +
+      # ajuste do manifest PWA + upload FTPS + checagem HTTP 200.
+      - name: Build e deploy FTP
+        run: npm run deploy:ftp
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_DIR: /damepizza.com.br/intranet
+          FTP_SECURE: 'true'
+          FTP_CLEAN: 'false'
+          PUBLIC_URL: https://damepizza.com.br/intranet/
