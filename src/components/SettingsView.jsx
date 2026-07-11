@@ -15,14 +15,14 @@ const TAB_LABELS = {
   ideas: 'Ideias',
   reviews: 'Avaliações',
   knowledge: 'Conhecimento',
-  precosInsumos: 'Preços Insumos',
+  precosInsumos: 'Preços',
   departamentoPessoal: 'Depto Pessoal',
 };
 
 // Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em
 // settings/{uid}). Default visível (valor != false). Espelha SUBPAGES do PrecosInsumosView.
 const PRECOS_SUBSECTIONS = [
-  { key: 'precosSubPrecos', label: 'Preços' },
+  { key: 'precosSubPrecos', label: 'Produtos' },
   { key: 'precosSubLista', label: 'Lista' },
   { key: 'precosSubFornecedores', label: 'Fornecedores' },
   { key: 'precosSubCadastrar', label: 'Cadastrar' },
@@ -74,7 +74,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     { key: 'shoppingListEnabled', label: 'Compras' },
     { key: 'reviewsEnabled', label: 'Avaliações' },
     { key: 'knowledgeEnabled', label: 'Conhecimento' },
-    { key: 'precosInsumosEnabled', label: 'Preços Insumos' },
+    { key: 'precosInsumosEnabled', label: 'Preços' },
     { key: 'departamentoPessoalEnabled', label: 'Depto Pessoal', defaultOff: true },
   ];
 
@@ -355,7 +355,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
                 {s.precosInsumosEnabled !== false && (
                   <>
-                    <span className={styles.subGroupLabel}>Sub-seções de Preços Insumos</span>
+                    <span className={styles.subGroupLabel}>Sub-seções de Preços</span>
                     <div className={styles.sectionToggles}>
                       {PRECOS_SUBSECTIONS.map((sub) => (
                         <label key={sub.key} className={`${styles.sectionToggle} ${styles.sectionToggleNested}`}>

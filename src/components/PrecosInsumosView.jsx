@@ -10,7 +10,7 @@ import { useSettings } from '../hooks/useSettings';
 // usuário, controlada em Configurações (chaves precosSub* em settings/{uid};
 // default visível = qualquer valor != false).
 const SUBPAGES = [
-  { key: 'precos', label: 'Preços', flag: 'precosSubPrecos' },
+  { key: 'precos', label: 'Produtos', flag: 'precosSubPrecos' },
   { key: 'lista', label: 'Lista', flag: 'precosSubLista' },
   { key: 'fornecedores', label: 'Fornecedores', flag: 'precosSubFornecedores' },
   { key: 'cadastrar', label: 'Cadastrar', flag: 'precosSubCadastrar', color: 'var(--success)' },
@@ -473,7 +473,7 @@ export default function PrecosInsumosView() {
   // Navegacao por sub-paginas, no mesmo estilo do Depto Pessoal (abas no topo).
   const header = (
     <div style={headerS}>
-      <h2 style={headerTitleS}>📦 Preços Insumos</h2>
+      <h2 style={headerTitleS}>📦 Preços</h2>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {SUBPAGES.filter(sp => subVisible[sp.key]).map(sp => (
           <button key={sp.key} style={tabBtnS(activeSub === sp.key, sp.color)} onClick={() => setSubPage(sp.key)}>{sp.label}</button>
