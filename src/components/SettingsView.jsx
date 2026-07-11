@@ -19,6 +19,17 @@ const TAB_LABELS = {
   departamentoPessoal: 'Depto Pessoal',
 };
 
+// Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em
+// settings/{uid}). Default visível (valor != false). Espelha SUBPAGES do PrecosInsumosView.
+const PRECOS_SUBSECTIONS = [
+  { key: 'precosSubPrecos', label: 'Preços' },
+  { key: 'precosSubLista', label: 'Lista' },
+  { key: 'precosSubFornecedores', label: 'Fornecedores' },
+  { key: 'precosSubCadastrar', label: 'Cadastrar' },
+  { key: 'precosSubSubiram', label: 'Subiram' },
+  { key: 'precosSubCmv', label: 'CMV' },
+];
+
 export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
@@ -157,9 +168,13 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     setNameValue('');
   };
 
-  useEffect(() => {
+  // Sincroniza o input com a prop geminiKey quando ela chega/muda (padrão de
+  // ajuste de estado no render, evita setState dentro de useEffect).
+  const [prevGeminiKey, setPrevGeminiKey] = useState(geminiKey);
+  if (geminiKey !== prevGeminiKey) {
+    setPrevGeminiKey(geminiKey);
     if (geminiKey !== undefined) setApiKeyValue(geminiKey);
-  }, [geminiKey]);
+  }
 
   const handleSaveApiKey = async () => {
     setApiKeyStatus('Salvando...');
@@ -337,6 +352,24 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                     </label>
                   ))}
                 </div>
+
+                {s.precosInsumosEnabled !== false && (
+                  <>
+                    <span className={styles.subGroupLabel}>Sub-seções de Preços Insumos</span>
+                    <div className={styles.sectionToggles}>
+                      {PRECOS_SUBSECTIONS.map((sub) => (
+                        <label key={sub.key} className={`${styles.sectionToggle} ${styles.sectionToggleNested}`}>
+                          <input
+                            type="checkbox"
+                            checked={s[sub.key] !== false}
+                            onChange={(e) => toggleSection(u.uid, sub.key, e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>{sub.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false) && (
                   <>

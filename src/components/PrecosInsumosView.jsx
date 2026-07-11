@@ -3,6 +3,20 @@ import { supabase } from '../utils/supabase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CmvView from './CmvView';
+import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../hooks/useSettings';
+
+// Sub-seções da seção e ordem em que aparecem. A visibilidade de cada uma é por
+// usuário, controlada em Configurações (chaves precosSub* em settings/{uid};
+// default visível = qualquer valor != false).
+const SUBPAGES = [
+  { key: 'precos', label: 'Preços', flag: 'precosSubPrecos' },
+  { key: 'lista', label: 'Lista', flag: 'precosSubLista' },
+  { key: 'fornecedores', label: 'Fornecedores', flag: 'precosSubFornecedores' },
+  { key: 'cadastrar', label: 'Cadastrar', flag: 'precosSubCadastrar', color: 'var(--success)' },
+  { key: 'subiram', label: 'Subiram', flag: 'precosSubSubiram', color: 'var(--danger)' },
+  { key: 'cmv', label: 'CMV', flag: 'precosSubCmv', color: 'var(--accent)' },
+];
 
 const OCULTOS_KEY = 'precos_fornecedores_ocultos';
 
@@ -216,6 +230,16 @@ export default function PrecosInsumosView() {
   const [subPage, setSubPage] = useState('precos');
   const [precos, setPrecos] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Visibilidade das sub-seções por usuário (Configurações). Sub-seção com flag
+  // != false fica visível. Se a sub-página ativa estiver oculta, cai na 1ª visível.
+  const { user } = useAuth();
+  const { settings } = useSettings(user?.uid);
+  const subVisible = useMemo(() => {
+    const v = {};
+    for (const sp of SUBPAGES) v[sp.key] = settings?.[sp.flag] !== false;
+    return v;
+  }, [settings]);
+  const activeSub = subVisible[subPage] ? subPage : (SUBPAGES.find(sp => subVisible[sp.key])?.key || 'precos');
   // Fornecedores ocultos (compartilhado pelas 3 sub-paginas).
   const { ocultos, toggle: toggleOculto } = useFornecedoresOcultos();
   const ocultosSet = useMemo(() => new Set(ocultos), [ocultos]);
@@ -450,13 +474,10 @@ export default function PrecosInsumosView() {
   const header = (
     <div style={headerS}>
       <h2 style={headerTitleS}>📦 Preços Insumos</h2>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button style={tabBtnS(subPage === 'precos')} onClick={() => setSubPage('precos')}>Preços</button>
-        <button style={tabBtnS(subPage === 'lista')} onClick={() => setSubPage('lista')}>Lista</button>
-        <button style={tabBtnS(subPage === 'fornecedores')} onClick={() => setSubPage('fornecedores')}>Fornecedores</button>
-        <button style={tabBtnS(subPage === 'cadastrar', 'var(--success)')} onClick={() => setSubPage('cadastrar')}>Cadastrar</button>
-        <button style={tabBtnS(subPage === 'subiram', 'var(--danger)')} onClick={() => setSubPage('subiram')}>Subiram</button>
-        <button style={tabBtnS(subPage === 'cmv', 'var(--accent)')} onClick={() => setSubPage('cmv')}>CMV</button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {SUBPAGES.filter(sp => subVisible[sp.key]).map(sp => (
+          <button key={sp.key} style={tabBtnS(activeSub === sp.key, sp.color)} onClick={() => setSubPage(sp.key)}>{sp.label}</button>
+        ))}
       </div>
     </div>
   );
@@ -468,7 +489,7 @@ export default function PrecosInsumosView() {
     </div>
   );
 
-  if (subPage === 'fornecedores') {
+  if (activeSub === 'fornecedores') {
     return (
       <div>
         {header}
@@ -477,7 +498,7 @@ export default function PrecosInsumosView() {
     );
   }
 
-  if (subPage === 'cadastrar') {
+  if (activeSub === 'cadastrar') {
     return (
       <div>
         {header}
@@ -486,7 +507,7 @@ export default function PrecosInsumosView() {
     );
   }
 
-  if (subPage === 'subiram') {
+  if (activeSub === 'subiram') {
     return (
       <div>
         {header}
@@ -495,7 +516,7 @@ export default function PrecosInsumosView() {
     );
   }
 
-  if (subPage === 'lista') {
+  if (activeSub === 'lista') {
     return (
       <div>
         {header}
@@ -504,7 +525,7 @@ export default function PrecosInsumosView() {
     );
   }
 
-  if (subPage === 'cmv') {
+  if (activeSub === 'cmv') {
     return (
       <div>
         {header}
