@@ -8,6 +8,8 @@ const thS = { textAlign: 'left', padding: '6px 8px', fontSize: 11, color: 'var(-
 const tdS = { padding: '5px 8px', fontSize: 12, color: 'var(--text, #222)' };
 const cardS = { background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', padding: 12, marginBottom: 12 };
 const SIZES = [['qtdP', 'Pequena'], ['qtdM', 'Média'], ['qtdG', 'Grande'], ['qtdS', 'Super']];
+// Hover nas linhas de dados das tabelas (inline styles não suportam :hover).
+const rowHoverCss = '.cmvRow{transition:background .12s}.cmvRow:hover{background:var(--card-hover,#f6f7f9)}';
 
 function fmt(n) {
   return 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -93,6 +95,7 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
 
   return (
     <div>
+      <style>{rowHoverCss}</style>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <button style={{ ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({beneficiados.length})</button>
         <button style={{ ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({sabores.length})</button>
@@ -200,7 +203,7 @@ function BeneficiadoCard({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
             {lines.map((l, i) => {
               const cu = custoBase[l.ref]?.custo;
               return (
-                <tr key={i} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                <tr key={i} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                   <td style={tdS}>
                     <select value={l.ref} onChange={e => setRef(i, e.target.value)} style={{ ...inputS, width: '100%', maxWidth: 260 }}>
                       {!nomesPadrao.includes(l.ref) && l.ref ? <option value={l.ref}>{l.ref}</option> : null}
@@ -253,7 +256,7 @@ function LinesTable({ lines: linesProp, onCommit, opcoes, custoBase, benefCusto 
               const cu = custoUnit(l);
               const selVal = `${l.tipo || 'base'}:${l.ref}`;
               return (
-                <tr key={i} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                <tr key={i} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                   <td style={tdS}>
                     <select value={selVal} onChange={e => setRef(i, e.target.value)} style={{ ...inputS, width: '100%', maxWidth: 240 }}>
                       {!opcoes.base.includes(l.ref) && !opcoes.beneficiados.includes(l.ref) && l.ref
@@ -357,7 +360,7 @@ function BeneficiadosResumo({ beneficiados, custoBase }) {
           {beneficiados.map(b => {
             const c = calcBeneficiado(b, custoBase);
             return (
-              <tr key={b.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+              <tr key={b.id} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                 <td style={{ ...tdS, fontWeight: 500 }}>{b.nome}</td>
                 <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)' }}>{c.pesoBruto.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg</td>
                 <td style={{ ...tdS, textAlign: 'right' }}>{fmt(c.custoTotal)}</td>
@@ -383,7 +386,7 @@ function SaboresResumo({ sabores, custoBase, benefCusto, bases }) {
           {sabores.map(s => {
             const t = calcSabor(s, custoBase, benefCusto, bases);
             return (
-              <tr key={s.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+              <tr key={s.id} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                 <td style={{ ...tdS, fontWeight: 500 }}>{s.nome}</td>
                 {SIZES.map(([k]) => <td key={k} style={{ ...tdS, textAlign: 'right', fontWeight: 600 }}>{fmt(t[k])}</td>)}
               </tr>
