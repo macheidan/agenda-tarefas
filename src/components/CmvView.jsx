@@ -33,10 +33,13 @@ function calcBeneficiado(b, custoBase) {
   return { pesoBruto, custoTotal, rendimento: rend, custoPorKg };
 }
 
-// Total de custo de um sabor por tamanho (P/M/G/S) = Σ (qtd × custo do ingrediente).
-function calcSabor(s, custoBase, benefCusto) {
+// Total de custo de um sabor por tamanho (P/M/G/S) = Σ (qtd × custo do ingrediente),
+// incluindo a BASE da categoria do sabor (mussarela/orégano/caixa que vão em todas).
+function calcSabor(s, custoBase, benefCusto, bases) {
+  const cat = s.categoria || 'salgada';
+  const baseLines = (bases && bases[cat]) || [];
   const t = { qtdP: 0, qtdM: 0, qtdG: 0, qtdS: 0 };
-  for (const l of s.lines || []) {
+  for (const l of [...(s.lines || []), ...baseLines]) {
     const cu = l.tipo === 'beneficiado' ? (benefCusto[l.ref] || 0) : (custoBase[l.ref]?.custo || 0);
     for (const [k] of SIZES) t[k] += num(l[k]) * cu;
   }
@@ -45,9 +48,9 @@ function calcSabor(s, custoBase, benefCusto) {
 
 export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
   const {
-    beneficiados, sabores, loading,
+    beneficiados, sabores, bases, loading,
     addBeneficiado, updateBeneficiado, deleteBeneficiado,
-    addSabor, updateSabor, deleteSabor, seedInitialData,
+    addSabor, updateSabor, deleteSabor, updateBases, seedInitialData,
   } = useCmv();
 
   const [aba, setAba] = useState('beneficiados');
@@ -135,13 +138,14 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
             <button style={{ ...btnS, borderColor: 'var(--success)', color: 'var(--success)' }}
               onClick={() => { if (novoSabor.trim()) { addSabor(novoSabor); setNovoSabor(''); } }}>+ Novo</button>
           </div>
+          <BaseConfig bases={bases} opcoes={opcoesSabor} custoBase={custoBase} benefCusto={benefCusto} onUpdate={updateBases} />
           {sabores.length === 0 ? (
             <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum sabor. Crie um acima ou importe da planilha.</p>
           ) : expandir ? sabores.map(s => (
-            <SaborCard key={s.id} s={s} custoBase={custoBase} benefCusto={benefCusto} opcoes={opcoesSabor}
+            <SaborCard key={s.id} s={s} custoBase={custoBase} benefCusto={benefCusto} bases={bases} opcoes={opcoesSabor}
               onUpdate={updateSabor} onDelete={deleteSabor} />
           )) : (
-            <SaboresResumo sabores={sabores} custoBase={custoBase} benefCusto={benefCusto} />
+            <SaboresResumo sabores={sabores} custoBase={custoBase} benefCusto={benefCusto} bases={bases} />
           )}
         </>
       )}
@@ -218,19 +222,15 @@ function BeneficiadoCard({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
   );
 }
 
-// ── Sabor: ingredientes (base ou beneficiado) x 4 tamanhos (qtd em kg) ──────
-function SaborCard({ s, custoBase, benefCusto, opcoes, onUpdate, onDelete }) {
-  const sig = JSON.stringify(s.lines || []);
-  const [lines, setLines] = useState(s.lines || []);
+// ── Editor de linhas (ingrediente × 4 tamanhos) — reutilizado por Sabor e Base ──
+function LinesTable({ lines: linesProp, onCommit, opcoes, custoBase, benefCusto }) {
+  const sig = JSON.stringify(linesProp || []);
+  const [lines, setLines] = useState(linesProp || []);
   const [prevSig, setPrevSig] = useState(sig);
-  if (sig !== prevSig) { setPrevSig(sig); setLines(s.lines || []); }
+  if (sig !== prevSig) { setPrevSig(sig); setLines(linesProp || []); }
 
   const custoUnit = (l) => (l.tipo === 'beneficiado' ? (benefCusto[l.ref] || 0) : (custoBase[l.ref]?.custo || 0));
-  const totais = useMemo(() => calcSabor({ lines }, custoBase, benefCusto), [lines, custoBase, benefCusto]);
-
-  const commit = (ls) => onUpdate(s.id, {
-    lines: ls.map(l => ({ ref: l.ref, tipo: l.tipo || 'base', qtdP: num(l.qtdP), qtdM: num(l.qtdM), qtdG: num(l.qtdG), qtdS: num(l.qtdS) })),
-  });
+  const commit = (ls) => onCommit(ls.map(l => ({ ref: l.ref, tipo: l.tipo || 'base', qtdP: num(l.qtdP), qtdM: num(l.qtdM), qtdG: num(l.qtdG), qtdS: num(l.qtdS) })));
   const setCell = (i, k, v) => setLines(ls => ls.map((l, idx) => idx === i ? { ...l, [k]: v } : l));
   const setRef = (i, val) => {
     const [tipo, ...rest] = val.split(':'); const ref = rest.join(':');
@@ -240,18 +240,7 @@ function SaborCard({ s, custoBase, benefCusto, opcoes, onUpdate, onDelete }) {
   const rmLine = (i) => { const ls = lines.filter((_, idx) => idx !== i); setLines(ls); commit(ls); };
 
   return (
-    <div style={cardS}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: 15 }}>{s.nome}</strong>
-        <span style={{ flex: 1 }} />
-        {SIZES.map(([k, label]) => (
-          <span key={k} style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-            {label} <strong style={{ color: 'var(--accent)' }}>{fmt(totais[k])}</strong>
-          </span>
-        ))}
-        <button style={{ ...btnS, color: 'var(--danger)', borderColor: 'var(--danger)' }}
-          onClick={() => { if (window.confirm(`Excluir o sabor "${s.nome}"?`)) onDelete(s.id); }} title="Excluir sabor">Excluir</button>
-      </div>
+    <>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
@@ -293,6 +282,62 @@ function SaborCard({ s, custoBase, benefCusto, opcoes, onUpdate, onDelete }) {
         </table>
       </div>
       <button style={{ ...btnS, marginTop: 8, fontSize: 12 }} onClick={addLine}>+ Ingrediente</button>
+    </>
+  );
+}
+
+// ── Base que entra em TODAS as pizzas, por categoria (config no topo dos Sabores) ──
+function BaseConfig({ bases, opcoes, custoBase, benefCusto, onUpdate }) {
+  const [open, setOpen] = useState(false);
+  const resumo = (cat) => (((bases && bases[cat]) || []).map(l => l.ref).filter(Boolean).join(', ')) || '—';
+  return (
+    <div style={{ ...cardS, borderColor: 'var(--accent)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', cursor: 'pointer' }} onClick={() => setOpen(o => !o)}>
+        <strong style={{ fontSize: 14 }}>{open ? '▾' : '▸'} Base — entra em todas as pizzas</strong>
+        {!open && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Salgada: {resumo('salgada')} · Doce: {resumo('doce')}</span>}
+      </div>
+      {open && (
+        <div style={{ marginTop: 10 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>
+            Ingredientes comuns a todo sabor da categoria (ex.: mussarela, orégano, caixa). Somam no custo de cada sabor conforme a categoria dele. Doce costuma ser mussarela em peso diferente e sem orégano.
+          </p>
+          <div style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px' }}>Salgadas</div>
+          <LinesTable lines={(bases && bases.salgada) || []} onCommit={ls => onUpdate({ ...bases, salgada: ls })} opcoes={opcoes} custoBase={custoBase} benefCusto={benefCusto} />
+          <div style={{ fontSize: 13, fontWeight: 600, margin: '14px 0 4px' }}>Doces</div>
+          <LinesTable lines={(bases && bases.doce) || []} onCommit={ls => onUpdate({ ...bases, doce: ls })} opcoes={opcoes} custoBase={custoBase} benefCusto={benefCusto} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Sabor: ingredientes próprios + base da categoria (salgada/doce) ─────────
+function SaborCard({ s, custoBase, benefCusto, bases, opcoes, onUpdate, onDelete }) {
+  const categoria = s.categoria || 'salgada';
+  const totais = useMemo(() => calcSabor(s, custoBase, benefCusto, bases), [s, custoBase, benefCusto, bases]);
+  const baseRefs = (((bases && bases[categoria]) || []).map(l => l.ref).filter(Boolean));
+
+  return (
+    <div style={cardS}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+        <strong style={{ fontSize: 15 }}>{s.nome}</strong>
+        <select value={categoria} onChange={e => onUpdate(s.id, { categoria: e.target.value })} style={{ ...inputS, padding: '3px 6px' }} title="Categoria — define a base (mussarela/orégano/caixa) que soma no custo">
+          <option value="salgada">Salgada</option>
+          <option value="doce">Doce</option>
+        </select>
+        <span style={{ flex: 1 }} />
+        {SIZES.map(([k, label]) => (
+          <span key={k} style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            {label} <strong style={{ color: 'var(--accent)' }}>{fmt(totais[k])}</strong>
+          </span>
+        ))}
+        <button style={{ ...btnS, color: 'var(--danger)', borderColor: 'var(--danger)' }}
+          onClick={() => { if (window.confirm(`Excluir o sabor "${s.nome}"?`)) onDelete(s.id); }} title="Excluir sabor">Excluir</button>
+      </div>
+      <LinesTable lines={s.lines} onCommit={ls => onUpdate(s.id, { lines: ls })} opcoes={opcoes} custoBase={custoBase} benefCusto={benefCusto} />
+      {baseRefs.length > 0 && (
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 0 0' }}>+ base {categoria} (em todas): {baseRefs.join(', ')}</p>
+      )}
     </div>
   );
 }
@@ -326,7 +371,7 @@ function BeneficiadosResumo({ beneficiados, custoBase }) {
   );
 }
 
-function SaboresResumo({ sabores, custoBase, benefCusto }) {
+function SaboresResumo({ sabores, custoBase, benefCusto, bases }) {
   return (
     <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -336,7 +381,7 @@ function SaboresResumo({ sabores, custoBase, benefCusto }) {
         </tr></thead>
         <tbody>
           {sabores.map(s => {
-            const t = calcSabor(s, custoBase, benefCusto);
+            const t = calcSabor(s, custoBase, benefCusto, bases);
             return (
               <tr key={s.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                 <td style={{ ...tdS, fontWeight: 500 }}>{s.nome}</td>

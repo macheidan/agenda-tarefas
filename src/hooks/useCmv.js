@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, Timestamp,
+  collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { CMV_SEED } from '../data/cmvSeed';
@@ -13,8 +13,27 @@ import { CMV_SEED } from '../data/cmvSeed';
 export function useCmv() {
   const [beneficiados, setBeneficiados] = useState([]);
   const [sabores, setSabores] = useState([]);
+  // Base que entra em TODAS as pizzas, por categoria. cmvConfig/bases.
+  const [bases, setBases] = useState({ salgada: [], doce: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'cmvConfig', 'bases'), (snap) => {
+      const d = snap.data() || {};
+      setBases({
+        salgada: Array.isArray(d.salgada) ? d.salgada : [],
+        doce: Array.isArray(d.doce) ? d.doce : [],
+      });
+    }, () => {});
+    return unsub;
+  }, []);
+
+  const updateBases = useCallback(async (next) => {
+    await setDoc(doc(db, 'cmvConfig', 'bases'), {
+      salgada: next.salgada || [], doce: next.doce || [],
+    });
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -105,9 +124,9 @@ export function useCmv() {
   }, []);
 
   return {
-    beneficiados, sabores, loading, error,
+    beneficiados, sabores, bases, loading, error,
     addBeneficiado, updateBeneficiado, deleteBeneficiado,
-    addSabor, updateSabor, deleteSabor,
+    addSabor, updateSabor, deleteSabor, updateBases,
     seedInitialData,
   };
 }

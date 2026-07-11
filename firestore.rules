@@ -189,5 +189,10 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isComprasEditor();
     }
+    // Config do CMV (ex.: base que entra em todas as pizzas, por categoria).
+    match /cmvConfig/{id} {
+      allow read: if isSignedIn();
+      allow write: if isComprasEditor();
+    }
   }
 }
