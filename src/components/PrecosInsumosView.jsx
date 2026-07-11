@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'rea
 import { supabase } from '../utils/supabase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import CmvView from './CmvView';
 
 const OCULTOS_KEY = 'precos_fornecedores_ocultos';
 
@@ -346,6 +347,25 @@ export default function PrecosInsumosView() {
     [precos]
   );
 
+  // Custo por "Produto (planilha)": pega a nota MAIS RECENTE de cada nome_padrao e
+  // usa o Resultado (calcResultado); sem fator, cai no preco normalizado. Alimenta
+  // o CMV (custo/kg de cada ingrediente). Mapa nome_padrao -> { custo, medida }.
+  const custoPorPlanilha = useMemo(() => {
+    const latest = {};
+    for (const p of precos) {
+      if (!p.produto_padrao) continue;
+      const cur = latest[p.produto_padrao];
+      if (!cur || p.data > cur.data || (p.data === cur.data && p.id > cur.id)) latest[p.produto_padrao] = p;
+    }
+    const map = {};
+    for (const nome in latest) {
+      const p = latest[nome];
+      const r = calcResultado(p.preco_normalizado, p.fator_regra3);
+      map[nome] = { custo: r == null ? (p.preco_normalizado || 0) : r, medida: p.unidade_normalizada };
+    }
+    return map;
+  }, [precos]);
+
   // Define o "Produto (planilha)" (nome_padrao) manualmente para um produto sem
   // ele. Como o nome_padrao mora em produtos (por produto_id), a escolha vale
   // pra TODAS as linhas do mesmo produto na listagem. Persiste no banco e
@@ -436,6 +456,7 @@ export default function PrecosInsumosView() {
         <button style={tabBtnS(subPage === 'fornecedores')} onClick={() => setSubPage('fornecedores')}>Fornecedores</button>
         <button style={tabBtnS(subPage === 'cadastrar', 'var(--success)')} onClick={() => setSubPage('cadastrar')}>Cadastrar</button>
         <button style={tabBtnS(subPage === 'subiram', 'var(--danger)')} onClick={() => setSubPage('subiram')}>Subiram</button>
+        <button style={tabBtnS(subPage === 'cmv', 'var(--accent)')} onClick={() => setSubPage('cmv')}>CMV</button>
       </div>
     </div>
   );
@@ -479,6 +500,15 @@ export default function PrecosInsumosView() {
       <div>
         {header}
         <ListaView precos={precos} ocultos={ocultosSet} />
+      </div>
+    );
+  }
+
+  if (subPage === 'cmv') {
+    return (
+      <div>
+        {header}
+        <CmvView custoBase={custoPorPlanilha} nomesPadrao={nomesPadrao} />
       </div>
     );
   }
@@ -589,7 +619,10 @@ export default function PrecosInsumosView() {
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)' }}>{(() => {
                       const res = calcResultado(p.preco_normalizado, fatores[p.produto_id]);
-                      return res == null ? '—' : 'R$ ' + res.toFixed(2);
+                      // Sem fator, o Resultado cai no preco normalizado (marca o titulo pra sinalizar).
+                      if (res != null) return 'R$ ' + res.toFixed(2);
+                      if (p.preco_normalizado > 0) return <span title="Sem fator: usando o preço normalizado">R$ {p.preco_normalizado.toFixed(2)}</span>;
+                      return '—';
                     })()}</td>
                     <td style={{ ...tdS, textAlign: 'right' }}>{(() => {
                       const ant = precoAnteriorPorId[p.id];
@@ -1226,7 +1259,9 @@ function ListaView({ precos, ocultos }) {
                     <td style={tdS}>{p.fornecedor}</td>
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
-                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)' }}>{res == null ? '—' : 'R$ ' + res.toFixed(2)}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)' }} title={res == null && p.preco_normalizado > 0 ? 'Sem fator: usando o preço normalizado' : undefined}>{
+                      res != null ? 'R$ ' + res.toFixed(2) : (p.preco_normalizado > 0 ? 'R$ ' + p.preco_normalizado.toFixed(2) : '—')
+                    }</td>
                   </tr>
                 );
               })}

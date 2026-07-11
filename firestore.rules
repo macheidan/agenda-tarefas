@@ -178,5 +178,16 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
       );
     }
+
+    // CMV (fichas técnicas): beneficiados e sabores. Qualquer logado lê;
+    // só admin/editor de compras escreve (mesma alçada do catálogo de Preços/Compras).
+    match /cmvBeneficiados/{id} {
+      allow read: if isSignedIn();
+      allow write: if isComprasEditor();
+    }
+    match /cmvSabores/{id} {
+      allow read: if isSignedIn();
+      allow write: if isComprasEditor();
+    }
   }
 }
