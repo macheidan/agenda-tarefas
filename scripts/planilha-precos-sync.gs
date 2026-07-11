@@ -46,8 +46,11 @@ function sync() {
 
   var sheet = getSheet_();
   var cols = detectColumns_(sheet);
-  Logger.log('Colunas: produto=%s, ultimo=%s, penultimo=%s, preços=[%s..%s]',
-    cols.produto, cols.ultimo, cols.penultimo, cols.priceStart, cols.priceEnd);
+  Logger.log('Cabeçalho na linha %s (dados a partir de %s). Colunas: produto=%s, ultimo=%s, penultimo=%s, preços=[%s..%s]',
+    cols.headerRow, cols.firstDataRow, cols.produto, cols.ultimo, cols.penultimo, cols.priceStart, cols.priceEnd);
+  if (!cols.produto || !cols.ultimo) {
+    throw new Error('Não achei "Produto"/"Último valor" no cabeçalho. Confira a aba (SHEET_GID) e os nomes em COL_PRODUTO/COL_ULTIMO.');
+  }
 
   var notas = fetchNotas_(key);                 // [{planilha, data, resultado}]
   var porProduto = groupByProduto_(notas);      // { nomePlanilha: [{data, resultado}] }
@@ -62,11 +65,15 @@ function sync() {
     var row = rowsByName[normalize_(nome)];
     if (!row) { semLinha.push(nome); continue; }
 
-    var lista = porProduto[nome].slice().sort(function (a, b) {
+    // Só o ÚLTIMO cadastrado de cada item: pega a nota de data mais recente e
+    // grava só ela (1 célula por produto). Assim não faz backfill do histórico —
+    // cada compra nova vira uma célula nova; o hist. manual da planilha fica intacto.
+    var todas = porProduto[nome].slice().sort(function (a, b) {
       return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
     });
+    var lista = todas.length ? [todas[todas.length - 1]] : [];
 
-    // Assinatura: se datas+resultados não mudaram desde o último run, pula a linha.
+    // Assinatura: se a data/resultado do último não mudou desde o run anterior, pula.
     var sig = lista.map(function (n) {
       return n.data + '=' + (n.resultado == null ? '' : n.resultado.toFixed(4));
     }).join('|');
@@ -180,8 +187,22 @@ function getSheet_() {
 
 function detectColumns_(sheet) {
   var lastCol = sheet.getLastColumn();
-  var hdr = sheet.getRange(HEADER_ROW, 1, 1, lastCol).getValues()[0].map(normalize_);
-  function find(sub) { for (var c = 0; c < hdr.length; c++) if (hdr[c].indexOf(sub) === 0 || hdr[c] === sub) return c + 1; return 0; }
+  // Acha automaticamente a LINHA do cabeçalho: varre as primeiras linhas atrás de
+  // uma que tenha "Produto" (idealmente também "Último valor"). Assim não depende
+  // de o cabeçalho estar exatamente na linha HEADER_ROW.
+  var scanRows = Math.min(8, sheet.getLastRow());
+  var scan = sheet.getRange(1, 1, scanRows, lastCol).getValues();
+  var headerRow = HEADER_ROW, hdr = null;
+  for (var rr = 0; rr < scanRows; rr++) {
+    var norm = scan[rr].map(normalize_);
+    var hasProd = norm.some(function (v) { return v.indexOf(COL_PRODUTO) === 0; });
+    var hasUlt = norm.some(function (v) { return v.indexOf(COL_ULTIMO) === 0; });
+    if (hasProd && hasUlt) { headerRow = rr + 1; hdr = norm; break; }
+    if (hasProd && hdr == null) { headerRow = rr + 1; hdr = norm; } // só produto = fallback
+  }
+  if (hdr == null) hdr = (scan[HEADER_ROW - 1] || []).map(normalize_);
+
+  function find(sub) { for (var c = 0; c < hdr.length; c++) if (hdr[c].indexOf(sub) === 0) return c + 1; return 0; }
   var produto = find(COL_PRODUTO);
   var ultimo  = find(COL_ULTIMO);
   var penultimo = find(COL_PENULTIMO);
@@ -190,16 +211,24 @@ function detectColumns_(sheet) {
   for (var c = ultimo; c < hdr.length; c++) {
     if (COL_TAIL.indexOf(hdr[c]) >= 0) { tail = c + 1; break; }
   }
-  return { produto: produto, ultimo: ultimo, penultimo: penultimo, priceStart: ultimo + 1, priceEnd: tail - 1 };
+  // Início dos preços = logo após Último valor (e após Penúltimo, se ela estiver
+  // à esquerda da série) — assim a série de preços nunca inclui essas colunas.
+  var effPen = (penultimo && penultimo < tail) ? penultimo : 0;
+  var priceStart = Math.max(ultimo, effPen) + 1;
+  return {
+    headerRow: headerRow, firstDataRow: headerRow + 1,
+    produto: produto, ultimo: ultimo, penultimo: penultimo,
+    priceStart: priceStart, priceEnd: tail - 1,
+  };
 }
 
 function indexRows_(sheet, cols) {
   var last = sheet.getLastRow();
-  var vals = sheet.getRange(FIRST_DATA_ROW, cols.produto, last - FIRST_DATA_ROW + 1, 1).getValues();
+  var vals = sheet.getRange(cols.firstDataRow, cols.produto, last - cols.firstDataRow + 1, 1).getValues();
   var idx = {};
   for (var i = 0; i < vals.length; i++) {
     var nome = String(vals[i][0] || '').trim();
-    if (nome) idx[normalize_(nome)] = FIRST_DATA_ROW + i;
+    if (nome) idx[normalize_(nome)] = cols.firstDataRow + i;
   }
   return idx;
 }
@@ -222,40 +251,59 @@ function nextFreeCol_(sheet, row, cols, cellMap) {
 // ── Penúltimo valor + cores (vermelho subiu / verde desceu) ─────────────────
 function applyPenultimoEFormat_(sheet, cols) {
   var last = sheet.getLastRow();
-  var nRows = last - FIRST_DATA_ROW + 1;
+  var fdr = cols.firstDataRow;
+  var nRows = last - fdr + 1;
   if (nRows <= 0) return;
   var pStart = columnToLetter_(cols.priceStart);
   var pEnd = columnToLetter_(cols.priceEnd);
 
+  // OBS locale: esta planilha é pt-BR — o separador de argumentos de fórmula é ';'
+  // (não ','). O setFormula grava o texto como está, então TEM que ser ';', senão
+  // vira #ERROR! de parse (que o IFERROR não pega). Mesma coisa nas fórmulas da
+  // formatação condicional. Espelha o estilo da fórmula do "Último valor" (D).
   if (SET_ULTIMO_FORMULA && cols.ultimo) {
     var uf = [];
-    for (var r = FIRST_DATA_ROW; r <= last; r++)
-      uf.push(['=IFERROR(LOOKUP(2,1/($' + pStart + r + ':$' + pEnd + r + '<>""),$' + pStart + r + ':$' + pEnd + r + '),"")']);
-    if (!DRY_RUN) sheet.getRange(FIRST_DATA_ROW, cols.ultimo, nRows, 1).setFormulas(uf);
+    for (var r = fdr; r <= last; r++) {
+      var au = pStart + r + ':' + pEnd + r;
+      uf.push(['=IFERROR(INDEX(' + au + ';1;MAX(IF(' + au + '<>"";COLUMN(' + au + ')-COLUMN(' + pStart + r + ')+1)));"")']);
+    }
+    if (!DRY_RUN) sheet.getRange(fdr, cols.ultimo, nRows, 1).setFormulas(uf);
   }
 
   if (SET_PENULTIMO_FORMULA && cols.penultimo) {
     var pf = [];
-    for (var r2 = FIRST_DATA_ROW; r2 <= last; r2++) {
-      var rng = '$' + pStart + r2 + ':$' + pEnd + r2;
-      pf.push(['=IFERROR(INDEX(FILTER(' + rng + ',' + rng + '<>""),COLUMNS(FILTER(' + rng + ',' + rng + '<>""))-1),"")']);
+    for (var r2 = fdr; r2 <= last; r2++) {
+      var a = pStart + r2 + ':' + pEnd + r2;                 // ex.: F2:AD2
+      // 2º valor não-vazio da linha (o penúltimo): LARGE(...;2) da posição.
+      pf.push(['=IFERROR(INDEX(' + a + ';1;LARGE(IF(' + a + '<>"";COLUMN(' + a + ')-COLUMN(' + pStart + r2 + ')+1);2));"")']);
     }
-    if (!DRY_RUN) sheet.getRange(FIRST_DATA_ROW, cols.penultimo, nRows, 1).setFormulas(pf);
+    if (!DRY_RUN) sheet.getRange(fdr, cols.penultimo, nRows, 1).setFormulas(pf);
   }
 
   if (SET_CONDITIONAL_FORMAT && cols.ultimo && cols.penultimo && !DRY_RUN) {
-    var U = columnToLetter_(cols.ultimo), P = columnToLetter_(cols.penultimo);
-    var target = sheet.getRange(FIRST_DATA_ROW, cols.ultimo, nRows, 1);
-    var rules = sheet.getConditionalFormatRules().filter(function (rule) {
+    // Remove regras de formatação condicional que versões anteriores deste script
+    // adicionaram na coluna Último (a CF por fórmula quebra com o locale pt-BR).
+    var keep = sheet.getConditionalFormatRules().filter(function (rule) {
       return rule.getRanges().every(function (rg) { return rg.getColumn() !== cols.ultimo; });
     });
-    rules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($' + U + FIRST_DATA_ROW + '<>"",$' + P + FIRST_DATA_ROW + '<>"",$' + U + FIRST_DATA_ROW + '>$' + P + FIRST_DATA_ROW + ')')
-      .setBackground('#F4CCCC').setRanges([target]).build());   // subiu → vermelho leve
-    rules.push(SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($' + U + FIRST_DATA_ROW + '<>"",$' + P + FIRST_DATA_ROW + '<>"",$' + U + FIRST_DATA_ROW + '<$' + P + FIRST_DATA_ROW + ')')
-      .setBackground('#D9EAD3').setRanges([target]).build());    // desceu → verde leve
-    sheet.setConditionalFormatRules(rules);
+    sheet.setConditionalFormatRules(keep);
+
+    // Colore o fundo do Último (D) comparando os VALORES exibidos em Último (D) e
+    // Penúltimo (E) — assim a cor sempre bate com o que aparece na tela. À prova de
+    // locale, recalc a cada run: vermelho se subiu, verde se desceu, branco se igual.
+    SpreadsheetApp.flush(); // garante que a fórmula do penúltimo já calculou
+    var ults = sheet.getRange(fdr, cols.ultimo, nRows, 1).getValues();
+    var pens = sheet.getRange(fdr, cols.penultimo, nRows, 1).getValues();
+    var bg = [];
+    for (var i = 0; i < nRows; i++) {
+      var u = ults[i][0], p = pens[i][0];
+      var cor = '#FFFFFF';
+      if (typeof u === 'number' && typeof p === 'number') {
+        if (u > p) cor = '#F4CCCC'; else if (u < p) cor = '#D9EAD3';
+      }
+      bg.push([cor]);
+    }
+    sheet.getRange(fdr, cols.ultimo, nRows, 1).setBackgrounds(bg);
   }
 }
 
