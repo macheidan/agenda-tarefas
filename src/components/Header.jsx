@@ -48,7 +48,7 @@ export default function Header({
       badge: reviewsUnread > 0 ? <span className={styles.sirenBadge}>🚨</span> : null,
     },
     knowledge: { enabled: knowledgeEnabled, key: 'knowledge', label: 'Conhecimento' },
-    precosInsumos: { enabled: precosInsumosEnabled, key: 'precosInsumos', label: 'Precos Insumos' },
+    precosInsumos: { enabled: precosInsumosEnabled, key: 'precosInsumos', label: 'Preços' },
     departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
   };
   const orderedTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(TABS_DEF))
