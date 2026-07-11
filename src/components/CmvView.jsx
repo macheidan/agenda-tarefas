@@ -33,6 +33,16 @@ function calcBeneficiado(b, custoBase) {
   return { pesoBruto, custoTotal, rendimento: rend, custoPorKg };
 }
 
+// Total de custo de um sabor por tamanho (P/M/G/S) = Σ (qtd × custo do ingrediente).
+function calcSabor(s, custoBase, benefCusto) {
+  const t = { qtdP: 0, qtdM: 0, qtdG: 0, qtdS: 0 };
+  for (const l of s.lines || []) {
+    const cu = l.tipo === 'beneficiado' ? (benefCusto[l.ref] || 0) : (custoBase[l.ref]?.custo || 0);
+    for (const [k] of SIZES) t[k] += num(l[k]) * cu;
+  }
+  return t;
+}
+
 export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
   const {
     beneficiados, sabores, loading,
@@ -44,6 +54,9 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
   const [novoBenef, setNovoBenef] = useState('');
   const [novoSabor, setNovoSabor] = useState('');
   const [importando, setImportando] = useState(false);
+  // Expandir: mostra as fichas completas (ingredientes). Desmarcado (padrão) =
+  // tabela resumida linha a linha (custo/kg dos beneficiados; total por tamanho dos sabores).
+  const [expandir, setExpandir] = useState(false);
 
   // custo/kg de cada beneficiado (vira "ingrediente" utilizável nos sabores).
   const benefCusto = useMemo(() => {
@@ -80,6 +93,9 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <button style={{ ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({beneficiados.length})</button>
         <button style={{ ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({sabores.length})</button>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text, #222)' }} title="Abre as fichas completas (ingredientes). Desmarcado = tabela resumida.">
+          <input type="checkbox" checked={expandir} onChange={e => setExpandir(e.target.checked)} /> Expandir
+        </label>
         <span style={{ flex: 1 }} />
         {vazio && (
           <button style={{ ...btnS, borderColor: 'var(--accent)', color: 'var(--accent)' }} onClick={importar} disabled={importando}>
@@ -103,10 +119,12 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
           </div>
           {beneficiados.length === 0 ? (
             <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum beneficiado. Crie um acima ou importe da planilha.</p>
-          ) : beneficiados.map(b => (
+          ) : expandir ? beneficiados.map(b => (
             <BeneficiadoCard key={b.id} b={b} custoBase={custoBase} nomesPadrao={opcoesSabor.base}
               onUpdate={updateBeneficiado} onDelete={deleteBeneficiado} />
-          ))}
+          )) : (
+            <BeneficiadosResumo beneficiados={beneficiados} custoBase={custoBase} />
+          )}
         </>
       ) : (
         <>
@@ -119,10 +137,12 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
           </div>
           {sabores.length === 0 ? (
             <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum sabor. Crie um acima ou importe da planilha.</p>
-          ) : sabores.map(s => (
+          ) : expandir ? sabores.map(s => (
             <SaborCard key={s.id} s={s} custoBase={custoBase} benefCusto={benefCusto} opcoes={opcoesSabor}
               onUpdate={updateSabor} onDelete={deleteSabor} />
-          ))}
+          )) : (
+            <SaboresResumo sabores={sabores} custoBase={custoBase} benefCusto={benefCusto} />
+          )}
         </>
       )}
     </div>
@@ -206,12 +226,7 @@ function SaborCard({ s, custoBase, benefCusto, opcoes, onUpdate, onDelete }) {
   if (sig !== prevSig) { setPrevSig(sig); setLines(s.lines || []); }
 
   const custoUnit = (l) => (l.tipo === 'beneficiado' ? (benefCusto[l.ref] || 0) : (custoBase[l.ref]?.custo || 0));
-  const totais = useMemo(() => {
-    const t = { qtdP: 0, qtdM: 0, qtdG: 0, qtdS: 0 };
-    for (const l of lines) { const cu = custoUnit(l); for (const [k] of SIZES) t[k] += num(l[k]) * cu; }
-    return t;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines, custoBase, benefCusto]);
+  const totais = useMemo(() => calcSabor({ lines }, custoBase, benefCusto), [lines, custoBase, benefCusto]);
 
   const commit = (ls) => onUpdate(s.id, {
     lines: ls.map(l => ({ ref: l.ref, tipo: l.tipo || 'base', qtdP: num(l.qtdP), qtdM: num(l.qtdM), qtdG: num(l.qtdG), qtdS: num(l.qtdS) })),
@@ -278,6 +293,59 @@ function SaborCard({ s, custoBase, benefCusto, opcoes, onUpdate, onDelete }) {
         </table>
       </div>
       <button style={{ ...btnS, marginTop: 8, fontSize: 12 }} onClick={addLine}>+ Ingrediente</button>
+    </div>
+  );
+}
+
+// ── Resumo (checkbox Expandir desmarcado): tabela linha a linha ─────────────
+function BeneficiadosResumo({ beneficiados, custoBase }) {
+  return (
+    <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+          <th style={thS}>Beneficiado</th>
+          <th style={{ ...thS, textAlign: 'right' }}>Peso bruto</th>
+          <th style={{ ...thS, textAlign: 'right' }}>Custo total</th>
+          <th style={{ ...thS, textAlign: 'right' }}>Custo/kg</th>
+        </tr></thead>
+        <tbody>
+          {beneficiados.map(b => {
+            const c = calcBeneficiado(b, custoBase);
+            return (
+              <tr key={b.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                <td style={{ ...tdS, fontWeight: 500 }}>{b.nome}</td>
+                <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)' }}>{c.pesoBruto.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg</td>
+                <td style={{ ...tdS, textAlign: 'right' }}>{fmt(c.custoTotal)}</td>
+                <td style={{ ...tdS, textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>{fmt(c.custoPorKg)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SaboresResumo({ sabores, custoBase, benefCusto }) {
+  return (
+    <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+          <th style={thS}>Sabor</th>
+          {SIZES.map(([k, label]) => <th key={k} style={{ ...thS, textAlign: 'right' }}>{label}</th>)}
+        </tr></thead>
+        <tbody>
+          {sabores.map(s => {
+            const t = calcSabor(s, custoBase, benefCusto);
+            return (
+              <tr key={s.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                <td style={{ ...tdS, fontWeight: 500 }}>{s.nome}</td>
+                {SIZES.map(([k]) => <td key={k} style={{ ...tdS, textAlign: 'right', fontWeight: 600 }}>{fmt(t[k])}</td>)}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
