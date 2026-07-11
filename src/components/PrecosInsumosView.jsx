@@ -432,6 +432,7 @@ export default function PrecosInsumosView() {
       <h2 style={headerTitleS}>📦 Preços Insumos</h2>
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={tabBtnS(subPage === 'precos')} onClick={() => setSubPage('precos')}>Preços</button>
+        <button style={tabBtnS(subPage === 'lista')} onClick={() => setSubPage('lista')}>Lista</button>
         <button style={tabBtnS(subPage === 'fornecedores')} onClick={() => setSubPage('fornecedores')}>Fornecedores</button>
         <button style={tabBtnS(subPage === 'cadastrar', 'var(--success)')} onClick={() => setSubPage('cadastrar')}>Cadastrar</button>
         <button style={tabBtnS(subPage === 'subiram', 'var(--danger)')} onClick={() => setSubPage('subiram')}>Subiram</button>
@@ -469,6 +470,15 @@ export default function PrecosInsumosView() {
       <div>
         {header}
         <SubiramView precos={precos} ocultos={ocultosSet} />
+      </div>
+    );
+  }
+
+  if (subPage === 'lista') {
+    return (
+      <div>
+        {header}
+        <ListaView precos={precos} ocultos={ocultosSet} />
       </div>
     );
   }
@@ -937,11 +947,11 @@ function usePrecosVistos() {
   return { vistos, marcarVisto, marcarVarios, desfazerVisto };
 }
 
-// Valor comparavel de uma linha: o Resultado (normalizado x fator/Regra3) quando
-// ha fator; senao o proprio preco normalizado. E o "valor do produto planilha".
+// Valor comparavel de uma linha = o Resultado (normalizado x fator/Regra3). Sem
+// fator NAO ha Resultado (retorna null): o item fica fora do alerta, porque
+// comparar pelo preco nota (nao normalizado pela Regra3) seria enganoso.
 function valorComparavel(p) {
-  const r = calcResultado(p.preco_normalizado, p.fator_regra3);
-  return r == null ? p.preco_normalizado : r;
+  return calcResultado(p.preco_normalizado, p.fator_regra3);
 }
 
 // Sub-pagina "Subiram": alerta de alta de preco por item (produto planilha).
@@ -963,9 +973,11 @@ function SubiramView({ precos, ocultos }) {
     for (const p of precos) {
       if (!p.data) continue;
       if (ocultos.has(p.fornecedor || '(sem)')) continue;
+      const v = valorComparavel(p);
+      if (v == null) continue; // sem Resultado (sem fator) nao entra no alerta
       const key = p.produto_padrao ? `pl:${p.produto_padrao}` : `id:${p.produto_id}`;
       const label = p.produto_padrao || p.produto || '(sem)';
-      (byKey[key] ||= { key, label, rows: [] }).rows.push({ ...p, v: valorComparavel(p) });
+      (byKey[key] ||= { key, label, rows: [] }).rows.push({ ...p, v });
     }
     return byKey;
   }, [precos, ocultos]);
@@ -1043,7 +1055,7 @@ function SubiramView({ precos, ocultos }) {
       </div>
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>
-        Alerta quando o preço atual passa do <strong>preço visto</strong> (última vez que você marcou o item). Sem baseline visto, compara com o menor preço da janela. Marque <strong>Visto ✓</strong> pra fixar o preço atual e limpar o alerta até um novo topo.
+        Alerta quando o <strong>Resultado</strong> atual passa do <strong>visto</strong> (última vez que você marcou o item). Sem baseline visto, compara com o menor Resultado da janela. Itens sem fator (sem Resultado) não entram aqui. Marque <strong>Visto ✓</strong> pra fixar o atual e limpar o alerta até um novo topo.
       </p>
 
       {alertas.length === 0 ? (
@@ -1130,6 +1142,96 @@ function SubiramView({ precos, ocultos }) {
                 ))}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Sub-pagina "Lista": visualizacao SOMENTE-LEITURA das colunas da secao Preços
+// (Produto, Produto (planilha), Fornecedor, Data, Preço Nota, Resultado) — sem
+// Fator nem Compara. Lista os ULTIMOS registros cadastrados no topo (data desc).
+function ListaView({ precos, ocultos }) {
+  const [busca, setBusca] = useState('');
+  const [limite, setLimite] = useState(50);
+
+  const linhas = useMemo(() => {
+    return precos
+      .filter(p => !ocultos.has(p.fornecedor || '(sem)'))
+      .slice()
+      .sort((a, b) => {
+        if (a.data !== b.data) return a.data < b.data ? 1 : -1; // mais recente primeiro
+        return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;          // id como desempate (desc)
+      });
+  }, [precos, ocultos]);
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return linhas;
+    return linhas.filter(p =>
+      p.produto.toLowerCase().includes(q) ||
+      (p.produto_padrao || '').toLowerCase().includes(q) ||
+      p.fornecedor.toLowerCase().includes(q)
+    );
+  }, [linhas, busca]);
+
+  const visiveis = limite ? filtrados.slice(0, limite) : filtrados;
+
+  return (
+    <div>
+      <style>{`
+        .listaTable tbody tr { transition: background 0.1s ease; }
+        .listaTable tbody tr:hover td { background: var(--accent-light, #ecf3ff) !important; }
+      `}</style>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12, alignItems: 'center' }}>
+        <input
+          type="search" placeholder="Buscar produto ou fornecedor..."
+          value={busca} onChange={e => setBusca(e.target.value)}
+          style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
+        />
+        <select value={limite} onChange={e => setLimite(Number(e.target.value))} style={{ ...inputS, width: 130 }}>
+          <option value={50}>Últimos 50</option>
+          <option value={100}>Últimos 100</option>
+          <option value={200}>Últimos 200</option>
+          <option value={0}>Todos</option>
+        </select>
+        <div style={{ flex: '1 1 140px', minWidth: 120 }}>
+          <StatCard label="Registros" value={filtrados.length} />
+        </div>
+      </div>
+
+      {visiveis.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum registro encontrado.</p>
+      ) : (
+        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
+          <table className="listaTable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+                <th style={thS}>Produto</th>
+                <th style={thS}>Produto (planilha)</th>
+                <th style={thS}>Fornecedor</th>
+                <th style={thS}>Data</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Preço Nota</th>
+                <th style={{ ...thS, textAlign: 'right' }}>Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visiveis.map(p => {
+                const res = calcResultado(p.preco_normalizado, p.fator_regra3);
+                return (
+                  <tr key={p.id} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                    <td style={{ ...tdS, fontWeight: 500, fontSize: 11 }}>{p.produto}</td>
+                    <td style={{ ...tdS, color: p.produto_padrao ? 'inherit' : 'var(--text-muted)' }}>{p.produto_padrao || '—'}</td>
+                    <td style={tdS}>{p.fornecedor}</td>
+                    <td style={tdS}>{formatDate(p.data)}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
+                    <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)' }}>{res == null ? '—' : 'R$ ' + res.toFixed(2)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
