@@ -238,8 +238,8 @@ export default function ComprasView() {
       const qty = Number(i.qty);
       const q = Number.isInteger(qty) ? qty : qty.toString().replace('.', ',');
       const marca = i.marca ? ` ${i.marca}` : '';
-      const unid = i.unid ? ` (${i.unid})` : '';
-      return `${q}x ${i.produto}${marca}${unid}`;
+      const unid = i.unid || '';
+      return `${q}${unid} - ${i.produto}${marca}`;
     });
     return [
       `*PEDIDO ${fornec.name}*`,
