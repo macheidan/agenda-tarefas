@@ -34,3 +34,4 @@ serviceAccount*.json
 *.sln
 *.sw?
 .vercel
+scripts/motoboys/data/

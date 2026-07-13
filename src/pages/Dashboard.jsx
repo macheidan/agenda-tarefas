@@ -46,6 +46,7 @@ const KnowledgeView = lazy(() => import('../components/KnowledgeView'));
 const PrecosInsumosView = lazy(() => import('../components/PrecosInsumosView'));
 const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPessoalView'));
 const ComprasView = lazy(() => import('../components/ComprasView'));
+const MotoboysView = lazy(() => import('../components/MotoboysView'));
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -98,6 +99,8 @@ export default function Dashboard() {
   const precosInsumosEnabled = !settingsLoading && settings.precosInsumosEnabled !== false;
   // Departamento Pessoal: desmarcado por padrão (default OFF).
   const departamentoPessoalEnabled = !settingsLoading && settings.departamentoPessoalEnabled === true;
+  // Motoboys (conferência semanal): default OFF, admin habilita por usuário.
+  const motoboysEnabled = !settingsLoading && settings.motoboysEnabled === true;
   const {
     influencers,
     addInfluencer,
@@ -136,12 +139,14 @@ export default function Dashboard() {
     calendar: 'Agenda', reels: 'Instagram', contentPlan: 'Conteúdo', influencers: 'Influencers',
     notes: 'Notas', shopping: 'Compras', ideas: 'Ideias', reviews: 'Avaliações',
     knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
+    motoboys: 'Motoboys',
   };
   const NAV_ENABLED = {
     calendar: calendarEnabled, reels: reelsEnabled, contentPlan: contentPlanEnabled,
     influencers: influencersEnabled, notes: notesEnabled, shopping: shoppingListEnabled,
     ideas: ideasEnabled, reviews: reviewsEnabled, knowledge: knowledgeEnabled,
     precosInsumos: precosInsumosEnabled, departamentoPessoal: departamentoPessoalEnabled,
+    motoboys: motoboysEnabled,
   };
   const navDot = <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block' }} />;
   const bottomTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(NAV_LABELS))
@@ -171,6 +176,7 @@ export default function Dashboard() {
         influencersEnabled={influencersEnabled}
         precosInsumosEnabled={precosInsumosEnabled}
         departamentoPessoalEnabled={departamentoPessoalEnabled}
+        motoboysEnabled={motoboysEnabled}
         ideasUnread={ideasUnread}
         reviewsUnread={reviewsUnread}
         onOpenMessage={() => setMessageModalOpen(true)}
@@ -305,6 +311,7 @@ export default function Dashboard() {
         )}
         {activeTab === 'precosInsumos' && precosInsumosEnabled && <PrecosInsumosView />}
         {activeTab === 'departamentoPessoal' && departamentoPessoalEnabled && <DepartamentoPessoalView />}
+        {activeTab === 'motoboys' && motoboysEnabled && <MotoboysView />}
         {activeTab === 'completed' && isAdmin && (
           <CompletedView
             completedTasks={completedTasks}

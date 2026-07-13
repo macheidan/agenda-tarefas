@@ -14,6 +14,7 @@ export const DEFAULT_TABS_ORDER = [
   'knowledge',
   'precosInsumos',
   'departamentoPessoal',
+  'motoboys',
 ];
 
 export function useTabsOrder() {

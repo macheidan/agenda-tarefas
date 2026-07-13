@@ -17,6 +17,7 @@ const TAB_LABELS = {
   knowledge: 'Conhecimento',
   precosInsumos: 'Preços',
   departamentoPessoal: 'Depto Pessoal',
+  motoboys: 'Motoboys',
 };
 
 // Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em
@@ -76,6 +77,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     { key: 'knowledgeEnabled', label: 'Conhecimento' },
     { key: 'precosInsumosEnabled', label: 'Preços' },
     { key: 'departamentoPessoalEnabled', label: 'Depto Pessoal', defaultOff: true },
+    { key: 'motoboysEnabled', label: 'Motoboys', defaultOff: true },
   ];
 
   // Chaves de visibilidade definidas como false ao aprovar (default tudo oculto)
@@ -371,7 +373,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                   </>
                 )}
 
-                {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false) && (
+                {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false || s.motoboysEnabled === true) && (
                   <>
                     <span className={styles.subGroupLabel}>Permissões de edição</span>
                     <div className={styles.permGroup}>
@@ -403,6 +405,16 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                             onChange={(e) => toggleSection(u.uid, 'comprasEditor', e.target.checked)}
                           />
                           <span className={styles.sectionLabel}>Compras — gerencia fornecedores e o catálogo de itens</span>
+                        </label>
+                      )}
+                      {s.motoboysEnabled === true && (
+                        <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
+                          <input
+                            type="checkbox"
+                            checked={s.motoboysEditor === true}
+                            onChange={(e) => toggleSection(u.uid, 'motoboysEditor', e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>Motoboys — lança entregas, taxas, descontos e bandas extras (gerente)</span>
                         </label>
                       )}
                     </div>

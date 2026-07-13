@@ -30,6 +30,10 @@ service cloud.firestore {
       return isAdmin() || hasSettingFlag('comprasEditor');
     }
 
+    function isMotoboysEditor() {
+      return isAdmin() || hasSettingFlag('motoboysEditor');
+    }
+
     // Usuários: qualquer logado lê. Cada um cria o seu (sem se auto-aprovar)
     // e atualiza só perfil; admin pode tudo (aprovar/rejeitar/deletar).
     match /users/{uid} {
@@ -193,6 +197,23 @@ service cloud.firestore {
     match /cmvConfig/{id} {
       allow read: if isSignedIn();
       allow write: if isComprasEditor();
+    }
+
+    // Motoboys (conferência semanal de entregas — valores pagos à cooperativa):
+    // dado sensível; leitura só para admin ou quem vê a seção (motoboysEnabled),
+    // escrita para admin/editor (gerente). O importador do Saipos usa o Admin
+    // SDK e ignora estas regras.
+    match /motoboySemanas/{id} {
+      allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');
+      allow write: if isMotoboysEditor();
+    }
+    match /motoboyConfig/{id} {
+      allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');
+      allow write: if isMotoboysEditor();
+    }
+    match /motoboyExtras/{id} {
+      allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');
+      allow write: if isMotoboysEditor();
     }
   }
 }
