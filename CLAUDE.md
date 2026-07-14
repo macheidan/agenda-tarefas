@@ -80,3 +80,18 @@ Hooks em `src/hooks/` são a fonte da verdade sobre shape dos documentos. Coleç
 - Commits seguem `feat:`/`fix:`/`refactor:`/`chore:`/`docs:` (Conventional Commits, mas livre).
 - Hooks exportam objetos com dados + funções (`{ tasks, addTask, updateTask, deleteTask }`).
 - Modais são componentes separados (`TaskModal`, `NoteModal`, `AdminMessageModal`) que recebem `open`, `onClose`, e os dados necessários.
+
+## Padrão de design (OBRIGATÓRIO — ler antes de criar ou mexer em qualquer view)
+
+A constituição completa está em **`.specify/memory/constitution.md`**. Referências canônicas de design: **InfluencersView, ReelsView e NotesView**. O design system em `src/ui/` (tokens `--ds-*`) NÃO é usado. Resumo dos 10 princípios:
+
+1. Toda view é um cartão único: `--card` + `radius-lg` + `shadow-sm` + `padding:24px`.
+2. Header flex space-between: `<h2>` 18px/700 à esquerda, `.headerActions` à direita.
+3. Sub-conteúdos = **submenu horizontal fixo na linha do título** (botões outline 2px coloridos, radius-md 8px, preenchem quando ativos, contador `(n)`). Modais só pra cadastros/configs pontuais.
+4. Botões sempre radius-md; primário `--accent` sólido, ghost com borda `--input-border`, perigo `--danger`. Pílula 999px só em chip informativo.
+5. Inputs retangulares radius-md, `:focus` acende `--accent`; forms em `--bg-secondary` com label 13/600 + hint 12.
+6. Escala tipográfica fechada: 18/15/14/13/12/11px; TH uppercase 11px letter-spacing.
+7. Só CSS vars do global.css; badges = chip `--accent-light`/`--accent` uppercase 11/700; destaques com `rgba()` suave.
+8. Denso no desktop (`<table>` compacta), cards no mobile: breakpoints 768/480px, `tr` vira card com `td[data-label]::before`; inputs 16px @480 (iOS).
+9. Empty state com borda tracejada em `--bg-secondary`; hover de card = sombra + borda accent; destrutivo pede `window.confirm`.
+10. 1 seção = View + hook + css module (+ Modal separado); `useMemo` pra derivações; dicionários de config no topo; wiring completo (Dashboard, Header, tabIcons, useTabsOrder, SettingsView, rules); seção nova default OFF com flags `xVer*`/`xEdit*`.
