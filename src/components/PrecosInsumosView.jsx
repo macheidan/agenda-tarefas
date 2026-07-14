@@ -476,7 +476,7 @@ export default function PrecosInsumosView() {
       <h2 style={headerTitleS}>📦 Preços</h2>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {SUBPAGES.filter(sp => subVisible[sp.key]).map(sp => (
-          <button key={sp.key} style={tabBtnS(activeSub === sp.key, sp.color)} onClick={() => setSubPage(sp.key)}>{sp.label}</button>
+          <button key={sp.key} style={tabBtnS(activeSub === sp.key)} onClick={() => setSubPage(sp.key)}>{sp.label}</button>
         ))}
       </div>
     </div>
@@ -1994,11 +1994,12 @@ function Campo({ label, full, children }) {
 
 const cadInputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box', width: '100%' };
 
-const headerS = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 0', marginBottom: 12, borderBottom: '1px solid var(--border, #e5e5e5)' };
+const headerS = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 0', marginBottom: 12, borderBottom: '1px solid var(--border-light, #e5e5e5)' };
 const headerTitleS = { fontSize: 18, fontWeight: 700, color: 'var(--text, #222)' };
-const tabBtnS = (active, color = 'var(--accent, #465fff)') => ({ padding: '8px 14px', border: `2px solid ${color}`, borderRadius: 6, background: active ? color : 'var(--card-bg, #fff)', color: active ? '#fff' : color, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
-// Sub-abas internas do Cadastrar (Produto / Fornecedor / Planilha) — visual mais leve que as abas principais.
-const subTabBtnS = (active) => ({ padding: '6px 14px', border: '1px solid var(--border, #e5e5e5)', borderRadius: 20, background: active ? 'var(--accent, #465fff)' : 'var(--card-bg, #fff)', color: active ? '#fff' : 'var(--text-secondary, #555)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
+// Submenu no padrão do app (estilo Dia/Semana/Mês do Calendário, igual Motoboys): sem cor por aba.
+const tabBtnS = (active) => ({ padding: '5px 12px', border: `1px solid ${active ? 'var(--accent, #465fff)' : 'var(--border-light, #e5e5e5)'}`, borderRadius: 8, background: active ? 'var(--accent, #465fff)' : 'none', color: active ? '#fff' : 'var(--text-muted, #888)', fontSize: 13, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
+// Sub-abas internas do Cadastrar (Produto / Fornecedor / Planilha) — mesmo estilo do submenu.
+const subTabBtnS = (active) => ({ padding: '5px 12px', border: `1px solid ${active ? 'var(--accent, #465fff)' : 'var(--border-light, #e5e5e5)'}`, borderRadius: 8, background: active ? 'var(--accent, #465fff)' : 'none', color: active ? '#fff' : 'var(--text-muted, #888)', fontSize: 13, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
 const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
