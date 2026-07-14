@@ -361,17 +361,27 @@ export default function MotoboysView() {
                                 {tx.valor != null ? formatBRL(tx.valor) : ''} {tx.faixa ? `· ${tx.faixa}` : ''}
                               </span>
                             </td>
-                            {diasIso.map((d, di) => (
-                              <td key={d}>
-                                <QtdInput
-                                  value={mb.dias?.[di]?.t?.[ti] ?? null}
-                                  disabled={!canEditGerente}
-                                  onCommit={(v) => setCelula(mb.mid, di, ti, v)}
-                                />
-                              </td>
-                            ))}
+                            {diasIso.map((d, di) => {
+                              const paT = canViewAdm ? pa?.taxas?.[mb.mid]?.[di]?.[ti] : null;
+                              return (
+                                <td key={d}>
+                                  <QtdInput
+                                    value={mb.dias?.[di]?.t?.[ti] ?? null}
+                                    disabled={!canEditGerente}
+                                    onCommit={(v) => setCelula(mb.mid, di, ti, v)}
+                                  />
+                                  {paT != null && <span className={styles.paTaxa}>/{paT}</span>}
+                                </td>
+                              );
+                            })}
                             <td className={styles.totalCol}>
                               {diasIso.reduce((acc, _, di) => acc + (Number(mb.dias?.[di]?.t?.[ti]) || 0), 0) || ''}
+                              {canViewAdm && (() => {
+                                const totPa = diasIso.reduce(
+                                  (acc, _, di) => acc + (Number(pa?.taxas?.[mb.mid]?.[di]?.[ti]) || 0), 0
+                                );
+                                return totPa ? <span className={styles.paTaxa}>/{totPa}</span> : null;
+                              })()}
                             </td>
                           </tr>
                         )

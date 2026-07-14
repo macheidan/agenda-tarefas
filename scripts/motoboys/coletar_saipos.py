@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Coleta entregas por motoboy no Saipos (delivery-man-paid), dia a dia.
+"""Coleta entregas por motoboy no Saipos (delivery-man-paid), com detalhe por taxa.
 
-Consulta o relatório "Entregadores" das duas lojas (Dáme e Lov) para cada dia
-da semana alvo (segunda a domingo) e grava um JSON com a quantidade de
-entregas por entregador por dia. O JSON é consumido pelo importar_pa.mjs,
-que casa os nomes e grava no Firestore da intranet.
+Consulta o relatório "Entregadores" das duas lojas (Dáme e Lov) para a semana
+alvo inteira (segunda a domingo) com status "Não pago", abre o "Ver detalhes"
+de cada entregador e extrai as entregas por data × valor de comissão. O JSON
+resultante traz a contagem por dia (compatível com o formato antigo) e a
+quebra por taxa, consumidos pelo importar_pa.mjs.
 
 Uso:
     python coletar_saipos.py                      # semana passada (seg-dom)
@@ -54,26 +55,44 @@ def login_robusto(page) -> None:
 
 
 def navegar_relatorio(page) -> None:
-    for tentativa in range(3):
+    for tentativa in range(5):
         page.goto(URL_ENTREGADORES, wait_until="domcontentloaded", timeout=60000)
         page.wait_for_timeout(3500)
         if "delivery-man-paid" in page.url:
             return
-        print(f"  [{tentativa + 1}/3] redirecionado para {page.url}, tentando de novo...")
+        print(f"  [{tentativa + 1}/5] redirecionado para {page.url}, tentando de novo...")
     raise RuntimeError(f"Nao consegui abrir o relatorio de entregadores (URL: {page.url})")
 
 
-def preencher_dia(page, dia: date) -> None:
-    """Preenche as duas datas (início e fim) com o mesmo dia."""
-    valor = dia.strftime("%d/%m/%Y")
+def preencher_periodo(page, inicio: date, fim: date) -> None:
+    """Preenche as datas de início e fim do período."""
     inputs = page.locator("input[ng-model='dateString']").all()
     if len(inputs) < 2:
         raise RuntimeError(f"Inputs de data nao encontrados ({len(inputs)})")
-    for inp in inputs[:2]:
+    for inp, dia in zip(inputs[:2], [inicio, fim]):
         inp.click(click_count=3)
-        inp.type(valor, delay=50)
+        inp.type(dia.strftime("%d/%m/%Y"), delay=50)
         inp.press("Tab")
     page.wait_for_timeout(400)
+
+
+def filtrar_nao_pago(page) -> None:
+    """Seleciona status "Não pago" no select (widget chosen escondido)."""
+    ok = page.evaluate(
+        """() => {
+          const sels = [...document.querySelectorAll('select')];
+          const sel = sels.find(s => [...s.options].some(o => /n.o pago/i.test(o.label || o.text)));
+          if (!sel) return false;
+          const opt = [...sel.options].find(o => /n.o pago/i.test(o.label || o.text));
+          sel.value = opt.value;
+          sel.dispatchEvent(new Event('change', {bubbles: true}));
+          if (window.angular) angular.element(sel).triggerHandler('change');
+          return true;
+        }"""
+    )
+    if not ok:
+        raise RuntimeError("Select de status (Nao pago) nao encontrado")
+    page.wait_for_timeout(600)
 
 
 def buscar(page) -> None:
@@ -88,39 +107,129 @@ def buscar(page) -> None:
     )
     if not clicado:
         raise RuntimeError("Botao BUSCAR nao encontrado")
-    page.wait_for_timeout(4500)
+    page.wait_for_timeout(5000)
 
 
-def ler_tabela(page) -> dict[str, int]:
-    """Lê a tabela de entregadores → { NOME: qtde_entregas } (só qtde > 0)."""
+def listar_entregadores(page) -> list[dict]:
+    """Linhas da tabela principal → [{id, nome, qtd, temDetalhes}]."""
     linhas = page.evaluate(
+        """() => [...document.querySelectorAll('tr[data-qa^="delivery-man-"]')].map(tr => ({
+              id: tr.getAttribute('data-qa'),
+              nome: (tr.querySelector('td[data-qa=name]')?.innerText || '').trim().split('\\n')[0].trim(),
+              qtd: parseInt((tr.querySelector('td[data-qa="count-deliveries"]')?.innerText || '0').trim(), 10) || 0,
+              temDetalhes: !!([...tr.querySelectorAll('a')].find(a => /ver detalhes/i.test(a.innerText))),
+            }))"""
+    )
+    return [l for l in linhas if l["nome"]]
+
+
+def abrir_detalhes(page, row_id: str) -> None:
+    ok = page.evaluate(
+        """(rowId) => {
+          const tr = document.querySelector(`tr[data-qa="${rowId}"]`);
+          const a = tr && [...tr.querySelectorAll('a')].find(a => /ver detalhes/i.test(a.innerText));
+          if (a) { a.click(); return true; }
+          return false;
+        }""",
+        row_id,
+    )
+    if not ok:
+        raise RuntimeError(f"Link Ver detalhes nao encontrado em {row_id}")
+    page.wait_for_selector(".modal-content", timeout=15000)
+    page.wait_for_timeout(1500)
+
+
+def ler_entregas_modal(page) -> list[dict]:
+    """Tabela "Entregas" do modal → [{data: 'dd/mm/aaaa', valor: float}]."""
+    vendas = page.evaluate(
         """() => {
-          const tables = [...document.querySelectorAll('table')].filter(t => t.offsetHeight);
-          for (const t of tables) {
-            const head = (t.querySelector('thead') || t).innerText || '';
-            if (!/ENTREGADOR/i.test(head)) continue;
-            return [...t.querySelectorAll('tbody tr')].map(tr =>
-              [...tr.querySelectorAll('td')].map(c => (c.innerText || '').trim()));
-          }
-          return null;
+          const modal = document.querySelector('.modal-content');
+          if (!modal) return null;
+          const rows = [...modal.querySelectorAll('tr[ng-repeat^="sale in"]')];
+          return rows.map(tr => {
+            const tds = [...tr.querySelectorAll('td')];
+            const data = (tds[2]?.innerText || '').trim();
+            const inp = tr.querySelector('input[ng-model="sale.sale_new_value_to_pay"]');
+            const bruto = inp ? inp.value : (tds[6]?.innerText || '');
+            return {data, bruto};
+          });
         }"""
     )
-    if linhas is None:
-        raise RuntimeError("Tabela de entregadores nao encontrada")
-    resultado: dict[str, int] = {}
-    for cels in linhas:
-        # Layout observado: [ '', 'NOME\nDiária', 'QTDE', 'VALOR TAXAS', ... ]
-        texto = [c for c in cels if c]
-        if len(texto) < 2:
+    if vendas is None:
+        raise RuntimeError("Modal de detalhes nao encontrado")
+    out = []
+    for v in vendas:
+        if not v["data"]:
             continue
-        nome = texto[0].split("\n")[0].strip()
+        bruto = str(v["bruto"]).replace("R$", "").replace(".", "").replace(",", ".").strip()
         try:
-            qtd = int(texto[1].split("\n")[0].strip())
-        except (ValueError, IndexError):
+            valor = float(bruto)
+        except ValueError:
+            valor = 0.0
+        out.append({"data": v["data"], "valor": valor})
+    return out
+
+
+def fechar_modal(page) -> None:
+    page.evaluate(
+        """() => {
+          const modal = document.querySelector('.modal-content');
+          if (!modal) return;
+          const btn = [...modal.querySelectorAll('button')].find(b => /cancelar/i.test(b.innerText || ''));
+          if (btn) btn.click();
+        }"""
+    )
+    try:
+        page.wait_for_selector(".modal-content", state="detached", timeout=10000)
+    except Exception:  # noqa: BLE001
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(1000)
+    page.wait_for_timeout(600)
+
+
+def coletar_loja(page, loja: str, dias: list[date]) -> dict:
+    """Uma loja → {dias: {i: {nome: qtd}}, taxas: {nome: {i: {'10.00': qtd}}}}."""
+    sa.selecionar_loja(page, loja)
+    navegar_relatorio(page)
+    preencher_periodo(page, dias[0], dias[-1])
+    filtrar_nao_pago(page)
+    buscar(page)
+
+    idx_por_data = {d.strftime("%d/%m/%Y"): str(i) for i, d in enumerate(dias)}
+    entregadores = listar_entregadores(page)
+    print(f"  {len(entregadores)} entregadores com status nao pago")
+
+    dias_loja: dict[str, dict[str, int]] = {}
+    taxas_loja: dict[str, dict[str, dict[str, int]]] = {}
+    for ent in entregadores:
+        if not ent["temDetalhes"]:
+            print(f"  {ent['nome']}: sem link de detalhes, pulando")
             continue
-        if nome and qtd > 0:
-            resultado[nome] = resultado.get(nome, 0) + qtd
-    return resultado
+        abrir_detalhes(page, ent["id"])
+        vendas = ler_entregas_modal(page)
+        fechar_modal(page)
+
+        fora = 0
+        for v in vendas:
+            di = idx_por_data.get(v["data"])
+            if di is None:
+                fora += 1
+                continue
+            dias_loja.setdefault(di, {})
+            dias_loja[di][ent["nome"]] = dias_loja[di].get(ent["nome"], 0) + 1
+            chave = f"{v['valor']:.2f}"
+            taxas_loja.setdefault(ent["nome"], {}).setdefault(di, {})
+            taxas_loja[ent["nome"]][di][chave] = taxas_loja[ent["nome"]][di].get(chave, 0) + 1
+
+        total = sum(1 for v in vendas if v["data"] in idx_por_data)
+        aviso = ""
+        if total != ent["qtd"]:
+            aviso = f" [AVISO: tabela diz {ent['qtd']}]"
+        if fora:
+            aviso += f" [{fora} fora do periodo]"
+        print(f"  {ent['nome']}: {total} entregas{aviso}")
+
+    return {"dias": dias_loja, "taxas": taxas_loja}
 
 
 def coletar(segunda: date, headless: bool) -> dict:
@@ -145,18 +254,7 @@ def coletar(segunda: date, headless: bool) -> dict:
             login_robusto(page)
             for loja in LOJAS:
                 print(f"== {loja} ==")
-                sa.selecionar_loja(page, loja)
-                navegar_relatorio(page)
-                dias_loja: dict[str, dict[str, int]] = {}
-                for i, dia in enumerate(dias):
-                    preencher_dia(page, dia)
-                    buscar(page)
-                    contagem = ler_tabela(page)
-                    if contagem:
-                        dias_loja[str(i)] = contagem
-                    total = sum(contagem.values())
-                    print(f"  {dia.strftime('%a %d/%m')}: {total} entregas, {len(contagem)} motoboys")
-                saida["lojas"][loja.lower()] = {"dias": dias_loja}
+                saida["lojas"][loja.lower()] = coletar_loja(page, loja, dias)
         finally:
             ctx.close()
     return saida

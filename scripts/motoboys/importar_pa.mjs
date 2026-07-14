@@ -151,6 +151,45 @@ function novoMid() {
   return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
+// Índice da taxa da intranet com valor mais próximo do valor do Saipos
+// (ex.: R$10,00 do Saipos → Taxa 1 R$10,50). Valores <= 0 não mapeiam.
+function taxaMaisProxima(valor, taxas) {
+  if (!(valor > 0)) return null;
+  let melhor = null;
+  let melhorDiff = Infinity;
+  (taxas || []).forEach((t, i) => {
+    const tv = Number(t?.valor);
+    if (!(tv > 0)) return;
+    const diff = Math.abs(tv - valor);
+    if (diff < melhorDiff) {
+      melhorDiff = diff;
+      melhor = i;
+    }
+  });
+  return melhor;
+}
+
+// Detalhe por taxa de um nome do Saipos ({dia: {'10.00': qtd}}) →
+// {dia: {taxaIdx: qtd}} usando a config da semana. Loga o mapa de valores.
+function mapearTaxas(taxasNome, taxasConfig, mapaLog) {
+  const out = {};
+  for (const [dia, porValor] of Object.entries(taxasNome || {})) {
+    for (const [valStr, qtd] of Object.entries(porValor)) {
+      const valor = Number(valStr);
+      const ti = taxaMaisProxima(valor, taxasConfig);
+      if (ti == null) {
+        mapaLog.set(valStr, 'sem taxa (ignorado)');
+        continue;
+      }
+      const tv = Number(taxasConfig[ti]?.valor);
+      mapaLog.set(valStr, `${taxasConfig[ti]?.label || `Taxa ${ti + 1}`} (R$ ${tv})${Math.abs(tv - valor) > 3 ? ' [DIFERENCA GRANDE]' : ''}`);
+      if (!out[dia]) out[dia] = {};
+      out[dia][ti] = (out[dia][ti] || 0) + Number(qtd);
+    }
+  }
+  return out;
+}
+
 async function importarLoja(db, loja, semana, diasLoja, fonte, dry) {
   const docId = `${loja}_${semana}`;
   const semanaRef = db.collection('motoboySemanas').doc(docId);
@@ -212,17 +251,43 @@ async function importarLoja(db, loja, semana, diasLoja, fonte, dry) {
     }
   }
 
+  // Config de taxas usada no mapeamento (mesma prioridade da view:
+  // config da semana > default da loja > default fixo).
+  const taxasConfig =
+    (semanaSnap.exists && semanaSnap.data()?.config?.taxas) ||
+    configDoc.config?.taxas ||
+    DEFAULT_CONFIG.taxas;
+  const detalheTaxas = diasLoja?.taxas || {};
+  const mapaLog = new Map();
+
   const naoCasados = nomes
     .filter((n) => !casados[n])
-    .map((n) => ({ nome: n, dias: porNome[n] }));
+    .map((n) => {
+      const item = { nome: n, dias: porNome[n] };
+      const t = mapearTaxas(detalheTaxas[n], taxasConfig, mapaLog);
+      if (Object.keys(t).length) item.taxas = t;
+      return item;
+    });
 
-  // Monta pa.entregas por mid (somando se dois nomes casarem no mesmo mid).
+  // Monta pa.entregas e pa.taxas por mid (somando se dois nomes casarem no mesmo mid).
   const entregas = {};
+  const taxas = {};
   for (const [nome, mid] of Object.entries(casados)) {
     if (!entregas[mid]) entregas[mid] = {};
     for (const [dia, qtd] of Object.entries(porNome[nome])) {
       entregas[mid][dia] = (entregas[mid][dia] || 0) + qtd;
     }
+    const t = mapearTaxas(detalheTaxas[nome], taxasConfig, mapaLog);
+    for (const [dia, porTaxa] of Object.entries(t)) {
+      if (!taxas[mid]) taxas[mid] = {};
+      if (!taxas[mid][dia]) taxas[mid][dia] = {};
+      for (const [ti, qtd] of Object.entries(porTaxa)) {
+        taxas[mid][dia][ti] = (taxas[mid][dia][ti] || 0) + qtd;
+      }
+    }
+  }
+  if (mapaLog.size) {
+    console.log(`  taxas Saipos → intranet: ${[...mapaLog.entries()].map(([v, t]) => `R$ ${v} → ${t}`).join(' · ')}`);
   }
 
   // Aliases aprendidos nesta rodada (fuzzy/LLM) para as próximas.
@@ -264,7 +329,7 @@ async function importarLoja(db, loja, semana, diasLoja, fonte, dry) {
   // pa é substituído por completo a cada importação (update de campo inteiro,
   // para remover chaves antigas de entregas de rodadas anteriores).
   await semanaRef.update({
-    pa: { entregas, naoCasados, importadoEm: new Date().toISOString(), fonte },
+    pa: { entregas, taxas, naoCasados, importadoEm: new Date().toISOString(), fonte },
     atualizadoEm: Timestamp.now(),
   });
 

@@ -398,8 +398,18 @@ export function useMotoboys(loja, segunda, author) {
       Object.entries(alvo.dias || {}).forEach(([d, q]) => {
         merged[d] = (Number(merged[d]) || 0) + (Number(q) || 0);
       });
+      // Detalhe por taxa (quando o import trouxe): merge no pa.taxas do destino.
+      const taxasAtual = semana?.pa?.taxas?.[mid] || {};
+      const taxasMerged = JSON.parse(JSON.stringify(taxasAtual));
+      Object.entries(alvo.taxas || {}).forEach(([d, porTaxa]) => {
+        if (!taxasMerged[d]) taxasMerged[d] = {};
+        Object.entries(porTaxa).forEach(([ti, q]) => {
+          taxasMerged[d][ti] = (Number(taxasMerged[d][ti]) || 0) + (Number(q) || 0);
+        });
+      });
       await updateDoc(doc(db, 'motoboySemanas', docId), {
         [`pa.entregas.${mid}`]: merged,
+        ...(Object.keys(taxasMerged).length ? { [`pa.taxas.${mid}`]: taxasMerged } : {}),
         'pa.naoCasados': naoCasados,
         atualizadoEm: Timestamp.now(),
       });
