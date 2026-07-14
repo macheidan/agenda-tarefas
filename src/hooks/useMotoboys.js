@@ -73,13 +73,14 @@ export function semanaDocId(loja, segunda) {
 
 // ---- Cálculos (réplica das fórmulas da planilha) ----
 
-// Um dia de um motoboy: { t: {0..5: qtd}, desc: number|null, ok: bool }.
-// `ok` é o checkbox de confirmação do dia: sem ele, o dia não gera acréscimo
-// (garantia) nem conta como moto-dia (taxa coop) — as bandas seguem valendo.
+// Um dia de um motoboy: { t: {0..5: qtd}, desc: number|null, semGarantia: bool }.
+// `semGarantia` é o checkbox de exceção do dia: marcado, o dia não gera
+// acréscimo (garantia) nem conta como moto-dia (taxa coop) — as bandas
+// seguem valendo. Desmarcado (padrão) é o cálculo normal.
 export function calcDia(cel, config) {
   const taxas = config?.taxas || DEFAULT_MOTOBOY_CONFIG.taxas;
   const garantia = Number(config?.garantia) || 0;
-  const ok = cel?.ok === true;
+  const semGarantia = cel?.semGarantia === true;
   let qtd = 0;
   let bandas = 0;
   for (let i = 0; i < taxas.length; i++) {
@@ -87,11 +88,11 @@ export function calcDia(cel, config) {
     qtd += n;
     bandas += n * (Number(taxas[i]?.valor) || 0);
   }
-  // Acréscimo: se o dia foi confirmado, trabalhou e rendeu menos que a garantia, completa.
-  const acrescimo = ok && qtd > 0 && bandas < garantia ? garantia - bandas : 0;
+  // Acréscimo: se trabalhou e o dia rendeu menos que a garantia, completa.
+  const acrescimo = !semGarantia && qtd > 0 && bandas < garantia ? garantia - bandas : 0;
   const desconto = Number(cel?.desc) || 0;
   const valor = bandas + acrescimo + desconto;
-  return { qtd, bandas, acrescimo, desconto, valor, trabalhou: ok && qtd > 0, ok };
+  return { qtd, bandas, acrescimo, desconto, valor, trabalhou: !semGarantia && qtd > 0, semGarantia };
 }
 
 // Semana inteira de um motoboy → { dias: [7×calcDia], total: {...} }.
@@ -237,12 +238,12 @@ export function useMotoboys(loja, segunda, author) {
     [docId]
   );
 
-  // Checkbox de confirmação do dia (libera acréscimo e moto-dia no cálculo).
-  const setDiaOk = useCallback(
-    async (mid, diaIdx, ok) => {
-      const path = `motoboys.${mid}.dias.${diaIdx}.ok`;
+  // Checkbox de exceção do dia (marcado = sem acréscimo e sem moto-dia).
+  const setDiaSemGarantia = useCallback(
+    async (mid, diaIdx, marcado) => {
+      const path = `motoboys.${mid}.dias.${diaIdx}.semGarantia`;
       await updateDoc(doc(db, 'motoboySemanas', docId), {
-        [path]: ok ? true : deleteField(),
+        [path]: marcado ? true : deleteField(),
         atualizadoEm: Timestamp.now(),
       });
     },
@@ -446,7 +447,7 @@ export function useMotoboys(loja, segunda, author) {
     error,
     criarSemana,
     setCelula,
-    setDiaOk,
+    setDiaSemGarantia,
     setDesconto,
     addMotoboy,
     removeMotoboy,

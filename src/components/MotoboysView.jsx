@@ -88,7 +88,7 @@ export default function MotoboysView() {
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
-    criarSemana, setCelula, setDiaOk, setDesconto, addMotoboy, removeMotoboy,
+    criarSemana, setCelula, setDiaSemGarantia, setDesconto, addMotoboy, removeMotoboy,
     addRosterMotoboy, renameMotoboy, setRosterAtivo,
     setConfig, addExtra, deleteExtra, atribuirNaoCasado,
   } = useMotoboys(loja, segunda, user);
@@ -313,11 +313,11 @@ export default function MotoboysView() {
             const totDiff = r.total.qtd - totPa - totEx;
             const aberto = expandidos.has(mb.mid);
             const temDiffBloco = compCells.some((c) => c.diff !== 0 && (c.pg || c.paQ));
-            // Dia confirmado (checkbox): sem ele a coluna fica pendente (amarela)
-            // e o dia não gera acréscimo nem moto-dia.
-            const diaOk = diasIso.map((_, di) => mb.dias?.[di]?.ok === true);
+            // Checkbox de exceção do dia: marcado, a coluna fica amarela e o
+            // dia não gera acréscimo nem moto-dia (padrão desmarcado = normal).
+            const diaSemGar = diasIso.map((_, di) => mb.dias?.[di]?.semGarantia === true);
             const colCls = (di, extra = '') =>
-              [diaOk[di] ? '' : styles.colPend, extra].filter(Boolean).join(' ');
+              [diaSemGar[di] ? styles.colPend : '', extra].filter(Boolean).join(' ');
             return (
               <div key={mb.mid} className={styles.bloco}>
                 <div className={styles.blocoHeader} onClick={() => toggleBloco(mb.mid)}>
@@ -349,13 +349,13 @@ export default function MotoboysView() {
                         <th className={styles.stickyCol}></th>
                         {diasIso.map((d, i) => (
                           <th key={d} className={colCls(i)}>
-                            <label className={styles.diaHead} title="Dia confirmado: libera acréscimo e moto-dia">
+                            <label className={styles.diaHead} title="Marcado: dia sem acréscimo (garantia) e sem moto-dia (taxa coop)">
                               <input
                                 type="checkbox"
                                 className={styles.diaCheck}
-                                checked={diaOk[i]}
+                                checked={diaSemGar[i]}
                                 disabled={!canEditGerente}
-                                onChange={(e) => setDiaOk(mb.mid, i, e.target.checked)}
+                                onChange={(e) => setDiaSemGarantia(mb.mid, i, e.target.checked)}
                               />
                               <span>
                                 <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
