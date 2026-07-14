@@ -165,36 +165,19 @@ export default function MotoboysView() {
 
   return (
     <div className={styles.container}>
-      {/* ---- Toolbar ---- */}
-      <div className={styles.toolbar}>
-        <div className={styles.lojaSwitch}>
+      {/* ---- Header: título + sub-nav de loja + ações ---- */}
+      <div className={styles.header}>
+        <h2>🛵 Motoboys</h2>
+        <div className={styles.headerActions}>
           {lojasVisiveis.map((l) => (
             <button
               key={l.id}
-              className={`${styles.lojaBtn} ${loja === l.id ? styles.lojaBtnActive : ''} ${l.id === 'lov' && loja === l.id ? styles.lojaBtnLov : ''}`}
+              className={`${l.id === 'lov' ? styles.lovBtn : styles.dameBtn} ${loja === l.id ? (l.id === 'lov' ? styles.lovBtnActive : styles.dameBtnActive) : ''}`}
               onClick={() => setLoja(l.id)}
             >
               {l.nome}
             </button>
           ))}
-        </div>
-
-        <div className={styles.weekNav}>
-          <button className={styles.weekBtn} onClick={() => navSemana(-1)} title="Semana anterior">‹</button>
-          <span className={styles.weekLabel}>
-            {formatDiaCurto(segunda)} a {formatDiaCurto(fim)}
-          </span>
-          <button className={styles.weekBtn} onClick={() => navSemana(1)} title="Próxima semana">›</button>
-          <button
-            className={styles.weekHoje}
-            onClick={() => setSegunda(mondayOf(new Date()))}
-            disabled={segunda === mondayOf(new Date())}
-          >
-            Semana atual
-          </button>
-        </div>
-
-        <div className={styles.toolbarBtns}>
           {semana && listaMotoboys.length > 0 && (
             <button className={styles.toolBtn} onClick={expandirTodos}>
               {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
@@ -213,13 +196,30 @@ export default function MotoboysView() {
         </div>
       </div>
 
-      {canViewAdm && semana && (
-        <p className={styles.importLine}>
-          {pa?.importadoEm
-            ? `Saipos importado em ${new Date(pa.importadoEm).toLocaleString('pt-BR')} (rodada ${pa.fonte || '—'}).`
-            : 'Saipos ainda não importado para esta semana (automático nas quartas de madrugada).'}
-        </p>
-      )}
+      {/* ---- Filtros: navegação de semana + status da importação ---- */}
+      <div className={styles.filters}>
+        <div className={styles.weekNav}>
+          <button className={styles.weekBtn} onClick={() => navSemana(-1)} title="Semana anterior">‹</button>
+          <span className={styles.weekLabel}>
+            {formatDiaCurto(segunda)} a {formatDiaCurto(fim)}
+          </span>
+          <button className={styles.weekBtn} onClick={() => navSemana(1)} title="Próxima semana">›</button>
+          <button
+            className={styles.weekHoje}
+            onClick={() => setSegunda(mondayOf(new Date()))}
+            disabled={segunda === mondayOf(new Date())}
+          >
+            Semana atual
+          </button>
+        </div>
+        {canViewAdm && semana && (
+          <span className={styles.importLine}>
+            {pa?.importadoEm
+              ? `Saipos importado em ${new Date(pa.importadoEm).toLocaleString('pt-BR')} (rodada ${pa.fonte || '—'})`
+              : 'Saipos ainda não importado (automático nas quartas de madrugada)'}
+          </span>
+        )}
+      </div>
 
       {error && <div className={styles.error}>Erro ao carregar: {error}</div>}
 

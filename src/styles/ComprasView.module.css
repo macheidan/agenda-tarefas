@@ -40,9 +40,9 @@
   gap: 8px;
   padding: 8px 12px;
   margin-bottom: 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
 }
 
 .searchRow:focus-within {
@@ -71,7 +71,7 @@
   font-size: 14px;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 
@@ -101,7 +101,7 @@
   align-self: flex-start;
   padding: 5px 14px;
   border: 2px solid var(--accent);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: var(--card);
   font-size: 13px;
   font-weight: 700;
@@ -109,7 +109,7 @@
 }
 
 .rowMatch {
-  box-shadow: 0 0 0 2px var(--accent) inset;
+  background: var(--accent-light);
 }
 
 /* ---- Fornecedores ---- */
@@ -129,7 +129,7 @@
 .fornecTab {
   padding: 7px 16px;
   border: 2px solid var(--accent);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

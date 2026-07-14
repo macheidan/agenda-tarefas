@@ -65,7 +65,7 @@
 .storeTab {
   padding: 7px 16px;
   border: 2px solid var(--accent);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -75,7 +75,7 @@
 .manageStoresBtn {
   padding: 6px 12px;
   border: 1px dashed var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--text-secondary);
   font-size: 12px;
