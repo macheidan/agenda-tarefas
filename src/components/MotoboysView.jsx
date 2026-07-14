@@ -52,13 +52,11 @@ function QtdInput({ value, onCommit, disabled }) {
   );
 }
 
-const DIV_LABELS = { gerente: 'Gerente', adm: 'Adm', resultado: 'Resultado' };
-
 export default function MotoboysView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
 
-  // Permissões por subseção (settings/{uid}). Ver: default ligado.
+  // Permissões por linha/recurso (settings/{uid}). Ver: default ligado.
   // Editar: default desligado; flag legada motoboysEditor libera tudo.
   const legacyEditor = settings?.motoboysEditor === true;
   const canViewGerente = isAdmin || settings?.motoboysVerGerente !== false;
@@ -68,24 +66,9 @@ export default function MotoboysView() {
   const canEditAdm = isAdmin || legacyEditor || settings?.motoboysEditAdm === true;
   const canEditResultado = isAdmin || legacyEditor || settings?.motoboysEditResultado === true;
   const canRoster = isAdmin || legacyEditor || settings?.motoboysRoster === true;
-  const canView = { gerente: canViewGerente, adm: canViewAdm, resultado: canViewResultado };
 
   const [loja, setLoja] = useState('dame');
   const [segunda, setSegunda] = useState(() => mondayOf(new Date()));
-  const [vis, setVis] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('motoboysDivs'));
-      if (saved && typeof saved === 'object') return { gerente: true, adm: true, resultado: true, ...saved };
-    } catch { /* ignora */ }
-    return { gerente: true, adm: true, resultado: true };
-  });
-  const toggleVis = (k) => {
-    setVis((prev) => {
-      const next = { ...prev, [k]: !prev[k] };
-      try { localStorage.setItem('motoboysDivs', JSON.stringify(next)); } catch { /* ignora */ }
-      return next;
-    });
-  };
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
@@ -111,7 +94,7 @@ export default function MotoboysView() {
     );
   });
 
-  // Extras agregados por motoboy/dia (entram na conferência PG x PA).
+  // Extras agregados por motoboy/dia (entram na conferência gerente x Saipos).
   const extrasPorMidDia = {};
   extras.forEach((e) => {
     const idx = diasIso.indexOf(e.data);
@@ -210,18 +193,13 @@ export default function MotoboysView() {
           </button>
         </div>
 
-        <div className={styles.divToggles}>
-          {Object.keys(DIV_LABELS).filter((k) => canView[k]).map((k) => (
-            <button
-              key={k}
-              className={`${styles.divToggle} ${vis[k] ? styles.divToggleOn : ''}`}
-              onClick={() => toggleVis(k)}
-              title={vis[k] ? 'Ocultar divisão' : 'Mostrar divisão'}
-            >
-              {vis[k] ? '👁' : '–'} {DIV_LABELS[k]}
-            </button>
-          ))}
-        </div>
+        {canViewAdm && (
+          <span className={styles.importStatus}>
+            {pa?.importadoEm
+              ? `Saipos importado em ${new Date(pa.importadoEm).toLocaleString('pt-BR')} (rodada ${pa.fonte || '—'})`
+              : 'Saipos ainda não importado (automático nas quartas de madrugada)'}
+          </span>
+        )}
       </div>
 
       {error && <div className={styles.error}>Erro ao carregar: {error}</div>}
@@ -238,517 +216,452 @@ export default function MotoboysView() {
       )}
 
       {semana && (
-        <>
-          {/* ================= GERENTE ================= */}
-          {canViewGerente && vis.gerente && (
-            <section className={styles.divisao}>
-              <div className={styles.divHeader} onClick={() => toggleVis('gerente')}>
-                <h3>Gerente</h3>
-                <span className={styles.divHint}>entregas e taxas anotadas nas comandas</span>
-              </div>
-
-              {listaMotoboys.map((mb) => {
-                const r = calcMotoboySemana(mb, config);
-                return (
-                  <div key={mb.mid} className={styles.bloco}>
-                    <div className={styles.blocoHeader}>
-                      <strong>{mb.nome}</strong>
-                      <span className={styles.blocoTotal}>{formatBRL(r.total.valor)}</span>
-                      {canEditGerente && (
-                        <button
-                          className={styles.removeBtn}
-                          title="Remover motoboy desta semana"
-                          onClick={() => {
-                            if (window.confirm(`Remover ${mb.nome} desta semana? Os lançamentos serão apagados.`)) removeMotoboy(mb.mid);
-                          }}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                    <div className={styles.tableWrap}>
-                      <table className={styles.grid}>
-                        <thead>
-                          <tr>
-                            <th className={styles.stickyCol}></th>
-                            {diasIso.map((d, i) => (
-                              <th key={d}>
-                                <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
-                                <span className={styles.diaData}>{formatDiaCurto(d)}</span>
-                              </th>
-                            ))}
-                            <th className={styles.totalCol}>Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {taxas.map((tx, ti) =>
-                            !taxaVisivel[ti] ? null : (
-                              <tr key={ti}>
-                                <td className={styles.stickyCol}>
-                                  <span className={styles.taxaLabel}>{tx.label}</span>
-                                  <span className={styles.taxaValor}>
-                                    {tx.valor != null ? formatBRL(tx.valor) : ''} {tx.faixa ? `· ${tx.faixa}` : ''}
-                                  </span>
-                                </td>
-                                {diasIso.map((d, di) => (
-                                  <td key={d}>
-                                    <QtdInput
-                                      value={mb.dias?.[di]?.t?.[ti] ?? null}
-                                      disabled={!canEditGerente}
-                                      onCommit={(v) => setCelula(mb.mid, di, ti, v)}
-                                    />
-                                  </td>
-                                ))}
-                                <td className={styles.totalCol}>
-                                  {diasIso.reduce((acc, _, di) => acc + (Number(mb.dias?.[di]?.t?.[ti]) || 0), 0) || ''}
-                                </td>
-                              </tr>
-                            )
-                          )}
-                          <tr className={styles.descRow}>
+        <section className={styles.divisao}>
+          {/* ---- Blocos por motoboy: lançamento + conferência + resultado ---- */}
+          {listaMotoboys.map((mb) => {
+            const r = calcMotoboySemana(mb, config);
+            const paDias = pa?.entregas?.[mb.mid] || {};
+            const exDias = extrasPorMidDia[mb.mid] || {};
+            let totPa = 0;
+            let totEx = 0;
+            const compCells = diasIso.map((d, i) => {
+              const pg = r.dias[i].qtd;
+              const paQ = Number(paDias[i]) || 0;
+              const ex = exDias[i] || 0;
+              totPa += paQ;
+              totEx += ex;
+              return { pg, paQ, ex, diff: pg - paQ - ex };
+            });
+            const totDiff = r.total.qtd - totPa - totEx;
+            return (
+              <div key={mb.mid} className={styles.bloco}>
+                <div className={styles.blocoHeader}>
+                  <strong>{mb.nome}</strong>
+                  {canViewResultado && <span className={styles.blocoTotal}>{formatBRL(r.total.valor)}</span>}
+                  {canEditGerente && (
+                    <button
+                      className={styles.removeBtn}
+                      title="Remover motoboy desta semana"
+                      onClick={() => {
+                        if (window.confirm(`Remover ${mb.nome} desta semana? Os lançamentos serão apagados.`)) removeMotoboy(mb.mid);
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                <div className={styles.tableWrap}>
+                  <table className={styles.grid}>
+                    <thead>
+                      <tr>
+                        <th className={styles.stickyCol}></th>
+                        {diasIso.map((d, i) => (
+                          <th key={d}>
+                            <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
+                            <span className={styles.diaData}>{formatDiaCurto(d)}</span>
+                          </th>
+                        ))}
+                        <th className={styles.totalCol}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {canViewGerente && taxas.map((tx, ti) =>
+                        !taxaVisivel[ti] ? null : (
+                          <tr key={ti}>
                             <td className={styles.stickyCol}>
-                              <span className={styles.taxaLabel}>Descontos</span>
-                              <span className={styles.taxaValor}>R$ · use negativo</span>
+                              <span className={styles.taxaLabel}>{tx.label}</span>
+                              <span className={styles.taxaValor}>
+                                {tx.valor != null ? formatBRL(tx.valor) : ''} {tx.faixa ? `· ${tx.faixa}` : ''}
+                              </span>
                             </td>
                             {diasIso.map((d, di) => (
                               <td key={d}>
-                                <MoneyInput
-                                  className={styles.descInput}
-                                  value={mb.dias?.[di]?.desc ?? null}
+                                <QtdInput
+                                  value={mb.dias?.[di]?.t?.[ti] ?? null}
                                   disabled={!canEditGerente}
-                                  placeholder=""
-                                  onCommit={(v) => setDesconto(mb.mid, di, v)}
+                                  onCommit={(v) => setCelula(mb.mid, di, ti, v)}
                                 />
                               </td>
                             ))}
-                            <td className={styles.totalCol}>{r.total.desconto ? formatBRL(r.total.desconto) : ''}</td>
-                          </tr>
-                          <tr className={styles.obsRow}>
-                            <td className={styles.stickyCol}>
-                              <span className={styles.taxaLabel}>Obs</span>
-                              <span className={styles.taxaValor}>comentário do dia</span>
+                            <td className={styles.totalCol}>
+                              {diasIso.reduce((acc, _, di) => acc + (Number(mb.dias?.[di]?.t?.[ti]) || 0), 0) || ''}
                             </td>
-                            {diasIso.map((d, di) => {
-                              const o = mb.dias?.[di]?.obs;
-                              return (
-                                <td key={d}>
-                                  <button
-                                    className={`${styles.obsBtn} ${o?.t ? styles.obsBtnOn : ''}`}
-                                    title={o?.t || (canEditGerente ? 'Adicionar comentário' : '')}
-                                    disabled={!canEditGerente && !o?.t}
-                                    onClick={() => (canEditGerente ? abrirObs(mb.mid, di) : null)}
-                                  >
-                                    {o?.t ? '🚨' : '+'}
-                                  </button>
-                                </td>
-                              );
-                            })}
-                            <td className={styles.totalCol}></td>
                           </tr>
-                          <tr className={styles.calcRow}>
-                            <td className={styles.stickyCol}>Entregas</td>
-                            {r.dias.map((d, i) => (
-                              <td key={i}>{d.qtd || ''}</td>
-                            ))}
-                            <td className={styles.totalCol}>{r.total.qtd || ''}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    {obsEdit?.mid === mb.mid && (
-                      <div className={styles.obsEditor}>
-                        <span className={styles.obsEditorLabel}>
-                          🚨 {mb.nome} · {DIAS_SEMANA[obsEdit.di]} {formatDiaCurto(diasIso[obsEdit.di])}
-                        </span>
-                        <textarea
-                          className={styles.obsTextarea}
-                          value={obsText}
-                          autoFocus
-                          rows={2}
-                          placeholder="Comentário do dia (ex.: chegou atrasado, recusou entrega...)"
-                          onChange={(e) => setObsText(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarObs(); }
-                            if (e.key === 'Escape') { setObsEdit(null); setObsText(''); }
-                          }}
-                        />
-                        <div className={styles.obsEditorActions}>
-                          <button className={styles.primaryBtn} onClick={salvarObs}>Salvar</button>
-                          {motoboys[obsEdit.mid]?.dias?.[obsEdit.di]?.obs?.t && (
-                            <button
-                              className={styles.dangerBtn}
-                              onClick={async () => { await setObs(obsEdit.mid, obsEdit.di, ''); setObsEdit(null); setObsText(''); }}
-                            >
-                              Excluir
-                            </button>
-                          )}
-                          <button className={styles.ghostBtn} onClick={() => { setObsEdit(null); setObsText(''); }}>Cancelar</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* ---- Comentários da semana (abaixo do calendário) ---- */}
-              {comentarios.length > 0 && (
-                <div className={styles.obsLista}>
-                  <h4>🚨 Comentários da semana</h4>
-                  {comentarios.map((c) => (
-                    <div key={`${c.mid}_${c.di}`} className={styles.obsListaRow}>
-                      <span className={styles.obsListaDia}>{DIAS_CURTOS[c.di]} {formatDiaCurto(diasIso[c.di])}</span>
-                      <span className={styles.obsListaNome}>{c.nome}</span>
-                      <span className={styles.obsListaTexto}>{c.t}</span>
-                      {c.por && <span className={styles.obsListaPor}>por {c.por}</span>}
-                      {canEditGerente && (
-                        <button className={styles.removeBtn} title="Excluir comentário" onClick={() => setObs(c.mid, c.di, '')}>×</button>
+                        )
                       )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {canEditGerente && (
-                <div className={styles.addRow}>
-                  <input
-                    className={styles.addInput}
-                    list="motoboyRoster"
-                    placeholder="Nome do motoboy"
-                    value={novoNome}
-                    onChange={(e) => setNovoNome(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key === 'Enter' && novoNome.trim()) {
-                        await addMotoboy(novoNome);
-                        setNovoNome('');
-                      }
-                    }}
-                  />
-                  <datalist id="motoboyRoster">
-                    {Object.values(configLoja?.roster || {})
-                      .filter((rr) => !listaMotoboys.some((m) => normalizarNome(m.nome) === normalizarNome(rr.nome)))
-                      .map((rr) => (
-                        <option key={rr.nome} value={rr.nome} />
-                      ))}
-                  </datalist>
-                  <button
-                    className={styles.primaryBtn}
-                    disabled={!novoNome.trim()}
-                    onClick={async () => { await addMotoboy(novoNome); setNovoNome(''); }}
-                  >
-                    + Motoboy
-                  </button>
-                </div>
-              )}
-
-              {/* ---- Bandas extras ---- */}
-              <div className={styles.extrasBox}>
-                <h4>Bandas extras <span className={styles.divHint}>entregas fora do sistema, com justificativa</span></h4>
-                {extras.length === 0 && <p className={styles.muted}>Nenhuma banda extra nesta semana.</p>}
-                {extras.length > 0 && (
-                  <div className={styles.tableWrap}>
-                    <table className={styles.extrasTable}>
-                      <thead>
-                        <tr><th>Data</th><th>Motoboy</th><th>Qtd</th><th>Taxa</th><th>Justificativa</th><th></th></tr>
-                      </thead>
-                      <tbody>
-                        {extras.map((e) => (
-                          <tr key={e.id}>
-                            <td>{formatDiaCurto(e.data)}</td>
-                            <td>{e.nome || motoboys[e.mid]?.nome || '—'}</td>
-                            <td>{e.quantidade}</td>
-                            <td>{taxas[e.taxaIdx]?.label || `Taxa ${(e.taxaIdx ?? 0) + 1}`}</td>
-                            <td className={styles.justCell}>{e.justificativa}</td>
-                            <td>
-                              {canEditGerente && (
-                                <button className={styles.removeBtn} onClick={() => deleteExtra(e.id)} title="Excluir">×</button>
-                              )}
+                      {canViewGerente && (
+                        <tr className={styles.descRow}>
+                          <td className={styles.stickyCol}>
+                            <span className={styles.taxaLabel}>Descontos</span>
+                            <span className={styles.taxaValor}>R$ · use negativo</span>
+                          </td>
+                          {diasIso.map((d, di) => (
+                            <td key={d}>
+                              <MoneyInput
+                                className={styles.descInput}
+                                value={mb.dias?.[di]?.desc ?? null}
+                                disabled={!canEditGerente}
+                                placeholder=""
+                                onCommit={(v) => setDesconto(mb.mid, di, v)}
+                              />
                             </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                          ))}
+                          <td className={styles.totalCol}>{r.total.desconto ? formatBRL(r.total.desconto) : ''}</td>
+                        </tr>
+                      )}
+                      {canViewGerente && (
+                        <tr className={styles.obsRow}>
+                          <td className={styles.stickyCol}>
+                            <span className={styles.taxaLabel}>Obs</span>
+                            <span className={styles.taxaValor}>comentário do dia</span>
+                          </td>
+                          {diasIso.map((d, di) => {
+                            const o = mb.dias?.[di]?.obs;
+                            return (
+                              <td key={d}>
+                                <button
+                                  className={`${styles.obsBtn} ${o?.t ? styles.obsBtnOn : ''}`}
+                                  title={o?.t || (canEditGerente ? 'Adicionar comentário' : '')}
+                                  disabled={!canEditGerente && !o?.t}
+                                  onClick={() => (canEditGerente ? abrirObs(mb.mid, di) : null)}
+                                >
+                                  {o?.t ? '🚨' : '+'}
+                                </button>
+                              </td>
+                            );
+                          })}
+                          <td className={styles.totalCol}></td>
+                        </tr>
+                      )}
+                      {canViewGerente && (
+                        <tr className={styles.calcRow}>
+                          <td className={styles.stickyCol}>Entregas</td>
+                          {r.dias.map((d, i) => (
+                            <td key={i}>{d.qtd || ''}</td>
+                          ))}
+                          <td className={styles.totalCol}>{r.total.qtd || ''}</td>
+                        </tr>
+                      )}
+                      {canViewAdm && (
+                        <tr className={styles.saiposRow}>
+                          <td className={styles.stickyCol}>
+                            <span className={styles.taxaLabel}>Saipos</span>
+                            <span className={styles.taxaValor}>+ bandas extras</span>
+                          </td>
+                          {compCells.map((c, i) => (
+                            <td key={i} className={c.diff !== 0 && (c.pg || c.paQ) ? styles.cellDiff : ''}>
+                              {c.paQ || c.ex ? (
+                                <span>
+                                  {c.paQ}{c.ex ? `+${c.ex}` : ''}
+                                </span>
+                              ) : null}
+                              {c.diff !== 0 && (c.pg || c.paQ) ? (
+                                <span className={c.diff > 0 ? styles.diffMais : styles.diffMenos}>
+                                  {c.diff > 0 ? ` +${c.diff}` : ` ${c.diff}`}
+                                </span>
+                              ) : null}
+                            </td>
+                          ))}
+                          <td className={`${styles.totalCol} ${totDiff !== 0 && (r.total.qtd || totPa) ? styles.cellDiff : ''}`}>
+                            {totPa}{totEx ? `+${totEx}` : ''}
+                            {totDiff !== 0 && (r.total.qtd || totPa) ? (
+                              <span className={totDiff > 0 ? styles.diffMais : styles.diffMenos}>
+                                {totDiff > 0 ? ` +${totDiff}` : ` ${totDiff}`}
+                              </span>
+                            ) : null}
+                          </td>
+                        </tr>
+                      )}
+                      {canViewResultado && (
+                        <tr className={styles.valorRow}>
+                          <td className={styles.stickyCol}>
+                            <span className={styles.taxaLabel}>Valor a receber</span>
+                            {r.total.acrescimo > 0 && (
+                              <span className={styles.taxaValor}>inclui acréscimo {formatBRL(r.total.acrescimo)}</span>
+                            )}
+                          </td>
+                          {r.dias.map((d, i) => (
+                            <td
+                              key={i}
+                              className={d.acrescimo > 0 ? styles.cellAcrescimo : ''}
+                              title={d.acrescimo > 0 ? `Acréscimo de ${formatBRL(d.acrescimo)} (garantia)` : ''}
+                            >
+                              {d.valor ? formatBRL(d.valor) : ''}
+                            </td>
+                          ))}
+                          <td className={`${styles.totalCol} ${styles.valorFinal}`}>{formatBRL(r.total.valor)}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {obsEdit?.mid === mb.mid && (
+                  <div className={styles.obsEditor}>
+                    <span className={styles.obsEditorLabel}>
+                      🚨 {mb.nome} · {DIAS_SEMANA[obsEdit.di]} {formatDiaCurto(diasIso[obsEdit.di])}
+                    </span>
+                    <textarea
+                      className={styles.obsTextarea}
+                      value={obsText}
+                      autoFocus
+                      rows={2}
+                      placeholder="Comentário do dia (ex.: chegou atrasado, recusou entrega...)"
+                      onChange={(e) => setObsText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarObs(); }
+                        if (e.key === 'Escape') { setObsEdit(null); setObsText(''); }
+                      }}
+                    />
+                    <div className={styles.obsEditorActions}>
+                      <button className={styles.primaryBtn} onClick={salvarObs}>Salvar</button>
+                      {motoboys[obsEdit.mid]?.dias?.[obsEdit.di]?.obs?.t && (
+                        <button
+                          className={styles.dangerBtn}
+                          onClick={async () => { await setObs(obsEdit.mid, obsEdit.di, ''); setObsEdit(null); setObsText(''); }}
+                        >
+                          Excluir
+                        </button>
+                      )}
+                      <button className={styles.ghostBtn} onClick={() => { setObsEdit(null); setObsText(''); }}>Cancelar</button>
+                    </div>
                   </div>
                 )}
-                {canEditGerente && (
-                  <div className={styles.extraForm}>
-                    <select value={novoExtra.dia} onChange={(e) => setNovoExtra((p) => ({ ...p, dia: Number(e.target.value) }))}>
-                      {DIAS_SEMANA.map((d, i) => (
-                        <option key={i} value={i}>{d} {formatDiaCurto(diasIso[i])}</option>
-                      ))}
-                    </select>
-                    <select value={novoExtra.mid} onChange={(e) => setNovoExtra((p) => ({ ...p, mid: e.target.value }))}>
-                      <option value="">Motoboy…</option>
+              </div>
+            );
+          })}
+
+          {canViewAdm && (
+            <p className={styles.legend}>
+              Linha <strong>Saipos</strong>: entregas no sistema (+ bandas extras quando houver).
+              <span className={styles.diffMais}> +N</span> = gerente lançou N a mais que o Saipos;
+              <span className={styles.diffMenos}> -N</span> = lançou N a menos.
+              Célula vermelha = divergência que não fecha nem com as bandas extras.
+            </p>
+          )}
+
+          {canViewAdm && pa?.naoCasados?.length > 0 && (
+            <div className={styles.naoCasados}>
+              <h4>Nomes da Saipos sem correspondência</h4>
+              {pa.naoCasados.map((n) => (
+                <div key={n.nome} className={styles.naoCasadoRow}>
+                  <span>{n.nome}</span>
+                  <span className={styles.muted}>
+                    {Object.entries(n.dias || {}).map(([d, q]) => `${DIAS_CURTOS[d]}: ${q}`).join(' · ')}
+                  </span>
+                  {canEditAdm && (
+                    <select defaultValue="" onChange={(e) => { if (e.target.value) atribuirNaoCasado(n.nome, e.target.value); }}>
+                      <option value="">Atribuir a…</option>
                       {listaMotoboys.map((m) => (
                         <option key={m.mid} value={m.mid}>{m.nome}</option>
                       ))}
                     </select>
-                    <input
-                      className={styles.extraQtd}
-                      inputMode="numeric"
-                      value={novoExtra.quantidade}
-                      onChange={(e) => setNovoExtra((p) => ({ ...p, quantidade: Number(e.target.value) || 1 }))}
-                    />
-                    <select value={novoExtra.taxaIdx} onChange={(e) => setNovoExtra((p) => ({ ...p, taxaIdx: Number(e.target.value) }))}>
-                      {taxas.map((tx, i) => (tx.valor != null ? <option key={i} value={i}>{tx.label}</option> : null))}
-                    </select>
-                    <input
-                      className={styles.extraJust}
-                      placeholder="Justificativa (ex.: #101340 troca de pedido)"
-                      value={novoExtra.justificativa}
-                      onChange={(e) => setNovoExtra((p) => ({ ...p, justificativa: e.target.value }))}
-                    />
-                    <button
-                      className={styles.primaryBtn}
-                      disabled={!novoExtra.mid || !novoExtra.justificativa.trim()}
-                      onClick={salvarExtra}
-                    >
-                      + Banda extra
-                    </button>
-                  </div>
-                )}
-              </div>
-            </section>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
 
-          {/* ================= ADM ================= */}
-          {canViewAdm && vis.adm && (
-            <section className={styles.divisao}>
-              <div className={styles.divHeader} onClick={() => toggleVis('adm')}>
-                <h3>Adm</h3>
-                <span className={styles.divHint}>conferência gerente x Saipos</span>
-              </div>
+          {canEditGerente && (
+            <div className={styles.addRow}>
+              <input
+                className={styles.addInput}
+                list="motoboyRoster"
+                placeholder="Nome do motoboy"
+                value={novoNome}
+                onChange={(e) => setNovoNome(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && novoNome.trim()) {
+                    await addMotoboy(novoNome);
+                    setNovoNome('');
+                  }
+                }}
+              />
+              <datalist id="motoboyRoster">
+                {Object.values(configLoja?.roster || {})
+                  .filter((rr) => rr.ativo !== false)
+                  .filter((rr) => !listaMotoboys.some((m) => normalizarNome(m.nome) === normalizarNome(rr.nome)))
+                  .map((rr) => (
+                    <option key={rr.nome} value={rr.nome} />
+                  ))}
+              </datalist>
+              <button
+                className={styles.primaryBtn}
+                disabled={!novoNome.trim()}
+                onClick={async () => { await addMotoboy(novoNome); setNovoNome(''); }}
+              >
+                + Motoboy
+              </button>
+            </div>
+          )}
 
-              <p className={styles.importStatus}>
-                {pa?.importadoEm
-                  ? `Saipos importado em ${new Date(pa.importadoEm).toLocaleString('pt-BR')} (rodada ${pa.fonte || '—'}).`
-                  : 'Dados da Saipos ainda não importados para esta semana (importação automática nas quartas, 3h da manhã).'}
-              </p>
+          {/* ---- Comentários da semana ---- */}
+          {canViewGerente && comentarios.length > 0 && (
+            <div className={styles.obsLista}>
+              <h4>🚨 Comentários da semana</h4>
+              {comentarios.map((c) => (
+                <div key={`${c.mid}_${c.di}`} className={styles.obsListaRow}>
+                  <span className={styles.obsListaDia}>{DIAS_CURTOS[c.di]} {formatDiaCurto(diasIso[c.di])}</span>
+                  <span className={styles.obsListaNome}>{c.nome}</span>
+                  <span className={styles.obsListaTexto}>{c.t}</span>
+                  {c.por && <span className={styles.obsListaPor}>por {c.por}</span>}
+                  {canEditGerente && (
+                    <button className={styles.removeBtn} title="Excluir comentário" onClick={() => setObs(c.mid, c.di, '')}>×</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
-              <div className={styles.tableWrap}>
-                <table className={styles.grid}>
-                  <thead>
-                    <tr>
-                      <th className={styles.stickyCol}>Motoboy</th>
-                      {diasIso.map((d, i) => (
-                        <th key={d}>
-                          <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
-                          <span className={styles.diaData}>{formatDiaCurto(d)}</span>
-                        </th>
-                      ))}
-                      <th className={styles.totalCol}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listaMotoboys.map((mb) => {
-                      const r = calcMotoboySemana(mb, config);
-                      const paDias = pa?.entregas?.[mb.mid] || {};
-                      const exDias = extrasPorMidDia[mb.mid] || {};
-                      let totPa = 0;
-                      let totEx = 0;
-                      let temDiff = false;
-                      const cells = diasIso.map((d, i) => {
-                        const pg = r.dias[i].qtd;
-                        const paQ = Number(paDias[i]) || 0;
-                        const ex = exDias[i] || 0;
-                        totPa += paQ;
-                        totEx += ex;
-                        const diff = pg - paQ - ex;
-                        if (diff !== 0 && (pg || paQ)) temDiff = true;
-                        return { pg, paQ, ex, diff };
-                      });
-                      const totDiff = r.total.qtd - totPa - totEx;
-                      return (
-                        <tr key={mb.mid} className={temDiff ? styles.rowDiff : ''}>
-                          <td className={styles.stickyCol}>{mb.nome}</td>
-                          {cells.map((c, i) => (
-                            <td key={i} className={c.diff !== 0 && (c.pg || c.paQ) ? styles.cellDiff : ''}>
-                              {c.pg || c.paQ ? (
-                                <div className={styles.compCell}>
-                                  <span>{c.pg}</span>
-                                  <span className={styles.compPa}>
-                                    {c.paQ}{c.ex ? `+${c.ex}` : ''}
-                                    {c.diff !== 0 && (
-                                      <span className={c.diff > 0 ? styles.diffMais : styles.diffMenos}>
-                                        {c.diff > 0 ? ` +${c.diff}` : ` ${c.diff}`}
-                                      </span>
-                                    )}
-                                  </span>
-                                </div>
-                              ) : null}
-                            </td>
-                          ))}
-                          <td className={styles.totalCol}>
-                            <div className={styles.compCell}>
-                              <span>{r.total.qtd}</span>
-                              <span className={styles.compPa}>
-                                {totPa}
-                                {totDiff !== 0 && (
-                                  <span className={totDiff > 0 ? styles.diffMais : styles.diffMenos}>
-                                    {totDiff > 0 ? ` +${totDiff}` : ` ${totDiff}`}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
+          {/* ---- Bandas extras ---- */}
+          {canViewGerente && (
+            <div className={styles.extrasBox}>
+              <h4>Bandas extras <span className={styles.divHint}>entregas fora do sistema, com justificativa</span></h4>
+              {extras.length === 0 && <p className={styles.muted}>Nenhuma banda extra nesta semana.</p>}
+              {extras.length > 0 && (
+                <div className={styles.tableWrap}>
+                  <table className={styles.extrasTable}>
+                    <thead>
+                      <tr><th>Data</th><th>Motoboy</th><th>Qtd</th><th>Taxa</th><th>Justificativa</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                      {extras.map((e) => (
+                        <tr key={e.id}>
+                          <td>{formatDiaCurto(e.data)}</td>
+                          <td>{e.nome || motoboys[e.mid]?.nome || '—'}</td>
+                          <td>{e.quantidade}</td>
+                          <td>{taxas[e.taxaIdx]?.label || `Taxa ${(e.taxaIdx ?? 0) + 1}`}</td>
+                          <td className={styles.justCell}>{e.justificativa}</td>
+                          <td>
+                            {canEditGerente && (
+                              <button className={styles.removeBtn} onClick={() => deleteExtra(e.id)} title="Excluir">×</button>
+                            )}
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <p className={styles.legend}>
-                Em cada célula: <strong>gerente</strong> em cima, <strong>Saipos</strong> embaixo (+ bandas extras quando houver).
-                <span className={styles.diffMais}> +N</span> = gerente lançou N a mais que o Saipos;
-                <span className={styles.diffMenos}> -N</span> = lançou N a menos.
-                Célula vermelha = divergência que não fecha nem com as bandas extras.
-              </p>
-
-              {pa?.naoCasados?.length > 0 && (
-                <div className={styles.naoCasados}>
-                  <h4>Nomes da Saipos sem correspondência</h4>
-                  {pa.naoCasados.map((n) => (
-                    <div key={n.nome} className={styles.naoCasadoRow}>
-                      <span>{n.nome}</span>
-                      <span className={styles.muted}>
-                        {Object.entries(n.dias || {}).map(([d, q]) => `${DIAS_CURTOS[d]}: ${q}`).join(' · ')}
-                      </span>
-                      {canEditAdm && (
-                        <select defaultValue="" onChange={(e) => { if (e.target.value) atribuirNaoCasado(n.nome, e.target.value); }}>
-                          <option value="">Atribuir a…</option>
-                          {listaMotoboys.map((m) => (
-                            <option key={m.mid} value={m.mid}>{m.nome}</option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  ))}
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </section>
+              {canEditGerente && (
+                <div className={styles.extraForm}>
+                  <select value={novoExtra.dia} onChange={(e) => setNovoExtra((p) => ({ ...p, dia: Number(e.target.value) }))}>
+                    {DIAS_SEMANA.map((d, i) => (
+                      <option key={i} value={i}>{d} {formatDiaCurto(diasIso[i])}</option>
+                    ))}
+                  </select>
+                  <select value={novoExtra.mid} onChange={(e) => setNovoExtra((p) => ({ ...p, mid: e.target.value }))}>
+                    <option value="">Motoboy…</option>
+                    {listaMotoboys.map((m) => (
+                      <option key={m.mid} value={m.mid}>{m.nome}</option>
+                    ))}
+                  </select>
+                  <input
+                    className={styles.extraQtd}
+                    inputMode="numeric"
+                    value={novoExtra.quantidade}
+                    onChange={(e) => setNovoExtra((p) => ({ ...p, quantidade: Number(e.target.value) || 1 }))}
+                  />
+                  <select value={novoExtra.taxaIdx} onChange={(e) => setNovoExtra((p) => ({ ...p, taxaIdx: Number(e.target.value) }))}>
+                    {taxas.map((tx, i) => (tx.valor != null ? <option key={i} value={i}>{tx.label}</option> : null))}
+                  </select>
+                  <input
+                    className={styles.extraJust}
+                    placeholder="Justificativa (ex.: #101340 troca de pedido)"
+                    value={novoExtra.justificativa}
+                    onChange={(e) => setNovoExtra((p) => ({ ...p, justificativa: e.target.value }))}
+                  />
+                  <button
+                    className={styles.primaryBtn}
+                    disabled={!novoExtra.mid || !novoExtra.justificativa.trim()}
+                    onClick={salvarExtra}
+                  >
+                    + Banda extra
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
-          {/* ================= RESULTADO ================= */}
-          {canViewResultado && vis.resultado && (
-            <section className={styles.divisao}>
-              <div className={styles.divHeader} onClick={() => toggleVis('resultado')}>
-                <h3>Resultado</h3>
-                <span className={styles.divHint}>valores a pagar, calculados como na planilha</span>
+          {/* ---- Resumo da semana ---- */}
+          {canViewResultado && (
+            <div className={styles.resumoCards}>
+              <div className={styles.resumoCard}>
+                <span className={styles.resumoLabel}>Entregas</span>
+                <span className={styles.resumoValor}>{resumo.entregas}</span>
               </div>
-
-              <div className={styles.tableWrap}>
-                <table className={styles.grid}>
-                  <thead>
-                    <tr>
-                      <th className={styles.stickyCol}>Motoboy</th>
-                      {diasIso.map((d, i) => (
-                        <th key={d}>
-                          <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
-                          <span className={styles.diaData}>{formatDiaCurto(d)}</span>
-                        </th>
-                      ))}
-                      <th className={styles.totalCol}>Entregas</th>
-                      <th className={styles.totalCol}>Acréscimo</th>
-                      <th className={styles.totalCol}>Valor a receber</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listaMotoboys.map((mb) => {
-                      const r = calcMotoboySemana(mb, config);
-                      return (
-                        <tr key={mb.mid}>
-                          <td className={styles.stickyCol}>{mb.nome}</td>
-                          {r.dias.map((d, i) => (
-                            <td key={i} className={d.acrescimo > 0 ? styles.cellAcrescimo : ''} title={d.acrescimo > 0 ? `Acréscimo de ${formatBRL(d.acrescimo)} (garantia)` : ''}>
-                              {d.valor ? formatBRL(d.valor) : ''}
-                            </td>
-                          ))}
-                          <td className={styles.totalCol}>{r.total.qtd || ''}</td>
-                          <td className={styles.totalCol}>{r.total.acrescimo ? formatBRL(r.total.acrescimo) : ''}</td>
-                          <td className={`${styles.totalCol} ${styles.valorFinal}`}>{formatBRL(r.total.valor)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className={styles.resumoCard}>
+                <span className={styles.resumoLabel}>Motos (diárias)</span>
+                <span className={styles.resumoValor}>{resumo.motoDias}</span>
               </div>
-
-              <div className={styles.resumoCards}>
-                <div className={styles.resumoCard}>
-                  <span className={styles.resumoLabel}>Entregas</span>
-                  <span className={styles.resumoValor}>{resumo.entregas}</span>
-                </div>
-                <div className={styles.resumoCard}>
-                  <span className={styles.resumoLabel}>Motos (diárias)</span>
-                  <span className={styles.resumoValor}>{resumo.motoDias}</span>
-                </div>
-                <div className={styles.resumoCard}>
-                  <span className={styles.resumoLabel}>Taxa coop ({formatBRL(config?.taxaCoop)}/moto)</span>
-                  <span className={styles.resumoValor}>{formatBRL(resumo.taxaCoopTotal)}</span>
-                </div>
-                <div className={styles.resumoCard}>
-                  <span className={styles.resumoLabel}>Transbordo (acréscimos)</span>
-                  <span className={styles.resumoValor}>{formatBRL(resumo.transbordo)}</span>
-                </div>
-                <div className={`${styles.resumoCard} ${styles.resumoTotal}`}>
-                  <span className={styles.resumoLabel}>Total a pagar</span>
-                  <span className={styles.resumoValor}>{formatBRL(resumo.totalPagar)}</span>
-                </div>
+              <div className={styles.resumoCard}>
+                <span className={styles.resumoLabel}>Taxa coop ({formatBRL(config?.taxaCoop)}/moto)</span>
+                <span className={styles.resumoValor}>{formatBRL(resumo.taxaCoopTotal)}</span>
               </div>
+              <div className={styles.resumoCard}>
+                <span className={styles.resumoLabel}>Transbordo (acréscimos)</span>
+                <span className={styles.resumoValor}>{formatBRL(resumo.transbordo)}</span>
+              </div>
+              <div className={`${styles.resumoCard} ${styles.resumoTotal}`}>
+                <span className={styles.resumoLabel}>Total a pagar</span>
+                <span className={styles.resumoValor}>{formatBRL(resumo.totalPagar)}</span>
+              </div>
+            </div>
+          )}
 
-              {/* ---- Config da semana ---- */}
-              <details className={styles.configBox}>
-                <summary>Configuração de taxas e garantia</summary>
-                <div className={styles.configGrid}>
-                  {taxas.map((tx, i) => (
-                    <div key={i} className={styles.configTaxa}>
-                      <span className={styles.taxaLabel}>{tx.label}</span>
-                      <MoneyInput
-                        className={styles.configInput}
-                        value={tx.valor}
-                        disabled={!canEditResultado}
-                        onCommit={(v) => {
-                          const novas = taxas.map((t, j) => (j === i ? { ...t, valor: v } : t));
+          {/* ---- Config da semana ---- */}
+          {canViewResultado && (
+            <details className={styles.configBox}>
+              <summary>Configuração de taxas e garantia</summary>
+              <div className={styles.configGrid}>
+                {taxas.map((tx, i) => (
+                  <div key={i} className={styles.configTaxa}>
+                    <span className={styles.taxaLabel}>{tx.label}</span>
+                    <MoneyInput
+                      className={styles.configInput}
+                      value={tx.valor}
+                      disabled={!canEditResultado}
+                      onCommit={(v) => {
+                        const novas = taxas.map((t, j) => (j === i ? { ...t, valor: v } : t));
+                        setConfig({ taxas: novas });
+                      }}
+                    />
+                    <input
+                      className={styles.configFaixa}
+                      placeholder="faixa (ex.: até 3km)"
+                      defaultValue={tx.faixa || ''}
+                      disabled={!canEditResultado}
+                      onBlur={(e) => {
+                        if (e.target.value !== (tx.faixa || '')) {
+                          const novas = taxas.map((t, j) => (j === i ? { ...t, faixa: e.target.value } : t));
                           setConfig({ taxas: novas });
-                        }}
-                      />
-                      <input
-                        className={styles.configFaixa}
-                        placeholder="faixa (ex.: até 3km)"
-                        defaultValue={tx.faixa || ''}
-                        disabled={!canEditResultado}
-                        onBlur={(e) => {
-                          if (e.target.value !== (tx.faixa || '')) {
-                            const novas = taxas.map((t, j) => (j === i ? { ...t, faixa: e.target.value } : t));
-                            setConfig({ taxas: novas });
-                          }
-                        }}
-                      />
-                    </div>
-                  ))}
-                  <div className={styles.configTaxa}>
-                    <span className={styles.taxaLabel}>Garantia/noite</span>
-                    <MoneyInput
-                      className={styles.configInput}
-                      value={config?.garantia}
-                      disabled={!canEditResultado}
-                      onCommit={(v) => setConfig({ garantia: v || 0 })}
+                        }
+                      }}
                     />
                   </div>
-                  <div className={styles.configTaxa}>
-                    <span className={styles.taxaLabel}>Taxa coop/moto</span>
-                    <MoneyInput
-                      className={styles.configInput}
-                      value={config?.taxaCoop}
-                      disabled={!canEditResultado}
-                      onCommit={(v) => setConfig({ taxaCoop: v || 0 })}
-                    />
-                  </div>
+                ))}
+                <div className={styles.configTaxa}>
+                  <span className={styles.taxaLabel}>Garantia/noite</span>
+                  <MoneyInput
+                    className={styles.configInput}
+                    value={config?.garantia}
+                    disabled={!canEditResultado}
+                    onCommit={(v) => setConfig({ garantia: v || 0 })}
+                  />
                 </div>
-                <p className={styles.muted}>Alterações valem para esta semana e viram padrão das próximas.</p>
-              </details>
-            </section>
+                <div className={styles.configTaxa}>
+                  <span className={styles.taxaLabel}>Taxa coop/moto</span>
+                  <MoneyInput
+                    className={styles.configInput}
+                    value={config?.taxaCoop}
+                    disabled={!canEditResultado}
+                    onCommit={(v) => setConfig({ taxaCoop: v || 0 })}
+                  />
+                </div>
+              </div>
+              <p className={styles.muted}>Alterações valem para esta semana e viram padrão das próximas.</p>
+            </details>
           )}
-        </>
+        </section>
       )}
 
       {/* ================= CADASTRO (roster da loja) ================= */}

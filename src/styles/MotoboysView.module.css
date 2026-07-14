@@ -490,11 +490,29 @@
 
 .rosterArquivados h4 { margin: 0 0 4px; font-size: 12.5px; color: var(--text-secondary); }
 
+/* ---- Linhas Saipos e Valor a receber (grade unificada) ---- */
+.saiposRow td {
+  background: color-mix(in srgb, var(--accent) 4%, var(--card));
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.saiposRow .stickyCol { background: color-mix(in srgb, var(--accent) 4%, var(--card)); }
+
+.valorRow td {
+  background: color-mix(in srgb, var(--accent) 9%, var(--card));
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.valorRow .stickyCol { background: color-mix(in srgb, var(--accent) 9%, var(--card)); }
+
 /* ---- Adm (conferência) ---- */
 .importStatus {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-secondary);
-  margin: 0 0 10px;
+  margin-left: auto;
 }
 
 .compCell {
