@@ -360,6 +360,28 @@
   white-space: nowrap;
 }
 
+/* Checkbox de confirmação do dia no cabeçalho do bloco */
+.diaHead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.diaCheck {
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+
+.diaCheck:disabled { cursor: default; }
+
+/* Dia não confirmado: coluna inteira em amarelo claro (sem acréscimo/moto-dia).
+   Seletor com th/td para vencer os fundos por linha (.descRow td, .calcRow td…). */
+.grid th.colPend,
+.grid td.colPend { background: color-mix(in srgb, #f2c200 14%, var(--card)); }
+
 .descRow td { background: color-mix(in srgb, var(--danger) 4%, var(--card)); }
 
 .descInput {

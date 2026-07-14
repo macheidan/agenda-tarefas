@@ -88,7 +88,7 @@ export default function MotoboysView() {
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
-    criarSemana, setCelula, setDesconto, addMotoboy, removeMotoboy,
+    criarSemana, setCelula, setDiaOk, setDesconto, addMotoboy, removeMotoboy,
     addRosterMotoboy, renameMotoboy, setRosterAtivo,
     setConfig, addExtra, deleteExtra, atribuirNaoCasado,
   } = useMotoboys(loja, segunda, user);
@@ -313,6 +313,11 @@ export default function MotoboysView() {
             const totDiff = r.total.qtd - totPa - totEx;
             const aberto = expandidos.has(mb.mid);
             const temDiffBloco = compCells.some((c) => c.diff !== 0 && (c.pg || c.paQ));
+            // Dia confirmado (checkbox): sem ele a coluna fica pendente (amarela)
+            // e o dia não gera acréscimo nem moto-dia.
+            const diaOk = diasIso.map((_, di) => mb.dias?.[di]?.ok === true);
+            const colCls = (di, extra = '') =>
+              [diaOk[di] ? '' : styles.colPend, extra].filter(Boolean).join(' ');
             return (
               <div key={mb.mid} className={styles.bloco}>
                 <div className={styles.blocoHeader} onClick={() => toggleBloco(mb.mid)}>
@@ -343,9 +348,20 @@ export default function MotoboysView() {
                       <tr>
                         <th className={styles.stickyCol}></th>
                         {diasIso.map((d, i) => (
-                          <th key={d}>
-                            <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
-                            <span className={styles.diaData}>{formatDiaCurto(d)}</span>
+                          <th key={d} className={colCls(i)}>
+                            <label className={styles.diaHead} title="Dia confirmado: libera acréscimo e moto-dia">
+                              <input
+                                type="checkbox"
+                                className={styles.diaCheck}
+                                checked={diaOk[i]}
+                                disabled={!canEditGerente}
+                                onChange={(e) => setDiaOk(mb.mid, i, e.target.checked)}
+                              />
+                              <span>
+                                <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
+                                <span className={styles.diaData}>{formatDiaCurto(d)}</span>
+                              </span>
+                            </label>
                           </th>
                         ))}
                         <th className={styles.totalCol}>Total</th>
@@ -364,7 +380,7 @@ export default function MotoboysView() {
                             {diasIso.map((d, di) => {
                               const paT = canViewAdm ? pa?.taxas?.[mb.mid]?.[di]?.[ti] : null;
                               return (
-                                <td key={d}>
+                                <td key={d} className={colCls(di)}>
                                   <QtdInput
                                     value={mb.dias?.[di]?.t?.[ti] ?? null}
                                     disabled={!canEditGerente}
@@ -393,7 +409,7 @@ export default function MotoboysView() {
                             <span className={styles.taxaValor}>R$ · use negativo</span>
                           </td>
                           {diasIso.map((d, di) => (
-                            <td key={d}>
+                            <td key={d} className={colCls(di)}>
                               <MoneyInput
                                 className={styles.descInput}
                                 value={mb.dias?.[di]?.desc ?? null}
@@ -410,7 +426,7 @@ export default function MotoboysView() {
                         <tr className={styles.calcRow}>
                           <td className={styles.stickyCol}>Entregas</td>
                           {r.dias.map((d, i) => (
-                            <td key={i}>{d.qtd || ''}</td>
+                            <td key={i} className={colCls(i)}>{d.qtd || ''}</td>
                           ))}
                           <td className={styles.totalCol}>{r.total.qtd || ''}</td>
                         </tr>
@@ -422,7 +438,7 @@ export default function MotoboysView() {
                             <span className={styles.taxaValor}>+ bandas extras</span>
                           </td>
                           {compCells.map((c, i) => (
-                            <td key={i} className={c.diff !== 0 && (c.pg || c.paQ) ? styles.cellDiff : ''}>
+                            <td key={i} className={colCls(i, c.diff !== 0 && (c.pg || c.paQ) ? styles.cellDiff : '')}>
                               {c.paQ || c.ex ? (
                                 <span>
                                   {c.paQ}{c.ex ? `+${c.ex}` : ''}
@@ -452,7 +468,7 @@ export default function MotoboysView() {
                             <span className={styles.taxaValor}>qtde × valor da taxa</span>
                           </td>
                           {r.dias.map((d, i) => (
-                            <td key={i}>{d.bandas ? formatBRL(d.bandas) : ''}</td>
+                            <td key={i} className={colCls(i)}>{d.bandas ? formatBRL(d.bandas) : ''}</td>
                           ))}
                           <td className={styles.totalCol}>{r.total.bandas ? formatBRL(r.total.bandas) : ''}</td>
                         </tr>
@@ -464,7 +480,7 @@ export default function MotoboysView() {
                             <span className={styles.taxaValor}>completa a garantia de {formatBRL(config?.garantia)}</span>
                           </td>
                           {r.dias.map((d, i) => (
-                            <td key={i} className={d.acrescimo > 0 ? styles.cellAcrescimo : ''}>
+                            <td key={i} className={colCls(i, d.acrescimo > 0 ? styles.cellAcrescimo : '')}>
                               {d.acrescimo ? formatBRL(d.acrescimo) : ''}
                             </td>
                           ))}
@@ -478,7 +494,7 @@ export default function MotoboysView() {
                             <span className={styles.taxaValor}>bandas + acréscimo + descontos</span>
                           </td>
                           {r.dias.map((d, i) => (
-                            <td key={i}>{d.valor ? formatBRL(d.valor) : ''}</td>
+                            <td key={i} className={colCls(i)}>{d.valor ? formatBRL(d.valor) : ''}</td>
                           ))}
                           <td className={`${styles.totalCol} ${styles.valorFinal}`}>{formatBRL(r.total.valor)}</td>
                         </tr>
