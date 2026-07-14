@@ -10,6 +10,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .header h2 {

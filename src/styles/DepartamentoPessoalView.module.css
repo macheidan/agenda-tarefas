@@ -31,24 +31,29 @@
   gap: 8px;
 }
 
+/* Submenu de seções — estilo Dia/Semana/Mês do Calendário */
 .sectionTab {
-  padding: 8px 14px;
-  border: 2px solid var(--accent);
-  border-radius: var(--radius-md);
-  background: var(--card);
-  color: var(--accent);
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
+.sectionTab:hover { background: var(--card-hover); color: var(--text); }
+
 .sectionTabActive {
   background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
-/* ---- Lojas ---- */
+.sectionTabActive:hover { background: var(--accent-hover); color: #fff; }
+
+/* ---- Lojas (mesmo estilo do submenu, mesma cor pra todas) ---- */
 .storeBar {
   display: flex;
   align-items: center;
@@ -63,14 +68,25 @@
 }
 
 .storeTab {
-  padding: 7px 16px;
-  border: 2px solid var(--accent);
-  border-radius: var(--radius-md);
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
+
+.storeTab:hover { background: var(--card-hover); color: var(--text); }
+
+.storeTabActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.storeTabActive:hover { background: var(--accent-hover); color: #fff; }
 
 .manageStoresBtn {
   padding: 6px 12px;
@@ -977,7 +993,7 @@
   }
 
   .sectionTab {
-    padding: 7px 12px;
+    padding: 4px 10px;
     font-size: 12px;
   }
 
@@ -990,7 +1006,7 @@
   }
 
   .storeTab {
-    padding: 6px 13px;
+    padding: 4px 10px;
     font-size: 12px;
   }
 

@@ -443,32 +443,18 @@ export default function DepartamentoPessoalView() {
       {/* Abas de lojas (+ Ambas) + gerenciar */}
       <div className={styles.storeBar}>
         <div className={styles.storeTabs}>
-          {visibleStores.map((s) => {
-            const color = storeMeta[s.id]?.color || 'var(--accent)';
-            const active = s.id === activeStore;
-            return (
-              <button
-                key={s.id}
-                className={styles.storeTab}
-                style={{
-                  borderColor: color,
-                  background: active ? color : 'var(--card)',
-                  color: active ? '#fff' : color,
-                }}
-                onClick={() => setSelectedStore(s.id)}
-              >
-                {s.name}
-              </button>
-            );
-          })}
+          {visibleStores.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.storeTab} ${s.id === activeStore ? styles.storeTabActive : ''}`}
+              onClick={() => setSelectedStore(s.id)}
+            >
+              {s.name}
+            </button>
+          ))}
           {visibleStores.length > 1 && (
             <button
-              className={styles.storeTab}
-              style={{
-                borderColor: 'var(--text-secondary)',
-                background: isAmbas ? 'var(--text-secondary)' : 'var(--card)',
-                color: isAmbas ? '#fff' : 'var(--text-secondary)',
-              }}
+              className={`${styles.storeTab} ${isAmbas ? styles.storeTabActive : ''}`}
               onClick={() => setSelectedStore(ALL_STORES)}
             >
               Ambas

@@ -202,7 +202,7 @@ export default function MotoboysView() {
           {lojasVisiveis.map((l) => (
             <button
               key={l.id}
-              className={`${l.id === 'lov' ? styles.lovBtn : styles.dameBtn} ${loja === l.id ? (l.id === 'lov' ? styles.lovBtnActive : styles.dameBtnActive) : ''}`}
+              className={`${styles.sectionTab} ${loja === l.id ? styles.sectionTabActive : ''}`}
               onClick={() => setLoja(l.id)}
             >
               {l.nome}

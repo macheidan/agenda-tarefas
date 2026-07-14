@@ -12,13 +12,15 @@
   gap: 16px;
 }
 
-/* ---- Header (título + sub-nav de loja + ações) ---- */
+/* ---- Header (título + submenu de seções) ---- */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .header h2 {
@@ -34,25 +36,29 @@
   flex-wrap: wrap;
 }
 
-/* Submenu de seções no título (mesmo padrão do Depto Pessoal) */
+/* Submenu de seções no título — estilo Dia/Semana/Mês do Calendário */
 .sectionTab {
-  padding: 8px 14px;
-  border: 2px solid var(--accent);
-  border-radius: var(--radius-md);
-  background: var(--card);
-  color: var(--accent);
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
+.sectionTab:hover { background: var(--card-hover); color: var(--text); }
+
 .sectionTabActive {
   background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 
-/* Abas de loja abaixo do header (mesmo padrão do Depto Pessoal) */
+.sectionTabActive:hover { background: var(--accent-hover); color: #fff; }
+
+/* Abas de loja abaixo do header (mesmo estilo, mesma cor pras duas marcas) */
 .storeBar {
   display: flex;
   align-items: center;
@@ -64,23 +70,6 @@
   flex-wrap: wrap;
   align-items: center;
 }
-
-.dameBtn,
-.lovBtn {
-  padding: 7px 16px;
-  border-radius: var(--radius-md);
-  background: var(--card);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.dameBtn { border: 2px solid var(--accent); color: var(--accent); }
-.dameBtnActive { background: var(--accent); color: #fff; }
-
-.lovBtn { border: 2px solid #d0447a; color: #d0447a; }
-.lovBtnActive { background: #d0447a; color: #fff; }
 
 /* ---- Filtros (semana + status) ---- */
 .filters {
@@ -811,8 +800,7 @@
 /* ---- Mobile ---- */
 @media (max-width: 768px) {
   .container { padding: 16px; }
-  .sectionTab { padding: 7px 12px; font-size: 12px; }
-  .dameBtn, .lovBtn { padding: 6px 13px; font-size: 12px; }
+  .sectionTab { padding: 4px 10px; font-size: 12px; }
   .stickyCol { min-width: 96px; }
   .justCell { max-width: 160px; }
 }

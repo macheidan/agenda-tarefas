@@ -27,15 +27,27 @@
   gap: 8px;
 }
 
+/* Mesmo estilo do submenu do Calendário (mesma cor pra todas as lojas) */
 .storeTab {
-  border: 1.5px solid;
-  border-radius: var(--radius-md);
-  padding: 6px 14px;
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  background: var(--card);
+  transition: background 0.15s, color 0.15s;
 }
+
+.storeTab:hover { background: var(--card-hover); color: var(--text); }
+
+.storeTabActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.storeTabActive:hover { background: var(--accent-hover); color: #fff; }
 
 .empSelect {
   flex: 1;
@@ -354,32 +366,32 @@
   background: var(--bg-secondary);
 }
 
-/* ---- Toggle de visão: por funcionário / resumo mensal ---- */
+/* ---- Toggle de visão: por funcionário / resumo mensal (estilo Calendário) ---- */
 .viewToggle {
   display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  gap: 8px;
 }
 
 .viewBtn {
-  padding: 7px 14px;
-  border: none;
-  background: var(--card);
-  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
-.viewBtn + .viewBtn {
-  border-left: 1px solid var(--border);
-}
+.viewBtn:hover { background: var(--card-hover); color: var(--text); }
 
 .viewBtnActive {
   background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
+
+.viewBtnActive:hover { background: var(--accent-hover); color: #fff; }
 
 /* ---- Resumo mensal por equipe ---- */
 .resumo {

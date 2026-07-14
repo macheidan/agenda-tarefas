@@ -4,7 +4,7 @@
 > Referências canônicas (escolhidas pelo Fábio): **InfluencersView**, **ReelsView** (Instagram) e **NotesView** (Anotações).
 > O design system paralelo em `src/ui/` (tokens `--ds-*`, "Sereno") NÃO é usado — a convenção abaixo é a oficial.
 
-**Versão:** 1.0.0 · **Ratificada:** 2026-07-14
+**Versão:** 1.1.0 · **Ratificada:** 2026-07-14 · **1.1.0:** header com linha divisória + submenu no estilo do Calendário (Dia/Semana/Mês), sem cores por marca em abas
 
 ---
 
@@ -27,22 +27,34 @@ Proibido: view transparente/full-bleed sem cartão (era o erro da MotoboysView o
 
 ## Princípio 2 — Header da seção
 
-`display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap`.
+`display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap`, com **linha divisória cinza embaixo**: `padding-bottom:14px; border-bottom:1px solid var(--border-light)` (ou `padding:16px 0; margin-bottom:8px` quando o container tem `padding-top:0`).
 Esquerda: `<h2>` **18px / 700** (emoji opcional: `📱 Instagram`). Direita: `.headerActions` com `gap:8px`.
-Blocos abaixo do header, nesta ordem: **stats → filtros → conteúdo**.
+Blocos abaixo do header, nesta ordem: **abas de loja (se houver) → stats → filtros → conteúdo**.
 
-## Princípio 3 — Sub-navegação horizontal fixa no topo (padrão Reels)
+## Princípio 3 — Sub-navegação horizontal fixa no topo (estilo Calendário)
 
-Conteúdos/visões secundárias da seção ficam num **submenu horizontal fixo dentro do cartão, na linha do título** (em `.headerActions`), nunca escondidos:
+Conteúdos/visões secundárias da seção ficam num **submenu horizontal fixo dentro do cartão, na linha do título** (em `.headerActions`), nunca escondidos. Estilo canônico = botões **Dia/Semana/Mês do Calendário** (`CalendarView .viewBtn`):
 
-- Botão **outline 2px colorido, `border-radius: var(--radius-md)` (8px)** — retangular, NUNCA pílula 999px.
-- Ativo = preenche com a cor (`background: <cor>; color: #fff`).
-- Rótulo com contador: `Reels (12)`.
-- Cor por sub-seção (accent, laranja `#ff9800`, roxo `#9c27b0`, neutro pra Arquivados).
-- Implementação: flags booleanas → `activeSection` derivado + `goToSection()`; sub-views com early-return reusando o header (ver `ReelsView.jsx:343-420`).
-- O botão "+ Novo" muda cor/rótulo conforme a sub-seção ativa.
+```css
+.sectionTab {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;              /* 12px @768px */
+  padding: 5px 12px;            /* 4px 10px @768px */
+  border-radius: var(--radius-md);
+  transition: background 0.15s, color 0.15s;
+}
+.sectionTab:hover { background: var(--card-hover); color: var(--text); }
+.sectionTabActive { background: var(--accent); border-color: var(--accent); color: #fff; }
+```
 
-**Janelas modais** são reservadas a cadastros e configurações pontuais (ex.: Taxas e Cadastro de motoboys): componente separado (`XModal.jsx`) ou overlay com painel, abertos por botão no `.headerActions`.
+- **Sem cor por marca/loja**: abas Dáme/Lov (e equivalentes) usam o MESMO estilo neutro; ativo sempre preenche com `--accent`. Cores de marca ficam pra badges e conteúdo, não pra navegação.
+- Abas de loja, quando existirem, ficam numa `.storeBar` logo abaixo do header, no mesmo estilo.
+- Rótulo com contador é permitido: `Reels (12)`.
+- Implementação: estado `secao` + fallback por permissão; seções trocam o conteúdo inline (sem modal).
+
+**Janelas modais** são reservadas a cadastros e configurações pontuais: componente separado (`XModal.jsx`) ou overlay com painel, abertos por botão no `.headerActions`.
 
 ## Princípio 4 — Botões
 
@@ -50,7 +62,7 @@ Conteúdos/visões secundárias da seção ficam num **submenu horizontal fixo d
 |---|---|
 | Primário | `padding:8px 16px; border:none; radius-md; background:var(--accent); color:#fff; font 14px/500`; hover `--accent-hover` |
 | Ghost | `border:1px solid var(--input-border); background:var(--card); color:var(--text-secondary); font 12-13px`; hover `--bg-secondary` |
-| Sub-nav | outline 2px colorido (Princípio 3) |
+| Sub-nav / abas | estilo Calendário, borda cinza 1px, ativo preenche accent (Princípio 3) |
 | Perigo | `border:1px solid var(--danger); background:none; color:var(--danger)`; hover `--danger-bg` |
 | Ícone | quadrado 28px (36px no mobile), radius-md, flex-center |
 
@@ -99,14 +111,6 @@ Ação destrutiva: `window.confirm` antes.
 
 ---
 
-## Anexo — Retrofit das telas existentes (dívidas conhecidas)
+## Anexo — Retrofit das telas existentes
 
-| Tela | Divergências a corrigir |
-|---|---|
-| **MotoboysView** | Sem shell de cartão/h2 (full-bleed com toolbar); pílulas 999px; fontes 12.5/10.5px; rosa `#d0447a` como cor base do switch de loja |
-| **ComprasView** | Sub-nav e busca em pílula 999px; `box-shadow inset` como indicador de linha |
-| **DepartamentoPessoalView** | `.storeTab`/`.manageStoresBtn` em pílula 999px |
-| **PrecosInsumosView** | Revisar sub-nav e escala tipográfica contra os princípios 3 e 6 |
-| **SettingsView** | Acordeões ok; alinhar botões/typography à escala |
-
-Ordem sugerida: Motoboys → Compras → Depto Pessoal → Preços → Configurações.
+Retrofit 1.0 (cartão, sem pílulas) e 1.1 (linha no header, submenu estilo Calendário, abas de loja sem cor por marca) aplicados em: Motoboys, Depto Pessoal, Salários, Compras, Influencers, Anotações, Ideias, Conhecimento, Arquivadas, Preços. Telas novas já nascem no padrão 1.1.

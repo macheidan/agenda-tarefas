@@ -14,6 +14,8 @@
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .header h2 {
