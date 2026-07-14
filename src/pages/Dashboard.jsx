@@ -23,6 +23,7 @@ import MessageOverlay from '../components/MessageOverlay';
 import MobileCalendarView from '../components/MobileCalendarView';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useTabsOrder } from '../hooks/useTabsOrder';
+import { useVersionCheck } from '../hooks/useVersionCheck';
 import { useInfluencers } from '../hooks/useInfluencers';
 import { useKnowledge } from '../hooks/useKnowledge';
 import TaskModal from '../components/TaskModal';
@@ -53,6 +54,7 @@ export default function Dashboard() {
   const users = useUsers();
   const isMobile = useIsMobile(768);
   const { order: tabsOrder, updateOrder: updateTabsOrder } = useTabsOrder();
+  const { updateAvailable, reload } = useVersionCheck();
 
   const [selectedUid, setSelectedUid] = useState(user.uid);
   // Deep-link por query param (?tab=...): permite abrir uma aba especifica numa
@@ -333,6 +335,20 @@ export default function Dashboard() {
       </main>
 
       {isMobile && <BottomNav tabs={bottomTabs} activeTab={activeTab} onTabChange={setActiveTab} />}
+
+      {updateAvailable && (
+        <button
+          onClick={reload}
+          style={{
+            position: 'fixed', bottom: isMobile ? 96 : 20, right: 20, zIndex: 2000,
+            padding: '10px 16px', border: 'none', borderRadius: 8,
+            background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 600,
+            boxShadow: '0 4px 14px rgba(16,24,40,.25)', cursor: 'pointer',
+          }}
+        >
+          Nova versão disponível · Atualizar
+        </button>
+      )}
 
       {modalOpen && (
         <TaskModal
