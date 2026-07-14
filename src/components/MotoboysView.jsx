@@ -69,6 +69,9 @@ export default function MotoboysView() {
 
   const [loja, setLoja] = useState('dame');
   const [segunda, setSegunda] = useState(() => mondayOf(new Date()));
+  // Blocos de motoboy iniciam recolhidos; expande por clique ou "Expandir todos".
+  const [expandidos, setExpandidos] = useState(() => new Set());
+  const [cadastroAberto, setCadastroAberto] = useState(false);
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
@@ -162,6 +165,17 @@ export default function MotoboysView() {
 
   const navSemana = (n) => setSegunda((s) => addDaysIso(s, n * 7));
 
+  const toggleBloco = (mid) =>
+    setExpandidos((prev) => {
+      const next = new Set(prev);
+      if (next.has(mid)) next.delete(mid);
+      else next.add(mid);
+      return next;
+    });
+  const todosAbertos = listaMotoboys.length > 0 && listaMotoboys.every((m) => expandidos.has(m.mid));
+  const expandirTodos = () =>
+    setExpandidos(todosAbertos ? new Set() : new Set(listaMotoboys.map((m) => m.mid)));
+
   return (
     <div className={styles.container}>
       {/* ---- Toolbar ---- */}
@@ -193,14 +207,27 @@ export default function MotoboysView() {
           </button>
         </div>
 
-        {canViewAdm && (
-          <span className={styles.importStatus}>
-            {pa?.importadoEm
-              ? `Saipos importado em ${new Date(pa.importadoEm).toLocaleString('pt-BR')} (rodada ${pa.fonte || '—'})`
-              : 'Saipos ainda não importado (automático nas quartas de madrugada)'}
-          </span>
-        )}
+        <div className={styles.toolbarBtns}>
+          {semana && listaMotoboys.length > 0 && (
+            <button className={styles.toolBtn} onClick={expandirTodos}>
+              {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
+            </button>
+          )}
+          {canRoster && (
+            <button className={styles.toolBtn} onClick={() => setCadastroAberto(true)}>
+              Cadastro de motoboys
+            </button>
+          )}
+        </div>
       </div>
+
+      {canViewAdm && semana && (
+        <p className={styles.importLine}>
+          {pa?.importadoEm
+            ? `Saipos importado em ${new Date(pa.importadoEm).toLocaleString('pt-BR')} (rodada ${pa.fonte || '—'}).`
+            : 'Saipos ainda não importado para esta semana (automático nas quartas de madrugada).'}
+        </p>
+      )}
 
       {error && <div className={styles.error}>Erro ao carregar: {error}</div>}
 
@@ -233,16 +260,24 @@ export default function MotoboysView() {
               return { pg, paQ, ex, diff: pg - paQ - ex };
             });
             const totDiff = r.total.qtd - totPa - totEx;
+            const aberto = expandidos.has(mb.mid);
+            const temDiffBloco = compCells.some((c) => c.diff !== 0 && (c.pg || c.paQ));
             return (
               <div key={mb.mid} className={styles.bloco}>
-                <div className={styles.blocoHeader}>
+                <div className={styles.blocoHeader} onClick={() => toggleBloco(mb.mid)}>
+                  <span className={styles.chevron}>{aberto ? '▾' : '▸'}</span>
                   <strong>{mb.nome}</strong>
+                  <span className={styles.blocoBadges}>
+                    {r.total.qtd > 0 && <span className={styles.badgeQtd}>{r.total.qtd} entregas</span>}
+                    {canViewAdm && temDiffBloco && <span className={styles.badgeDiff}>divergência</span>}
+                  </span>
                   {canViewResultado && <span className={styles.blocoTotal}>{formatBRL(r.total.valor)}</span>}
                   {canEditGerente && (
                     <button
                       className={styles.removeBtn}
                       title="Remover motoboy desta semana"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (window.confirm(`Remover ${mb.nome} desta semana? Os lançamentos serão apagados.`)) removeMotoboy(mb.mid);
                       }}
                     >
@@ -250,6 +285,7 @@ export default function MotoboysView() {
                     </button>
                   )}
                 </div>
+                {aberto && (
                 <div className={styles.tableWrap}>
                   <table className={styles.grid}>
                     <thead>
@@ -395,7 +431,8 @@ export default function MotoboysView() {
                     </tbody>
                   </table>
                 </div>
-                {obsEdit?.mid === mb.mid && (
+                )}
+                {aberto && obsEdit?.mid === mb.mid && (
                   <div className={styles.obsEditor}>
                     <span className={styles.obsEditorLabel}>
                       🚨 {mb.nome} · {DIAS_SEMANA[obsEdit.di]} {formatDiaCurto(diasIso[obsEdit.di])}
@@ -664,10 +701,11 @@ export default function MotoboysView() {
         </section>
       )}
 
-      {/* ================= CADASTRO (roster da loja) ================= */}
-      {canRoster && (
-        <section className={styles.divisao}>
-          <div className={styles.divHeader}>
+      {/* ================= CADASTRO (janela aberta pelo botão do topo) ================= */}
+      {canRoster && cadastroAberto && (
+        <div className={styles.modalOverlay} onClick={() => setCadastroAberto(false)}>
+        <section className={styles.modalPanel} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.modalHeader}>
             <h3>Cadastro de motoboys</h3>
             <span className={styles.divHint}>
               nomes de {MOTOBOY_LOJAS.find((l) => l.id === loja)?.nome}; arquivado não entra em semanas novas
@@ -677,6 +715,7 @@ export default function MotoboysView() {
                 {showArquivados ? 'Ocultar arquivados' : `Ver arquivados (${rosterArquivados.length})`}
               </button>
             )}
+            <button className={styles.modalClose} title="Fechar" onClick={() => setCadastroAberto(false)}>×</button>
           </div>
 
           <div className={styles.rosterLista}>
@@ -754,6 +793,7 @@ export default function MotoboysView() {
             </button>
           </div>
         </section>
+        </div>
       )}
     </div>
   );
