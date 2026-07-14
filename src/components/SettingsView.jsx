@@ -425,6 +425,25 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                           </label>
                         </div>
                       ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <span className={styles.sectionLabel} style={{ minWidth: 84, fontWeight: 600 }}>Lojas</span>
+                        <label className={styles.sectionToggle}>
+                          <input
+                            type="checkbox"
+                            checked={s.motoboysVerDame !== false}
+                            onChange={(e) => toggleSection(u.uid, 'motoboysVerDame', e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>Dáme</span>
+                        </label>
+                        <label className={styles.sectionToggle}>
+                          <input
+                            type="checkbox"
+                            checked={s.motoboysVerLov !== false}
+                            onChange={(e) => toggleSection(u.uid, 'motoboysVerLov', e.target.checked)}
+                          />
+                          <span className={styles.sectionLabel}>Lov</span>
+                        </label>
+                      </div>
                       <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
                         <input
                           type="checkbox"

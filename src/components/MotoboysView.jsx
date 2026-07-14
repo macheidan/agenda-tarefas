@@ -68,9 +68,17 @@ export default function MotoboysView() {
   const canViewTaxas = isAdmin || settings?.motoboysVerTaxas !== false;
   const canEditTaxas = isAdmin || legacyEditor || settings?.motoboysEditTaxas === true;
   const canRoster = isAdmin || legacyEditor || settings?.motoboysRoster === true;
+  // Lojas visíveis por usuário (default: as duas).
+  const lojasVisiveis = MOTOBOY_LOJAS.filter((l) =>
+    isAdmin || (l.id === 'dame' ? settings?.motoboysVerDame !== false : settings?.motoboysVerLov !== false)
+  );
 
   const [loja, setLoja] = useState('dame');
   const [segunda, setSegunda] = useState(() => mondayOf(new Date()));
+  // Se a loja selecionada não está liberada pro usuário, pula pra primeira liberada.
+  if (lojasVisiveis.length > 0 && !lojasVisiveis.some((l) => l.id === loja)) {
+    setLoja(lojasVisiveis[0].id);
+  }
   // Blocos de motoboy iniciam recolhidos; expande por clique ou "Expandir todos".
   const [expandidos, setExpandidos] = useState(() => new Set());
   const [cadastroAberto, setCadastroAberto] = useState(false);
@@ -160,7 +168,7 @@ export default function MotoboysView() {
       {/* ---- Toolbar ---- */}
       <div className={styles.toolbar}>
         <div className={styles.lojaSwitch}>
-          {MOTOBOY_LOJAS.map((l) => (
+          {lojasVisiveis.map((l) => (
             <button
               key={l.id}
               className={`${styles.lojaBtn} ${loja === l.id ? styles.lojaBtnActive : ''} ${l.id === 'lov' && loja === l.id ? styles.lojaBtnLov : ''}`}
