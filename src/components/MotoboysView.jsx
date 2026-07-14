@@ -81,8 +81,10 @@ export default function MotoboysView() {
   }
   // Blocos de motoboy iniciam recolhidos; expande por clique ou "Expandir todos".
   const [expandidos, setExpandidos] = useState(() => new Set());
-  const [cadastroAberto, setCadastroAberto] = useState(false);
-  const [taxasAberto, setTaxasAberto] = useState(false);
+  // Seções no submenu do título (padrão Depto Pessoal): Semana | Taxas | Cadastro.
+  const [secao, setSecao] = useState('semana');
+  const secaoEfetiva =
+    (secao === 'taxas' && canViewTaxas) || (secao === 'cadastro' && canRoster) ? secao : 'semana';
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
@@ -165,10 +167,38 @@ export default function MotoboysView() {
 
   return (
     <div className={styles.container}>
-      {/* ---- Header: título + sub-nav de loja + ações ---- */}
+      {/* ---- Header: título + submenu de seções (padrão Depto Pessoal) ---- */}
       <div className={styles.header}>
         <h2>🛵 Motoboys</h2>
         <div className={styles.headerActions}>
+          <button
+            className={`${styles.sectionTab} ${secaoEfetiva === 'semana' ? styles.sectionTabActive : ''}`}
+            onClick={() => setSecao('semana')}
+          >
+            Semana
+          </button>
+          {canViewTaxas && (
+            <button
+              className={`${styles.sectionTab} ${secaoEfetiva === 'taxas' ? styles.sectionTabActive : ''}`}
+              onClick={() => setSecao('taxas')}
+            >
+              Taxas
+            </button>
+          )}
+          {canRoster && (
+            <button
+              className={`${styles.sectionTab} ${secaoEfetiva === 'cadastro' ? styles.sectionTabActive : ''}`}
+              onClick={() => setSecao('cadastro')}
+            >
+              Cadastro
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ---- Abas de loja (padrão Depto Pessoal) ---- */}
+      <div className={styles.storeBar}>
+        <div className={styles.storeTabs}>
           {lojasVisiveis.map((l) => (
             <button
               key={l.id}
@@ -178,24 +208,10 @@ export default function MotoboysView() {
               {l.nome}
             </button>
           ))}
-          {semana && listaMotoboys.length > 0 && (
-            <button className={styles.toolBtn} onClick={expandirTodos}>
-              {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
-            </button>
-          )}
-          {canViewTaxas && (
-            <button className={styles.toolBtn} onClick={() => setTaxasAberto(true)}>
-              Taxas
-            </button>
-          )}
-          {canRoster && (
-            <button className={styles.toolBtn} onClick={() => setCadastroAberto(true)}>
-              Cadastro de motoboys
-            </button>
-          )}
         </div>
       </div>
 
+      {secaoEfetiva === 'semana' && (<>
       {/* ---- Filtros: navegação de semana + status da importação ---- */}
       <div className={styles.filters}>
         <div className={styles.weekNav}>
@@ -238,11 +254,17 @@ export default function MotoboysView() {
             <button
               className={styles.primaryBtn}
               disabled={!novoNome.trim()}
+              title="Adicionar motoboy na semana"
               onClick={async () => { await addMotoboy(novoNome); setNovoNome(''); }}
             >
-              + Motoboy
+              +
             </button>
           </div>
+        )}
+        {semana && listaMotoboys.length > 0 && (
+          <button className={styles.toolBtn} onClick={expandirTodos}>
+            {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
+          </button>
         )}
         {canViewAdm && semana && (
           <span className={styles.importLine}>
@@ -580,16 +602,11 @@ export default function MotoboysView() {
 
         </section>
       )}
+      </>)}
 
-      {/* ================= TAXAS (janela aberta pelo botão do topo) ================= */}
-      {canViewTaxas && taxasAberto && (
-        <div className={styles.modalOverlay} onClick={() => setTaxasAberto(false)}>
-        <section className={`${styles.modalPanel} ${styles.taxasPanel}`} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.modalHeader}>
-            <h3>Taxas</h3>
-            <button className={styles.modalClose} title="Fechar" onClick={() => setTaxasAberto(false)}>×</button>
-          </div>
-
+      {/* ================= TAXAS (seção do submenu) ================= */}
+      {secaoEfetiva === 'taxas' && canViewTaxas && (
+        <section className={`${styles.inlinePanel} ${styles.taxasPanel}`}>
           <table className={styles.taxasTable}>
             <thead>
               <tr><th>Taxa</th><th>Valor</th><th>Faixa</th></tr>
@@ -657,25 +674,21 @@ export default function MotoboysView() {
               : 'Somente visualização.'}
           </p>
         </section>
-        </div>
       )}
 
-      {/* ================= CADASTRO (janela aberta pelo botão do topo) ================= */}
-      {canRoster && cadastroAberto && (
-        <div className={styles.modalOverlay} onClick={() => setCadastroAberto(false)}>
-        <section className={styles.modalPanel} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.modalHeader}>
-            <h3>Cadastro de motoboys</h3>
-            {rosterArquivados.length > 0 && (
+      {/* ================= CADASTRO (seção do submenu) ================= */}
+      {secaoEfetiva === 'cadastro' && canRoster && (
+        <section className={styles.inlinePanel}>
+          {rosterArquivados.length > 0 && (
+            <div className={styles.inlinePanelActions}>
               <button className={styles.primaryBtn} onClick={() => setShowArquivados((v) => !v)}>
                 <svg className={styles.btnIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                 </svg>
                 Arquivados
               </button>
-            )}
-            <button className={styles.modalClose} title="Fechar" onClick={() => setCadastroAberto(false)}>×</button>
-          </div>
+            </div>
+          )}
 
           <div className={styles.rosterLista}>
             {rosterAtivos.length === 0 && <p className={styles.muted}>Nenhum motoboy cadastrado.</p>}
@@ -752,7 +765,6 @@ export default function MotoboysView() {
             </button>
           </div>
         </section>
-        </div>
       )}
     </div>
   );

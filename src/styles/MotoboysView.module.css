@@ -34,10 +34,40 @@
   flex-wrap: wrap;
 }
 
-/* Sub-nav de loja: outline 2px que preenche quando ativa (padrão Reels) */
+/* Submenu de seções no título (mesmo padrão do Depto Pessoal) */
+.sectionTab {
+  padding: 8px 14px;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sectionTabActive {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Abas de loja abaixo do header (mesmo padrão do Depto Pessoal) */
+.storeBar {
+  display: flex;
+  align-items: center;
+}
+
+.storeTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .dameBtn,
 .lovBtn {
-  padding: 8px 14px;
+  padding: 7px 16px;
   border-radius: var(--radius-md);
   background: var(--card);
   font-size: 13px;
@@ -154,59 +184,24 @@
 }
 
 /* ---- Modal do cadastro ---- */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(16, 24, 40, 0.45);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 60px 16px 16px;
-}
-
-.modalPanel {
+/* ---- Painel inline das seções Taxas e Cadastro ---- */
+.inlinePanel {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 14px 16px 16px;
   width: min(560px, 100%);
-  max-height: calc(100vh - 90px);
-  overflow-y: auto;
-  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.22);
 }
 
-.modalHeader {
+.inlinePanelActions {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  justify-content: flex-end;
   margin-bottom: 10px;
 }
-
-.modalHeader h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.modalClose {
-  margin-left: auto;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 4px;
-}
-
-.modalClose:hover { color: var(--danger); }
 
 /* ---- Quadro de Taxas (destacado) ---- */
 .taxasPanel {
   border: 2px solid var(--accent);
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .taxasTable {
@@ -816,6 +811,8 @@
 /* ---- Mobile ---- */
 @media (max-width: 768px) {
   .container { padding: 16px; }
+  .sectionTab { padding: 7px 12px; font-size: 12px; }
+  .dameBtn, .lovBtn { padding: 6px 13px; font-size: 12px; }
   .stickyCol { min-width: 96px; }
   .justCell { max-width: 160px; }
 }
