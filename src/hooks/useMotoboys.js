@@ -289,6 +289,72 @@ export function useMotoboys(loja, segunda, author) {
     [docId]
   );
 
+  // Comentário do dia de um motoboy (sirene). Texto vazio apaga.
+  const setObs = useCallback(
+    async (mid, diaIdx, texto) => {
+      const t = String(texto || '').trim();
+      await updateDoc(doc(db, 'motoboySemanas', docId), {
+        [`motoboys.${mid}.dias.${diaIdx}.obs`]: t
+          ? { t, por: author?.displayName || author?.email || null, em: new Date().toISOString() }
+          : deleteField(),
+        atualizadoEm: Timestamp.now(),
+      });
+    },
+    [docId, author]
+  );
+
+  // ---- Cadastro (roster da loja): adicionar, renomear, arquivar ----
+
+  // Adiciona nome ao roster sem colocar na semana (entra nas próximas semanas).
+  const addRosterMotoboy = useCallback(
+    async (nome) => {
+      const limpo = String(nome || '').trim();
+      if (!limpo) return null;
+      const norm = normalizarNome(limpo);
+      const roster = configLoja?.roster || {};
+      let mid = Object.keys(roster).find((k) => normalizarNome(roster[k].nome) === norm);
+      if (mid) {
+        // Já existe: só garante ativo.
+        await setDoc(doc(db, 'motoboyConfig', loja), { roster: { [mid]: { ativo: true } } }, { merge: true });
+        return mid;
+      }
+      mid = novoMid();
+      const ordem = Object.keys(roster).length;
+      await setDoc(
+        doc(db, 'motoboyConfig', loja),
+        { roster: { [mid]: { nome: limpo, ativo: true, ordem } } },
+        { merge: true }
+      );
+      return mid;
+    },
+    [loja, configLoja]
+  );
+
+  // Renomeia no roster e, se o motoboy está na semana aberta, nela também.
+  const renameMotoboy = useCallback(
+    async (mid, nome) => {
+      const limpo = String(nome || '').trim();
+      if (!limpo) return;
+      await setDoc(doc(db, 'motoboyConfig', loja), { roster: { [mid]: { nome: limpo } } }, { merge: true });
+      if (semana?.motoboys?.[mid]) {
+        await updateDoc(doc(db, 'motoboySemanas', docId), {
+          [`motoboys.${mid}.nome`]: limpo,
+          atualizadoEm: Timestamp.now(),
+        });
+      }
+    },
+    [docId, loja, semana]
+  );
+
+  // Arquiva/desarquiva no roster (arquivado não entra em semanas novas;
+  // semanas já criadas não mudam).
+  const setRosterAtivo = useCallback(
+    async (mid, ativo) => {
+      await setDoc(doc(db, 'motoboyConfig', loja), { roster: { [mid]: { ativo: !!ativo } } }, { merge: true });
+    },
+    [loja]
+  );
+
   // Atualiza config da semana e grava como novo default da loja.
   const setConfig = useCallback(
     async (patch) => {
@@ -365,6 +431,10 @@ export function useMotoboys(loja, segunda, author) {
     setDesconto,
     addMotoboy,
     removeMotoboy,
+    setObs,
+    addRosterMotoboy,
+    renameMotoboy,
+    setRosterAtivo,
     setConfig,
     addExtra,
     deleteExtra,

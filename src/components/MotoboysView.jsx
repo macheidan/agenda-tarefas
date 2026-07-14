@@ -57,7 +57,18 @@ const DIV_LABELS = { gerente: 'Gerente', adm: 'Adm', resultado: 'Resultado' };
 export default function MotoboysView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
-  const canEdit = isAdmin || settings?.motoboysEditor === true;
+
+  // Permissões por subseção (settings/{uid}). Ver: default ligado.
+  // Editar: default desligado; flag legada motoboysEditor libera tudo.
+  const legacyEditor = settings?.motoboysEditor === true;
+  const canViewGerente = isAdmin || settings?.motoboysVerGerente !== false;
+  const canViewAdm = isAdmin || settings?.motoboysVerAdm !== false;
+  const canViewResultado = isAdmin || settings?.motoboysVerResultado !== false;
+  const canEditGerente = isAdmin || legacyEditor || settings?.motoboysEditGerente === true;
+  const canEditAdm = isAdmin || legacyEditor || settings?.motoboysEditAdm === true;
+  const canEditResultado = isAdmin || legacyEditor || settings?.motoboysEditResultado === true;
+  const canRoster = isAdmin || legacyEditor || settings?.motoboysRoster === true;
+  const canView = { gerente: canViewGerente, adm: canViewAdm, resultado: canViewResultado };
 
   const [loja, setLoja] = useState('dame');
   const [segunda, setSegunda] = useState(() => mondayOf(new Date()));
@@ -79,6 +90,7 @@ export default function MotoboysView() {
   const {
     semana, semanaLoading, config, configLoja, extras, error,
     criarSemana, setCelula, setDesconto, addMotoboy, removeMotoboy,
+    setObs, addRosterMotoboy, renameMotoboy, setRosterAtivo,
     setConfig, addExtra, deleteExtra, atribuirNaoCasado,
   } = useMotoboys(loja, segunda, user);
 
@@ -115,6 +127,41 @@ export default function MotoboysView() {
   // ---- Form de nova banda extra ----
   const [novoExtra, setNovoExtra] = useState({ dia: 0, mid: '', quantidade: 1, taxaIdx: 0, justificativa: '' });
   const [novoNome, setNovoNome] = useState('');
+
+  // ---- Editor de comentário (sirene) mid+dia ----
+  const [obsEdit, setObsEdit] = useState(null); // {mid, di} | null
+  const [obsText, setObsText] = useState('');
+  const abrirObs = (mid, di) => {
+    setObsEdit({ mid, di });
+    setObsText(motoboys[mid]?.dias?.[di]?.obs?.t || '');
+  };
+  const salvarObs = async () => {
+    if (!obsEdit) return;
+    await setObs(obsEdit.mid, obsEdit.di, obsText);
+    setObsEdit(null);
+    setObsText('');
+  };
+
+  // Comentários da semana (para a listagem abaixo das grades).
+  const comentarios = [];
+  listaMotoboys.forEach((mb) => {
+    for (let di = 0; di < 7; di++) {
+      const o = mb.dias?.[di]?.obs;
+      if (o?.t) comentarios.push({ mid: mb.mid, nome: mb.nome, di, ...o });
+    }
+  });
+  comentarios.sort((a, b) => a.di - b.di || a.nome.localeCompare(b.nome));
+
+  // ---- Cadastro de motoboys (roster) ----
+  const [showArquivados, setShowArquivados] = useState(false);
+  const [novoRoster, setNovoRoster] = useState('');
+  const [renMid, setRenMid] = useState(null);
+  const [renNome, setRenNome] = useState('');
+  const rosterEntries = Object.entries(configLoja?.roster || {})
+    .map(([mid, r]) => ({ mid, ...r }))
+    .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.nome.localeCompare(b.nome));
+  const rosterAtivos = rosterEntries.filter((r) => r.ativo !== false);
+  const rosterArquivados = rosterEntries.filter((r) => r.ativo === false);
 
   const salvarExtra = async () => {
     if (!novoExtra.mid || !novoExtra.justificativa.trim()) return;
@@ -164,7 +211,7 @@ export default function MotoboysView() {
         </div>
 
         <div className={styles.divToggles}>
-          {Object.keys(DIV_LABELS).map((k) => (
+          {Object.keys(DIV_LABELS).filter((k) => canView[k]).map((k) => (
             <button
               key={k}
               className={`${styles.divToggle} ${vis[k] ? styles.divToggleOn : ''}`}
@@ -182,7 +229,7 @@ export default function MotoboysView() {
       {!semanaLoading && !semana && (
         <div className={styles.emptyWeek}>
           <p>Semana de {formatDiaCurto(segunda)} a {formatDiaCurto(fim)} ainda não iniciada para {MOTOBOY_LOJAS.find((l) => l.id === loja)?.nome}.</p>
-          {canEdit ? (
+          {canEditGerente ? (
             <button className={styles.primaryBtn} onClick={criarSemana}>Iniciar semana</button>
           ) : (
             <p className={styles.muted}>Peça a um editor para iniciar a semana.</p>
@@ -193,7 +240,7 @@ export default function MotoboysView() {
       {semana && (
         <>
           {/* ================= GERENTE ================= */}
-          {vis.gerente && (
+          {canViewGerente && vis.gerente && (
             <section className={styles.divisao}>
               <div className={styles.divHeader} onClick={() => toggleVis('gerente')}>
                 <h3>Gerente</h3>
@@ -207,7 +254,7 @@ export default function MotoboysView() {
                     <div className={styles.blocoHeader}>
                       <strong>{mb.nome}</strong>
                       <span className={styles.blocoTotal}>{formatBRL(r.total.valor)}</span>
-                      {canEdit && (
+                      {canEditGerente && (
                         <button
                           className={styles.removeBtn}
                           title="Remover motoboy desta semana"
@@ -247,7 +294,7 @@ export default function MotoboysView() {
                                   <td key={d}>
                                     <QtdInput
                                       value={mb.dias?.[di]?.t?.[ti] ?? null}
-                                      disabled={!canEdit}
+                                      disabled={!canEditGerente}
                                       onCommit={(v) => setCelula(mb.mid, di, ti, v)}
                                     />
                                   </td>
@@ -268,13 +315,35 @@ export default function MotoboysView() {
                                 <MoneyInput
                                   className={styles.descInput}
                                   value={mb.dias?.[di]?.desc ?? null}
-                                  disabled={!canEdit}
+                                  disabled={!canEditGerente}
                                   placeholder=""
                                   onCommit={(v) => setDesconto(mb.mid, di, v)}
                                 />
                               </td>
                             ))}
                             <td className={styles.totalCol}>{r.total.desconto ? formatBRL(r.total.desconto) : ''}</td>
+                          </tr>
+                          <tr className={styles.obsRow}>
+                            <td className={styles.stickyCol}>
+                              <span className={styles.taxaLabel}>Obs</span>
+                              <span className={styles.taxaValor}>comentário do dia</span>
+                            </td>
+                            {diasIso.map((d, di) => {
+                              const o = mb.dias?.[di]?.obs;
+                              return (
+                                <td key={d}>
+                                  <button
+                                    className={`${styles.obsBtn} ${o?.t ? styles.obsBtnOn : ''}`}
+                                    title={o?.t || (canEditGerente ? 'Adicionar comentário' : '')}
+                                    disabled={!canEditGerente && !o?.t}
+                                    onClick={() => (canEditGerente ? abrirObs(mb.mid, di) : null)}
+                                  >
+                                    {o?.t ? '🚨' : '+'}
+                                  </button>
+                                </td>
+                              );
+                            })}
+                            <td className={styles.totalCol}></td>
                           </tr>
                           <tr className={styles.calcRow}>
                             <td className={styles.stickyCol}>Entregas</td>
@@ -286,11 +355,60 @@ export default function MotoboysView() {
                         </tbody>
                       </table>
                     </div>
+                    {obsEdit?.mid === mb.mid && (
+                      <div className={styles.obsEditor}>
+                        <span className={styles.obsEditorLabel}>
+                          🚨 {mb.nome} · {DIAS_SEMANA[obsEdit.di]} {formatDiaCurto(diasIso[obsEdit.di])}
+                        </span>
+                        <textarea
+                          className={styles.obsTextarea}
+                          value={obsText}
+                          autoFocus
+                          rows={2}
+                          placeholder="Comentário do dia (ex.: chegou atrasado, recusou entrega...)"
+                          onChange={(e) => setObsText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarObs(); }
+                            if (e.key === 'Escape') { setObsEdit(null); setObsText(''); }
+                          }}
+                        />
+                        <div className={styles.obsEditorActions}>
+                          <button className={styles.primaryBtn} onClick={salvarObs}>Salvar</button>
+                          {motoboys[obsEdit.mid]?.dias?.[obsEdit.di]?.obs?.t && (
+                            <button
+                              className={styles.dangerBtn}
+                              onClick={async () => { await setObs(obsEdit.mid, obsEdit.di, ''); setObsEdit(null); setObsText(''); }}
+                            >
+                              Excluir
+                            </button>
+                          )}
+                          <button className={styles.ghostBtn} onClick={() => { setObsEdit(null); setObsText(''); }}>Cancelar</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
 
-              {canEdit && (
+              {/* ---- Comentários da semana (abaixo do calendário) ---- */}
+              {comentarios.length > 0 && (
+                <div className={styles.obsLista}>
+                  <h4>🚨 Comentários da semana</h4>
+                  {comentarios.map((c) => (
+                    <div key={`${c.mid}_${c.di}`} className={styles.obsListaRow}>
+                      <span className={styles.obsListaDia}>{DIAS_CURTOS[c.di]} {formatDiaCurto(diasIso[c.di])}</span>
+                      <span className={styles.obsListaNome}>{c.nome}</span>
+                      <span className={styles.obsListaTexto}>{c.t}</span>
+                      {c.por && <span className={styles.obsListaPor}>por {c.por}</span>}
+                      {canEditGerente && (
+                        <button className={styles.removeBtn} title="Excluir comentário" onClick={() => setObs(c.mid, c.di, '')}>×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {canEditGerente && (
                 <div className={styles.addRow}>
                   <input
                     className={styles.addInput}
@@ -341,7 +459,7 @@ export default function MotoboysView() {
                             <td>{taxas[e.taxaIdx]?.label || `Taxa ${(e.taxaIdx ?? 0) + 1}`}</td>
                             <td className={styles.justCell}>{e.justificativa}</td>
                             <td>
-                              {canEdit && (
+                              {canEditGerente && (
                                 <button className={styles.removeBtn} onClick={() => deleteExtra(e.id)} title="Excluir">×</button>
                               )}
                             </td>
@@ -351,7 +469,7 @@ export default function MotoboysView() {
                     </table>
                   </div>
                 )}
-                {canEdit && (
+                {canEditGerente && (
                   <div className={styles.extraForm}>
                     <select value={novoExtra.dia} onChange={(e) => setNovoExtra((p) => ({ ...p, dia: Number(e.target.value) }))}>
                       {DIAS_SEMANA.map((d, i) => (
@@ -393,7 +511,7 @@ export default function MotoboysView() {
           )}
 
           {/* ================= ADM ================= */}
-          {vis.adm && (
+          {canViewAdm && vis.adm && (
             <section className={styles.divisao}>
               <div className={styles.divHeader} onClick={() => toggleVis('adm')}>
                 <h3>Adm</h3>
@@ -426,16 +544,19 @@ export default function MotoboysView() {
                       const paDias = pa?.entregas?.[mb.mid] || {};
                       const exDias = extrasPorMidDia[mb.mid] || {};
                       let totPa = 0;
+                      let totEx = 0;
                       let temDiff = false;
                       const cells = diasIso.map((d, i) => {
                         const pg = r.dias[i].qtd;
                         const paQ = Number(paDias[i]) || 0;
                         const ex = exDias[i] || 0;
                         totPa += paQ;
+                        totEx += ex;
                         const diff = pg - paQ - ex;
                         if (diff !== 0 && (pg || paQ)) temDiff = true;
                         return { pg, paQ, ex, diff };
                       });
+                      const totDiff = r.total.qtd - totPa - totEx;
                       return (
                         <tr key={mb.mid} className={temDiff ? styles.rowDiff : ''}>
                           <td className={styles.stickyCol}>{mb.nome}</td>
@@ -444,7 +565,14 @@ export default function MotoboysView() {
                               {c.pg || c.paQ ? (
                                 <div className={styles.compCell}>
                                   <span>{c.pg}</span>
-                                  <span className={styles.compPa}>{c.paQ}{c.ex ? `+${c.ex}` : ''}</span>
+                                  <span className={styles.compPa}>
+                                    {c.paQ}{c.ex ? `+${c.ex}` : ''}
+                                    {c.diff !== 0 && (
+                                      <span className={c.diff > 0 ? styles.diffMais : styles.diffMenos}>
+                                        {c.diff > 0 ? ` +${c.diff}` : ` ${c.diff}`}
+                                      </span>
+                                    )}
+                                  </span>
                                 </div>
                               ) : null}
                             </td>
@@ -452,7 +580,14 @@ export default function MotoboysView() {
                           <td className={styles.totalCol}>
                             <div className={styles.compCell}>
                               <span>{r.total.qtd}</span>
-                              <span className={styles.compPa}>{totPa}</span>
+                              <span className={styles.compPa}>
+                                {totPa}
+                                {totDiff !== 0 && (
+                                  <span className={totDiff > 0 ? styles.diffMais : styles.diffMenos}>
+                                    {totDiff > 0 ? ` +${totDiff}` : ` ${totDiff}`}
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           </td>
                         </tr>
@@ -463,6 +598,8 @@ export default function MotoboysView() {
               </div>
               <p className={styles.legend}>
                 Em cada célula: <strong>gerente</strong> em cima, <strong>Saipos</strong> embaixo (+ bandas extras quando houver).
+                <span className={styles.diffMais}> +N</span> = gerente lançou N a mais que o Saipos;
+                <span className={styles.diffMenos}> -N</span> = lançou N a menos.
                 Célula vermelha = divergência que não fecha nem com as bandas extras.
               </p>
 
@@ -475,7 +612,7 @@ export default function MotoboysView() {
                       <span className={styles.muted}>
                         {Object.entries(n.dias || {}).map(([d, q]) => `${DIAS_CURTOS[d]}: ${q}`).join(' · ')}
                       </span>
-                      {canEdit && (
+                      {canEditAdm && (
                         <select defaultValue="" onChange={(e) => { if (e.target.value) atribuirNaoCasado(n.nome, e.target.value); }}>
                           <option value="">Atribuir a…</option>
                           {listaMotoboys.map((m) => (
@@ -491,7 +628,7 @@ export default function MotoboysView() {
           )}
 
           {/* ================= RESULTADO ================= */}
-          {vis.resultado && (
+          {canViewResultado && vis.resultado && (
             <section className={styles.divisao}>
               <div className={styles.divHeader} onClick={() => toggleVis('resultado')}>
                 <h3>Resultado</h3>
@@ -568,7 +705,7 @@ export default function MotoboysView() {
                       <MoneyInput
                         className={styles.configInput}
                         value={tx.valor}
-                        disabled={!canEdit}
+                        disabled={!canEditResultado}
                         onCommit={(v) => {
                           const novas = taxas.map((t, j) => (j === i ? { ...t, valor: v } : t));
                           setConfig({ taxas: novas });
@@ -578,7 +715,7 @@ export default function MotoboysView() {
                         className={styles.configFaixa}
                         placeholder="faixa (ex.: até 3km)"
                         defaultValue={tx.faixa || ''}
-                        disabled={!canEdit}
+                        disabled={!canEditResultado}
                         onBlur={(e) => {
                           if (e.target.value !== (tx.faixa || '')) {
                             const novas = taxas.map((t, j) => (j === i ? { ...t, faixa: e.target.value } : t));
@@ -593,7 +730,7 @@ export default function MotoboysView() {
                     <MoneyInput
                       className={styles.configInput}
                       value={config?.garantia}
-                      disabled={!canEdit}
+                      disabled={!canEditResultado}
                       onCommit={(v) => setConfig({ garantia: v || 0 })}
                     />
                   </div>
@@ -602,7 +739,7 @@ export default function MotoboysView() {
                     <MoneyInput
                       className={styles.configInput}
                       value={config?.taxaCoop}
-                      disabled={!canEdit}
+                      disabled={!canEditResultado}
                       onCommit={(v) => setConfig({ taxaCoop: v || 0 })}
                     />
                   </div>
@@ -612,6 +749,98 @@ export default function MotoboysView() {
             </section>
           )}
         </>
+      )}
+
+      {/* ================= CADASTRO (roster da loja) ================= */}
+      {canRoster && (
+        <section className={styles.divisao}>
+          <div className={styles.divHeader}>
+            <h3>Cadastro de motoboys</h3>
+            <span className={styles.divHint}>
+              nomes de {MOTOBOY_LOJAS.find((l) => l.id === loja)?.nome}; arquivado não entra em semanas novas
+            </span>
+            {rosterArquivados.length > 0 && (
+              <button className={styles.arquivadosBtn} onClick={() => setShowArquivados((v) => !v)}>
+                {showArquivados ? 'Ocultar arquivados' : `Ver arquivados (${rosterArquivados.length})`}
+              </button>
+            )}
+          </div>
+
+          <div className={styles.rosterLista}>
+            {rosterAtivos.length === 0 && <p className={styles.muted}>Nenhum motoboy cadastrado.</p>}
+            {rosterAtivos.map((r) => (
+              <div key={r.mid} className={styles.rosterRow}>
+                {renMid === r.mid ? (
+                  <>
+                    <input
+                      className={styles.addInput}
+                      value={renNome}
+                      autoFocus
+                      onChange={(e) => setRenNome(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && renNome.trim()) { await renameMotoboy(r.mid, renNome); setRenMid(null); }
+                        if (e.key === 'Escape') setRenMid(null);
+                      }}
+                    />
+                    <button
+                      className={styles.primaryBtn}
+                      disabled={!renNome.trim()}
+                      onClick={async () => { await renameMotoboy(r.mid, renNome); setRenMid(null); }}
+                    >
+                      Salvar
+                    </button>
+                    <button className={styles.ghostBtn} onClick={() => setRenMid(null)}>Cancelar</button>
+                  </>
+                ) : (
+                  <>
+                    <span className={styles.rosterNome}>{r.nome}</span>
+                    <button className={styles.ghostBtn} onClick={() => { setRenMid(r.mid); setRenNome(r.nome); }}>
+                      Renomear
+                    </button>
+                    <button
+                      className={styles.ghostBtn}
+                      title="Sai das semanas novas; semanas já lançadas não mudam"
+                      onClick={() => setRosterAtivo(r.mid, false)}
+                    >
+                      Arquivar
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {showArquivados && rosterArquivados.length > 0 && (
+            <div className={styles.rosterArquivados}>
+              <h4>Arquivados</h4>
+              {rosterArquivados.map((r) => (
+                <div key={r.mid} className={`${styles.rosterRow} ${styles.rosterRowArquivado}`}>
+                  <span className={styles.rosterNome}>{r.nome}</span>
+                  <button className={styles.ghostBtn} onClick={() => setRosterAtivo(r.mid, true)}>Restaurar</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className={styles.addRow}>
+            <input
+              className={styles.addInput}
+              placeholder="Novo motoboy (só cadastro; não entra na semana atual)"
+              value={novoRoster}
+              onChange={(e) => setNovoRoster(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && novoRoster.trim()) { await addRosterMotoboy(novoRoster); setNovoRoster(''); }
+              }}
+            />
+            <button
+              className={styles.primaryBtn}
+              disabled={!novoRoster.trim()}
+              onClick={async () => { await addRosterMotoboy(novoRoster); setNovoRoster(''); }}
+            >
+              + Cadastrar
+            </button>
+          </div>
+        </section>
       )}
     </div>
   );

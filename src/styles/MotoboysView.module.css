@@ -346,6 +346,150 @@
 .extraQtd { width: 52px; text-align: center; }
 .extraJust { flex: 1 1 220px; }
 
+/* ---- Obs (comentário do dia, sirene) ---- */
+.obsRow td { background: color-mix(in srgb, var(--warning-text, #b54708) 4%, var(--card)); }
+
+.obsBtn {
+  border: 1px dashed transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.obsBtn:hover:not(:disabled) { opacity: 1; border-color: var(--input-border); }
+.obsBtn:disabled { cursor: default; opacity: 0.25; }
+.obsBtnOn { opacity: 1; font-size: 14px; }
+.obsBtnOn:disabled { opacity: 1; }
+
+.obsEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--warning-text, #b54708) 5%, var(--card));
+}
+
+.obsEditorLabel { font-size: 12.5px; font-weight: 600; color: var(--text); }
+
+.obsTextarea {
+  width: 100%;
+  resize: vertical;
+  padding: 7px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.obsTextarea:focus { border-color: var(--accent); outline: none; }
+
+.obsEditorActions { display: flex; gap: 8px; }
+
+.dangerBtn {
+  padding: 7px 14px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dangerBtn:hover { background: var(--danger-bg); }
+
+.ghostBtn {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.ghostBtn:hover { color: var(--text); background: var(--card-hover); }
+
+.obsLista {
+  margin: 4px 0 14px;
+  border: 1px solid var(--warning-border, var(--border));
+  background: var(--warning-bg, var(--bg-secondary));
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.obsLista h4 { margin: 0 0 8px; font-size: 13.5px; color: var(--warning-text, var(--text)); }
+
+.obsListaRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+  border-top: 1px solid var(--border-light);
+}
+
+.obsListaRow:first-of-type { border-top: none; }
+
+.obsListaDia { font-weight: 600; color: var(--text-secondary); white-space: nowrap; font-size: 12px; }
+.obsListaNome { font-weight: 700; color: var(--text); white-space: nowrap; }
+.obsListaTexto { flex: 1; color: var(--text); }
+.obsListaPor { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+
+/* ---- Diferença gerente x admin (+N vermelho / -N verde) ---- */
+.diffMais { color: var(--danger); font-weight: 700; }
+.diffMenos { color: var(--success, #12b76a); font-weight: 700; }
+
+/* ---- Cadastro de motoboys (roster) ---- */
+.arquivadosBtn {
+  margin-left: auto;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.arquivadosBtn:hover { color: var(--text); background: var(--card-hover); }
+
+.rosterLista { display: flex; flex-direction: column; }
+
+.rosterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border-light);
+}
+
+.rosterRow:first-child { border-top: none; }
+
+.rosterNome { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+.rosterRowArquivado .rosterNome {
+  color: var(--text-secondary);
+  font-weight: 400;
+  text-decoration: line-through;
+}
+
+.rosterArquivados {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.rosterArquivados h4 { margin: 0 0 4px; font-size: 12.5px; color: var(--text-secondary); }
+
 /* ---- Adm (conferência) ---- */
 .importStatus {
   font-size: 12.5px;

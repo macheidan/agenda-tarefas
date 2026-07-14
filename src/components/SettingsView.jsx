@@ -31,6 +31,15 @@ const PRECOS_SUBSECTIONS = [
   { key: 'precosSubCmv', label: 'CMV' },
 ];
 
+// Sub-seções de Motoboys: ver (default ligado) e editar (default desligado)
+// por usuário. A flag legada motoboysEditor equivale a editar tudo + cadastro.
+const MOTOBOYS_SUBSECTIONS = [
+  { view: 'motoboysVerGerente', edit: 'motoboysEditGerente', label: 'Gerente' },
+  { view: 'motoboysVerAdm', edit: 'motoboysEditAdm', label: 'Adm' },
+  { view: 'motoboysVerResultado', edit: 'motoboysEditResultado', label: 'Resultado' },
+];
+const MOTOBOYS_EDIT_KEYS = ['motoboysEditGerente', 'motoboysEditAdm', 'motoboysEditResultado', 'motoboysRoster'];
+
 export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
@@ -107,6 +116,23 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     setUserSettings((prev) => ({
       ...prev,
       [uid]: { ...prev[uid], [key]: enabled },
+    }));
+  };
+
+  // Permissão de Motoboys: ao mexer numa flag de edição de quem ainda usa a
+  // flag legada (motoboysEditor), expande a legada em flags explícitas antes.
+  const toggleMotoboyPerm = async (uid, key, enabled) => {
+    const s = userSettings[uid] || {};
+    const patch = {};
+    if (s.motoboysEditor === true && MOTOBOYS_EDIT_KEYS.includes(key)) {
+      MOTOBOYS_EDIT_KEYS.forEach((k) => { patch[k] = true; });
+      patch.motoboysEditor = false;
+    }
+    patch[key] = enabled;
+    await setDoc(doc(db, 'settings', uid), patch, { merge: true });
+    setUserSettings((prev) => ({
+      ...prev,
+      [uid]: { ...prev[uid], ...patch },
     }));
   };
 
@@ -373,7 +399,44 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                   </>
                 )}
 
-                {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false || s.motoboysEnabled === true) && (
+                {s.motoboysEnabled === true && (
+                  <>
+                    <span className={styles.subGroupLabel}>Motoboys — quem vê e quem edita cada subseção</span>
+                    <div className={styles.permGroup}>
+                      {MOTOBOYS_SUBSECTIONS.map((sub) => (
+                        <div key={sub.view} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <span className={styles.sectionLabel} style={{ minWidth: 84, fontWeight: 600 }}>{sub.label}</span>
+                          <label className={styles.sectionToggle}>
+                            <input
+                              type="checkbox"
+                              checked={s[sub.view] !== false}
+                              onChange={(e) => toggleMotoboyPerm(u.uid, sub.view, e.target.checked)}
+                            />
+                            <span className={styles.sectionLabel}>vê</span>
+                          </label>
+                          <label className={styles.sectionToggle}>
+                            <input
+                              type="checkbox"
+                              checked={s[sub.edit] === true || s.motoboysEditor === true}
+                              onChange={(e) => toggleMotoboyPerm(u.uid, sub.edit, e.target.checked)}
+                            />
+                            <span className={styles.sectionLabel}>edita</span>
+                          </label>
+                        </div>
+                      ))}
+                      <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
+                        <input
+                          type="checkbox"
+                          checked={s.motoboysRoster === true || s.motoboysEditor === true}
+                          onChange={(e) => toggleMotoboyPerm(u.uid, 'motoboysRoster', e.target.checked)}
+                        />
+                        <span className={styles.sectionLabel}>Cadastro — adiciona, renomeia e arquiva nomes de motoboys</span>
+                      </label>
+                    </div>
+                  </>
+                )}
+
+                {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false) && (
                   <>
                     <span className={styles.subGroupLabel}>Permissões de edição</span>
                     <div className={styles.permGroup}>
@@ -405,16 +468,6 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                             onChange={(e) => toggleSection(u.uid, 'comprasEditor', e.target.checked)}
                           />
                           <span className={styles.sectionLabel}>Compras — gerencia fornecedores e o catálogo de itens</span>
-                        </label>
-                      )}
-                      {s.motoboysEnabled === true && (
-                        <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
-                          <input
-                            type="checkbox"
-                            checked={s.motoboysEditor === true}
-                            onChange={(e) => toggleSection(u.uid, 'motoboysEditor', e.target.checked)}
-                          />
-                          <span className={styles.sectionLabel}>Motoboys — lança entregas, taxas, descontos e bandas extras (gerente)</span>
                         </label>
                       )}
                     </div>
