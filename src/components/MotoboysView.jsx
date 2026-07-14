@@ -212,6 +212,38 @@ export default function MotoboysView() {
             Semana atual
           </button>
         </div>
+        {semana && canEditGerente && (
+          <div className={styles.addRow}>
+            <input
+              className={styles.addInput}
+              list="motoboyRoster"
+              placeholder="Nome do motoboy"
+              value={novoNome}
+              onChange={(e) => setNovoNome(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && novoNome.trim()) {
+                  await addMotoboy(novoNome);
+                  setNovoNome('');
+                }
+              }}
+            />
+            <datalist id="motoboyRoster">
+              {Object.values(configLoja?.roster || {})
+                .filter((rr) => rr.ativo !== false)
+                .filter((rr) => !listaMotoboys.some((m) => normalizarNome(m.nome) === normalizarNome(rr.nome)))
+                .map((rr) => (
+                  <option key={rr.nome} value={rr.nome} />
+                ))}
+            </datalist>
+            <button
+              className={styles.primaryBtn}
+              disabled={!novoNome.trim()}
+              onClick={async () => { await addMotoboy(novoNome); setNovoNome(''); }}
+            >
+              + Motoboy
+            </button>
+          </div>
+        )}
         {canViewAdm && semana && (
           <span className={styles.importLine}>
             {pa?.importadoEm
@@ -236,6 +268,11 @@ export default function MotoboysView() {
 
       {semana && (
         <section className={styles.divisao}>
+          {listaMotoboys.length === 0 && (
+            <p className={styles.muted}>
+              Nenhum motoboy nesta semana. Adicione pelo campo "Nome do motoboy" acima.
+            </p>
+          )}
           {/* ---- Blocos por motoboy: lançamento + conferência + resultado ---- */}
           {listaMotoboys.map((mb) => {
             const r = calcMotoboySemana(mb, config);
@@ -442,39 +479,6 @@ export default function MotoboysView() {
                   )}
                 </div>
               ))}
-            </div>
-          )}
-
-          {canEditGerente && (
-            <div className={styles.addRow}>
-              <input
-                className={styles.addInput}
-                list="motoboyRoster"
-                placeholder="Nome do motoboy"
-                value={novoNome}
-                onChange={(e) => setNovoNome(e.target.value)}
-                onKeyDown={async (e) => {
-                  if (e.key === 'Enter' && novoNome.trim()) {
-                    await addMotoboy(novoNome);
-                    setNovoNome('');
-                  }
-                }}
-              />
-              <datalist id="motoboyRoster">
-                {Object.values(configLoja?.roster || {})
-                  .filter((rr) => rr.ativo !== false)
-                  .filter((rr) => !listaMotoboys.some((m) => normalizarNome(m.nome) === normalizarNome(rr.nome)))
-                  .map((rr) => (
-                    <option key={rr.nome} value={rr.nome} />
-                  ))}
-              </datalist>
-              <button
-                className={styles.primaryBtn}
-                disabled={!novoNome.trim()}
-                onClick={async () => { await addMotoboy(novoNome); setNovoNome(''); }}
-              >
-                + Motoboy
-              </button>
             </div>
           )}
 

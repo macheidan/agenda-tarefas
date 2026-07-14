@@ -204,24 +204,17 @@ export function useMotoboys(loja, segunda, author) {
   // Config efetiva da semana (semana > default da loja > default fixo).
   const config = semana?.config || configLoja?.config || DEFAULT_MOTOBOY_CONFIG;
 
-  // Cria a semana se não existir, com config da loja e motos ativas do roster.
+  // Cria a semana se não existir, com config da loja e SEM motoboys:
+  // cada semana começa vazia e os nomes entram manualmente (roster vira sugestão).
   const criarSemana = useCallback(async () => {
     const cfg = configLoja?.config || DEFAULT_MOTOBOY_CONFIG;
-    const roster = configLoja?.roster || {};
-    const motoboys = {};
-    Object.entries(roster)
-      .filter(([, r]) => r.ativo !== false)
-      .sort((a, b) => (a[1].ordem ?? 0) - (b[1].ordem ?? 0))
-      .forEach(([mid, r], i) => {
-        motoboys[mid] = { nome: r.nome, ordem: i, dias: {} };
-      });
     await setDoc(
       doc(db, 'motoboySemanas', docId),
       {
         loja,
         semana: segunda,
         config: cfg,
-        motoboys,
+        motoboys: {},
         criadoEm: Timestamp.now(),
         criadoPor: author?.uid || null,
       },

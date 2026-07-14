@@ -390,11 +390,11 @@
   font-weight: 600;
 }
 
-/* ---- Adicionar motoboy ---- */
+/* ---- Adicionar motoboy (na linha da semana; também usado no modal de cadastro) ---- */
 .addRow {
   display: flex;
+  align-items: center;
   gap: 8px;
-  margin: 4px 0 14px;
 }
 
 .addInput {
