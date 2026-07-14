@@ -409,21 +409,39 @@ export default function MotoboysView() {
                         </tr>
                       )}
                       {canViewResultado && (
+                        <tr className={styles.calcRow}>
+                          <td className={styles.stickyCol}>
+                            <span className={styles.taxaLabel}>Total bandas</span>
+                            <span className={styles.taxaValor}>qtde × valor da taxa</span>
+                          </td>
+                          {r.dias.map((d, i) => (
+                            <td key={i}>{d.bandas ? formatBRL(d.bandas) : ''}</td>
+                          ))}
+                          <td className={styles.totalCol}>{r.total.bandas ? formatBRL(r.total.bandas) : ''}</td>
+                        </tr>
+                      )}
+                      {canViewResultado && (
+                        <tr className={styles.acrescimoRow}>
+                          <td className={styles.stickyCol}>
+                            <span className={styles.taxaLabel}>Acréscimo</span>
+                            <span className={styles.taxaValor}>completa a garantia de {formatBRL(config?.garantia)}</span>
+                          </td>
+                          {r.dias.map((d, i) => (
+                            <td key={i} className={d.acrescimo > 0 ? styles.cellAcrescimo : ''}>
+                              {d.acrescimo ? formatBRL(d.acrescimo) : ''}
+                            </td>
+                          ))}
+                          <td className={styles.totalCol}>{r.total.acrescimo ? formatBRL(r.total.acrescimo) : ''}</td>
+                        </tr>
+                      )}
+                      {canViewResultado && (
                         <tr className={styles.valorRow}>
                           <td className={styles.stickyCol}>
                             <span className={styles.taxaLabel}>Valor a receber</span>
-                            {r.total.acrescimo > 0 && (
-                              <span className={styles.taxaValor}>inclui acréscimo {formatBRL(r.total.acrescimo)}</span>
-                            )}
+                            <span className={styles.taxaValor}>bandas + acréscimo + descontos</span>
                           </td>
                           {r.dias.map((d, i) => (
-                            <td
-                              key={i}
-                              className={d.acrescimo > 0 ? styles.cellAcrescimo : ''}
-                              title={d.acrescimo > 0 ? `Acréscimo de ${formatBRL(d.acrescimo)} (garantia)` : ''}
-                            >
-                              {d.valor ? formatBRL(d.valor) : ''}
-                            </td>
+                            <td key={i}>{d.valor ? formatBRL(d.valor) : ''}</td>
                           ))}
                           <td className={`${styles.totalCol} ${styles.valorFinal}`}>{formatBRL(r.total.valor)}</td>
                         </tr>

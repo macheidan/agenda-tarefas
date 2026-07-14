@@ -598,6 +598,16 @@
 
 .rosterArquivados h4 { margin: 0 0 4px; font-size: 12.5px; color: var(--text-secondary); }
 
+/* ---- Linha Acréscimo (garantia) ---- */
+.acrescimoRow td {
+  background: color-mix(in srgb, var(--warning-text, #b54708) 5%, var(--card));
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.acrescimoRow .stickyCol { background: color-mix(in srgb, var(--warning-text, #b54708) 5%, var(--card)); }
+
 /* ---- Linhas Saipos e Valor a receber (grade unificada) ---- */
 .saiposRow td {
   background: color-mix(in srgb, var(--accent) 4%, var(--card));
