@@ -65,6 +65,8 @@ export default function MotoboysView() {
   const canEditGerente = isAdmin || legacyEditor || settings?.motoboysEditGerente === true;
   const canEditAdm = isAdmin || legacyEditor || settings?.motoboysEditAdm === true;
   const canEditResultado = isAdmin || legacyEditor || settings?.motoboysEditResultado === true;
+  const canViewTaxas = isAdmin || settings?.motoboysVerTaxas !== false;
+  const canEditTaxas = isAdmin || legacyEditor || settings?.motoboysEditTaxas === true;
   const canRoster = isAdmin || legacyEditor || settings?.motoboysRoster === true;
 
   const [loja, setLoja] = useState('dame');
@@ -72,11 +74,12 @@ export default function MotoboysView() {
   // Blocos de motoboy iniciam recolhidos; expande por clique ou "Expandir todos".
   const [expandidos, setExpandidos] = useState(() => new Set());
   const [cadastroAberto, setCadastroAberto] = useState(false);
+  const [taxasAberto, setTaxasAberto] = useState(false);
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
     criarSemana, setCelula, setDesconto, addMotoboy, removeMotoboy,
-    setObs, addRosterMotoboy, renameMotoboy, setRosterAtivo,
+    addRosterMotoboy, renameMotoboy, setRosterAtivo,
     setConfig, addExtra, deleteExtra, atribuirNaoCasado,
   } = useMotoboys(loja, segunda, user);
 
@@ -113,30 +116,6 @@ export default function MotoboysView() {
   // ---- Form de nova banda extra ----
   const [novoExtra, setNovoExtra] = useState({ dia: 0, mid: '', quantidade: 1, taxaIdx: 0, justificativa: '' });
   const [novoNome, setNovoNome] = useState('');
-
-  // ---- Editor de comentário (sirene) mid+dia ----
-  const [obsEdit, setObsEdit] = useState(null); // {mid, di} | null
-  const [obsText, setObsText] = useState('');
-  const abrirObs = (mid, di) => {
-    setObsEdit({ mid, di });
-    setObsText(motoboys[mid]?.dias?.[di]?.obs?.t || '');
-  };
-  const salvarObs = async () => {
-    if (!obsEdit) return;
-    await setObs(obsEdit.mid, obsEdit.di, obsText);
-    setObsEdit(null);
-    setObsText('');
-  };
-
-  // Comentários da semana (para a listagem abaixo das grades).
-  const comentarios = [];
-  listaMotoboys.forEach((mb) => {
-    for (let di = 0; di < 7; di++) {
-      const o = mb.dias?.[di]?.obs;
-      if (o?.t) comentarios.push({ mid: mb.mid, nome: mb.nome, di, ...o });
-    }
-  });
-  comentarios.sort((a, b) => a.di - b.di || a.nome.localeCompare(b.nome));
 
   // ---- Cadastro de motoboys (roster) ----
   const [showArquivados, setShowArquivados] = useState(false);
@@ -211,6 +190,11 @@ export default function MotoboysView() {
           {semana && listaMotoboys.length > 0 && (
             <button className={styles.toolBtn} onClick={expandirTodos}>
               {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
+            </button>
+          )}
+          {canViewTaxas && (
+            <button className={styles.toolBtn} onClick={() => setTaxasAberto(true)}>
+              Taxas
             </button>
           )}
           {canRoster && (
@@ -346,30 +330,6 @@ export default function MotoboysView() {
                         </tr>
                       )}
                       {canViewGerente && (
-                        <tr className={styles.obsRow}>
-                          <td className={styles.stickyCol}>
-                            <span className={styles.taxaLabel}>Obs</span>
-                            <span className={styles.taxaValor}>comentário do dia</span>
-                          </td>
-                          {diasIso.map((d, di) => {
-                            const o = mb.dias?.[di]?.obs;
-                            return (
-                              <td key={d}>
-                                <button
-                                  className={`${styles.obsBtn} ${o?.t ? styles.obsBtnOn : ''}`}
-                                  title={o?.t || (canEditGerente ? 'Adicionar comentário' : '')}
-                                  disabled={!canEditGerente && !o?.t}
-                                  onClick={() => (canEditGerente ? abrirObs(mb.mid, di) : null)}
-                                >
-                                  {o?.t ? '🚨' : '+'}
-                                </button>
-                              </td>
-                            );
-                          })}
-                          <td className={styles.totalCol}></td>
-                        </tr>
-                      )}
-                      {canViewGerente && (
                         <tr className={styles.calcRow}>
                           <td className={styles.stickyCol}>Entregas</td>
                           {r.dias.map((d, i) => (
@@ -450,49 +410,10 @@ export default function MotoboysView() {
                   </table>
                 </div>
                 )}
-                {aberto && obsEdit?.mid === mb.mid && (
-                  <div className={styles.obsEditor}>
-                    <span className={styles.obsEditorLabel}>
-                      🚨 {mb.nome} · {DIAS_SEMANA[obsEdit.di]} {formatDiaCurto(diasIso[obsEdit.di])}
-                    </span>
-                    <textarea
-                      className={styles.obsTextarea}
-                      value={obsText}
-                      autoFocus
-                      rows={2}
-                      placeholder="Comentário do dia (ex.: chegou atrasado, recusou entrega...)"
-                      onChange={(e) => setObsText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarObs(); }
-                        if (e.key === 'Escape') { setObsEdit(null); setObsText(''); }
-                      }}
-                    />
-                    <div className={styles.obsEditorActions}>
-                      <button className={styles.primaryBtn} onClick={salvarObs}>Salvar</button>
-                      {motoboys[obsEdit.mid]?.dias?.[obsEdit.di]?.obs?.t && (
-                        <button
-                          className={styles.dangerBtn}
-                          onClick={async () => { await setObs(obsEdit.mid, obsEdit.di, ''); setObsEdit(null); setObsText(''); }}
-                        >
-                          Excluir
-                        </button>
-                      )}
-                      <button className={styles.ghostBtn} onClick={() => { setObsEdit(null); setObsText(''); }}>Cancelar</button>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
 
-          {canViewAdm && (
-            <p className={styles.legend}>
-              Linha <strong>Saipos</strong>: entregas no sistema (+ bandas extras quando houver).
-              <span className={styles.diffMais}> +N</span> = gerente lançou N a mais que o Saipos;
-              <span className={styles.diffMenos}> -N</span> = lançou N a menos.
-              Célula vermelha = divergência que não fecha nem com as bandas extras.
-            </p>
-          )}
 
           {canViewAdm && pa?.naoCasados?.length > 0 && (
             <div className={styles.naoCasados}>
@@ -546,24 +467,6 @@ export default function MotoboysView() {
               >
                 + Motoboy
               </button>
-            </div>
-          )}
-
-          {/* ---- Comentários da semana ---- */}
-          {canViewGerente && comentarios.length > 0 && (
-            <div className={styles.obsLista}>
-              <h4>🚨 Comentários da semana</h4>
-              {comentarios.map((c) => (
-                <div key={`${c.mid}_${c.di}`} className={styles.obsListaRow}>
-                  <span className={styles.obsListaDia}>{DIAS_CURTOS[c.di]} {formatDiaCurto(diasIso[c.di])}</span>
-                  <span className={styles.obsListaNome}>{c.nome}</span>
-                  <span className={styles.obsListaTexto}>{c.t}</span>
-                  {c.por && <span className={styles.obsListaPor}>por {c.por}</span>}
-                  {canEditGerente && (
-                    <button className={styles.removeBtn} title="Excluir comentário" onClick={() => setObs(c.mid, c.di, '')}>×</button>
-                  )}
-                </div>
-              ))}
             </div>
           )}
 
@@ -663,28 +566,43 @@ export default function MotoboysView() {
             </div>
           )}
 
-          {/* ---- Config da semana ---- */}
-          {canViewResultado && (
-            <details className={styles.configBox}>
-              <summary>Configuração de taxas e garantia</summary>
-              <div className={styles.configGrid}>
-                {taxas.map((tx, i) => (
-                  <div key={i} className={styles.configTaxa}>
-                    <span className={styles.taxaLabel}>{tx.label}</span>
+        </section>
+      )}
+
+      {/* ================= TAXAS (janela aberta pelo botão do topo) ================= */}
+      {canViewTaxas && taxasAberto && (
+        <div className={styles.modalOverlay} onClick={() => setTaxasAberto(false)}>
+        <section className={`${styles.modalPanel} ${styles.taxasPanel}`} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.modalHeader}>
+            <h3>Taxas</h3>
+            <button className={styles.modalClose} title="Fechar" onClick={() => setTaxasAberto(false)}>×</button>
+          </div>
+
+          <table className={styles.taxasTable}>
+            <thead>
+              <tr><th>Taxa</th><th>Valor</th><th>Faixa</th></tr>
+            </thead>
+            <tbody>
+              {taxas.map((tx, i) => (
+                <tr key={i}>
+                  <td className={styles.taxasNome}>{tx.label}</td>
+                  <td>
                     <MoneyInput
                       className={styles.configInput}
                       value={tx.valor}
-                      disabled={!canEditResultado}
+                      disabled={!canEditTaxas}
                       onCommit={(v) => {
                         const novas = taxas.map((t, j) => (j === i ? { ...t, valor: v } : t));
                         setConfig({ taxas: novas });
                       }}
                     />
+                  </td>
+                  <td>
                     <input
                       className={styles.configFaixa}
-                      placeholder="faixa (ex.: até 3km)"
+                      placeholder="ex.: até 3km"
                       defaultValue={tx.faixa || ''}
-                      disabled={!canEditResultado}
+                      disabled={!canEditTaxas}
                       onBlur={(e) => {
                         if (e.target.value !== (tx.faixa || '')) {
                           const novas = taxas.map((t, j) => (j === i ? { ...t, faixa: e.target.value } : t));
@@ -692,31 +610,42 @@ export default function MotoboysView() {
                         }
                       }}
                     />
-                  </div>
-                ))}
-                <div className={styles.configTaxa}>
-                  <span className={styles.taxaLabel}>Garantia/noite</span>
+                  </td>
+                </tr>
+              ))}
+              <tr className={styles.taxasSep}>
+                <td className={styles.taxasNome}>Garantia/noite</td>
+                <td>
                   <MoneyInput
                     className={styles.configInput}
                     value={config?.garantia}
-                    disabled={!canEditResultado}
+                    disabled={!canEditTaxas}
                     onCommit={(v) => setConfig({ garantia: v || 0 })}
                   />
-                </div>
-                <div className={styles.configTaxa}>
-                  <span className={styles.taxaLabel}>Taxa coop/moto</span>
+                </td>
+                <td className={styles.muted}>mínimo por noite trabalhada</td>
+              </tr>
+              <tr>
+                <td className={styles.taxasNome}>Taxa coop/moto</td>
+                <td>
                   <MoneyInput
                     className={styles.configInput}
                     value={config?.taxaCoop}
-                    disabled={!canEditResultado}
+                    disabled={!canEditTaxas}
                     onCommit={(v) => setConfig({ taxaCoop: v || 0 })}
                   />
-                </div>
-              </div>
-              <p className={styles.muted}>Alterações valem para esta semana e viram padrão das próximas.</p>
-            </details>
-          )}
+                </td>
+                <td className={styles.muted}>por moto-diária trabalhada</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className={styles.muted}>
+            {canEditTaxas
+              ? 'Alterações valem para a semana aberta e viram padrão das próximas.'
+              : 'Somente visualização.'}
+          </p>
         </section>
+        </div>
       )}
 
       {/* ================= CADASTRO (janela aberta pelo botão do topo) ================= */}
@@ -725,12 +654,12 @@ export default function MotoboysView() {
         <section className={styles.modalPanel} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
             <h3>Cadastro de motoboys</h3>
-            <span className={styles.divHint}>
-              nomes de {MOTOBOY_LOJAS.find((l) => l.id === loja)?.nome}; arquivado não entra em semanas novas
-            </span>
             {rosterArquivados.length > 0 && (
-              <button className={styles.arquivadosBtn} onClick={() => setShowArquivados((v) => !v)}>
-                {showArquivados ? 'Ocultar arquivados' : `Ver arquivados (${rosterArquivados.length})`}
+              <button className={styles.primaryBtn} onClick={() => setShowArquivados((v) => !v)}>
+                <svg className={styles.btnIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                </svg>
+                Arquivados
               </button>
             )}
             <button className={styles.modalClose} title="Fechar" onClick={() => setCadastroAberto(false)}>×</button>

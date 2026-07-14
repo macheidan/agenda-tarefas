@@ -33,7 +33,8 @@ service cloud.firestore {
     function isMotoboysEditor() {
       return isAdmin() || hasSettingFlag('motoboysEditor') ||
         hasSettingFlag('motoboysEditGerente') || hasSettingFlag('motoboysEditAdm') ||
-        hasSettingFlag('motoboysEditResultado') || hasSettingFlag('motoboysRoster');
+        hasSettingFlag('motoboysEditResultado') || hasSettingFlag('motoboysEditTaxas') ||
+        hasSettingFlag('motoboysRoster');
     }
 
     // Usuários: qualquer logado lê. Cada um cria o seu (sem se auto-aprovar)

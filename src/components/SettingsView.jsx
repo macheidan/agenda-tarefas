@@ -37,8 +37,9 @@ const MOTOBOYS_SUBSECTIONS = [
   { view: 'motoboysVerGerente', edit: 'motoboysEditGerente', label: 'Gerente' },
   { view: 'motoboysVerAdm', edit: 'motoboysEditAdm', label: 'Adm' },
   { view: 'motoboysVerResultado', edit: 'motoboysEditResultado', label: 'Resultado' },
+  { view: 'motoboysVerTaxas', edit: 'motoboysEditTaxas', label: 'Taxas' },
 ];
-const MOTOBOYS_EDIT_KEYS = ['motoboysEditGerente', 'motoboysEditAdm', 'motoboysEditResultado', 'motoboysRoster'];
+const MOTOBOYS_EDIT_KEYS = ['motoboysEditGerente', 'motoboysEditAdm', 'motoboysEditResultado', 'motoboysEditTaxas', 'motoboysRoster'];
 
 export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
   const { user, isAdmin } = useAuth();

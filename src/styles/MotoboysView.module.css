@@ -212,6 +212,44 @@
 
 .modalClose:hover { color: var(--danger); }
 
+/* ---- Quadro de Taxas (destacado) ---- */
+.taxasPanel {
+  border: 2px solid var(--accent);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.taxasTable {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.taxasTable th,
+.taxasTable td {
+  border: 1px solid var(--border-light);
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--text);
+}
+
+.taxasTable thead th {
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.taxasNome { font-weight: 700; white-space: nowrap; }
+
+.taxasSep td { border-top: 2px solid var(--border); }
+
+.btnIcon {
+  width: 14px;
+  height: 14px;
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+
 /* ---- Divisões ---- */
 .divisao {
   background: var(--card);
