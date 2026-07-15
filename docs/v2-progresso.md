@@ -1,10 +1,23 @@
 # v2 → paridade com demo.tailadmin.com — progresso do loop
 
+> ## 🚩 A v2 É A TITULAR desde 2026-07-15
+> O PR #111 foi mergeado e o `index.html` passou a ligar `[data-v2]` em **qualquer
+> URL** — `damepizza.com.br/intranet` serve o shell TailAdmin pra equipe toda.
+> **`?v1=1` volta pro shell antigo** (escape de emergência, sem deploy).
+> `/intranet/v2` e `?v2=1` viraram redundantes (continuam funcionando).
+>
+> Verificado em produção no dia: as 8 views visíveis renderizam sem erro de
+> console (Calendário, Compras, Preços, Depto Pessoal, Motoboys, Avaliações,
+> Anotações, Ideias). **4 seguem desligadas nas settings e foram ao ar sem
+> nenhuma verificação:** Instagram/Reels, Content Plan, Influencers, Conhecimento.
+> Ligar e conferir é a dívida mais urgente — a ReelsView é a suspeita nº 1
+> (24 KB de CSS, 47 cores hardcoded).
+
 > **Status (2026-07-15, 9 iterações): o que eu conseguia fazer e VERIFICAR
-> sozinho está feito.** O loop parou por dois bloqueios que dependem do Fábio:
-> (1) 6 das 12 views estão desligadas nas settings dele e não renderizam;
-> (2) a constituição precisa ser decidida (proposta pronta em
-> `.specify/memory/constitution-v2-proposta.md`).
+> sozinho está feito.** Sobra um bloqueio que depende do Fábio: a constituição
+> precisa ser decidida (proposta pronta em
+> `.specify/memory/constitution-v2-proposta.md`). O outro bloqueio (views
+> desligadas) encolheu de 6 pra 4 — Ideias e Avaliações foram ligadas.
 > Cauda que sobra, toda em views invisíveis ou de baixo valor: badges, empty
 > states, borda gray-300 em outline.
 
