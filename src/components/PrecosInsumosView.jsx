@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import CmvView from './CmvView';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
+import { useFatorSugestao } from '../hooks/useFatorSugestao';
 
 // Sub-seções da seção e ordem em que aparecem. A visibilidade de cada uma é por
 // usuário, controlada em Configurações (chaves precosSub* em settings/{uid};
@@ -267,6 +268,29 @@ export default function PrecosInsumosView() {
   // Evita disparar dois carregamentos completos (12 meses) simultaneos.
   const loadingFullRef = useRef(false);
   useEffect(() => { loadData(); }, []);
+
+  // Sugestão de fator por LLM: ao focar o campo, pede a sugestão e mostra num
+  // dropdown abaixo do input; clicar aplica e salva.
+  const { sugestoes, sugerir } = useFatorSugestao();
+  const [fatorFoco, setFatorFoco] = useState(null); // produto_id com o campo focado
+
+  async function aplicarSugestao(produtoId, fator) {
+    const novo = fator == null ? null : String(fator).trim();
+    const salvoRaw = fatoresSalvos[produtoId];
+    const salvo = salvoRaw === '' || salvoRaw == null ? null : String(salvoRaw).trim();
+    if (novo === salvo) return;
+    if (salvo != null) {
+      const ok = window.confirm('A Regra3 deste produto já está preenchida. Substituir pela sugestão?');
+      if (!ok) return;
+    }
+    setFatores(prev => ({ ...prev, [produtoId]: novo ?? '' }));
+    setFatoresSalvos(prev => ({ ...prev, [produtoId]: novo }));
+    const { error } = await supabase
+      .from('produtos')
+      .update({ fator_regra3: novo })
+      .eq('id', produtoId);
+    if (error) console.error('[precos] erro ao salvar fator sugerido:', error);
+  }
 
   function handleFatorChange(produtoId, raw) {
     setFatores(prev => ({ ...prev, [produtoId]: raw }));
@@ -625,18 +649,44 @@ export default function PrecosInsumosView() {
                     <td style={tdS}>{p.fornecedor}</td>
                     <td style={tdS}>{formatDate(p.data)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12 }}>R$ {p.preco_normalizado.toFixed(2)}/{p.unidade_normalizada}</td>
-                    <td style={{ ...tdS, textAlign: 'right' }}>
+                    <td style={{ ...tdS, textAlign: 'right', position: 'relative' }}>
                       <input
                         type="text"
                         inputMode="text"
                         placeholder="2 ou /2"
-                        title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2)"
+                        title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2). Ao focar, a LLM sugere o fator pelo nome/embalagem"
                         value={fatores[p.produto_id] ?? ''}
                         onKeyDown={handleFatorKeyDown}
+                        onFocus={() => { setFatorFoco(p.produto_id); sugerir(p); }}
                         onChange={e => handleFatorChange(p.produto_id, e.target.value)}
-                        onBlur={() => handleFatorBlur(p.produto_id)}
+                        onBlur={() => { setFatorFoco(null); handleFatorBlur(p.produto_id); }}
                         style={fatorInputS}
                       />
+                      {fatorFoco === p.produto_id && (() => {
+                        const s = sugestoes[p.produto_id];
+                        if (!s) return null;
+                        return (
+                          <div style={fatorPopS}>
+                            {s.status === 'loading' && <span style={{ color: 'var(--text-muted)' }}>Sugerindo fator…</span>}
+                            {s.status === 'erro' && <span style={{ color: 'var(--text-muted)' }}>{s.motivo}</span>}
+                            {s.status === 'ok' && s.fator == null && (
+                              <span style={{ color: 'var(--text-muted)' }}>Sem fator sugerido — {s.motivo || 'já está na unidade final'}</span>
+                            )}
+                            {s.status === 'ok' && s.fator != null && (
+                              <button
+                                type="button"
+                                title="Aplicar a sugestão (grava a Regra3 do produto)"
+                                // mousedown pra rodar ANTES do blur do input (que fecharia o dropdown)
+                                onMouseDown={e => { e.preventDefault(); aplicarSugestao(p.produto_id, s.fator); }}
+                                style={fatorSugBtnS}
+                              >
+                                <span style={{ fontWeight: 700 }}>{s.fator}</span>
+                                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> · {s.motivo}</span>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)' }}>{(() => {
                       const res = calcResultado(p.preco_normalizado, fatores[p.produto_id]);
@@ -2004,5 +2054,8 @@ const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
 const tdS = { padding: '7px 10px' };
 const fatorInputS = { width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--border, #e5e5e5)', textAlign: 'right', fontSize: 12, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
+// Dropdown de sugestão de fator (LLM), ancorado abaixo do input.
+const fatorPopS = { position: 'absolute', right: 8, top: '100%', zIndex: 20, minWidth: 190, maxWidth: 280, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card, #fff)', boxShadow: '0 4px 14px rgba(0,0,0,0.12)', fontSize: 12, textAlign: 'left', whiteSpace: 'normal' };
+const fatorSugBtnS = { display: 'block', width: '100%', padding: '4px 6px', borderRadius: 6, border: '1px solid var(--accent, #465fff)', background: 'var(--accent-light, #eef2ff)', color: 'var(--accent, #465fff)', cursor: 'pointer', fontSize: 12, textAlign: 'left' };
 const produtoPadraoSelectS = { minWidth: 140, maxWidth: 200, padding: '5px 24px 5px 8px', borderRadius: 6, border: '1px solid var(--accent, #465fff)', fontSize: 12, fontWeight: 600, background: 'var(--accent-light, #eef2ff)', color: 'var(--accent, #465fff)', cursor: 'pointer', boxSizing: 'border-box', appearance: 'auto' };
 const btnS = { padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', cursor: 'pointer', fontSize: 12 };
