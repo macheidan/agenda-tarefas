@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { Fragment, useState, useMemo } from 'react';
 import { useCmv } from '../hooks/useCmv';
 
 // ── Estilos locais (mesmo tema por CSS vars da intranet) ────────────────────
@@ -7,9 +7,12 @@ const btnS = { padding: '6px 10px', borderRadius: 6, border: '1px solid var(--bo
 const thS = { textAlign: 'left', padding: '6px 8px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' };
 const tdS = { padding: '5px 8px', fontSize: 12, color: 'var(--text, #222)' };
 const cardS = { background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', padding: 12, marginBottom: 12 };
+// Ficha aberta dentro da linha do resumo (fundo recuado pra separar do restante da tabela).
+const fichaS = { background: 'var(--bg-secondary, #fafafa)', padding: '10px 12px 12px', borderLeft: '2px solid var(--accent)' };
 const SIZES = [['qtdP', 'Pequena'], ['qtdM', 'Média'], ['qtdG', 'Grande'], ['qtdS', 'Super']];
 // Hover nas linhas de dados das tabelas (inline styles não suportam :hover).
-const rowHoverCss = '.cmvRow{transition:background .12s}.cmvRow:hover{background:var(--card-hover,#f6f7f9)}';
+const rowHoverCss = '.cmvRow{transition:background .12s}.cmvRow:hover{background:var(--card-hover,#f6f7f9)}'
+  + '.cmvArrow{display:inline-block;transition:transform .12s;color:var(--text-muted)}.cmvArrow.open{transform:rotate(90deg)}';
 
 function fmt(n) {
   return 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -59,9 +62,18 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
   const [novoBenef, setNovoBenef] = useState('');
   const [novoSabor, setNovoSabor] = useState('');
   const [importando, setImportando] = useState(false);
-  // Expandir: mostra as fichas completas (ingredientes). Desmarcado (padrão) =
-  // tabela resumida linha a linha (custo/kg dos beneficiados; total por tamanho dos sabores).
-  const [expandir, setExpandir] = useState(false);
+  // Ids abertos por aba: cada linha expande sua ficha (ingredientes) pela seta.
+  const [abertosB, setAbertosB] = useState(() => new Set());
+  const [abertosS, setAbertosS] = useState(() => new Set());
+  const abertos = aba === 'beneficiados' ? abertosB : abertosS;
+  const setAbertos = aba === 'beneficiados' ? setAbertosB : setAbertosS;
+  const idsAba = (aba === 'beneficiados' ? beneficiados : sabores).map(x => x.id);
+  const todosAbertos = idsAba.length > 0 && idsAba.every(id => abertos.has(id));
+  const toggle = (id) => setAbertos(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
 
   // custo/kg de cada beneficiado (vira "ingrediente" utilizável nos sabores).
   const benefCusto = useMemo(() => {
@@ -99,8 +111,8 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <button style={{ ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({beneficiados.length})</button>
         <button style={{ ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({sabores.length})</button>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text, #222)' }} title="Abre as fichas completas (ingredientes). Desmarcado = tabela resumida.">
-          <input type="checkbox" checked={expandir} onChange={e => setExpandir(e.target.checked)} /> Expandir
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text, #222)' }} title="Abre ou fecha as fichas de todos os itens da aba. Cada linha também abre pela seta.">
+          <input type="checkbox" checked={todosAbertos} onChange={e => setAbertos(e.target.checked ? new Set(idsAba) : new Set())} /> Expandir tudo
         </label>
         <span style={{ flex: 1 }} />
         {vazio && (
@@ -125,11 +137,9 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
           </div>
           {beneficiados.length === 0 ? (
             <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum beneficiado. Crie um acima ou importe da planilha.</p>
-          ) : expandir ? beneficiados.map(b => (
-            <BeneficiadoCard key={b.id} b={b} custoBase={custoBase} nomesPadrao={opcoesSabor.base}
-              onUpdate={updateBeneficiado} onDelete={deleteBeneficiado} />
-          )) : (
-            <BeneficiadosResumo beneficiados={beneficiados} custoBase={custoBase} />
+          ) : (
+            <BeneficiadosResumo beneficiados={beneficiados} custoBase={custoBase} nomesPadrao={opcoesSabor.base}
+              abertos={abertosB} onToggle={toggle} onUpdate={updateBeneficiado} onDelete={deleteBeneficiado} />
           )}
         </>
       ) : (
@@ -144,11 +154,9 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
           <BaseConfig bases={bases} opcoes={opcoesSabor} custoBase={custoBase} benefCusto={benefCusto} onUpdate={updateBases} />
           {sabores.length === 0 ? (
             <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum sabor. Crie um acima ou importe da planilha.</p>
-          ) : expandir ? sabores.map(s => (
-            <SaborCard key={s.id} s={s} custoBase={custoBase} benefCusto={benefCusto} bases={bases} opcoes={opcoesSabor}
-              onUpdate={updateSabor} onDelete={deleteSabor} />
-          )) : (
-            <SaboresResumo sabores={sabores} custoBase={custoBase} benefCusto={benefCusto} bases={bases} />
+          ) : (
+            <SaboresResumo sabores={sabores} custoBase={custoBase} benefCusto={benefCusto} bases={bases} opcoes={opcoesSabor}
+              abertos={abertosS} onToggle={toggle} onUpdate={updateSabor} onDelete={deleteSabor} />
           )}
         </>
       )}
@@ -157,7 +165,8 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
 }
 
 // ── Beneficiado: receita de ingredientes base (qtd em kg) + rendimento ──────
-function BeneficiadoCard({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
+// Renderizado embutido na linha do resumo (peso/custo/kg já aparecem lá).
+function BeneficiadoFicha({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
   const sig = JSON.stringify(b.lines || []);
   const [lines, setLines] = useState(b.lines || []);
   const [rend, setRend] = useState(b.rendimento ?? '');
@@ -169,7 +178,6 @@ function BeneficiadoCard({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
   if ((b.rendimento ?? '') !== prevRend) { setPrevRend(b.rendimento ?? ''); setRend(b.rendimento ?? ''); }
 
   const commit = (ls) => onUpdate(b.id, { lines: ls.map(l => ({ ref: l.ref, qtd: num(l.qtd) })) });
-  const calc = useMemo(() => calcBeneficiado({ lines, rendimento: rend }, custoBase), [lines, rend, custoBase]);
 
   const setQtd = (i, v) => setLines(ls => ls.map((l, idx) => idx === i ? { ...l, qtd: v } : l));
   const setRef = (i, v) => { const ls = lines.map((l, idx) => idx === i ? { ...l, ref: v } : l); setLines(ls); commit(ls); };
@@ -177,19 +185,14 @@ function BeneficiadoCard({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
   const rmLine = (i) => { const ls = lines.filter((_, idx) => idx !== i); setLines(ls); commit(ls); };
 
   return (
-    <div style={cardS}>
+    <div style={fichaS}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: 15 }}>{b.nome}</strong>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          Peso bruto {calc.pesoBruto.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg · Custo total {fmt(calc.custoTotal)}
-        </span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Custo/kg {fmt(calc.custoPorKg)}</span>
-        <span style={{ flex: 1 }} />
         <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }} title="kg de saída após o preparo (perda). Vazio = igual ao peso bruto.">
           Rendimento
           <input inputMode="decimal" value={rend} onChange={e => setRend(e.target.value)} onBlur={() => onUpdate(b.id, { rendimento: rend === '' ? null : num(rend) })}
             placeholder="kg" style={{ ...inputS, width: 70 }} />
         </label>
+        <span style={{ flex: 1 }} />
         <button style={{ ...btnS, color: 'var(--danger)', borderColor: 'var(--danger)' }}
           onClick={() => { if (window.confirm(`Excluir o beneficiado "${b.nome}"?`)) onDelete(b.id); }} title="Excluir beneficiado">Excluir</button>
       </div>
@@ -315,25 +318,19 @@ function BaseConfig({ bases, opcoes, custoBase, benefCusto, onUpdate }) {
 }
 
 // ── Sabor: ingredientes próprios + base da categoria (salgada/doce) ─────────
-function SaborCard({ s, custoBase, benefCusto, bases, opcoes, onUpdate, onDelete }) {
+// Renderizado embutido na linha do resumo (nome e totais por tamanho já aparecem lá).
+function SaborFicha({ s, custoBase, benefCusto, bases, opcoes, onUpdate, onDelete }) {
   const categoria = s.categoria || 'salgada';
-  const totais = useMemo(() => calcSabor(s, custoBase, benefCusto, bases), [s, custoBase, benefCusto, bases]);
   const baseRefs = (((bases && bases[categoria]) || []).map(l => l.ref).filter(Boolean));
 
   return (
-    <div style={cardS}>
+    <div style={fichaS}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: 15 }}>{s.nome}</strong>
         <select value={categoria} onChange={e => onUpdate(s.id, { categoria: e.target.value })} style={{ ...inputS, padding: '3px 6px' }} title="Categoria — define a base (mussarela/orégano/caixa) que soma no custo">
           <option value="salgada">Salgada</option>
           <option value="doce">Doce</option>
         </select>
         <span style={{ flex: 1 }} />
-        {SIZES.map(([k, label]) => (
-          <span key={k} style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-            {label} <strong style={{ color: 'var(--accent)' }}>{fmt(totais[k])}</strong>
-          </span>
-        ))}
         <button style={{ ...btnS, color: 'var(--danger)', borderColor: 'var(--danger)' }}
           onClick={() => { if (window.confirm(`Excluir o sabor "${s.nome}"?`)) onDelete(s.id); }} title="Excluir sabor">Excluir</button>
       </div>
@@ -345,12 +342,18 @@ function SaborCard({ s, custoBase, benefCusto, bases, opcoes, onUpdate, onDelete
   );
 }
 
-// ── Resumo (checkbox Expandir desmarcado): tabela linha a linha ─────────────
-function BeneficiadosResumo({ beneficiados, custoBase }) {
+// Seta da coluna de expansão — gira 90° quando a ficha da linha está aberta.
+function Seta({ aberto }) {
+  return <span className={aberto ? 'cmvArrow open' : 'cmvArrow'} aria-hidden="true">▸</span>;
+}
+
+// ── Resumo: uma linha por item; a seta abre a ficha (ingredientes) logo abaixo ──
+function BeneficiadosResumo({ beneficiados, custoBase, nomesPadrao, abertos, onToggle, onUpdate, onDelete }) {
   return (
     <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+          <th style={{ ...thS, width: 28 }}></th>
           <th style={thS}>Beneficiado</th>
           <th style={{ ...thS, textAlign: 'right' }}>Peso bruto</th>
           <th style={{ ...thS, textAlign: 'right' }}>Custo total</th>
@@ -359,13 +362,25 @@ function BeneficiadosResumo({ beneficiados, custoBase }) {
         <tbody>
           {beneficiados.map(b => {
             const c = calcBeneficiado(b, custoBase);
+            const aberto = abertos.has(b.id);
             return (
-              <tr key={b.id} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-                <td style={{ ...tdS, fontWeight: 500 }}>{b.nome}</td>
-                <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)' }}>{c.pesoBruto.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg</td>
-                <td style={{ ...tdS, textAlign: 'right' }}>{fmt(c.custoTotal)}</td>
-                <td style={{ ...tdS, textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>{fmt(c.custoPorKg)}</td>
-              </tr>
+              <Fragment key={b.id}>
+                <tr className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: 'pointer' }}
+                  onClick={() => onToggle(b.id)} title={aberto ? 'Fechar ficha' : 'Abrir ficha (ingredientes)'}>
+                  <td style={{ ...tdS, textAlign: 'center' }}><Seta aberto={aberto} /></td>
+                  <td style={{ ...tdS, fontWeight: 500 }}>{b.nome}</td>
+                  <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)' }}>{c.pesoBruto.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg</td>
+                  <td style={{ ...tdS, textAlign: 'right' }}>{fmt(c.custoTotal)}</td>
+                  <td style={{ ...tdS, textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>{fmt(c.custoPorKg)}</td>
+                </tr>
+                {aberto && (
+                  <tr style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                    <td colSpan={5} style={{ padding: 0 }}>
+                      <BeneficiadoFicha b={b} custoBase={custoBase} nomesPadrao={nomesPadrao} onUpdate={onUpdate} onDelete={onDelete} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
         </tbody>
@@ -374,22 +389,35 @@ function BeneficiadosResumo({ beneficiados, custoBase }) {
   );
 }
 
-function SaboresResumo({ sabores, custoBase, benefCusto, bases }) {
+function SaboresResumo({ sabores, custoBase, benefCusto, bases, opcoes, abertos, onToggle, onUpdate, onDelete }) {
   return (
     <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+          <th style={{ ...thS, width: 28 }}></th>
           <th style={thS}>Sabor</th>
           {SIZES.map(([k, label]) => <th key={k} style={{ ...thS, textAlign: 'right' }}>{label}</th>)}
         </tr></thead>
         <tbody>
           {sabores.map(s => {
             const t = calcSabor(s, custoBase, benefCusto, bases);
+            const aberto = abertos.has(s.id);
             return (
-              <tr key={s.id} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-                <td style={{ ...tdS, fontWeight: 500 }}>{s.nome}</td>
-                {SIZES.map(([k]) => <td key={k} style={{ ...tdS, textAlign: 'right', fontWeight: 600 }}>{fmt(t[k])}</td>)}
-              </tr>
+              <Fragment key={s.id}>
+                <tr className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: 'pointer' }}
+                  onClick={() => onToggle(s.id)} title={aberto ? 'Fechar ficha' : 'Abrir ficha (ingredientes)'}>
+                  <td style={{ ...tdS, textAlign: 'center' }}><Seta aberto={aberto} /></td>
+                  <td style={{ ...tdS, fontWeight: 500 }}>{s.nome}</td>
+                  {SIZES.map(([k]) => <td key={k} style={{ ...tdS, textAlign: 'right', fontWeight: 600 }}>{fmt(t[k])}</td>)}
+                </tr>
+                {aberto && (
+                  <tr style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                    <td colSpan={2 + SIZES.length} style={{ padding: 0 }}>
+                      <SaborFicha s={s} custoBase={custoBase} benefCusto={benefCusto} bases={bases} opcoes={opcoes} onUpdate={onUpdate} onDelete={onDelete} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
         </tbody>
