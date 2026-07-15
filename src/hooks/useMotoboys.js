@@ -250,6 +250,18 @@ export function useMotoboys(loja, segunda, author) {
     [docId]
   );
 
+  // Checkbox "Conferido" do motoboy na semana. Mora no doc da semana, então o
+  // estado é o mesmo para todos os usuários (não é por usuário).
+  const setConferido = useCallback(
+    async (mid, marcado) => {
+      await updateDoc(doc(db, 'motoboySemanas', docId), {
+        [`motoboys.${mid}.conferido`]: marcado ? true : deleteField(),
+        atualizadoEm: Timestamp.now(),
+      });
+    },
+    [docId]
+  );
+
   // Desconto (R$) de um motoboy num dia (valor negativo desconta).
   const setDesconto = useCallback(
     async (mid, diaIdx, valor) => {
@@ -448,6 +460,7 @@ export function useMotoboys(loja, segunda, author) {
     criarSemana,
     setCelula,
     setDiaSemGarantia,
+    setConferido,
     setDesconto,
     addMotoboy,
     removeMotoboy,

@@ -71,6 +71,44 @@
   align-items: center;
 }
 
+/* v2: segmented control (docs/tailadmin-medido.md). Aqui os DOIS wrappers
+   contêm só abas — .headerActions (Semana/Taxas/Cadastro) e .storeTabs (lojas,
+   que também usam a classe .sectionTab). Escopado — v1 intacta. */
+:global(:root[data-v2]) .headerActions,
+:global(:root[data-v2]) .storeTabs {
+  display: inline-flex;
+  width: fit-content;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .sectionTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .sectionTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .sectionTabActive,
+:global(:root[data-v2]) .sectionTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
+
 /* ---- Filtros (semana + status) ---- */
 .filters {
   display: flex;
@@ -161,6 +199,13 @@
   border: 1px solid var(--border-light);
   border-radius: 999px;
   padding: 1px 8px;
+}
+
+/* Total bate com a Saipos, mas as taxas divergem entre si. */
+.badgeQtdTaxa {
+  background: color-mix(in srgb, #f2c200 22%, var(--card));
+  border-color: color-mix(in srgb, #f2c200 45%, var(--card));
+  color: var(--text);
 }
 
 .badgeDiff {
@@ -270,8 +315,22 @@
 
 .blocoHeader strong { font-size: 14px; color: var(--text); }
 
-.blocoTotal {
+/* Empurra Conferido + total para a direita do header do bloco. */
+.conferidoLabel {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.conferidoLabel input:disabled { cursor: default; }
+
+.blocoTotal {
   font-weight: 700;
   font-size: 13px;
   color: var(--accent);
@@ -352,9 +411,10 @@
 .qtdInput:focus { border-color: var(--accent); outline: none; background: var(--card); }
 .qtdInput:disabled { color: var(--text); opacity: 1; }
 
-/* Valor importado do Saipos ao lado do lançamento da gerente: NN/NN */
+/* Valor importado do Saipos ao lado do lançamento da gerente: NN/NN.
+   Mesmo tamanho do .qtdInput para os dois números lerem como um par. */
 .paTaxa {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--accent);
   white-space: nowrap;
@@ -841,5 +901,6 @@
   .headerActions { width: 100%; }
   .headerActions button { flex: 1 1 auto; min-height: 38px; }
   .qtdInput, .descInput, .addInput, .extraJust, .extraQtd { font-size: 16px; }
+  .paTaxa { font-size: 16px; }
   .importLine { margin-left: 0; }
 }

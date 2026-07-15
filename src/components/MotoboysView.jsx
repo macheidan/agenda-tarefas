@@ -52,6 +52,9 @@ function QtdInput({ value, onCommit, disabled }) {
   );
 }
 
+// Desconto nunca é positivo: 50 vira -50 e 0 limpa a célula.
+const soNegativo = (v) => (v == null || v === 0 ? null : -Math.abs(v));
+
 export default function MotoboysView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
@@ -88,7 +91,7 @@ export default function MotoboysView() {
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
-    criarSemana, setCelula, setDiaSemGarantia, setDesconto, addMotoboy, removeMotoboy,
+    criarSemana, setCelula, setDiaSemGarantia, setConferido, setDesconto, addMotoboy, removeMotoboy,
     addRosterMotoboy, renameMotoboy, setRosterAtivo,
     setConfig, addExtra, deleteExtra, atribuirNaoCasado,
   } = useMotoboys(loja, segunda, user);
@@ -111,13 +114,21 @@ export default function MotoboysView() {
   });
 
   // Extras agregados por motoboy/dia (entram na conferência gerente x Saipos).
+  // O segundo mapa quebra também por taxa, para detectar a divergência que existe
+  // dentro das taxas mesmo quando o total do motoboy fecha.
   const extrasPorMidDia = {};
+  const extrasPorMidDiaTaxa = {};
   extras.forEach((e) => {
     const idx = diasIso.indexOf(e.data);
     if (idx < 0) return;
     const key = e.mid || `nome:${normalizarNome(e.nome)}`;
+    const qtd = Number(e.quantidade) || 0;
+    const ti = Number(e.taxaIdx) || 0;
     if (!extrasPorMidDia[key]) extrasPorMidDia[key] = {};
-    extrasPorMidDia[key][idx] = (extrasPorMidDia[key][idx] || 0) + (Number(e.quantidade) || 0);
+    extrasPorMidDia[key][idx] = (extrasPorMidDia[key][idx] || 0) + qtd;
+    if (!extrasPorMidDiaTaxa[key]) extrasPorMidDiaTaxa[key] = {};
+    if (!extrasPorMidDiaTaxa[key][idx]) extrasPorMidDiaTaxa[key][idx] = {};
+    extrasPorMidDiaTaxa[key][idx][ti] = (extrasPorMidDiaTaxa[key][idx][ti] || 0) + qtd;
   });
 
   const resumo = calcResumoSemana(motoboys, config);
@@ -313,6 +324,21 @@ export default function MotoboysView() {
             const totDiff = r.total.qtd - totPa - totEx;
             const aberto = expandidos.has(mb.mid);
             const temDiffBloco = compCells.some((c) => c.diff !== 0 && (c.pg || c.paQ));
+            // Taxas trocadas entre si: alguma célula (dia × taxa) diverge do
+            // Saipos + extras, mas a soma da semana fecha. Sinaliza em amarelo —
+            // o valor a receber pode mudar mesmo com a contagem batendo.
+            const exTaxaDias = extrasPorMidDiaTaxa[mb.mid] || {};
+            const temDiffTaxa =
+              canViewAdm &&
+              taxas.some((_, ti) =>
+                diasIso.some((_, di) => {
+                  const pg = Number(mb.dias?.[di]?.t?.[ti]) || 0;
+                  const paT = Number(pa?.taxas?.[mb.mid]?.[di]?.[ti]) || 0;
+                  const ex = exTaxaDias[di]?.[ti] || 0;
+                  return pg !== paT + ex;
+                })
+              );
+            const diffSoNasTaxas = temDiffTaxa && totDiff === 0 && (r.total.qtd || totPa);
             // Checkbox de exceção do dia: marcado, a coluna fica amarela e o
             // dia não gera acréscimo nem moto-dia (padrão desmarcado = normal).
             const diaSemGar = diasIso.map((_, di) => mb.dias?.[di]?.semGarantia === true);
@@ -324,9 +350,30 @@ export default function MotoboysView() {
                   <span className={styles.chevron}>{aberto ? '▾' : '▸'}</span>
                   <strong>{mb.nome}</strong>
                   <span className={styles.blocoBadges}>
-                    {r.total.qtd > 0 && <span className={styles.badgeQtd}>{r.total.qtd} entregas</span>}
+                    {r.total.qtd > 0 && (
+                      <span
+                        className={`${styles.badgeQtd} ${diffSoNasTaxas ? styles.badgeQtdTaxa : ''}`}
+                        title={diffSoNasTaxas ? 'O total bate com a Saipos, mas há diferença entre as taxas' : undefined}
+                      >
+                        {r.total.qtd} entregas
+                      </span>
+                    )}
                     {canViewAdm && temDiffBloco && <span className={styles.badgeDiff}>divergência</span>}
                   </span>
+                  <label
+                    className={styles.conferidoLabel}
+                    title="Conferido — vale para todos os usuários"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      className={styles.diaCheck}
+                      checked={mb.conferido === true}
+                      disabled={!canEditGerente}
+                      onChange={(e) => setConferido(mb.mid, e.target.checked)}
+                    />
+                    Conferido
+                  </label>
                   {canViewResultado && <span className={styles.blocoTotal}>{formatBRL(r.total.valor)}</span>}
                   {canEditGerente && (
                     <button
@@ -406,7 +453,7 @@ export default function MotoboysView() {
                         <tr className={styles.descRow}>
                           <td className={styles.stickyCol}>
                             <span className={styles.taxaLabel}>Descontos</span>
-                            <span className={styles.taxaValor}>R$ · use negativo</span>
+                            <span className={styles.taxaValor}>R$ · sempre negativo</span>
                           </td>
                           {diasIso.map((d, di) => (
                             <td key={d} className={colCls(di)}>
@@ -415,6 +462,7 @@ export default function MotoboysView() {
                                 value={mb.dias?.[di]?.desc ?? null}
                                 disabled={!canEditGerente}
                                 placeholder=""
+                                normalize={soNegativo}
                                 onCommit={(v) => setDesconto(mb.mid, di, v)}
                               />
                             </td>
