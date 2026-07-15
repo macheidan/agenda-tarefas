@@ -433,7 +433,7 @@ export default function MotoboysView() {
                                     disabled={!canEditGerente}
                                     onCommit={(v) => setCelula(mb.mid, di, ti, v)}
                                   />
-                                  {paT != null && <span className={styles.paTaxa}>/{paT}</span>}
+                                  {paT != null && <span className={styles.paTaxa}>/ {paT}</span>}
                                 </td>
                               );
                             })}
@@ -443,7 +443,7 @@ export default function MotoboysView() {
                                 const totPa = diasIso.reduce(
                                   (acc, _, di) => acc + (Number(pa?.taxas?.[mb.mid]?.[di]?.[ti]) || 0), 0
                                 );
-                                return totPa ? <span className={styles.paTaxa}>/{totPa}</span> : null;
+                                return totPa ? <span className={styles.paTaxa}>/ {totPa}</span> : null;
                               })()}
                             </td>
                           </tr>
