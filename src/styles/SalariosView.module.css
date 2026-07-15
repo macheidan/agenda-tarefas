@@ -49,6 +49,41 @@
 
 .storeTabActive:hover { background: var(--accent-hover); color: #fff; }
 
+/* v2: segmented control (docs/tailadmin-medido.md). Escopado — v1 intacta. */
+:global(:root[data-v2]) .storeTabs {
+  display: inline-flex;
+  width: fit-content;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .storeTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .storeTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .storeTabActive,
+:global(:root[data-v2]) .storeTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
+
 .empSelect {
   flex: 1;
   min-width: 200px;
@@ -392,6 +427,38 @@
 }
 
 .viewBtnActive:hover { background: var(--accent-hover); color: #fff; }
+
+/* v2: o .viewToggle já contém só as 2 abas — vira o track direto. */
+:global(:root[data-v2]) .viewToggle {
+  width: fit-content;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .viewBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .viewBtn:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .viewBtnActive,
+:global(:root[data-v2]) .viewBtnActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
 
 /* ---- Resumo mensal por equipe ---- */
 .resumo {

@@ -1,0 +1,185 @@
+/* ===========================================================================
+   Tema v2 — port do spec-kit de design do dashboard (TailAdmin)
+   ---------------------------------------------------------------------------
+   Ativo SÓ quando o <html> tem [data-v2], setado pelo script do index.html
+   quando a URL é /intranet/v2 (ou ?v2=1 pra testar em dev). No build normal
+   (/intranet e Vercel) este arquivo é inerte — nada aqui casa.
+
+   Como funciona: remapeia as CSS vars do global.css pros tokens do TailAdmin.
+   Como 90% dos .module.css consomem var(--x), as ~30 views trocam de cara
+   sem nenhuma alteração nos componentes.
+
+   Especificidade: :root[data-v2] (0,2,0) ganha do :root (0,1,0) do global.css;
+   :root[data-v2][data-theme="dark"] (0,3,0) ganha do [data-theme="dark"] (0,1,0).
+
+   Paleta TailAdmin de referência (docs do dashboard, 01-fundamentos.md):
+     brand   300 #9cb9ff · 400 #7592ff · 500 #465fff · 600 #3641f5 · 50 #ecf3ff
+     gray    25 #fcfcfd · 50 #f9fafb · 100 #f2f4f7 · 200 #e4e7ec · 300 #d0d5dd
+             400 #98a2b3 · 500 #667085 · 600 #475467 · 700 #344054 · 800 #1d2939
+             900 #101828 · 950 #0c111d
+     success 400 #32d583 · 500 #12b76a · 50 #ecfdf3
+     warning 400 #fdb022 · 500 #f79009 · 600 #dc6803 · 200 #fedf89 · 50 #fffaeb
+     error   400 #f97066 · 500 #f04438 · 50 #fef3f2
+   =========================================================================== */
+
+/* ===== v2 — LIGHT ===== */
+:root[data-v2] {
+  --bg: #f9fafb;              /* gray-50  — fundo da página */
+  --bg-secondary: #f9fafb;    /* gray-50  — poço (forms/empty) dentro do card branco */
+  --card: #ffffff;
+  --card-hover: #f9fafb;
+  --text: #1d2939;            /* gray-800 — títulos e corpo (padrão TailAdmin) */
+  --text-secondary: #475467;  /* gray-600 */
+  --text-muted: #667085;      /* gray-500 */
+  --border: #e4e7ec;          /* gray-200 */
+  --border-light: #f2f4f7;    /* gray-100 */
+  --accent: #465fff;          /* brand-500 — azul de UI do TailAdmin */
+  --accent-hover: #3641f5;    /* brand-600 */
+  --accent-light: #ecf3ff;    /* brand-50 */
+  --input-bg: #ffffff;
+  --input-border: #d0d5dd;    /* gray-300 */
+  --input-focus: #465fff;
+  --badge-bg: #f2f4f7;        /* gray-100 */
+  --shadow: rgba(16, 24, 40, 0.05);
+  --shadow-hover: rgba(16, 24, 40, 0.1);
+  --overlay: rgba(16, 24, 40, 0.4);
+  --danger: #f04438;          /* error-500 */
+  --danger-bg: #fef3f2;       /* error-50 */
+  --success: #12b76a;         /* success-500 */
+  --success-bg: #ecfdf3;      /* success-50 */
+  --warning-bg: #fffaeb;      /* warning-50 */
+  --warning-text: #dc6803;    /* warning-600 — padrão soft: bg-50 + text-600 */
+  --warning-border: #fedf89;  /* warning-200 */
+  --overdue-bg: #fef3f2;
+  --status-not-started: #98a2b3;  /* gray-400 */
+  --status-in-progress: #465fff;  /* brand-500 */
+  --status-done: #12b76a;         /* success-500 */
+  --task-not-started-bg: #f9fafb;
+  --task-in-progress-bg: #ecf3ff;
+  --task-done-bg: #ecfdf3;
+  --sent-bubble: #465fff;
+  --sent-text: #ffffff;
+  --received-bubble: #f2f4f7;
+  --received-text: #1d2939;
+  --drag-over: #ecf3ff;
+  --today-bg: #fffaeb;
+  --modal-bg: #ffffff;
+  --toolbar-bg: #f9fafb;
+  --toolbar-border: #e4e7ec;
+  --scrollbar-thumb: #d0d5dd;
+
+  /* Tipografia — Outfit é a fonte do TailAdmin (já carregada no index.html).
+     A escala do intranet (12/14/16/18/20/24/30) já bate com a do TailAdmin
+     (theme-xs 12 · theme-sm 14 · theme-xl 20 · title-xs 24 · title-sm 30),
+     então não há o que remapear aqui. */
+  --font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Raio — TailAdmin: card rounded-2xl (16px), botão/input rounded-lg (8px),
+     container de ícone e dropdown rounded-xl (12px).
+     A constituição usa --radius-lg no card e --radius-md no botão, então
+     subir o --radius-lg pra 16px já entrega o card no padrão. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+
+  /* Sombras — shadow-theme-* do TailAdmin */
+  --shadow-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+
+  /* --shadow-sm = o CARD. Medido no demo (docs/tailadmin-medido.md): o card do
+     TailAdmin é `rounded-2xl border border-gray-200 bg-white` com sombra
+     NENHUMA. O intranet faz o oposto (sombra, sem borda) — e `--shadow-sm` tem
+     exatamente um consumidor: o `.container` das 12 views. Então redefinir a
+     var como um anel de 1px entrega a borda do demo sem tocar em module nenhum
+     (e, por ser box-shadow, não altera o layout). */
+  --shadow-sm: 0 0 0 1px #e4e7ec;
+
+  /* Sidebar (medido no demo) — o kit de segunda mão errou os três. */
+  --nav-label: #98a2b3;  /* gray-400 · 12/400 sem tracking */
+  --nav-item: #344054;   /* gray-700 · item inativo */
+
+  /* Foco de campo, medido: `focus:border-brand-300 focus:ring-brand-500/10`.
+     Não é border-brand-500 + ring 20% (o que eu tinha chutado). */
+  --focus-border: #9cb9ff;                 /* brand-300 */
+  --focus-ring: rgba(70, 95, 255, 0.10);   /* brand-500/10 */
+
+  /* Segmented control (sub-abas). Medido no demo (Overview/Sales/Revenue):
+       track  `inline-flex w-fit gap-0.5 rounded-lg bg-gray-100 p-0.5`
+       ativa  `rounded-md px-3 py-2 text-theme-sm font-medium shadow-theme-xs
+               text-gray-900 bg-white`  — sem borda
+       inativa `text-gray-500` — transparente, sem borda
+     A casa faz o oposto: ativa preenche com accent, inativa tem borda colorida. */
+  --seg-track: #f2f4f7;        /* gray-100 */
+  --seg-active-bg: #ffffff;
+  --seg-active-text: #101828;  /* gray-900 */
+}
+
+/* ===== v2 — DARK ===== */
+:root[data-v2][data-theme="dark"] {
+  --bg: #101828;              /* gray-900 — fundo da página (spec) */
+  --bg-secondary: #101828;    /* poço dentro do card, igual ao light (bg == bg-secondary) */
+  --card: #171f2f;            /* card dark do spec */
+  --card-hover: #1d2939;      /* gray-800 */
+  --text: #f2f4f7;            /* gray-100 */
+  --text-secondary: #d0d5dd;  /* gray-300 */
+  --text-muted: #98a2b3;      /* gray-400 */
+  --border: #1d2939;          /* gray-800 (spec) */
+  --border-light: #182030;    /* tint entre o card e o gray-800 — divisor sutil */
+  --accent: #7592ff;          /* brand-400 — "brand vivo" no dark, legível sobre #171f2f */
+  --accent-hover: #9cb9ff;    /* brand-300 */
+  --accent-light: rgba(117, 146, 255, 0.15);  /* padrão soft do spec no dark: *-500/15 */
+  --input-bg: #101828;
+  --input-border: #344054;    /* gray-700 */
+  --input-focus: #7592ff;
+  --badge-bg: #1d2939;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-hover: rgba(0, 0, 0, 0.5);
+  --overlay: rgba(12, 17, 29, 0.7);
+  --danger: #f97066;          /* error-400 */
+  --danger-bg: rgba(240, 68, 56, 0.15);
+  --success: #32d583;         /* success-400 */
+  --success-bg: rgba(18, 183, 106, 0.15);
+  --warning-bg: rgba(247, 144, 9, 0.15);
+  --warning-text: #fdb022;    /* warning-400 */
+  --warning-border: rgba(247, 144, 9, 0.3);
+  --overdue-bg: rgba(240, 68, 56, 0.15);
+  --status-not-started: #667085;  /* gray-500 */
+  --status-in-progress: #7592ff;
+  --status-done: #32d583;
+  --task-not-started-bg: #171f2f;
+  --task-in-progress-bg: rgba(117, 146, 255, 0.15);
+  --task-done-bg: rgba(18, 183, 106, 0.15);
+  --sent-bubble: #465fff;
+  --sent-text: #ffffff;
+  --received-bubble: #1d2939;
+  --received-text: #f2f4f7;
+  --drag-over: rgba(117, 146, 255, 0.15);
+  --today-bg: rgba(247, 144, 9, 0.15);
+  --modal-bg: #171f2f;
+  --toolbar-bg: #101828;
+  --toolbar-border: #1d2939;
+  --scrollbar-thumb: #344054;
+
+  --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0px 4px 8px -2px rgba(0, 0, 0, 0.4), 0px 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0px 12px 16px -4px rgba(0, 0, 0, 0.45), 0px 4px 6px -2px rgba(0, 0, 0, 0.3);
+
+  /* Card no dark: `dark:border-gray-800`, sem sombra (ver light acima). */
+  --shadow-sm: 0 0 0 1px #1d2939;
+
+  --nav-label: #98a2b3;  /* gray-400 — igual ao light no demo */
+  --nav-item: #d0d5dd;   /* gray-300 — inativo no dark */
+
+  /* Dark, medido: `dark:focus:border-brand-800` + mesmo ring. */
+  --focus-border: #252dae;                 /* brand-800 */
+  --focus-ring: rgba(70, 95, 255, 0.10);
+
+  /* Segmented control no dark: track `dark:bg-gray-900`, ativa `dark:text-white`
+     sobre gray-800 (a ativa fica MAIS CLARA que o track, como no light). */
+  --seg-track: #101828;        /* gray-900 */
+  --seg-active-bg: #1d2939;    /* gray-800 */
+  --seg-active-text: #ffffff;
+}

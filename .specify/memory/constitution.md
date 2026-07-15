@@ -1,5 +1,12 @@
 # Constituição de Design e Código — Intranet Dáme & Lov
 
+> ℹ️ **Esta (v1.1.0) é a VIGENTE.** Existe uma proposta v2.0.0 em
+> `constitution-v2-proposta.md`, alinhada ao demo.tailadmin.com, aplicada só em
+> `/intranet/v2` (design em teste, não promovido). **Enquanto o Fábio não
+> decidir, vale esta aqui** — inclusive pra seção nova. Se a v2 for aprovada, a
+> proposta substitui este arquivo; ter as duas como obrigatórias é o pior
+> cenário, porque cada view nova desfaz o port. Contexto: `docs/design-v2.md`.
+
 > Padrão obrigatório para TODA seção nova e para o retrofit das existentes.
 > Referências canônicas (escolhidas pelo Fábio): **InfluencersView**, **ReelsView** (Instagram) e **NotesView** (Anotações).
 > O design system paralelo em `src/ui/` (tokens `--ds-*`, "Sereno") NÃO é usado — a convenção abaixo é a oficial.

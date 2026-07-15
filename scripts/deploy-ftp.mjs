@@ -70,11 +70,32 @@ if (faltando.length) {
 
 const skipBuild = process.argv.includes('--skip-build');
 
+// --v2            publica em <FTP_DIR>/v2 (design TailAdmin, ligado pelo
+//                 [data-v2] que o index.html seta quando a URL é /intranet/v2)
+// --subdir <nome> publica num subpath qualquer. Serve pra conferir a V1 rodando
+//                 e logada: como o path não casa /intranet/v2, o [data-v2] não
+//                 liga e o build renderiza o caminho da v1 — e por ser a mesma
+//                 origem, a sessão do Firebase vem junto (localhost não vem).
+//                 Ex: npm run deploy:ftp -- --subdir v1check
+// Sem flag nenhuma, tudo se comporta como antes.
+const isV2 = process.argv.includes('--v2');
+const subIdx = process.argv.indexOf('--subdir');
+const subdir = subIdx !== -1 && process.argv[subIdx + 1]
+  ? process.argv[subIdx + 1].replace(/^\/+|\/+$/g, '')
+  : (isV2 ? 'v2' : null);
+
+const WEB_BASE = subdir ? `/intranet/${subdir}/` : '/intranet/'; // casa com o --base do build
+const targetDir = subdir ? `${FTP_DIR.replace(/\/$/, '')}/${subdir}` : FTP_DIR;
+const buildScript = subdir ? `npx vite build --base=${WEB_BASE}` : 'npm run build:ftp';
+const publicUrl = subdir && PUBLIC_URL
+  ? `${PUBLIC_URL.replace(/\/$/, '')}/${subdir}/`
+  : PUBLIC_URL;
+
 if (!skipBuild) {
-  console.log('[deploy-ftp] Buildando com base=/intranet/ ...');
+  console.log(`[deploy-ftp] Buildando com base=${WEB_BASE} ...`);
   // shell: true e obrigatorio no Windows pra resolver o npm (.cmd). Comando como
   // string unica (sem array de args) evita o DeprecationWarning DEP0190.
-  const r = spawnSync('npm run build:ftp', { cwd: root, stdio: 'inherit', shell: true });
+  const r = spawnSync(buildScript, { cwd: root, stdio: 'inherit', shell: true });
   if (r.status !== 0) { console.error('[deploy-ftp] build falhou.'); process.exit(1); }
 } else {
   console.log('[deploy-ftp] --skip-build: usando dist/ existente.');
@@ -89,7 +110,6 @@ if (!existsSync(distDir)) {
 // O manifest PWA fica em public/ com caminhos absolutos ("/") que o Vite nao
 // reescreve. No subpath /intranet/ isso faria o "instalar app" abrir a raiz
 // errada — entao ajustamos o manifest do dist/ (nao toca no repo nem na Vercel).
-const WEB_BASE = '/intranet/'; // deve casar com o --base do build:ftp
 const manifestPath = resolve(distDir, 'manifest.webmanifest');
 if (existsSync(manifestPath)) {
   try {
@@ -127,13 +147,13 @@ try {
     secureOptions: { rejectUnauthorized: false },
   });
 
-  await client.ensureDir(FTP_DIR); // cria (se preciso) e entra na pasta remota
+  await client.ensureDir(targetDir); // cria (se preciso) e entra na pasta remota
   if (FTP_CLEAN === 'true') {
     console.log('[deploy-ftp] FTP_CLEAN=true: limpando pasta remota ...');
     await client.clearWorkingDir();
   }
 
-  console.log(`[deploy-ftp] Enviando dist/ -> ${FTP_DIR} ...`);
+  console.log(`[deploy-ftp] Enviando dist/ -> ${targetDir} ...`);
   await client.uploadFromDir(distDir);
 
   console.log('\n[deploy-ftp] ✓ Upload concluido.');
@@ -146,8 +166,8 @@ try {
 
 // Checagem pos-deploy: confirma que a URL publica responde 200 e que o HTML
 // aponta os assets pro base certo. So roda se o upload foi ok e PUBLIC_URL existe.
-if (process.exitCode !== 1 && PUBLIC_URL) {
-  const url = PUBLIC_URL.endsWith('/') ? PUBLIC_URL : PUBLIC_URL + '/';
+if (process.exitCode !== 1 && publicUrl) {
+  const url = publicUrl.endsWith('/') ? publicUrl : publicUrl + '/';
   // Da uns segundos pro FTP/CDN assentar antes de bater na URL.
   await new Promise(r => setTimeout(r, 3000));
   try {
@@ -156,12 +176,11 @@ if (process.exitCode !== 1 && PUBLIC_URL) {
     const res = await fetch(url, { redirect: 'follow', signal: ctrl.signal });
     clearTimeout(t);
     const html = await res.text();
-    const base = FTP_DIR.split('/').filter(Boolean).pop() || '';
-    const assetsOk = html.includes(`/${base}/assets/`);
+    const assetsOk = html.includes(`${WEB_BASE}assets/`);
     if (res.status === 200 && assetsOk) {
-      console.log(`[deploy-ftp] ✓ ${url} respondeu 200 e os assets apontam pra /${base}/.`);
+      console.log(`[deploy-ftp] ✓ ${url} respondeu 200 e os assets apontam pra ${WEB_BASE}.`);
     } else if (res.status === 200) {
-      console.warn(`[deploy-ftp] ⚠ ${url} respondeu 200, mas nao achei "/${base}/assets/" no HTML — confira o base do build.`);
+      console.warn(`[deploy-ftp] ⚠ ${url} respondeu 200, mas nao achei "${WEB_BASE}assets/" no HTML — confira o base do build.`);
     } else {
       console.warn(`[deploy-ftp] ⚠ ${url} respondeu HTTP ${res.status} (esperado 200).`);
       process.exitCode = 1;

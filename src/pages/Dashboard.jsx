@@ -12,10 +12,12 @@ import { useContentPlan } from '../hooks/useContentPlan';
 import { useAdminMessages } from '../hooks/useAdminMessages';
 import { useNotes } from '../hooks/useNotes';
 import { useStickyNotes } from '../hooks/useStickyNotes';
-import { useReviews } from '../hooks/useReviews';
+import { useSurveys } from '../hooks/useSurveys';
 import { useCompletedTasks } from '../hooks/useCompletedTasks';
 import { useAllSettings } from '../hooks/useAllSettings';
 import Header from '../components/Header';
+import AppShellV2 from '../components/v2/AppShellV2';
+import { IS_V2 } from '../lib/v2';
 import BottomNav from '../components/BottomNav';
 import NoteModal from '../components/NoteModal';
 import AdminMessageModal from '../components/AdminMessageModal';
@@ -42,7 +44,7 @@ const IdeasView = lazy(() => import('../components/IdeasView'));
 const ReelsView = lazy(() => import('../components/ReelsView'));
 const ContentPlanView = lazy(() => import('../components/ContentPlanView'));
 const InfluencersView = lazy(() => import('../components/InfluencersView'));
-const ReviewsView = lazy(() => import('../components/ReviewsView'));
+const SurveysView = lazy(() => import('../components/SurveysView'));
 const KnowledgeView = lazy(() => import('../components/KnowledgeView'));
 const PrecosInsumosView = lazy(() => import('../components/PrecosInsumosView'));
 const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPessoalView'));
@@ -117,8 +119,7 @@ export default function Dashboard() {
   const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
   const { scripts, addScript, updateScript, archiveScript, unarchiveScript, deleteScript } = useScripts();
   const { items: contentPlanItems, addItem: addContentPlanItem, updateItem: updateContentPlanItem, deleteItem: deleteContentPlanItem } = useContentPlan();
-  const { reviews, unreadCount: reviewsUnread, addReview, addComment: addReviewComment, deleteComment: deleteReviewComment, deleteReview, archiveReview, markAsRead: markReviewAsRead } =
-    useReviews(null, user, true);
+  const { surveys, loading: surveysLoading, error: surveysError } = useSurveys();
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
   const viewingUser = users.find((u) => u.uid === selectedUid);
@@ -156,45 +157,44 @@ export default function Dashboard() {
     .map((k) => ({
       key: k,
       label: NAV_LABELS[k] || k,
-      badge: (k === 'ideas' && ideasUnread > 0) || (k === 'reviews' && reviewsUnread > 0) ? navDot : null,
+      badge: k === 'ideas' && ideasUnread > 0 ? navDot : null,
     }));
 
-  return (
-    <div className={styles.container}>
-      <Header
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        users={users}
-        selectedUid={selectedUid}
-        onSelectUser={setSelectedUid}
-        calendarEnabled={calendarEnabled}
-        ideasEnabled={ideasEnabled}
-        reelsEnabled={reelsEnabled}
-        contentPlanEnabled={contentPlanEnabled}
-        notesEnabled={notesEnabled}
-        shoppingListEnabled={shoppingListEnabled}
-        reviewsEnabled={reviewsEnabled}
-        knowledgeEnabled={knowledgeEnabled}
-        influencersEnabled={influencersEnabled}
-        precosInsumosEnabled={precosInsumosEnabled}
-        departamentoPessoalEnabled={departamentoPessoalEnabled}
-        motoboysEnabled={motoboysEnabled}
-        ideasUnread={ideasUnread}
-        reviewsUnread={reviewsUnread}
-        onOpenMessage={() => setMessageModalOpen(true)}
-        completedCount={completedTasks.length}
-        customName={settings.customName}
-        allSettings={allSettings}
-        tabsOrder={tabsOrder}
-      />
+  // Props do shell — o Header (v1) e o AppShellV2 (v2) consomem as MESMAS.
+  const shellProps = {
+    activeTab,
+    onTabChange: setActiveTab,
+    users,
+    selectedUid,
+    onSelectUser: setSelectedUid,
+    calendarEnabled,
+    ideasEnabled,
+    reelsEnabled,
+    contentPlanEnabled,
+    notesEnabled,
+    shoppingListEnabled,
+    reviewsEnabled,
+    knowledgeEnabled,
+    influencersEnabled,
+    precosInsumosEnabled,
+    departamentoPessoalEnabled,
+    motoboysEnabled,
+    ideasUnread,
+    onOpenMessage: () => setMessageModalOpen(true),
+    completedCount: completedTasks.length,
+    customName: settings.customName,
+    allSettings,
+    tabsOrder,
+  };
 
-      {viewingOther && viewingUser && (
-        <div className={styles.banner}>
-          Visualizando agenda de <strong>{allSettings[viewingUser.uid]?.customName || viewingUser.displayName || viewingUser.email}</strong>
-        </div>
-      )}
+  const bannerEl = viewingOther && viewingUser && (
+    <div className={styles.banner}>
+      Visualizando agenda de <strong>{allSettings[viewingUser.uid]?.customName || viewingUser.displayName || viewingUser.email}</strong>
+    </div>
+  );
 
-      <main className={`${styles.main} ${activeTab === 'calendar' && !isMobile ? styles.mainCalendar : ''}`}>
+  const mainEl = (
+      <main className={`${styles.main} ${activeTab === 'calendar' && !isMobile ? styles.mainCalendar : ''} ${IS_V2 ? styles.mainV2 : ''}`}>
         <Suspense fallback={<div className={styles.suspenseFallback}>Carregando…</div>}>
         {activeTab === 'calendar' && calendarEnabled && (
           isMobile ? (
@@ -287,17 +287,7 @@ export default function Dashboard() {
         )}
         {activeTab === 'shopping' && shoppingListEnabled && <ComprasView />}
         {activeTab === 'reviews' && reviewsEnabled && (
-          <ReviewsView
-            reviews={reviews}
-            addReview={addReview}
-            addComment={addReviewComment}
-            deleteComment={deleteReviewComment}
-            deleteReview={deleteReview}
-            archiveReview={archiveReview}
-            markAsRead={markReviewAsRead}
-            users={users}
-            allSettings={allSettings}
-          />
+          <SurveysView surveys={surveys} loading={surveysLoading} error={surveysError} />
         )}
         {activeTab === 'knowledge' && knowledgeEnabled && (
           <KnowledgeView
@@ -333,9 +323,10 @@ export default function Dashboard() {
         {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} geminiKey={kbGeminiKey} updateGeminiKey={updateGeminiKey} tabsOrder={tabsOrder} updateTabsOrder={updateTabsOrder} />}
         </Suspense>
       </main>
+  );
 
-      {isMobile && <BottomNav tabs={bottomTabs} activeTab={activeTab} onTabChange={setActiveTab} />}
-
+  const overlays = (
+    <>
       {updateAvailable && (
         <button
           onClick={reload}
@@ -385,6 +376,28 @@ export default function Dashboard() {
         message={unreadMessage}
         onDismiss={(msgId) => markMessageRead(msgId, user.uid)}
       />
+    </>
+  );
+
+  // v2: shell com sidebar + topbar (spec-kit). Mobile usa o drawer da sidebar,
+  // por isso não monta a BottomNav.
+  if (IS_V2) {
+    return (
+      <AppShellV2 {...shellProps}>
+        {bannerEl}
+        {mainEl}
+        {overlays}
+      </AppShellV2>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+      <Header {...shellProps} />
+      {bannerEl}
+      {mainEl}
+      {isMobile && <BottomNav tabs={bottomTabs} activeTab={activeTab} onTabChange={setActiveTab} />}
+      {overlays}
     </div>
   );
 }

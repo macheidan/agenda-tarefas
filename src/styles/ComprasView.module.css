@@ -26,6 +26,27 @@
   color: var(--text);
 }
 
+/* v2: ícone SVG no título, no lugar do emoji. Dimensionado aqui porque o
+   componente Icon não define tamanho — quem usa decide (padrão do tabIcons). */
+:global(:root[data-v2]) .header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titleIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.titleIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
 .headerActions {
   display: flex;
   gap: 8px;
@@ -52,6 +73,20 @@
 .searchIcon {
   font-size: 14px;
   opacity: 0.7;
+}
+
+/* v2: o 🔎 vira SVG — sem opacity, a cor vem do token. */
+:global(:root[data-v2]) .searchIcon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 1;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+:global(:root[data-v2]) .searchIcon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .searchInput {
@@ -444,6 +479,16 @@
   color: var(--text);
 }
 
+/* v2 (medido): texto de célula do demo é `font-medium` = 500, não 600. */
+:global(:root[data-v2]) .produto {
+  font-weight: 500;
+}
+
+/* v2 (medido): texto secundário do demo é gray-500; a casa usa gray-600. */
+:global(:root[data-v2]) .meta {
+  color: var(--text-muted);
+}
+
 .meta {
   display: flex;
   gap: 8px;
@@ -496,6 +541,33 @@
 .iconBtnDanger {
   color: var(--danger);
   font-weight: 700;
+}
+
+/* v2: ✎/✕ viram SVG. O ✎ herdava a cor do <button> e saía em PRETO PURO — cor
+   que não existe no tema; agora vem de --text-muted. O danger mantém --danger. */
+:global(:root[data-v2]) .iconBtn,
+:global(:root[data-v2]) .iconBtnDanger,
+:global(:root[data-v2]) .clearSearch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  line-height: 0;
+}
+
+:global(:root[data-v2]) .iconBtn {
+  color: var(--text-muted);
+}
+
+:global(:root[data-v2]) .clearSearch {
+  color: var(--text-muted);
+}
+
+:global(:root[data-v2]) .iconBtn svg,
+:global(:root[data-v2]) .iconBtnDanger svg,
+:global(:root[data-v2]) .clearSearch svg {
+  width: 16px;
+  height: 16px;
 }
 
 .iconBtn:hover {

@@ -6,6 +6,7 @@ import CmvView from './CmvView';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useFatorSugestao } from '../hooks/useFatorSugestao';
+import { IS_V2 } from '../lib/v2';
 
 // Sub-seções da seção e ordem em que aparecem. A visibilidade de cada uma é por
 // usuário, controlada em Configurações (chaves precosSub* em settings/{uid};
@@ -498,7 +499,7 @@ export default function PrecosInsumosView() {
   const header = (
     <div style={headerS}>
       <h2 style={headerTitleS}>📦 Preços</h2>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={tabTrackS}>
         {SUBPAGES.filter(sp => subVisible[sp.key]).map(sp => (
           <button key={sp.key} style={tabBtnS(activeSub === sp.key)} onClick={() => setSubPage(sp.key)}>{sp.label}</button>
         ))}
@@ -2045,17 +2046,60 @@ function Campo({ label, full, children }) {
 const cadInputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box', width: '100%' };
 
 const headerS = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 0', marginBottom: 12, borderBottom: '1px solid var(--border-light, #e5e5e5)' };
-const headerTitleS = { fontSize: 18, fontWeight: 700, color: 'var(--text, #222)' };
-// Submenu no padrão do app (estilo Dia/Semana/Mês do Calendário, igual Motoboys): sem cor por aba.
-const tabBtnS = (active) => ({ padding: '5px 12px', border: `1px solid ${active ? 'var(--accent, #465fff)' : 'var(--border-light, #e5e5e5)'}`, borderRadius: 8, background: active ? 'var(--accent, #465fff)' : 'none', color: active ? '#fff' : 'var(--text-muted, #888)', fontSize: 13, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
-// Sub-abas internas do Cadastrar (Produto / Fornecedor / Planilha) — mesmo estilo do submenu.
-const subTabBtnS = (active) => ({ padding: '5px 12px', border: `1px solid ${active ? 'var(--accent, #465fff)' : 'var(--border-light, #e5e5e5)'}`, borderRadius: 8, background: active ? 'var(--accent, #465fff)' : 'none', color: active ? '#fff' : 'var(--text-muted, #888)', fontSize: 13, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
-const inputS = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', fontSize: 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
-const thS = { padding: '8px 10px', fontSize: 12, fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' };
-const tdS = { padding: '7px 10px' };
+/* ===========================================================================
+   ATENÇÃO: esta view é estilizada por OBJETOS INLINE, não por CSS module (são
+   ~264 no arquivo). Estilo inline ganha de qualquer seletor, então as camadas
+   `theme-v2.css` / `components-v2.css` NÃO alcançam nada daqui — o que vale é o
+   que está escrito abaixo. Por isso os objetos são condicionais em IS_V2.
+
+   Os valores v2 são MEDIDOS no demo (docs/tailadmin-medido.md), não deduzidos.
+   A v1 fica byte a byte como estava.
+   =========================================================================== */
+
+// Título de card no demo: 18/600 (a casa usa 18/700).
+const headerTitleS = { fontSize: 18, fontWeight: IS_V2 ? 600 : 700, color: 'var(--text, #222)' };
+
+// Track do submenu. v2: `inline-flex w-fit gap-0.5 rounded-lg bg-gray-100 p-0.5`.
+const tabTrackS = IS_V2
+  ? { display: 'inline-flex', width: 'fit-content', alignItems: 'center', gap: 2, padding: 2, borderRadius: 8, background: 'var(--seg-track)' }
+  : { display: 'flex', gap: 8, flexWrap: 'wrap' };
+
+// Segmento. v2 (medido): ativa = branca r6 8x12 14/500 + shadow-theme-xs, SEM
+// borda; inativa = transparente gray-500. A casa faz o oposto (ativa preenche
+// com accent, inativa tem borda colorida).
+const segBtnS = (active) => (IS_V2
+  ? { padding: '8px 12px', border: 'none', borderRadius: 6, background: active ? 'var(--seg-active-bg)' : 'transparent', color: active ? 'var(--seg-active-text)' : 'var(--text-muted, #888)', fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', boxShadow: active ? 'var(--shadow-xs)' : 'none', cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }
+  : { padding: '5px 12px', border: `1px solid ${active ? 'var(--accent, #465fff)' : 'var(--border-light, #e5e5e5)'}`, borderRadius: 8, background: active ? 'var(--accent, #465fff)' : 'none', color: active ? '#fff' : 'var(--text-muted, #888)', fontSize: 13, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' });
+
+const tabBtnS = segBtnS;
+// Sub-abas internas do Cadastrar (Produto / Fornecedor / Planilha) — mesmo estilo.
+const subTabBtnS = segBtnS;
+
+// Campo. v2 (medido): r8, borda gray-200, 14px.
+const inputS = { padding: '7px 10px', borderRadius: IS_V2 ? 8 : 6, border: '1px solid var(--border, #e5e5e5)', fontSize: IS_V2 ? 14 : 13, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
+
+// th. v2 (medido): 12/500 gray-500, SEM uppercase.
+const thS = { padding: '8px 10px', fontSize: 12, fontWeight: IS_V2 ? 500 : 600, color: IS_V2 ? 'var(--text-muted)' : undefined, textAlign: 'left', whiteSpace: 'nowrap' };
+
+// td. O demo usa 14/500 — e aqui NÃO dá. Esta tabela é deliberadamente densa:
+// a `<table>` roda em 13px, o nome do produto em 11px e as colunas numéricas em
+// 12px (spreads `{...tdS, fontSize: 11|12}` ao longo do arquivo). São 205
+// produtos x 8 colunas; o demo não tem tela equivalente — o "Recent Orders"
+// dele tem 4 colunas e 5 linhas.
+// Tentei subir pra 14 e o efeito foi PIOR: só as células sem override subiam,
+// deixando 11/12/14 misturados na mesma linha. Então o tamanho fica com a
+// escala densa da view (Princípio 8 da constituição) e só a cor segue o v2.
+// Divergência consciente do demo, registrada em docs/v2-progresso.md.
+const tdS = { padding: '7px 10px', color: IS_V2 ? 'var(--text)' : undefined };
 const fatorInputS = { width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid var(--border, #e5e5e5)', textAlign: 'right', fontSize: 12, background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', boxSizing: 'border-box' };
 // Dropdown de sugestão de fator (LLM), ancorado abaixo do input.
 const fatorPopS = { position: 'absolute', right: 8, top: '100%', zIndex: 20, minWidth: 190, maxWidth: 280, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card, #fff)', boxShadow: '0 4px 14px rgba(0,0,0,0.12)', fontSize: 12, textAlign: 'left', whiteSpace: 'normal' };
 const fatorSugBtnS = { display: 'block', width: '100%', padding: '4px 6px', borderRadius: 6, border: '1px solid var(--accent, #465fff)', background: 'var(--accent-light, #eef2ff)', color: 'var(--accent, #465fff)', cursor: 'pointer', fontSize: 12, textAlign: 'left' };
 const produtoPadraoSelectS = { minWidth: 140, maxWidth: 200, padding: '5px 24px 5px 8px', borderRadius: 6, border: '1px solid var(--accent, #465fff)', fontSize: 12, fontWeight: 600, background: 'var(--accent-light, #eef2ff)', color: 'var(--accent, #465fff)', cursor: 'pointer', boxSizing: 'border-box', appearance: 'auto' };
-const btnS = { padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', cursor: 'pointer', fontSize: 12 };
+// Botão outline. v2 (medido): `rounded-lg border border-gray-300 bg-white
+// px-4 py-2.5 text-theme-sm font-medium shadow-theme-xs` = r8, borda gray-300
+// (--input-border), 14/500, sombra xs. Padding fica menor que os 10x16 do demo
+// de propósito: a toolbar do Preços tem 6 abas + filtros e estouraria.
+const btnS = IS_V2
+  ? { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--card-bg, #fff)', color: 'var(--text)', cursor: 'pointer', fontSize: 14, fontWeight: 500, boxShadow: 'var(--shadow-xs)' }
+  : { padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', cursor: 'pointer', fontSize: 12 };

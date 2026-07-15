@@ -4,6 +4,9 @@ import Dashboard from './pages/Dashboard';
 import PendingApproval from './pages/PendingApproval';
 import StyleGuide from './pages/StyleGuide';
 import './styles/global.css';
+// Tema v2 (spec-kit TailAdmin). Inertes sem [data-v2] no <html> — ver index.html.
+import './styles/theme-v2.css';
+import './styles/components-v2.css';
 
 function AppContent() {
   const { user, loading, approved } = useAuth();
