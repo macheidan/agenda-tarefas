@@ -10,6 +10,7 @@ import {
   DIAS_SEMANA,
   mondayOf,
   addDaysIso,
+  isoDate,
   formatDiaCurto,
   calcMotoboySemana,
   calcResumoSemana,
@@ -98,6 +99,7 @@ export default function MotoboysView() {
 
   const fim = addDaysIso(segunda, 6);
   const diasIso = Array.from({ length: 7 }, (_, i) => addDaysIso(segunda, i));
+  const hojeIso = isoDate(new Date());
 
   const motoboys = semana?.motoboys || {};
   const listaMotoboys = Object.entries(motoboys)
@@ -343,7 +345,11 @@ export default function MotoboysView() {
             // dia não gera acréscimo nem moto-dia (padrão desmarcado = normal).
             const diaSemGar = diasIso.map((_, di) => mb.dias?.[di]?.semGarantia === true);
             const colCls = (di, extra = '') =>
-              [diaSemGar[di] ? styles.colPend : '', extra].filter(Boolean).join(' ');
+              [
+                diaSemGar[di] ? styles.colPend : '',
+                diasIso[di] === hojeIso ? styles.colHoje : '',
+                extra,
+              ].filter(Boolean).join(' ');
             return (
               <div key={mb.mid} className={styles.bloco}>
                 <div className={styles.blocoHeader} onClick={() => toggleBloco(mb.mid)}>
@@ -433,7 +439,11 @@ export default function MotoboysView() {
                                     disabled={!canEditGerente}
                                     onCommit={(v) => setCelula(mb.mid, di, ti, v)}
                                   />
-                                  {paT != null && <span className={styles.paTaxa}>/ {paT}</span>}
+                                  {paT != null && (
+                                    <span className={styles.paTaxa}>
+                                      <span className={styles.paSlash}>/ </span>{paT}
+                                    </span>
+                                  )}
                                 </td>
                               );
                             })}
@@ -443,7 +453,11 @@ export default function MotoboysView() {
                                 const totPa = diasIso.reduce(
                                   (acc, _, di) => acc + (Number(pa?.taxas?.[mb.mid]?.[di]?.[ti]) || 0), 0
                                 );
-                                return totPa ? <span className={styles.paTaxa}>/ {totPa}</span> : null;
+                                return totPa ? (
+                                  <span className={styles.paTaxa}>
+                                    <span className={styles.paSlash}>/ </span>{totPa}
+                                  </span>
+                                ) : null;
                               })()}
                             </td>
                           </tr>

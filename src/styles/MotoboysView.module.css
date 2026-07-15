@@ -442,6 +442,62 @@
 .grid th.colPend,
 .grid td.colPend { background: color-mix(in srgb, #f2c200 14%, var(--card)); }
 
+/* Coluna do dia de hoje — só pinta na v2 (ver bloco [data-v2] no fim). */
+.colHoje { background: none; }
+
+/* ===================================================================
+   v2 (TESTE): grade no estilo da DRE do Dashboard Pizzarias.
+   Valores medidos em fabiomachado.com.br/pizzas/dre — não do demo
+   TailAdmin, que diverge no `th` (ver docs/v2-progresso.md).
+   Escopado em [data-v2]: a v1 fica intacta.
+   =================================================================== */
+
+/* th: 12/600 uppercase tracking-wider gray-500 (medido: tracking .6px). */
+:global(:root[data-v2]) .diaNome {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+:global(:root[data-v2]) .diaData {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* Célula da DRE = valor 13px em cima, secundário 10px muted embaixo.
+   Aqui o secundário é a contagem da Saipos: o par "12 / 10" da v1 vira
+   coluna, então a barra some e o span quebra pra linha de baixo. */
+:global(:root[data-v2]) .paSlash { display: none; }
+
+:global(:root[data-v2]) .paTaxa {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+
+:global(:root[data-v2]) .grid td { font-variant-numeric: tabular-nums; }
+
+/* Dia de hoje = o "mês corrente" da DRE: brand/10 no th, brand/5 na célula. */
+:global(:root[data-v2]) .grid th.colHoje {
+  background: rgba(70, 95, 255, 0.1);
+  color: var(--accent);
+}
+
+:global(:root[data-v2]) .grid td.colHoje { background: rgba(70, 95, 255, 0.05); }
+
+/* Empata em especificidade com .colHoje e vem depois: dia marcado continua
+   amarelo mesmo sendo hoje. O .cellDiff usa !important e ganha dos dois. */
+:global(:root[data-v2]) .grid th.colPend,
+:global(:root[data-v2]) .grid td.colPend { background: color-mix(in srgb, #f2c200 14%, var(--card)); }
+
+/* Coluna Total: cinza (bg-muted), não o azul da v1. */
+:global(:root[data-v2]) .grid thead .totalCol { color: var(--text); }
+:global(:root[data-v2]) .grid .totalCol { background: var(--bg-secondary); }
+
 .descRow td { background: color-mix(in srgb, var(--danger) 4%, var(--card)); }
 
 .descInput {
