@@ -10,10 +10,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev       # Vite dev server
 npm run build     # production build to dist/
 npm run lint      # ESLint
-npm run deploy    # legado: publica dist/ no gh-pages (não usar — produção é Vercel)
+npm run deploy:ftp  # PRODUÇÃO: build + publica em damepizza.com.br/intranet
+npm run deploy:v2   # publica a v2 (tema TailAdmin) em /intranet/v2
+npm run deploy      # legado: gh-pages (não usar — morto)
 ```
 
-**Produção:** https://agenda-tarefas-eight.vercel.app/ — deploy automático via Vercel quando a branch padrão recebe commits. Após mudanças em UI, **mergear o PR direto** (sem pedir confirmação — usuário autorizou) pra atualizar produção. PR preview do Vercel sai automaticamente em cada push da branch. **Não** rodar `npm run deploy` (gh-pages está deprecado).
+**Produção:** https://damepizza.com.br/intranet/ — **deploy automático a cada push na `main`** pelo GitHub Action `.github/workflows/deploy-ftp.yml` (roda o mesmo `npm run deploy:ftp`, com as credenciais vindo de secrets). Conferir em `gh run list`. O `npm run deploy:ftp` local é só pra publicar fora de um push; precisa de `.env.ftp` na raiz (fora do git).
+
+⚠️ Os hashes dos assets do FTP **nunca** batem com os de `npm run build`: o FTP builda com `--base=/intranet/`, o que muda o hash. Comparar os dois pra concluir que "o FTP está velho" é erro garantido — use `gh run list` pra saber se publicou.
+
+**A Vercel foi aposentada em 2026-07-15.** O projeto `agenda-tarefas` ainda existe, mas só serve um **redirect 307** pra `damepizza.com.br/intranet` (ver `vercel.json`) — quem tem o link antigo salvo cai na nova sem quebrar. É 307 e não 308 de propósito: 308 fica cacheado no browser e seria difícil de reverter. Para voltar atrás: apagar `vercel.json` e publicar.
 
 ## Environment
 
