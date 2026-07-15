@@ -3,124 +3,126 @@
  * importSurveys.mjs — importa as pesquisas de satisfação (NPS) do Delivery
  * Direto para a coleção `surveys` do Firestore, que a SurveysView lê.
  *
- * Ponte Delivery Direto → Firestore. Usa Playwright porque o admin do DD é uma
- * SPA: o login é feito em JS e os endpoints rejeitam POST direto (403 CSRF/WAF).
- * O script deixa a própria página resolver o slug da pesquisa (`pesquisa-14`)
- * para o id numérico (`14735`) e intercepta a resposta de `/surveys/N/answers`,
- * então a config abaixo precisa só da URL que aparece no navegador.
+ * Login e credenciais reaproveitados do projeto irmão `caixas-conferencia`
+ * (coletores/stripe_dd.py), que já faz isso em produção: mesmos seletores,
+ * mesmo .env. NÃO duplicar credencial aqui — a fonte da verdade é
+ * C:\claude_project\Pizzarias\KPI\.env (DAME_EMAIL/DAME_PASSWORD,
+ * LOV_EMAIL/LOV_PASSWORD). Cada loja é uma CONTA diferente do DD, por isso
+ * cada uma roda num contexto de browser isolado.
+ *
+ * Playwright (e não fetch) porque o admin do DD é uma SPA e os endpoints de
+ * auth rejeitam POST direto com 403 (CSRF/WAF). O id numérico da pesquisa
+ * (14735) não sai do slug (`pesquisa-14`) nem do HTML, então o script deixa a
+ * própria página resolver e intercepta a resposta de `/surveys/N/answers`.
  *
  * Escrita idempotente: id do doc = `dd_<brand>_<survey_hash>`, com merge.
  * Rodar de novo nunca duplica.
  *
  * Uso:
- *   node scripts/importSurveys.mjs [--dry] [--headed]
+ *   node scripts/importSurveys.mjs [--dry] [--headed] [--loja DAME|LOV]
  *
- *   --dry     → mostra o que faria, sem escrever no Firestore
- *   --headed  → abre o browser (útil pra depurar login/2FA)
- *
- * Pré-requisitos:
- *   1. npm i -D playwright && npx playwright install chromium
- *   2. .env na raiz com DD_EMAIL e DD_PASSWORD (o .env já está no .gitignore —
- *      NUNCA commitar credencial)
- *   3. serviceAccount.json na raiz (ou GOOGLE_APPLICATION_CREDENTIALS)
- *
- * Se a conta do DD tiver 2FA ativo, o login headless falha por definição — o
- * script avisa e você precisa desativar o 2FA dessa conta ou trocar para uma
- * conta de serviço sem 2FA.
+ * Pré-requisitos: npx playwright install chromium · serviceAccount.json na raiz.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
+/** Mesma fonte de credenciais do caixas-conferencia (coletores/stripe_dd.py). */
+const KPI_ENV = 'C:\\claude_project\\Pizzarias\\KPI\\.env';
+
+const SIGNIN = 'https://deliverydireto.com.br/admin/signin';
+const ANSWERS_RE = /\/surveys\/\d+\/answers/;
+
 /**
- * Lojas a importar. `surveyUrl` é a URL da pesquisa como ela aparece no admin.
- * Para achar a da Lov: admin do DD da loja → Clientes → Pesquisa de satisfação.
+ * Uma entrada por loja. `surveyPath` é a URL da pesquisa como aparece no admin
+ * (Clientes → Pesquisa de satisfação → Ver resultados).
  */
 const STORES = [
   {
+    loja: 'DAME',
     brand: 'dame',
     storeName: 'DAME PIZZA',
-    surveyUrl: 'https://deliverydireto.com.br/admin/portoalegre/mepizzas/surveys/pesquisa-14',
+    surveyPath: '/admin/portoalegre/mepizzas/surveys/pesquisa-14',
   },
-  // TODO(Fábio): a conta machadofabio@gmail.com só enxerga a DAME PIZZA — não há
-  // troca de loja no admin. Para trazer a Lov, adicione aqui a URL da pesquisa
-  // dela. Se a Lov usar OUTRO login do DD, coloque as credenciais em
-  // DD_EMAIL_LOV / DD_PASSWORD_LOV e preencha `credentials: 'lov'` abaixo.
+  // TODO(Fábio): falta a URL da pesquisa da Lov. O slug da loja é
+  // `lovpizza/lovpizza` (confirmado em caixas-conferencia/coletores/dd_stats.py)
+  // e as credenciais LOV_* já existem no KPI/.env — só falta o `pesquisa-N`.
   // {
+  //   loja: 'LOV',
   //   brand: 'lov',
   //   storeName: 'LOV PIZZA',
-  //   surveyUrl: 'https://deliverydireto.com.br/admin/<marca>/<loja>/surveys/pesquisa-N',
-  //   credentials: 'lov',
+  //   surveyPath: '/admin/lovpizza/lovpizza/surveys/pesquisa-N',
   // },
 ];
-
-const SIGNIN_URL = 'https://deliverydireto.com.br/admin/signin';
-const ANSWERS_RE = /\/surveys\/\d+\/answers/;
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
 const HEADED = args.includes('--headed');
+const only = args.includes('--loja') ? args[args.indexOf('--loja') + 1]?.toUpperCase() : null;
 
-function loadEnv() {
-  // .env simples (KEY=VALUE), sem dependência extra.
-  if (!existsSync('.env')) return;
-  for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
-    const m = line.match(/^\s*([\w.-]+)\s*=\s*(.*)\s*$/);
+/** Lê o .env do KPI sem depender de dotenv. Os valores nunca são logados. */
+function readEnvFile(path) {
+  const out = {};
+  if (!existsSync(path)) return out;
+  for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^\s*([\w.-]+)\s*=\s*(.*?)\s*$/);
     if (!m) continue;
-    const key = m[1];
-    let value = m[2].trim();
+    let value = m[2];
     if (/^(['"]).*\1$/.test(value)) value = value.slice(1, -1);
-    if (!(key in process.env)) process.env[key] = value;
+    out[m[1]] = value;
   }
+  return out;
 }
 
-function credentialsFor(store) {
-  const suffix = store.credentials ? `_${store.credentials.toUpperCase()}` : '';
-  const email = process.env[`DD_EMAIL${suffix}`];
-  const password = process.env[`DD_PASSWORD${suffix}`];
+function credentialsFor(loja, env) {
+  const email = env[`${loja}_EMAIL`];
+  const password = env[`${loja}_PASSWORD`];
   if (!email || !password) {
-    throw new Error(
-      `Faltam DD_EMAIL${suffix} / DD_PASSWORD${suffix} no .env (loja ${store.storeName}).`
-    );
+    throw new Error(`credenciais ${loja}_* não encontradas em ${KPI_ENV}`);
   }
   return { email, password };
 }
 
-async function login(page, { email, password }) {
-  await page.goto(SIGNIN_URL, { waitUntil: 'domcontentloaded' });
+/** Login no DD — mesmos seletores do caixas-conferencia (stripe_dd.py::_login). */
+async function login(page, { email, password }, loja) {
+  await page.goto(SIGNIN, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForTimeout(3000);
 
-  // Já logado (sessão reaproveitada): o DD redireciona para /pedidos.
-  if (!/\/admin\/signin/.test(page.url())) return;
+  if (!page.url().includes('signin')) return; // sessão já ativa
 
-  const emailField = page.locator('input[type="email"], input[name="email"]').first();
-  const passField = page.locator('input[type="password"], input[name="password"]').first();
-
-  await emailField.waitFor({ state: 'visible', timeout: 20000 });
-  await emailField.fill(email);
-  await passField.fill(password);
-  await passField.press('Enter');
-
-  await page.waitForURL((u) => !/\/admin\/signin/.test(String(u)), { timeout: 30000 }).catch(() => {
-    throw new Error(
-      'Login no Delivery Direto não completou. Causas prováveis: credencial errada, ' +
-        '2FA ativo na conta, ou o DD mudou a tela de login. Rode com --headed para ver.'
-    );
-  });
+  await page.click('.adopt-c-Imbrw', { timeout: 2000 }).catch(() => {}); // banner cookies
+  await page.fill('input#email', email);
+  await page.fill('input#password', password);
+  await page.click('.js-signin-btn');
+  await page
+    .waitForURL((u) => !String(u).includes('signin'), { timeout: 30000 })
+    .catch(() => {
+      throw new Error(
+        `login no DD não completou (${loja}). Confira ${loja}_EMAIL/${loja}_PASSWORD ` +
+          `em ${KPI_ENV}, ou rode com --headed para ver a tela.`
+      );
+    });
+  await page.waitForTimeout(2000);
 }
 
 /** Carrega a página da pesquisa e captura o JSON que ela mesma busca. */
-async function fetchAnswers(page, surveyUrl) {
+async function fetchAnswers(page, surveyPath) {
   const waitForAnswers = page.waitForResponse(
     (r) => ANSWERS_RE.test(r.url()) && r.status() === 200,
-    { timeout: 30000 }
+    { timeout: 40000 }
   );
-  await page.goto(surveyUrl, { waitUntil: 'domcontentloaded' });
+  await page.goto(`https://deliverydireto.com.br${surveyPath}`, {
+    waitUntil: 'domcontentloaded',
+    timeout: 60000,
+  });
   const response = await waitForAnswers.catch(() => {
-    throw new Error(`Não veio resposta de /surveys/N/answers em ${surveyUrl}`);
+    throw new Error(
+      `não veio resposta de /surveys/N/answers em ${surveyPath} — a pesquisa existe nessa loja?`
+    );
   });
   const body = await response.json();
   if (body?.status !== 'success' || !body?.data?.questions) {
-    throw new Error(`Resposta inesperada do DD em ${surveyUrl}: ${JSON.stringify(body).slice(0, 200)}`);
+    throw new Error(`resposta inesperada do DD em ${surveyPath}`);
   }
   return body.data.questions;
 }
@@ -170,28 +172,25 @@ function groupRespondents(questions, store) {
     }
   }
 
-  return [...byHash.values()].map((entry) => {
-    const { _respondedAt, ...rest } = entry;
-    return {
-      ...rest,
-      respondedAt: _respondedAt ? Timestamp.fromDate(new Date(_respondedAt)) : null,
-    };
-  });
+  return [...byHash.values()].map(({ _respondedAt, ...rest }) => ({
+    ...rest,
+    respondedAt: _respondedAt ? Timestamp.fromDate(new Date(_respondedAt)) : null,
+  }));
 }
 
 async function main() {
-  loadEnv();
+  const env = readEnvFile(KPI_ENV);
+  const stores = only ? STORES.filter((s) => s.loja === only) : STORES;
+  if (stores.length === 0) {
+    console.error(only ? `loja ${only} não configurada em STORES.` : 'nenhuma loja configurada.');
+    process.exit(1);
+  }
 
   let chromium;
   try {
     ({ chromium } = await import('playwright'));
   } catch {
-    console.error('Playwright não instalado. Rode: npm i -D playwright && npx playwright install chromium');
-    process.exit(1);
-  }
-
-  if (STORES.length === 0) {
-    console.error('Nenhuma loja configurada em STORES.');
+    console.error('Playwright não instalado: npm i -D playwright && npx playwright install chromium');
     process.exit(1);
   }
 
@@ -212,53 +211,49 @@ async function main() {
   let total = 0;
 
   try {
-    // Uma sessão por conjunto de credenciais (lojas do mesmo login reaproveitam).
-    const contexts = new Map();
-
-    for (const store of STORES) {
-      const credKey = store.credentials || 'default';
-      if (!contexts.has(credKey)) {
-        const context = await browser.newContext();
+    for (const store of stores) {
+      // Contexto isolado por loja: cada uma é uma conta distinta do DD, então
+      // os cookies não podem vazar de uma pra outra.
+      const context = await browser.newContext();
+      try {
         const page = await context.newPage();
-        await login(page, credentialsFor(store));
-        contexts.set(credKey, page);
-        console.log(`Login OK (${credKey}).`);
-      }
-      const page = contexts.get(credKey);
+        await login(page, credentialsFor(store.loja, env), store.loja);
 
-      const questions = await fetchAnswers(page, store.surveyUrl);
-      const respondents = groupRespondents(questions, store);
-      console.log(
-        `${store.storeName}: ${respondents.length} respondentes ` +
-          `(${respondents.filter((r) => r.answers.length).length} com comentário).`
-      );
-
-      if (DRY) {
-        const worst = [...respondents].sort((a, b) => (a.nota ?? 99) - (b.nota ?? 99)).slice(0, 3);
-        for (const r of worst) {
-          console.log(`  nota ${r.nota} · ${r.customerName} · pedido ${r.orderId}`);
-        }
-        total += respondents.length;
-        continue;
-      }
-
-      let batch = db.batch();
-      let pending = 0;
-      for (const r of respondents) {
-        batch.set(
-          db.collection('surveys').doc(`dd_${store.brand}_${r.hash}`),
-          { ...r, importedAt: Timestamp.now() },
-          { merge: true }
+        const questions = await fetchAnswers(page, store.surveyPath);
+        const respondents = groupRespondents(questions, store);
+        const comComentario = respondents.filter((r) => r.answers.length).length;
+        const detratores = respondents.filter((r) => r.nota <= 6).length;
+        console.log(
+          `${store.storeName}: ${respondents.length} respondentes · ` +
+            `${comComentario} com comentário · ${detratores} detratores`
         );
-        pending += 1;
-        if (pending === 400) {
-          await batch.commit();
-          batch = db.batch();
-          pending = 0;
+
+        if (DRY) {
+          const piores = [...respondents].sort((a, b) => (a.nota ?? 99) - (b.nota ?? 99)).slice(0, 3);
+          for (const r of piores) console.log(`  nota ${r.nota} · ${r.customerName} · pedido ${r.orderId}`);
+          total += respondents.length;
+          continue;
         }
+
+        let batch = db.batch();
+        let pending = 0;
+        for (const r of respondents) {
+          batch.set(
+            db.collection('surveys').doc(`dd_${store.brand}_${r.hash}`),
+            { ...r, importedAt: Timestamp.now() },
+            { merge: true }
+          );
+          if (++pending === 400) {
+            await batch.commit();
+            batch = db.batch();
+            pending = 0;
+          }
+        }
+        if (pending > 0) await batch.commit();
+        total += respondents.length;
+      } finally {
+        await context.close();
       }
-      if (pending > 0) await batch.commit();
-      total += respondents.length;
     }
   } finally {
     await browser.close();
