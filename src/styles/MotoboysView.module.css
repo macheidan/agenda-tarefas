@@ -374,8 +374,22 @@
   color: var(--text-secondary);
 }
 
-.diaNome { display: block; font-size: 12px; }
-.diaData { display: block; font-size: 11px; font-weight: 400; }
+/* Cabeçalho do dia no estilo da DRE (fabiomachado.com.br/pizzas/dre, medido):
+   nome 12/600 uppercase tracking .6px + data 10/400 em cinza. */
+.diaNome {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.diaData {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
 
 .stickyCol {
   position: sticky;
@@ -391,8 +405,9 @@
 .taxaLabel { display: block; font-weight: 600; font-size: 13px; }
 .taxaValor { display: block; font-size: 11px; color: var(--text-secondary); }
 
+/* Coluna Total = cinza (bg-muted da DRE), não o azul que a grade usava antes. */
 .totalCol {
-  background: color-mix(in srgb, var(--accent) 7%, var(--card));
+  background: var(--bg-secondary);
   font-weight: 700;
 }
 
@@ -411,11 +426,16 @@
 .qtdInput:focus { border-color: var(--accent); outline: none; background: var(--card); }
 .qtdInput:disabled { color: var(--text); opacity: 1; }
 
-/* Valor importado do Saipos ao lado do lançamento da gerente: NN/NN.
-   Mesmo tamanho do .qtdInput para os dois números lerem como um par. */
+/* Contagem da Saipos EMBAIXO do lançamento da gerente — a célula de dois níveis
+   da DRE (valor 13px em cima, secundário 10px embaixo). O `/` do par "12 / 10"
+   vira um span próprio e some; o azul distingue o importado do digitado. */
+.paSlash { display: none; }
+
 .paTaxa {
-  font-size: 13px;
+  display: block;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 1.2;
   color: var(--accent);
   white-space: nowrap;
 }
@@ -439,64 +459,24 @@
 
 /* Dia não confirmado: coluna inteira em amarelo claro (sem acréscimo/moto-dia).
    Seletor com th/td para vencer os fundos por linha (.descRow td, .calcRow td…). */
-.grid th.colPend,
-.grid td.colPend { background: color-mix(in srgb, #f2c200 14%, var(--card)); }
-
-/* Coluna do dia de hoje — só pinta na v2 (ver bloco [data-v2] no fim). */
-.colHoje { background: none; }
-
-/* ===================================================================
-   v2 (TESTE): grade no estilo da DRE do Dashboard Pizzarias.
-   Valores medidos em fabiomachado.com.br/pizzas/dre — não do demo
-   TailAdmin, que diverge no `th` (ver docs/v2-progresso.md).
-   Escopado em [data-v2]: a v1 fica intacta.
-   =================================================================== */
-
-/* th: 12/600 uppercase tracking-wider gray-500 (medido: tracking .6px). */
-:global(:root[data-v2]) .diaNome {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-:global(:root[data-v2]) .diaData {
-  font-size: 10px;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-/* Célula da DRE = valor 13px em cima, secundário 10px muted embaixo.
-   Aqui o secundário é a contagem da Saipos: o par "12 / 10" da v1 vira
-   coluna, então a barra some e o span quebra pra linha de baixo. */
-:global(:root[data-v2]) .paSlash { display: none; }
-
-:global(:root[data-v2]) .paTaxa {
-  display: block;
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 1.2;
-  color: var(--text-muted);
-}
-
-:global(:root[data-v2]) .grid td { font-variant-numeric: tabular-nums; }
+.grid td { font-variant-numeric: tabular-nums; }
 
 /* Dia de hoje = o "mês corrente" da DRE: brand/10 no th, brand/5 na célula. */
-:global(:root[data-v2]) .grid th.colHoje {
-  background: rgba(70, 95, 255, 0.1);
+.grid th.colHoje {
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
   color: var(--accent);
 }
 
-:global(:root[data-v2]) .grid td.colHoje { background: rgba(70, 95, 255, 0.05); }
+.grid td.colHoje { background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
 
-/* Empata em especificidade com .colHoje e vem depois: dia marcado continua
-   amarelo mesmo sendo hoje. O .cellDiff usa !important e ganha dos dois. */
-:global(:root[data-v2]) .grid th.colPend,
-:global(:root[data-v2]) .grid td.colPend { background: color-mix(in srgb, #f2c200 14%, var(--card)); }
+/* Lançado ≠ Saipos naquela taxa: mesmo amarelo do badge "NN entregas". */
+.grid td.cellTaxaDiff { background: color-mix(in srgb, #f2c200 22%, var(--card)); }
 
-/* Coluna Total: cinza (bg-muted), não o azul da v1. */
-:global(:root[data-v2]) .grid thead .totalCol { color: var(--text); }
-:global(:root[data-v2]) .grid .totalCol { background: var(--bg-secondary); }
+/* As três regras abaixo empatam em especificidade com .colHoje/.cellTaxaDiff e
+   vêm depois no arquivo — é a ordem que decide. Dia marcado como exceção
+   continua amarelo mesmo sendo hoje; .cellDiff usa !important e ganha de todos. */
+.grid th.colPend,
+.grid td.colPend { background: color-mix(in srgb, #f2c200 14%, var(--card)); }
 
 .descRow td { background: color-mix(in srgb, var(--danger) 4%, var(--card)); }
 
@@ -957,6 +937,5 @@
   .headerActions { width: 100%; }
   .headerActions button { flex: 1 1 auto; min-height: 38px; }
   .qtdInput, .descInput, .addInput, .extraJust, .extraQtd { font-size: 16px; }
-  .paTaxa { font-size: 16px; }
   .importLine { margin-left: 0; }
 }

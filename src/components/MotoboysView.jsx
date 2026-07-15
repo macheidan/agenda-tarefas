@@ -326,20 +326,22 @@ export default function MotoboysView() {
             const totDiff = r.total.qtd - totPa - totEx;
             const aberto = expandidos.has(mb.mid);
             const temDiffBloco = compCells.some((c) => c.diff !== 0 && (c.pg || c.paQ));
-            // Taxas trocadas entre si: alguma célula (dia × taxa) diverge do
-            // Saipos + extras, mas a soma da semana fecha. Sinaliza em amarelo —
-            // o valor a receber pode mudar mesmo com a contagem batendo.
+            // Comparação taxa a taxa (lançado × Saipos + extras). Só vale quando
+            // a Saipos trouxe o detalhe por taxa deste motoboy — sem isso, tudo
+            // "divergiria" contra zero. `diffTaxaCel` pinta a célula; o badge usa
+            // a MESMA conta, então os dois nunca discordam.
             const exTaxaDias = extrasPorMidDiaTaxa[mb.mid] || {};
+            const taxasPa = canViewAdm ? pa?.taxas?.[mb.mid] : null;
+            const diffTaxaCel = (di, ti) => {
+              if (!taxasPa) return false;
+              const pg = Number(mb.dias?.[di]?.t?.[ti]) || 0;
+              const paT = Number(taxasPa?.[di]?.[ti]) || 0;
+              return pg !== paT + (exTaxaDias[di]?.[ti] || 0);
+            };
+            // Taxas trocadas entre si: alguma célula diverge, mas a soma fecha —
+            // o valor a receber muda mesmo com a contagem batendo.
             const temDiffTaxa =
-              canViewAdm &&
-              taxas.some((_, ti) =>
-                diasIso.some((_, di) => {
-                  const pg = Number(mb.dias?.[di]?.t?.[ti]) || 0;
-                  const paT = Number(pa?.taxas?.[mb.mid]?.[di]?.[ti]) || 0;
-                  const ex = exTaxaDias[di]?.[ti] || 0;
-                  return pg !== paT + ex;
-                })
-              );
+              !!taxasPa && taxas.some((_, ti) => diasIso.some((_, di) => diffTaxaCel(di, ti)));
             const diffSoNasTaxas = temDiffTaxa && totDiff === 0 && (r.total.qtd || totPa);
             // Checkbox de exceção do dia: marcado, a coluna fica amarela e o
             // dia não gera acréscimo nem moto-dia (padrão desmarcado = normal).
@@ -433,7 +435,11 @@ export default function MotoboysView() {
                             {diasIso.map((d, di) => {
                               const paT = canViewAdm ? pa?.taxas?.[mb.mid]?.[di]?.[ti] : null;
                               return (
-                                <td key={d} className={colCls(di)}>
+                                <td
+                                  key={d}
+                                  className={colCls(di, diffTaxaCel(di, ti) ? styles.cellTaxaDiff : '')}
+                                  title={diffTaxaCel(di, ti) ? 'Lançado diferente da Saipos nesta taxa' : undefined}
+                                >
                                   <QtdInput
                                     value={mb.dias?.[di]?.t?.[ti] ?? null}
                                     disabled={!canEditGerente}
