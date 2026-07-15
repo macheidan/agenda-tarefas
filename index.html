@@ -22,10 +22,11 @@
           var theme = stored || (prefersDark ? 'dark' : 'light');
           if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
         } catch (e) {}
-        // Tema v2 (spec-kit TailAdmin): liga em /intranet/v2 e, em dev, com ?v2=1.
-        // Precisa rodar antes do paint pra não piscar o tema antigo.
+        // Tema v2 (spec-kit TailAdmin) é o TITULAR desde 2026-07-15: liga em
+        // qualquer URL. `?v1=1` volta pro shell antigo — escape de emergência
+        // que não precisa de deploy. Precisa rodar antes do paint pra não piscar.
         try {
-          if (/\/intranet\/v2(\/|$)/.test(location.pathname) || location.search.indexOf('v2=1') !== -1) {
+          if (location.search.indexOf('v1=1') === -1) {
             document.documentElement.setAttribute('data-v2', '');
           }
         } catch (e) {}
