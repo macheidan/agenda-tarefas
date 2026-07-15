@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useCompras } from '../hooks/useCompras';
+import { Icon } from './icons';
+import { IS_V2 } from '../lib/v2';
 import styles from '../styles/ComprasView.module.css';
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
@@ -145,7 +147,9 @@ export default function ComprasView() {
           />
           {canEdit && (
             <>
-              <button className={styles.iconBtn} onClick={() => openEdit(item)} title="Editar item">✎</button>
+              <button className={styles.iconBtn} onClick={() => openEdit(item)} title="Editar item">
+                {IS_V2 ? <Icon k="pencil" /> : '✎'}
+              </button>
               <button
                 className={styles.iconBtnDanger}
                 onClick={() => {
@@ -155,7 +159,7 @@ export default function ComprasView() {
                 }}
                 title="Apagar item"
               >
-                ✕
+                {IS_V2 ? <Icon k="trash" /> : '✕'}
               </button>
             </>
           )}
@@ -302,7 +306,9 @@ export default function ComprasView() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>🛒 Compras</h2>
+        {/* v2: o emoji vira SVG que herda currentColor (segue tema e cor);
+            na v1 o título continua exatamente "🛒 Compras". */}
+        <h2>{IS_V2 ? <><span className={styles.titleIcon}><Icon k="cart" /></span>Compras</> : '🛒 Compras'}</h2>
         {fornecedores.length > 0 && (
           <div className={styles.headerActions}>
             {canEdit && activeFornec && (
@@ -325,7 +331,7 @@ export default function ComprasView() {
 
       {fornecedores.length > 0 && (
         <div className={styles.searchRow}>
-          <span className={styles.searchIcon}>🔎</span>
+          <span className={styles.searchIcon}>{IS_V2 ? <Icon k="search" /> : '🔎'}</span>
           <input
             className={styles.searchInput}
             type="text"
@@ -335,7 +341,7 @@ export default function ComprasView() {
           />
           {searching && (
             <button className={styles.clearSearch} onClick={() => setQuery('')} title="Limpar busca">
-              ✕
+              {IS_V2 ? <Icon k="x" /> : '✕'}
             </button>
           )}
         </div>

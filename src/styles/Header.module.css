@@ -300,24 +300,6 @@
   75% { transform: rotate(-10deg); }
 }
 
-.sirenBadge {
-  margin-left: 4px;
-  font-size: 14px;
-  display: inline-block;
-  animation: sirenPulse 1s ease-in-out infinite;
-}
-
-@keyframes sirenPulse {
-  0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(229, 57, 53, 0));
-  }
-  50% {
-    transform: scale(1.15);
-    filter: drop-shadow(0 0 4px rgba(229, 57, 53, 0.85));
-  }
-}
-
 @media (max-width: 768px) {
   /* No mobile o menu do topo some — a navegação vira a barra inferior (BottomNav) */
   .tabs {

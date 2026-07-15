@@ -88,3 +88,31 @@
   color: var(--text-muted);
   font-size: 14px;
 }
+
+/* ===== v2 (AppShellV2) =====
+   O shell já provê o padding (16/24px) e o max-width (1536px) da área de
+   conteúdo, e no mobile usa drawer em vez de BottomNav. Então o .main abre mão
+   do padding, do teto de 1200px e da reserva pra barra inferior. Precisa vir no
+   FIM do arquivo: mesma especificidade do .main, quem ganha é a ordem. */
+.mainV2 {
+  padding: 0;
+  max-width: none;
+}
+
+@media (max-width: 768px) {
+  .mainV2 {
+    padding: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .mainV2 {
+    padding: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .mainV2 {
+    padding: 0;
+  }
+}

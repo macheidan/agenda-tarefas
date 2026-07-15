@@ -1,0 +1,374 @@
+/* AppShell da v2 — port do 02-layout.md do spec-kit (TailAdmin).
+   Sidebar 290px fixa + topbar 72px sticky + área de conteúdo.
+   Cores/raios vêm das vars, que no /v2 são os tokens TailAdmin (theme-v2.css). */
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* ===== Sidebar ===== */
+/* 240px: o demo usa 290px (w-[290px]), mas aqui os rótulos são curtos — o mais
+   longo é "Depto Pessoal" — e 290 sobrava espaço à toa. Divergência
+   deliberada do demo, a pedido do Fábio. */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Logo — h 72px, casa com a altura da topbar */
+.logo {
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+}
+
+.logoMark {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  /* gradiente das marcas: Dáme (#A50000) → brand → Lov (#EC4899) */
+  background: linear-gradient(135deg, #a50000 0%, var(--accent) 50%, #ec4899 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.nav {
+  padding: 0 16px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Label de seção — medido no demo: `text-xs leading-[20px] text-gray-400
+   uppercase mb-4` = 12/400, uppercase, SEM tracking, gray-400.
+   (O kit de segunda mão dizia semibold + tracking-wider; errado.) */
+.navGroupLabel {
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: normal;
+  color: var(--nav-label);
+  padding: 16px 12px 8px;
+}
+
+/* Item de menu — medido no demo: 14/500, radius 8px, padding 10px 12px.
+   Inativo: gray-700 (o kit dizia muted/gray-500; o demo é mais escuro). */
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  background: none;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nav-item);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navItem:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+/* Ativo — medido no demo: bg #ecf3ff, texto #465fff, peso 500 (não 600). */
+.navItemActive,
+.navItemActive:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.navIcon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.navIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.navLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Badge de contagem — chip rounded-full ml-auto */
+.navBadge {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--text-secondary);
+}
+
+.navBadgeAlert {
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ===== Coluna principal ===== */
+.mainCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Topbar — sticky h-72 border-b bg/80 backdrop-blur ===== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+@media (min-width: 769px) {
+  .topbar { padding: 0 24px; }
+}
+
+.topbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hamburger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.hamburger:hover { background: var(--card-hover); }
+
+.userSelect {
+  padding: 8px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 14px;
+  max-width: 190px;
+  cursor: pointer;
+}
+
+.userSelect:focus {
+  outline: none;
+  border-color: var(--input-focus);
+}
+
+/* Botão circular do topbar (tema, sino) — h-11 w-11 rounded-full border */
+.iconBtn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.iconBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.iconBtnSelected {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bellCount {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Avatar + dropdown ===== */
+.avatarMenu { position: relative; }
+
+.avatarBtn {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid var(--border);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  z-index: 40;
+}
+
+.dropdownHeader {
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+/* ===== Conteúdo — flex-1 overflow-auto p-4 md:p-6 ===== */
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+}
+
+@media (min-width: 769px) {
+  .content { padding: 24px; }
+}
+
+.contentInner {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1536px; /* max-w-screen-2xl */
+}
+
+/* ===== Mobile: sidebar vira drawer ===== */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .hamburger { display: flex; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebarOpen { transform: translateX(0); }
+  .overlayOpen { display: block; }
+
+  .userSelect { max-width: 120px; }
+
+  /* Toque confortável sem estourar a topbar no mobile */
+  .iconBtn { width: 40px; height: 40px; }
+}

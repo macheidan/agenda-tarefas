@@ -11,7 +11,10 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "build:ftp": "vite build --base=/intranet/",
-    "deploy:ftp": "node scripts/deploy-ftp.mjs"
+    "deploy:ftp": "node scripts/deploy-ftp.mjs",
+    "build:v2": "vite build --base=/intranet/v2/",
+    "deploy:v2": "node scripts/deploy-ftp.mjs --v2",
+    "import:surveys": "node scripts/importSurveys.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -30,15 +33,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "basic-ftp": "^5.0.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "basic-ftp": "^5.0.5",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "firebase-admin": "^14.1.0",
     "globals": "^17.4.0",
+    "playwright": "^1.61.1",
     "vite": "^8.0.1"
   }
 }

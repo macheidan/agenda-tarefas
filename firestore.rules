@@ -113,11 +113,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Avaliações: qualquer logado lê e cria, admin pode tudo
+    // Avaliações internas (admin → funcionário): seção substituída pelas
+    // pesquisas do Delivery Direto (surveys). Sem tela desde 2026-07-15; as
+    // regras ficam só para não perder o acesso aos dados históricos.
     match /reviews/{reviewId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin();
+    }
+
+    // Avaliações (aba "Avaliações"): pesquisas de satisfação do Delivery Direto.
+    // Somente leitura no cliente — quem escreve é scripts/importSurveys.mjs pelo
+    // Admin SDK, que ignora estas regras.
+    match /surveys/{surveyId} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
 
     // Mensagens admin: qualquer logado lê; admin cria/deleta;

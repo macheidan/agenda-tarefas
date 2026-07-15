@@ -1,12 +1,37 @@
 import { Fragment, useState, useMemo } from 'react';
 import { useCmv } from '../hooks/useCmv';
+import { IS_V2 } from '../lib/v2';
 
 // ── Estilos locais (mesmo tema por CSS vars da intranet) ────────────────────
-const inputS = { padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', fontSize: 13 };
-const btnS = { padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', cursor: 'pointer', fontSize: 13 };
-const thS = { textAlign: 'left', padding: '6px 8px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' };
+/* Como o PrecosInsumosView, esta view é estilizada por objetos INLINE (95 no
+   arquivo) — as camadas theme-v2/components-v2 NÃO a alcançam. Valores v2
+   medidos no demo (docs/tailadmin-medido.md); a v1 fica como estava. */
+
+const inputS = { padding: '6px 8px', borderRadius: IS_V2 ? 8 : 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', fontSize: 13 };
+
+// Botão outline. v2 (medido): r8, borda gray-300 (--input-border), 14/500,
+// shadow-theme-xs.
+const btnS = IS_V2
+  ? { padding: '6px 12px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', cursor: 'pointer', fontSize: 14, fontWeight: 500, boxShadow: 'var(--shadow-xs)' }
+  : { padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border, #e5e5e5)', background: 'var(--card-bg, #fff)', color: 'var(--text, #222)', cursor: 'pointer', fontSize: 13 };
+
+// Track + segmento das abas Beneficiados/Sabores (mesmo padrão do Preços).
+const tabTrackS = IS_V2
+  ? { display: 'inline-flex', width: 'fit-content', alignItems: 'center', gap: 2, padding: 2, borderRadius: 8, background: 'var(--seg-track)' }
+  : { display: 'contents' };
+
+const segBtnS = (active) => ({ padding: '8px 12px', border: 'none', borderRadius: 6, background: active ? 'var(--seg-active-bg)' : 'transparent', color: active ? 'var(--seg-active-text)' : 'var(--text-muted, #888)', fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', boxShadow: active ? 'var(--shadow-xs)' : 'none', cursor: 'pointer' });
+
+// th. v2 (medido): 12/500 gray-500 (a casa usa 11/600).
+const thS = { textAlign: 'left', padding: '6px 8px', fontSize: IS_V2 ? 12 : 11, color: 'var(--text-muted)', fontWeight: IS_V2 ? 500 : 600, whiteSpace: 'nowrap' };
+
+// td: fica em 12px. Mesma razão do Preços — tabela densa de ficha técnica, o
+// demo não tem equivalente. Ver docs/v2-progresso.md.
 const tdS = { padding: '5px 8px', fontSize: 12, color: 'var(--text, #222)' };
-const cardS = { background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', padding: 12, marginBottom: 12 };
+
+// Painel dentro do cartão da view. Demo §1: não aninhar card em card — usar
+// painel `rounded-xl` (12px). A casa usa 8px.
+const cardS = { background: 'var(--card-bg, #fff)', borderRadius: IS_V2 ? 12 : 8, border: '1px solid var(--border, #e5e5e5)', padding: 12, marginBottom: 12 };
 // Ficha aberta dentro da linha do resumo (fundo recuado pra separar do restante da tabela).
 const fichaS = { background: 'var(--bg-secondary, #fafafa)', padding: '10px 12px 12px', borderLeft: '2px solid var(--accent)' };
 const SIZES = [['qtdP', 'Pequena'], ['qtdM', 'Média'], ['qtdG', 'Grande'], ['qtdS', 'Super']];
@@ -109,8 +134,13 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
     <div>
       <style>{rowHoverCss}</style>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button style={{ ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({beneficiados.length})</button>
-        <button style={{ ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({sabores.length})</button>
+        {/* Na v2 este div é o track do segmented control; na v1 usa
+            `display:contents`, então os 2 botões seguem filhos diretos do flex
+            de cima — layout idêntico ao de antes. */}
+        <div style={tabTrackS}>
+          <button style={IS_V2 ? segBtnS(aba === 'beneficiados') : { ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({beneficiados.length})</button>
+          <button style={IS_V2 ? segBtnS(aba === 'sabores') : { ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({sabores.length})</button>
+        </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text, #222)' }} title="Abre ou fecha as fichas de todos os itens da aba. Cada linha também abre pela seta.">
           <input type="checkbox" checked={todosAbertos} onChange={e => setAbertos(e.target.checked ? new Set(idsAba) : new Set())} /> Expandir tudo
         </label>

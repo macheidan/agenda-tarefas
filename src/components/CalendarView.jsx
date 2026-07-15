@@ -147,24 +147,28 @@ export default function CalendarView({ tasks, onDateClick, onTaskClick }) {
         <div className={styles.toolbarRight}>
           <button className={styles.navBtn} onClick={handlePrev}>‹</button>
           <button className={styles.navBtn} onClick={handleNext}>›</button>
-          <button
-            className={`${styles.viewBtn} ${currentView === 'dayGridDay' ? styles.viewBtnActive : ''}`}
-            onClick={() => changeView('dayGridDay')}
-          >
-            Dia
-          </button>
-          <button
-            className={`${styles.viewBtn} ${currentView === 'dayGridWeek' ? styles.viewBtnActive : ''}`}
-            onClick={() => changeView('dayGridWeek')}
-          >
-            Semana
-          </button>
-          <button
-            className={`${styles.viewBtn} ${currentView === 'dayGridMonth' ? styles.viewBtnActive : ''}`}
-            onClick={() => changeView('dayGridMonth')}
-          >
-            Mês
-          </button>
+          {/* .viewToggle é o track do segmented control na v2. Na v1 é neutro
+              (inline-flex gap 4px = o que o .toolbarRight já dava). */}
+          <div className={styles.viewToggle}>
+            <button
+              className={`${styles.viewBtn} ${currentView === 'dayGridDay' ? styles.viewBtnActive : ''}`}
+              onClick={() => changeView('dayGridDay')}
+            >
+              Dia
+            </button>
+            <button
+              className={`${styles.viewBtn} ${currentView === 'dayGridWeek' ? styles.viewBtnActive : ''}`}
+              onClick={() => changeView('dayGridWeek')}
+            >
+              Semana
+            </button>
+            <button
+              className={`${styles.viewBtn} ${currentView === 'dayGridMonth' ? styles.viewBtnActive : ''}`}
+              onClick={() => changeView('dayGridMonth')}
+            >
+              Mês
+            </button>
+          </div>
           <button className={styles.todayBtn} onClick={handleToday}>Hoje</button>
         </div>
       </div>

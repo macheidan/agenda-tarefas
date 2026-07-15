@@ -22,6 +22,13 @@
           var theme = stored || (prefersDark ? 'dark' : 'light');
           if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
         } catch (e) {}
+        // Tema v2 (spec-kit TailAdmin): liga em /intranet/v2 e, em dev, com ?v2=1.
+        // Precisa rodar antes do paint pra não piscar o tema antigo.
+        try {
+          if (/\/intranet\/v2(\/|$)/.test(location.pathname) || location.search.indexOf('v2=1') !== -1) {
+            document.documentElement.setAttribute('data-v2', '');
+          }
+        } catch (e) {}
       })();
     </script>
     <title>Intranet Dáme & Lov</title>

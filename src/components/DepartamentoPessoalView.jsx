@@ -409,20 +409,24 @@ export default function DepartamentoPessoalView() {
       <div className={styles.header}>
         <h2>👥 Departamento Pessoal</h2>
         <div className={styles.headerActions}>
-          <button
-            className={`${styles.sectionTab} ${effectiveSection === 'escala' ? styles.sectionTabActive : ''}`}
-            onClick={() => setDpSection('escala')}
-          >
-            Escala
-          </button>
-          {canSalarios && (
+          {/* .sectionTabs é o "track" do segmented control na v2. Na v1 ele é
+              neutro (flex gap 8px = o que o headerActions já dava). */}
+          <div className={styles.sectionTabs}>
             <button
-              className={`${styles.sectionTab} ${effectiveSection === 'salarios' ? styles.sectionTabActive : ''}`}
-              onClick={() => setDpSection('salarios')}
+              className={`${styles.sectionTab} ${effectiveSection === 'escala' ? styles.sectionTabActive : ''}`}
+              onClick={() => setDpSection('escala')}
             >
-              Salários
+              Escala
             </button>
-          )}
+            {canSalarios && (
+              <button
+                className={`${styles.sectionTab} ${effectiveSection === 'salarios' ? styles.sectionTabActive : ''}`}
+                onClick={() => setDpSection('salarios')}
+              >
+                Salários
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -460,16 +464,19 @@ export default function DepartamentoPessoalView() {
               Ambas
             </button>
           )}
-          {canEdit && (
-            <button
-              className={styles.manageStoresBtn}
-              onClick={() => setManagingStores((v) => !v)}
-              title="Gerenciar lojas"
-            >
-              {managingStores ? 'Fechar' : '⚙ Lojas'}
-            </button>
-          )}
         </div>
+        {/* Fora do .storeTabs de propósito: na v2 o .storeTabs é o track do
+            segmented control e só pode conter os segmentos — "⚙ Lojas" é ação,
+            não aba. O gap do .storeBar preserva o espaçamento da v1. */}
+        {canEdit && (
+          <button
+            className={styles.manageStoresBtn}
+            onClick={() => setManagingStores((v) => !v)}
+            title="Gerenciar lojas"
+          >
+            {managingStores ? 'Fechar' : '⚙ Lojas'}
+          </button>
+        )}
       </div>
 
       {managingStores && canEdit && (

@@ -32,6 +32,15 @@
 }
 
 /* Submenu de seções — estilo Dia/Semana/Mês do Calendário */
+/* Wrapper das abas de seção. Na v1 é neutro — reproduz exatamente o
+   espaçamento que o .headerActions já dava aos botões soltos. Na v2 vira o
+   track do segmented control (bloco :global([data-v2]) abaixo). */
+.sectionTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .sectionTab {
   background: none;
   border: 1px solid var(--border-light);
@@ -53,10 +62,47 @@
 
 .sectionTabActive:hover { background: var(--accent-hover); color: #fff; }
 
+/* v2: segmented control do TailAdmin (ver docs/tailadmin-medido.md). Escopado
+   em :global(:root[data-v2]) — a v1 acima fica intacta. */
+:global(:root[data-v2]) .sectionTabs {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .sectionTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+:global(:root[data-v2]) .sectionTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .sectionTabActive,
+:global(:root[data-v2]) .sectionTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
+
 /* ---- Lojas (mesmo estilo do submenu, mesma cor pra todas) ---- */
+/* gap:8px porque o "⚙ Lojas" saiu de dentro do .storeTabs (que na v2 é o track
+   do segmented control). Mantém o mesmo espaçamento que a v1 já tinha. */
 .storeBar {
   display: flex;
   align-items: center;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
@@ -87,6 +133,41 @@
 }
 
 .storeTabActive:hover { background: var(--accent-hover); color: #fff; }
+
+/* v2: mesmo segmented control nas abas de loja. */
+:global(:root[data-v2]) .storeTabs {
+  display: inline-flex;
+  width: fit-content;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .storeTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .storeTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .storeTabActive,
+:global(:root[data-v2]) .storeTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
 
 .manageStoresBtn {
   padding: 6px 12px;

@@ -1,0 +1,142 @@
+/* ===========================================================================
+   Componentes v2 — port do 03-componentes.md do spec-kit (TailAdmin)
+   ---------------------------------------------------------------------------
+   Ativo só sob [data-v2] (ver theme-v2.css / index.html). Inerte na v1.
+
+   POR QUE POR ELEMENTO, E NÃO POR VIEW:
+   as ~30 views repetem os mesmos padrões (botão, input, tabela) em 30 CSS
+   modules com nomes de classe próprios e scopeados. Um seletor de classe não
+   alcança as 30; o ELEMENTO alcança. Então aqui se ajusta o que é comum a
+   todas — o que o kit chama de contrato visual de cada componente.
+
+   ESPECIFICIDADE: os modules usam `.classe` (0,1,0) ou `.classe elemento`
+   (0,1,1). `:root[data-v2] elemento` = (0,2,1) e ganha dos dois independente
+   da ordem de carga — importante porque o CSS das views é lazy e injetado
+   DEPOIS deste arquivo.
+
+   CUIDADO DELIBERADO — o que este arquivo NÃO faz:
+   - Não mexe em `padding` de `td`/`th`: o kit pede px-5 py-3, mas a escala do
+     Depto Pessoal tem 31 colunas de dia e estouraria. Padding fica com a view.
+   - Não força `border-color`: mataria bordas intencionais (danger, success).
+     Só normaliza a LARGURA (2px → 1px), que é o que destoa do kit.
+   - Não põe sombra em botão: não dá pra distinguir botão sólido de ghost/ícone
+     por seletor, e sombra em botão transparente fica errado.
+   =========================================================================== */
+
+/* ===== Botões (§5) — rounded-lg; borda 1px (a casa usava 2px em accent) =====
+   `border-width` é seguro: quem tem `border:none` fica com border-style:none,
+   então a largura não pinta nada. Só os que TÊM borda são afetados. */
+:root[data-v2] button {
+  border-width: 1px;
+  border-radius: var(--radius-md);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+/* Foco visível por teclado — o kit pede ring-2; a casa usa outline:none. */
+:root[data-v2] button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Tipografia de botão. Medido: TODO botão do demo é `text-theme-sm font-medium`
+   = 14/500 — primário e outline igual. A casa usa 13/600 (e 13/700 no danger).
+   Só ≥769px: no mobile as views compactam os botões pra caber (Princípio 8 da
+   constituição, ex.: `.toolbar .resetBtn { font-size:12px }` @768). Aquelas
+   regras são (0,2,0) e perderiam pra esta (0,2,1) — o que estouraria a toolbar
+   no celular. Então o mobile mantém a compactação da casa, de propósito. */
+@media (min-width: 769px) {
+  :root[data-v2] button,
+  :root[data-v2] select {
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+/* ===== Campos (§10) — rounded-lg + ring-2 no foco ===== */
+:root[data-v2] input,
+:root[data-v2] select,
+:root[data-v2] textarea {
+  border-width: 1px;
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* Foco medido no demo: `focus:border-brand-300 focus:ring-brand-500/10`
+   (ring do Tailwind = 3px). Não é brand-500 + 20%. */
+:root[data-v2] input:focus,
+:root[data-v2] select:focus,
+:root[data-v2] textarea:focus,
+:root[data-v2] input:focus-visible,
+:root[data-v2] select:focus-visible,
+:root[data-v2] textarea:focus-visible {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Wrapper de busca (input dentro de div com :focus-within) — mesmo anel. */
+:root[data-v2] div:focus-within > input:not(:focus) {
+  box-shadow: none;
+}
+
+/* ===== Tabela — medida no demo (docs/tailadmin-medido.md) =====
+   th: `font-medium text-gray-500 text-theme-xs` = 12/500 gray-500,
+   SEM uppercase e SEM letter-spacing. O kit de segunda mão dizia
+   "uppercase tracking-wider" e a constituição diz "TH 11px uppercase
+   letter-spacing" — os dois divergem do demo. Vale o demo.
+   thead: border-bottom 1px gray-100 (--border-light). */
+:root[data-v2] thead th {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* O TailAdmin não estiliza o th direto — põe um <p>/<span> dentro com a
+   tipografia. As views do intranet fazem os dois, então o filho precisa
+   herdar em vez de manter o tamanho/caixa antigos. */
+:root[data-v2] thead th > * {
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+:root[data-v2] tbody tr {
+  transition: background 0.15s;
+}
+
+:root[data-v2] tbody tr:hover {
+  background: var(--card-hover);
+}
+
+/* `td` medido no demo: `font-medium text-gray-800 text-theme-sm` = 14/500.
+   A casa usa 13px (constituição). Sobe pra 14 — VERIFICAR nas tabelas densas
+   (Preços tem ~8 colunas; a grade do Depto Pessoal tem 31 e é `.grid td`, que
+   carrega chip e não texto). Padding continua com a view, de propósito. */
+:root[data-v2] tbody td {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Títulos — medidos no demo =====
+   Título de card do TailAdmin: 18px / 600 / gray-800 / lh 28px. O h2 da view
+   no intranet é exatamente isso (título dentro do cartão), e a casa usa
+   18/700 — só o peso destoa. (O kit de segunda mão dizia 20/600; errado.) */
+:root[data-v2] h2 {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+:root[data-v2] h3 {
+  font-size: 16px;
+  font-weight: 600;
+}

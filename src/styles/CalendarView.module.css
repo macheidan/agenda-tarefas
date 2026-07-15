@@ -67,6 +67,45 @@
   color: #fff;
 }
 
+/* Wrapper das abas Dia/Semana/Mês. Neutro na v1 — reproduz o gap 4px que o
+   .toolbarRight já dava aos botões soltos. */
+.viewToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* v2: segmented control (docs/tailadmin-medido.md). Escopado — v1 intacta. */
+:global(:root[data-v2]) .viewToggle {
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .viewBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .viewBtn:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .viewBtnActive,
+:global(:root[data-v2]) .viewBtnActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
+
 .viewBtnActive:hover {
   background: var(--accent-hover);
   color: #fff;
