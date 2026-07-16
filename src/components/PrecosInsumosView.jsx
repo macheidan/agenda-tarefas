@@ -1141,6 +1141,7 @@ function SubiramView({ precos, ocultos }) {
       case 'fornecedor': return (i.fornecedor || '').toLowerCase();
       case 'baseline': return i.baseline;
       case 'atual': return i.atual;
+      case 'data': return i.atualData || '';
       case 'variacao': return i.pct;
       default: return 0;
     }
@@ -1219,6 +1220,7 @@ function SubiramView({ precos, ocultos }) {
                   <th style={thSort} onClick={() => toggleSort('fornecedor')} title="Ordenar por fornecedor">Fornecedor{arrow('fornecedor')}</th>
                   <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('baseline')} title="Ordenar por baseline">Baseline{arrow('baseline')}</th>
                   <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('atual')} title="Ordenar por preço atual">Atual{arrow('atual')}</th>
+                  <th style={thSort} onClick={() => toggleSort('data')} title="Ordenar por data">Data{arrow('data')}</th>
                   <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('variacao')} title="Ordenar por variação">Variação{arrow('variacao')}</th>
                   <th style={{ ...thS, textAlign: 'center' }}></th>
                 </tr>
@@ -1241,8 +1243,8 @@ function SubiramView({ precos, ocultos }) {
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
                       R$ {i.atual.toFixed(2)}
-                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>{formatDate(i.atualData)}</span>
                     </td>
+                    <td style={{ ...tdS, fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(i.atualData)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--danger)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       +R$ {i.diff.toFixed(2)}<span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)', fontWeight: 400 }}>+{i.pct.toFixed(1)}%</span>
                     </td>
