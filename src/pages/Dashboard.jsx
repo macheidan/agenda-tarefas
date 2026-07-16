@@ -292,6 +292,8 @@ export default function Dashboard() {
             loading={surveysLoading}
             error={surveysError}
             setArchived={setSurveyArchived}
+            settings={settings}
+            isAdmin={isAdmin}
           />
         )}
         {activeTab === 'knowledge' && knowledgeEnabled && (

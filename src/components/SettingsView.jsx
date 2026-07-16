@@ -20,6 +20,24 @@ const TAB_LABELS = {
   motoboys: 'Motoboys',
 };
 
+// Seções do menu. `defaultOff` = nasce desmarcada; as demais são visíveis a
+// menos que a flag esteja explicitamente em false. O Dashboard repete essa
+// polaridade ao ler (`=== true` vs `!== false`) — mexeu aqui, confira lá.
+const SECTIONS = [
+  { key: 'calendarEnabled', label: 'Calendário', desc: 'Agenda de tarefas, recorrências e lembretes' },
+  { key: 'contentPlanEnabled', label: 'Content Plan', desc: 'Planejamento de conteúdo do mês' },
+  { key: 'reelsEnabled', label: 'Instagram', desc: 'Reels, stories, roteiros e arquivados' },
+  { key: 'influencersEnabled', label: 'Influencers', desc: 'Cadastro e acompanhamento de parcerias' },
+  { key: 'ideasEnabled', label: 'Ideias', desc: 'Mural de ideias com comentários' },
+  { key: 'notesEnabled', label: 'Anotações', desc: 'Notas compartilhadas com a equipe' },
+  { key: 'shoppingListEnabled', label: 'Compras', desc: 'Lista de compras e fornecedores' },
+  { key: 'reviewsEnabled', label: 'Avaliações', desc: 'Pesquisas de satisfação (NPS) do Delivery Direto' },
+  { key: 'knowledgeEnabled', label: 'Conhecimento', desc: 'Base de conhecimento e chat com IA' },
+  { key: 'precosInsumosEnabled', label: 'Preços', desc: 'Preços de insumos, fornecedores e fichas técnicas' },
+  { key: 'departamentoPessoalEnabled', label: 'Depto Pessoal', desc: 'Escala, faltas e folha de pagamento', defaultOff: true },
+  { key: 'motoboysEnabled', label: 'Motoboys', desc: 'Conferência semanal de entregas', defaultOff: true },
+];
+
 // Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em
 // settings/{uid}). Default visível (valor != false). Espelha SUBPAGES do PrecosInsumosView.
 const PRECOS_SUBSECTIONS = [
@@ -41,6 +59,60 @@ const MOTOBOYS_SUBSECTIONS = [
 ];
 const MOTOBOYS_EDIT_KEYS = ['motoboysEditGerente', 'motoboysEditAdm', 'motoboysEditResultado', 'motoboysEditTaxas', 'motoboysRoster'];
 
+// Lojas por seção — espelham MOTOBOY_LOJAS (MotoboysView) e LOJAS (SurveysView).
+const MOTOBOYS_LOJAS = [
+  { flag: 'motoboysVerDame', label: 'Dáme' },
+  { flag: 'motoboysVerLov', label: 'Lov' },
+];
+const REVIEWS_LOJAS = [
+  { flag: 'reviewsVerDame', label: 'Dáme' },
+  { flag: 'reviewsVerLov', label: 'Lov' },
+];
+
+/** Switch do TailAdmin: track 36×20, knob 16 que anda 16px. O input fica
+ *  visualmente escondido mas continua sendo o alvo de clique e de teclado. */
+function Switch({ checked, onChange, disabled, label }) {
+  return (
+    <label className={styles.switch}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-label={label}
+      />
+      <span className={styles.switchTrack}>
+        <span className={styles.switchKnob} />
+      </span>
+    </label>
+  );
+}
+
+/** Linha de configuração: título + descrição à esquerda, controle à direita.
+ *  Divisória entre linhas; a última não tem. Empilha no mobile. */
+function Row({ title, desc, children }) {
+  return (
+    <div className={styles.row}>
+      <div className={styles.rowText}>
+        <span className={styles.rowTitle}>{title}</span>
+        {desc && <p className={styles.rowDesc}>{desc}</p>}
+      </div>
+      <div className={styles.rowControl}>{children}</div>
+    </div>
+  );
+}
+
+/** Card interno de um grupo de configurações. */
+function Group({ title, desc, children }) {
+  return (
+    <section className={styles.group}>
+      <h4 className={styles.groupTitle}>{title}</h4>
+      {desc && <p className={styles.groupDesc}>{desc}</p>}
+      <div className={styles.rows}>{children}</div>
+    </section>
+  );
+}
+
 export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
@@ -49,6 +121,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
   const [apiKeyValue, setApiKeyValue] = useState('');
   const [apiKeyStatus, setApiKeyStatus] = useState('');
   const [dpStores, setDpStores] = useState([]);
+  const [permUid, setPermUid] = useState(user.uid);
 
   // Lojas do Departamento Pessoal (para visibilidade por usuário).
   useEffect(() => {
@@ -74,21 +147,6 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
       [uid]: { ...prev[uid], dpHiddenStores },
     }));
   };
-
-  const SECTIONS = [
-    { key: 'calendarEnabled', label: 'Calendário' },
-    { key: 'contentPlanEnabled', label: 'Content Plan' },
-    { key: 'reelsEnabled', label: 'Instagram' },
-    { key: 'influencersEnabled', label: 'Influencers' },
-    { key: 'ideasEnabled', label: 'Ideias' },
-    { key: 'notesEnabled', label: 'Anotações' },
-    { key: 'shoppingListEnabled', label: 'Compras' },
-    { key: 'reviewsEnabled', label: 'Avaliações' },
-    { key: 'knowledgeEnabled', label: 'Conhecimento' },
-    { key: 'precosInsumosEnabled', label: 'Preços' },
-    { key: 'departamentoPessoalEnabled', label: 'Depto Pessoal', defaultOff: true },
-    { key: 'motoboysEnabled', label: 'Motoboys', defaultOff: true },
-  ];
 
   // Chaves de visibilidade definidas como false ao aprovar (default tudo oculto)
   const VISIBILITY_KEYS_FALSE = SECTIONS.reduce(
@@ -217,6 +275,8 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
   const pendingUsers = allVisibleUsers.filter((u) => u.uid !== user.uid && u.approved !== true);
   const approvedOtherUsers = otherUsers.filter((u) => u.approved === true);
 
+  const nameOf = (u) => userSettings[u.uid]?.customName || u.displayName || u.email;
+
   if (!isAdmin) {
     return (
       <div className={styles.container}>
@@ -226,382 +286,328 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     );
   }
 
+  // Usuários elegíveis a permissão (o admin inclusive, pra ver a própria conta).
+  // Admin primeiro, resto em ordem alfabética — a lista crua vem na ordem do
+  // Firestore e enterra o próprio admin no meio.
+  const permUsers = allVisibleUsers
+    .filter((u) => u.uid === user.uid || u.approved === true)
+    .sort((a, b) => {
+      if (a.uid === user.uid) return -1;
+      if (b.uid === user.uid) return 1;
+      return nameOf(a).localeCompare(nameOf(b), 'pt-BR');
+    });
+  // Se o escolhido sumiu (excluído), cai no admin em vez de renderizar vazio.
+  const permTarget = permUsers.some((u) => u.uid === permUid) ? permUid : user.uid;
+  const s = userSettings[permTarget] || {};
+
   return (
     <div className={styles.container}>
       <h2>Configurações</h2>
 
-      <div className={styles.section}>
-        <button
-          className={styles.removeBtn}
-          style={{ background: 'var(--card)', color: 'var(--text-secondary)', borderColor: 'var(--input-border)', padding: '8px 16px', fontSize: 13 }}
-          onClick={() => onNavigate && onNavigate('archived')}
-        >
-          Arquivados
-        </button>
-      </div>
-
       {pendingUsers.length > 0 && (
-        <div className={`${styles.section} ${styles.pendingSection}`}>
-          <h3>Aprovações Pendentes ({pendingUsers.length})</h3>
-          <p className={styles.sectionDesc}>
-            Novos usuários precisam ser aprovados antes de acessar a plataforma.
-            Ao aprovar, todas as seções nascem desmarcadas — habilite individualmente em "Visibilidade e Permissões".
+        <section className={`${styles.card} ${styles.cardPending}`}>
+          <h3 className={styles.cardTitle}>Aprovações Pendentes ({pendingUsers.length})</h3>
+          <p className={styles.cardDesc}>
+            Novos usuários precisam ser aprovados antes de acessar a plataforma. Ao aprovar,
+            todas as seções nascem desmarcadas — libere uma a uma em Permissões.
           </p>
-          <div className={styles.userList}>
+          <div className={styles.rows}>
             {pendingUsers.map((u) => (
-              <div key={u.uid} className={styles.userRow}>
-                <img
-                  className={styles.userAvatar}
-                  src={u.photoURL || 'https://via.placeholder.com/32'}
-                  alt={u.displayName || u.email}
-                />
-                <div className={styles.userInfoStack}>
-                  <span className={styles.userName}>{u.displayName || u.email}</span>
-                  <span className={styles.userEmail}>{u.email}</span>
+              <div key={u.uid} className={styles.row}>
+                <div className={styles.userCell}>
+                  <img className={styles.userAvatar} src={u.photoURL || 'https://via.placeholder.com/40'} alt="" />
+                  <div className={styles.rowText}>
+                    <span className={styles.rowTitle}>{u.displayName || u.email}</span>
+                    <p className={styles.rowDesc}>{u.email}</p>
+                  </div>
                 </div>
-                <div className={styles.confirmActions}>
-                  <button className={styles.approveBtn} onClick={() => approveUser(u.uid)}>✓ Aprovar</button>
-                  <button className={styles.rejectBtn} onClick={() => rejectUser(u.uid)}>✗ Rejeitar</button>
+                <div className={styles.rowControl}>
+                  <button className={styles.btn} onClick={() => approveUser(u.uid)}>Aprovar</button>
+                  <button className={`${styles.btn} ${styles.btnDanger}`} onClick={() => rejectUser(u.uid)}>Rejeitar</button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ---- Gerenciar Usuários (renomear + remover no mesmo lugar) ---- */}
-      <details className={styles.acc}>
-        <summary className={styles.accSummary}>
-          <span className={styles.accTitle}>Gerenciar Usuários</span>
-          <span className={styles.accHint}>renomear e remover acesso</span>
-        </summary>
-        <div className={styles.accBody}>
-          <div className={styles.userList}>
-            {approvedOtherUsers.map((u) => {
-              const s = userSettings[u.uid] || {};
-              const displayName = s.customName || u.displayName || u.email;
-              return (
-                <div key={u.uid} className={styles.userRow}>
-                  <img
-                    className={styles.userAvatar}
-                    src={u.photoURL || 'https://via.placeholder.com/32'}
-                    alt={displayName}
+      {/* ---- Permissões: um usuário por vez, escolhido no dropdown ---- */}
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h3 className={styles.cardTitle}>Permissões</h3>
+          <label className={styles.userPicker}>
+            <span>Usuário</span>
+            <select value={permTarget} onChange={(e) => setPermUid(e.target.value)}>
+              {permUsers.map((u) => (
+                <option key={u.uid} value={u.uid}>
+                  {u.uid === user.uid ? `${nameOf(u)} (você)` : nameOf(u)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <Group title="Seções visíveis" desc="O que aparece no menu lateral deste usuário.">
+          {SECTIONS.map((sec) => (
+            <Row key={sec.key} title={sec.label} desc={sec.desc}>
+              <Switch
+                label={sec.label}
+                checked={sec.defaultOff ? s[sec.key] === true : s[sec.key] !== false}
+                onChange={(v) => toggleSection(permTarget, sec.key, v)}
+              />
+            </Row>
+          ))}
+        </Group>
+
+        {s.precosInsumosEnabled !== false && (
+          <Group title="Preços — sub-seções" desc="Quais abas aparecem dentro de Preços.">
+            {PRECOS_SUBSECTIONS.map((sub) => (
+              <Row key={sub.key} title={sub.label}>
+                <Switch
+                  label={sub.label}
+                  checked={s[sub.key] !== false}
+                  onChange={(v) => toggleSection(permTarget, sub.key, v)}
+                />
+              </Row>
+            ))}
+          </Group>
+        )}
+
+        {s.motoboysEnabled === true && (
+          <Group title="Motoboys" desc="Ver e editar cada quadro da conferência.">
+            {MOTOBOYS_SUBSECTIONS.map((sub) => (
+              <Row key={sub.view} title={sub.label}>
+                <span className={styles.pairCtl}>
+                  <span className={styles.pairLabel}>vê</span>
+                  <Switch
+                    label={`${sub.label} — vê`}
+                    checked={s[sub.view] !== false}
+                    onChange={(v) => toggleMotoboyPerm(permTarget, sub.view, v)}
                   />
-                  {editingNameUid === u.uid ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                      <input
-                        className={styles.confirmInput}
-                        type="text"
-                        value={nameValue}
-                        onChange={(e) => setNameValue(e.target.value)}
-                        autoFocus
-                        onKeyDown={(e) => e.key === 'Enter' && saveRename(u.uid)}
-                      />
-                      <button className={styles.cancelBtn} style={{ background: 'var(--success)', color: '#fff', border: 'none' }} onClick={() => saveRename(u.uid)}>
-                        Salvar
-                      </button>
-                      <button className={styles.cancelBtn} onClick={() => setEditingNameUid(null)}>Cancelar</button>
-                    </div>
-                  ) : confirmUid === u.uid ? (
-                    <>
-                      <span className={styles.userName}>{displayName}</span>
-                      <div className={styles.confirmBox}>
-                        <p className={styles.confirmText}>
-                          Digite <strong>EXCLUIR</strong> para confirmar:
-                        </p>
-                        <input
-                          className={styles.confirmInput}
-                          type="text"
-                          value={confirmText}
-                          onChange={(e) => setConfirmText(e.target.value)}
-                          placeholder="EXCLUIR"
-                          autoFocus
-                        />
-                        <div className={styles.confirmActions}>
-                          <button
-                            className={styles.removeBtn}
-                            disabled={confirmText !== 'EXCLUIR'}
-                            onClick={() => removeUser(u.uid)}
-                          >
-                            Confirmar
-                          </button>
-                          <button className={styles.cancelBtn} onClick={cancelRemove}>Cancelar</button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className={styles.userName}>{displayName}</span>
-                      <div className={styles.confirmActions}>
-                        <button className={styles.removeBtn} style={{ background: 'var(--card)', color: 'var(--accent)', borderColor: 'var(--accent)' }} onClick={() => startRename(u.uid)}>
-                          Renomear
-                        </button>
-                        <button className={styles.removeBtn} onClick={() => startRemove(u.uid)}>
-                          Excluir acesso
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-            {approvedOtherUsers.length === 0 && (
-              <p className={styles.noAccess}>Nenhum usuário cadastrado.</p>
+                </span>
+                <span className={styles.pairCtl}>
+                  <span className={styles.pairLabel}>edita</span>
+                  <Switch
+                    label={`${sub.label} — edita`}
+                    checked={s[sub.edit] === true || s.motoboysEditor === true}
+                    onChange={(v) => toggleMotoboyPerm(permTarget, sub.edit, v)}
+                  />
+                </span>
+              </Row>
+            ))}
+            {MOTOBOYS_LOJAS.map((l) => (
+              <Row key={l.flag} title={l.label} desc="Loja visível na conferência">
+                <Switch
+                  label={`Motoboys — ${l.label}`}
+                  checked={s[l.flag] !== false}
+                  onChange={(v) => toggleSection(permTarget, l.flag, v)}
+                />
+              </Row>
+            ))}
+            <Row title="Cadastro" desc="Adiciona, renomeia e arquiva nomes de motoboys">
+              <Switch
+                label="Motoboys — cadastro"
+                checked={s.motoboysRoster === true || s.motoboysEditor === true}
+                onChange={(v) => toggleMotoboyPerm(permTarget, 'motoboysRoster', v)}
+              />
+            </Row>
+          </Group>
+        )}
+
+        {s.reviewsEnabled !== false && (
+          <Group title="Avaliações — lojas" desc="De quais lojas este usuário vê as pesquisas.">
+            {REVIEWS_LOJAS.map((l) => (
+              <Row key={l.flag} title={l.label}>
+                <Switch
+                  label={`Avaliações — ${l.label}`}
+                  checked={s[l.flag] !== false}
+                  onChange={(v) => toggleSection(permTarget, l.flag, v)}
+                />
+              </Row>
+            ))}
+          </Group>
+        )}
+
+        {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false) && (
+          <Group title="Permissões de edição" desc="Sem isto o usuário só lê.">
+            {s.departamentoPessoalEnabled === true && (
+              <Row title="Depto Pessoal" desc="Gerencia funcionários, lojas e marca faltas">
+                <Switch
+                  label="Depto Pessoal — edita"
+                  checked={s.dpEditor === true}
+                  onChange={(v) => toggleSection(permTarget, 'dpEditor', v)}
+                />
+              </Row>
             )}
-          </div>
-        </div>
-      </details>
+            {s.departamentoPessoalEnabled === true && (
+              <Row title="Salários e Funcionários" desc="Dado sensível: só o admin edita, mesmo com isto ligado">
+                <Switch
+                  label="Depto Pessoal — vê Salários"
+                  checked={s.dpSalariosVisible === true}
+                  onChange={(v) => toggleSection(permTarget, 'dpSalariosVisible', v)}
+                />
+              </Row>
+            )}
+            {s.shoppingListEnabled !== false && (
+              <Row title="Compras" desc="Gerencia fornecedores e o catálogo de itens">
+                <Switch
+                  label="Compras — edita"
+                  checked={s.comprasEditor === true}
+                  onChange={(v) => toggleSection(permTarget, 'comprasEditor', v)}
+                />
+              </Row>
+            )}
+          </Group>
+        )}
 
-      {/* ---- Visibilidade e Permissões (um bloco recolhível por usuário) ---- */}
-      <details className={styles.acc}>
-        <summary className={styles.accSummary}>
-          <span className={styles.accTitle}>Visibilidade e Permissões</span>
-          <span className={styles.accHint}>o que cada usuário vê e edita</span>
-        </summary>
-        <div className={styles.accBody}>
-          <div className={styles.userList}>
-            {allVisibleUsers.filter((u) => u.uid === user.uid || u.approved === true).map((u) => {
-              const s = userSettings[u.uid] || {};
-              return (
-                <details key={u.uid} className={styles.accUser}>
-                  <summary className={styles.accUserSummary}>
-                    <img
-                      className={styles.userAvatar}
-                      src={u.photoURL || 'https://via.placeholder.com/32'}
-                      alt={u.displayName || u.email}
-                    />
-                    <span className={styles.userName}>
-                      {u.uid === user.uid ? `${s.customName || u.displayName || u.email} (você)` : s.customName || u.displayName || u.email}
-                    </span>
-                  </summary>
-                  <div className={styles.userRowSections}>
-                    <span className={styles.subGroupLabel}>Seções visíveis</span>
-                    <div className={styles.sectionToggles}>
-                      {SECTIONS.map((sec) => (
-                        <label
-                          key={sec.key}
-                          className={`${styles.sectionToggle} ${sec.parent ? styles.sectionToggleNested : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={sec.defaultOff ? s[sec.key] === true : s[sec.key] !== false}
-                            onChange={(e) => toggleSection(u.uid, sec.key, e.target.checked)}
-                          />
-                          <span className={styles.sectionLabel}>{sec.label}</span>
-                        </label>
-                      ))}
-                    </div>
+        {s.departamentoPessoalEnabled === true && dpStores.length > 0 && (
+          <Group title="Depto Pessoal — lojas" desc="Quais lojas aparecem na escala deste usuário.">
+            {dpStores.map((store) => (
+              <Row key={store.id} title={store.name}>
+                <Switch
+                  label={`Depto Pessoal — ${store.name}`}
+                  checked={!(s.dpHiddenStores || []).includes(store.id)}
+                  onChange={(v) => toggleStoreVisibility(permTarget, store.id, v)}
+                />
+              </Row>
+            ))}
+          </Group>
+        )}
+      </section>
 
-                    {s.precosInsumosEnabled !== false && (
-                      <div className={styles.permBlock}>
-                        <span className={styles.subGroupLabel}>Preços — sub-seções visíveis</span>
-                        <div className={styles.sectionToggles}>
-                          {PRECOS_SUBSECTIONS.map((sub) => (
-                            <label key={sub.key} className={`${styles.sectionToggle} ${styles.sectionToggleNested}`}>
-                              <input
-                                type="checkbox"
-                                checked={s[sub.key] !== false}
-                                onChange={(e) => toggleSection(u.uid, sub.key, e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>{sub.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {s.motoboysEnabled === true && (
-                      <div className={styles.permBlock}>
-                        <span className={styles.subGroupLabel}>Motoboys</span>
-                        <div className={styles.permGroup}>
-                          {MOTOBOYS_SUBSECTIONS.map((sub) => (
-                            <div key={sub.view} className={styles.permRow}>
-                              <span className={styles.permRowLabel}>{sub.label}</span>
-                              <label className={styles.sectionToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={s[sub.view] !== false}
-                                  onChange={(e) => toggleMotoboyPerm(u.uid, sub.view, e.target.checked)}
-                                />
-                                <span className={styles.sectionLabel}>vê</span>
-                              </label>
-                              <label className={styles.sectionToggle}>
-                                <input
-                                  type="checkbox"
-                                  checked={s[sub.edit] === true || s.motoboysEditor === true}
-                                  onChange={(e) => toggleMotoboyPerm(u.uid, sub.edit, e.target.checked)}
-                                />
-                                <span className={styles.sectionLabel}>edita</span>
-                              </label>
-                            </div>
-                          ))}
-                          <div className={styles.permRow}>
-                            <span className={styles.permRowLabel}>Lojas</span>
-                            <label className={styles.sectionToggle}>
-                              <input
-                                type="checkbox"
-                                checked={s.motoboysVerDame !== false}
-                                onChange={(e) => toggleSection(u.uid, 'motoboysVerDame', e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>Dáme</span>
-                            </label>
-                            <label className={styles.sectionToggle}>
-                              <input
-                                type="checkbox"
-                                checked={s.motoboysVerLov !== false}
-                                onChange={(e) => toggleSection(u.uid, 'motoboysVerLov', e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>Lov</span>
-                            </label>
-                          </div>
-                          <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
-                            <input
-                              type="checkbox"
-                              checked={s.motoboysRoster === true || s.motoboysEditor === true}
-                              onChange={(e) => toggleMotoboyPerm(u.uid, 'motoboysRoster', e.target.checked)}
-                            />
-                            <span className={styles.sectionLabel}>Cadastro — adiciona, renomeia e arquiva nomes de motoboys</span>
-                          </label>
-                        </div>
-                      </div>
-                    )}
-
-                    {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false) && (
-                      <div className={styles.permBlock}>
-                        <span className={styles.subGroupLabel}>Permissões de edição</span>
-                        <div className={styles.permGroup}>
-                          {s.departamentoPessoalEnabled === true && (
-                            <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
-                              <input
-                                type="checkbox"
-                                checked={s.dpEditor === true}
-                                onChange={(e) => toggleSection(u.uid, 'dpEditor', e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>Depto Pessoal — gerencia funcionários, lojas e marca faltas</span>
-                            </label>
-                          )}
-                          {s.departamentoPessoalEnabled === true && (
-                            <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
-                              <input
-                                type="checkbox"
-                                checked={s.dpSalariosVisible === true}
-                                onChange={(e) => toggleSection(u.uid, 'dpSalariosVisible', e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>Depto Pessoal — vê Salários e Funcionários (dado sensível; só admin edita)</span>
-                            </label>
-                          )}
-                          {s.shoppingListEnabled !== false && (
-                            <label className={`${styles.sectionToggle} ${styles.dpEditorToggle}`}>
-                              <input
-                                type="checkbox"
-                                checked={s.comprasEditor === true}
-                                onChange={(e) => toggleSection(u.uid, 'comprasEditor', e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>Compras — gerencia fornecedores e o catálogo de itens</span>
-                            </label>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {s.departamentoPessoalEnabled === true && dpStores.length > 0 && (
-                      <div className={styles.permBlock}>
-                        <span className={styles.subGroupLabel}>Lojas visíveis (Depto Pessoal)</span>
-                        <div className={styles.sectionToggles}>
-                          {dpStores.map((store) => (
-                            <label key={store.id} className={styles.sectionToggle}>
-                              <input
-                                type="checkbox"
-                                checked={!(s.dpHiddenStores || []).includes(store.id)}
-                                onChange={(e) => toggleStoreVisibility(u.uid, store.id, e.target.checked)}
-                              />
-                              <span className={styles.sectionLabel}>{store.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+      {/* ---- Usuários: renomear e remover acesso ---- */}
+      <section className={styles.card}>
+        <h3 className={styles.cardTitle}>Usuários</h3>
+        <p className={styles.cardDesc}>Renomear e remover acesso.</p>
+        <div className={styles.rows}>
+          {approvedOtherUsers.map((u) => (
+            <div key={u.uid} className={styles.row}>
+              <div className={styles.userCell}>
+                <img className={styles.userAvatar} src={u.photoURL || 'https://via.placeholder.com/40'} alt="" />
+                {editingNameUid === u.uid ? (
+                  <input
+                    className={styles.input}
+                    type="text"
+                    value={nameValue}
+                    onChange={(e) => setNameValue(e.target.value)}
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && saveRename(u.uid)}
+                  />
+                ) : (
+                  <div className={styles.rowText}>
+                    <span className={styles.rowTitle}>{nameOf(u)}</span>
+                    <p className={styles.rowDesc}>{u.email}</p>
                   </div>
-                </details>
-              );
-            })}
-          </div>
+                )}
+              </div>
+
+              {editingNameUid === u.uid ? (
+                <div className={styles.rowControl}>
+                  <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => saveRename(u.uid)}>Salvar</button>
+                  <button className={styles.btn} onClick={() => setEditingNameUid(null)}>Cancelar</button>
+                </div>
+              ) : confirmUid === u.uid ? (
+                <div className={styles.rowControl}>
+                  <span className={styles.confirmText}>
+                    Digite <strong>EXCLUIR</strong>:
+                  </span>
+                  <input
+                    className={styles.input}
+                    type="text"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="EXCLUIR"
+                    autoFocus
+                  />
+                  <button
+                    className={`${styles.btn} ${styles.btnDanger}`}
+                    disabled={confirmText !== 'EXCLUIR'}
+                    onClick={() => removeUser(u.uid)}
+                  >
+                    Confirmar
+                  </button>
+                  <button className={styles.btn} onClick={cancelRemove}>Cancelar</button>
+                </div>
+              ) : (
+                <div className={styles.rowControl}>
+                  <button className={styles.btn} onClick={() => startRename(u.uid)}>Renomear</button>
+                  <button className={`${styles.btn} ${styles.btnDanger}`} onClick={() => startRemove(u.uid)}>
+                    Excluir acesso
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {approvedOtherUsers.length === 0 && (
+            <p className={styles.noAccess}>Nenhum usuário cadastrado.</p>
+          )}
         </div>
-      </details>
+      </section>
 
       {/* ---- Ordem do Menu ---- */}
-      <details className={styles.acc}>
-        <summary className={styles.accSummary}>
-          <span className={styles.accTitle}>Ordem do Menu</span>
-          <span className={styles.accHint}>vale para todos os usuários</span>
-        </summary>
-        <div className={styles.accBody}>
-          <ul className={styles.orderList}>
-            {tabsOrder.map((key, idx) => (
-              <li key={key} className={styles.orderItem}>
-                <span className={styles.orderIndex}>{idx + 1}</span>
-                <span className={styles.orderLabel}>{TAB_LABELS[key] || key}</span>
-                <div className={styles.orderActions}>
-                  <button
-                    className={styles.orderBtn}
-                    disabled={idx === 0}
-                    onClick={() => {
-                      const next = [...tabsOrder];
-                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-                      updateTabsOrder(next);
-                    }}
-                    title="Mover para cima"
-                    aria-label="Mover para cima"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    className={styles.orderBtn}
-                    disabled={idx === tabsOrder.length - 1}
-                    onClick={() => {
-                      const next = [...tabsOrder];
-                      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-                      updateTabsOrder(next);
-                    }}
-                    title="Mover para baixo"
-                    aria-label="Mover para baixo"
-                  >
-                    ↓
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </details>
+      <section className={styles.card}>
+        <h3 className={styles.cardTitle}>Ordem do Menu</h3>
+        <p className={styles.cardDesc}>Vale para todos os usuários.</p>
+        <ul className={styles.orderList}>
+          {tabsOrder.map((key, idx) => (
+            <li key={key} className={styles.orderItem}>
+              <span className={styles.orderIndex}>{idx + 1}</span>
+              <span className={styles.orderLabel}>{TAB_LABELS[key] || key}</span>
+              <div className={styles.orderActions}>
+                <button
+                  className={styles.orderBtn}
+                  disabled={idx === 0}
+                  onClick={() => {
+                    const next = [...tabsOrder];
+                    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                    updateTabsOrder(next);
+                  }}
+                  title="Mover para cima"
+                  aria-label="Mover para cima"
+                >
+                  ↑
+                </button>
+                <button
+                  className={styles.orderBtn}
+                  disabled={idx === tabsOrder.length - 1}
+                  onClick={() => {
+                    const next = [...tabsOrder];
+                    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                    updateTabsOrder(next);
+                  }}
+                  title="Mover para baixo"
+                  aria-label="Mover para baixo"
+                >
+                  ↓
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-      {/* ---- Chave API (fim da lista) ---- */}
-      <details className={styles.acc}>
-        <summary className={styles.accSummary}>
-          <span className={styles.accTitle}>Chave API do Gemini</span>
-          <span className={styles.accHint}>usada na seção Conhecimento</span>
-        </summary>
-        <div className={styles.accBody}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      {/* ---- Integrações e atalhos ---- */}
+      <section className={styles.card}>
+        <h3 className={styles.cardTitle}>Integrações</h3>
+        <div className={styles.rows}>
+          <Row title="Chave API do Gemini" desc="Usada pelo chat da seção Conhecimento">
             <input
-              className={styles.confirmInput}
+              className={styles.input}
               type="password"
               value={apiKeyValue}
               onChange={(e) => setApiKeyValue(e.target.value)}
               placeholder="Cole a chave API..."
-              style={{ width: 220, fontSize: 12 }}
             />
-            <button
-              className={styles.cancelBtn}
-              style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}
-              onClick={handleSaveApiKey}
-            >
-              Salvar
+            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSaveApiKey}>Salvar</button>
+            {apiKeyStatus && <span className={styles.hint}>{apiKeyStatus}</span>}
+          </Row>
+          <Row title="Arquivados" desc="Tarefas arquivadas e limpeza de conversas">
+            <button className={styles.btn} onClick={() => onNavigate && onNavigate('archived')}>
+              Abrir
             </button>
-            {apiKeyStatus && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{apiKeyStatus}</span>}
-          </div>
+          </Row>
         </div>
-      </details>
+      </section>
     </div>
   );
 }

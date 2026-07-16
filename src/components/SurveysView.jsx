@@ -4,7 +4,14 @@ import { Icon } from './icons';
 import SurveyModal from './SurveyModal';
 import styles from '../styles/SurveysView.module.css';
 
-const BRAND_LABELS = { dame: 'Dáme', lov: 'Lov' };
+// As duas lojas são fixas, não derivadas dos dados: a Lov precisa aparecer na
+// barra mesmo com zero pesquisas importadas, senão o filtro some justo quando
+// alguém quer saber por que a Lov está vazia. Espelha MOTOBOY_LOJAS.
+const LOJAS = [
+  { brand: 'dame', label: 'Dáme', flag: 'reviewsVerDame' },
+  { brand: 'lov', label: 'Lov', flag: 'reviewsVerLov' },
+];
+const BRAND_LABELS = Object.fromEntries(LOJAS.map((l) => [l.brand, l.label]));
 
 const formatDate = (ts) => {
   const d = ts?.toDate?.();
@@ -14,24 +21,43 @@ const formatDate = (ts) => {
   return `${mm}-${dd}`;
 };
 
-export default function SurveysView({ surveys, loading, error, setArchived }) {
+export default function SurveysView({ surveys, loading, error, setArchived, settings, isAdmin }) {
   const [tierFilter, setTierFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
   const [showArchived, setShowArchived] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  const brands = useMemo(() => {
-    const set = new Set(surveys.map((s) => s.brand).filter(Boolean));
-    return [...set].sort();
-  }, [surveys]);
+  // Lojas liberadas pro usuário (default: as duas). Admin vê tudo.
+  const lojas = useMemo(
+    () => LOJAS.filter((l) => isAdmin || settings?.[l.flag] !== false),
+    [settings, isAdmin]
+  );
 
-  const archivedCount = useMemo(() => surveys.filter((s) => s.archived === true).length, [surveys]);
+  // Quem só pode ver uma loja nunca escapa dela: o filtro é travado na permissão,
+  // não no que o usuário clicou. Quem vê todas não passa pelo filtro — assim uma
+  // pesquisa com brand inesperado (ou sem brand) continua aparecendo pra quem tem
+  // acesso total, em vez de sumir sem deixar rastro.
+  const permitidas = useMemo(() => new Set(lojas.map((l) => l.brand)), [lojas]);
+  const daLoja = useMemo(
+    () => (lojas.length === LOJAS.length ? surveys : surveys.filter((s) => permitidas.has(s.brand))),
+    [surveys, permitidas, lojas]
+  );
+
+  const archivedCount = useMemo(() => daLoja.filter((s) => s.archived === true).length, [daLoja]);
+
+  // O chip de marca na linha é cosmético: só faz sentido quando há mesmo pesquisa
+  // de mais de uma loja na tela. A barra de lojas em cima é que segue a permissão
+  // (e aparece mesmo com a loja zerada, pra dizer que ela existe).
+  const marcasComDados = useMemo(
+    () => new Set(daLoja.map((s) => s.brand).filter(Boolean)),
+    [daLoja]
+  );
 
   // Arquivar é o "já tratei": some da lista principal e só aparece na aba
   // Arquivadas. Os contadores por faixa seguem a aba em que se está.
   const visible = useMemo(
-    () => surveys.filter((s) => (showArchived ? s.archived === true : s.archived !== true)),
-    [surveys, showArchived]
+    () => daLoja.filter((s) => (showArchived ? s.archived === true : s.archived !== true)),
+    [daLoja, showArchived]
   );
 
   const byBrand = useMemo(
@@ -88,7 +114,7 @@ export default function SurveysView({ surveys, loading, error, setArchived }) {
         </div>
       </div>
 
-      {brands.length > 1 && (
+      {lojas.length > 1 && (
         <div className={styles.storeBar}>
           <button
             className={`${styles.sectionTab} ${brandFilter === 'all' ? styles.sectionTabActive : ''}`}
@@ -96,13 +122,13 @@ export default function SurveysView({ surveys, loading, error, setArchived }) {
           >
             Todas as lojas
           </button>
-          {brands.map((b) => (
+          {lojas.map((l) => (
             <button
-              key={b}
-              className={`${styles.sectionTab} ${brandFilter === b ? styles.sectionTabActive : ''}`}
-              onClick={() => setBrandFilter(b)}
+              key={l.brand}
+              className={`${styles.sectionTab} ${brandFilter === l.brand ? styles.sectionTabActive : ''}`}
+              onClick={() => setBrandFilter(l.brand)}
             >
-              {BRAND_LABELS[b] || b}
+              {l.label} ({daLoja.filter((s) => s.brand === l.brand && s.archived !== true).length})
             </button>
           ))}
         </div>
@@ -121,16 +147,28 @@ export default function SurveysView({ surveys, loading, error, setArchived }) {
         </div>
       )}
 
-      {!loading && !error && surveys.length === 0 && (
+      {!loading && !error && daLoja.length === 0 && (
         <div className={styles.empty}>
           <p>Nenhuma avaliação importada ainda.</p>
           <span>Rode <code>npm run import:surveys</code> para puxar as pesquisas do Delivery Direto.</span>
         </div>
       )}
 
-      {!loading && !error && surveys.length > 0 && rows.length === 0 && (
+      {!loading && !error && daLoja.length > 0 && rows.length === 0 && (
         <div className={styles.empty}>
-          <p>{showArchived ? 'Nenhuma avaliação arquivada.' : 'Nenhuma avaliação nesse filtro.'}</p>
+          <p>
+            {showArchived
+              ? 'Nenhuma avaliação arquivada.'
+              : brandFilter !== 'all' && tierFilter === 'all'
+                ? `Nenhuma avaliação da ${BRAND_LABELS[brandFilter]} importada ainda.`
+                : 'Nenhuma avaliação nesse filtro.'}
+          </p>
+          {!showArchived && brandFilter === 'lov' && tierFilter === 'all' && (
+            <span>
+              O import da Lov ainda não está ligado — falta o número da pesquisa
+              (<code>pesquisa-N</code>) no admin do Delivery Direto.
+            </span>
+          )}
         </div>
       )}
 
@@ -156,7 +194,7 @@ export default function SurveysView({ surveys, loading, error, setArchived }) {
                     <button className={styles.customerBtn} onClick={() => setSelected(s)}>
                       {s.customerName || 'Sem nome'}
                     </button>
-                    {brandFilter === 'all' && brands.length > 1 && s.brand && (
+                    {brandFilter === 'all' && marcasComDados.size > 1 && s.brand && (
                       <span className={styles.brandChip}>{BRAND_LABELS[s.brand] || s.brand}</span>
                     )}
                   </td>
