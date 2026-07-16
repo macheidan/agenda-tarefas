@@ -23,6 +23,8 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.2s ease;
 }
 
 /* Logo — h 72px, casa com a altura da topbar */
@@ -31,8 +33,43 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 0 20px;
+}
+
+.logoBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Botão de retrair a sidebar — só desktop, ícone PanelLeft (igual dashboard_pizzarias) */
+.collapseBtn {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .collapseBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .collapseBtn:hover {
+    background: var(--card-hover);
+    color: var(--text);
+  }
 }
 
 .logoMark {
@@ -79,6 +116,7 @@
 /* Item de menu — medido no demo: 14/500, radius 8px, padding 10px 12px.
    Inativo: gray-700 (o kit dizia muted/gray-500; o demo é mais escuro). */
 .navItem {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -146,6 +184,54 @@
   background: var(--danger);
   color: #fff;
   font-weight: 600;
+}
+
+/* ===== Sidebar retraída (faixa de ícones) — só desktop ===== */
+@media (min-width: 769px) {
+  .sidebarCollapsed {
+    width: 76px;
+  }
+
+  .sidebarCollapsed .logo {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebarCollapsed .logoBrand {
+    display: none;
+  }
+
+  .sidebarCollapsed .nav {
+    padding: 0 12px 24px;
+  }
+
+  .sidebarCollapsed .navGroupLabel {
+    display: none;
+  }
+
+  .sidebarCollapsed .navItem {
+    justify-content: center;
+    gap: 0;
+    padding: 10px 0;
+  }
+
+  .sidebarCollapsed .navLabel {
+    display: none;
+  }
+
+  /* Contador de não-lidas vira um ponto sobre o ícone quando retraído */
+  .sidebarCollapsed .navBadge {
+    position: absolute;
+    top: 6px;
+    right: 14px;
+    min-width: 8px;
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    font-size: 0;
+    line-height: 0;
+    border-radius: 999px;
+  }
 }
 
 /* ===== Coluna principal ===== */
