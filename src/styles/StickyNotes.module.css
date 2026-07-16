@@ -74,6 +74,12 @@
   opacity: 1;
 }
 
+.barLeft {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .barBtn {
   background: none;
   border: none;
@@ -90,6 +96,30 @@
 .barBtn:hover {
   background: rgba(0, 0, 0, 0.08);
   color: rgba(40, 30, 10, 0.9);
+}
+
+/* Alça de arraste — mesmo visual dos botões da barra, com cursor de mover */
+.dragHandle {
+  background: none;
+  border: none;
+  padding: 3px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(40, 30, 10, 0.5);
+  line-height: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.dragHandle:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(40, 30, 10, 0.9);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
 }
 
 .paletteWrap {

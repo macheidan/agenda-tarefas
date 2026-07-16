@@ -83,7 +83,7 @@ export default function Dashboard() {
   const unreadMessage = getUnreadForUser(user.uid);
 
   const { notes, addNote, updateNote, deleteNote, reorderNotes } = useNotes(selectedUid);
-  const { stickyNotes, addStickyNote, updateStickyNote, deleteStickyNote } =
+  const { stickyNotes, addStickyNote, updateStickyNote, deleteStickyNote, reorderStickyNotes } =
     useStickyNotes(selectedUid);
   const { completedTasks, archiveCompletedTask } = useCompletedTasks(isAdmin ? users : []);
   const allSettings = useAllSettings(users);
@@ -211,6 +211,7 @@ export default function Dashboard() {
                 addStickyNote={addStickyNote}
                 updateStickyNote={updateStickyNote}
                 deleteStickyNote={deleteStickyNote}
+                reorderStickyNotes={reorderStickyNotes}
               />
               <div className={styles.calendarMain}>
                 <CalendarView
@@ -225,6 +226,7 @@ export default function Dashboard() {
                 addStickyNote={addStickyNote}
                 updateStickyNote={updateStickyNote}
                 deleteStickyNote={deleteStickyNote}
+                reorderStickyNotes={reorderStickyNotes}
               />
             </div>
           )
