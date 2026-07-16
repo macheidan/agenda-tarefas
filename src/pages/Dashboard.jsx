@@ -119,7 +119,7 @@ export default function Dashboard() {
   const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
   const { scripts, addScript, updateScript, archiveScript, unarchiveScript, deleteScript } = useScripts();
   const { items: contentPlanItems, addItem: addContentPlanItem, updateItem: updateContentPlanItem, deleteItem: deleteContentPlanItem } = useContentPlan();
-  const { surveys, loading: surveysLoading, error: surveysError } = useSurveys();
+  const { surveys, loading: surveysLoading, error: surveysError, setArchived: setSurveyArchived } = useSurveys();
 
   const viewingOther = isAdmin && selectedUid !== user.uid;
   const viewingUser = users.find((u) => u.uid === selectedUid);
@@ -287,7 +287,12 @@ export default function Dashboard() {
         )}
         {activeTab === 'shopping' && shoppingListEnabled && <ComprasView />}
         {activeTab === 'reviews' && reviewsEnabled && (
-          <SurveysView surveys={surveys} loading={surveysLoading} error={surveysError} />
+          <SurveysView
+            surveys={surveys}
+            loading={surveysLoading}
+            error={surveysError}
+            setArchived={setSurveyArchived}
+          />
         )}
         {activeTab === 'knowledge' && knowledgeEnabled && (
           <KnowledgeView

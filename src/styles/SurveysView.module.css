@@ -118,6 +118,39 @@
   text-align: center;
 }
 
+/* Ação (arquivar) encostada na direita da linha: a coluna só ocupa o botão,
+   então o Comentário fica com toda a folga que sobra. */
+.colAcao {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.acaoBtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.acaoBtn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.acaoBtn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .customerBtn {
   background: none;
   border: none;
@@ -425,6 +458,18 @@
   .colNota {
     width: auto;
     text-align: left;
+  }
+
+  /* No card do mobile a ação não tem rótulo — o ::before vazio reservaria os
+     84px da label e jogaria o botão pro meio do card. */
+  .colAcao {
+    width: auto;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  .colAcao::before {
+    content: none;
   }
 
   .fieldGrid {

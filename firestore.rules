@@ -123,11 +123,14 @@ service cloud.firestore {
     }
 
     // Avaliações (aba "Avaliações"): pesquisas de satisfação do Delivery Direto.
-    // Somente leitura no cliente — quem escreve é scripts/importSurveys.mjs pelo
-    // Admin SDK, que ignora estas regras.
+    // O conteúdo da pesquisa vem de scripts/importSurveys.mjs pelo Admin SDK,
+    // que ignora estas regras. No cliente a única escrita é arquivar: o hasOnly
+    // garante que nota, comentário e cliente não podem ser adulterados junto.
     match /surveys/{surveyId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archived']);
+      allow create, delete: if false;
     }
 
     // Mensagens admin: qualquer logado lê; admin cria/deleta;

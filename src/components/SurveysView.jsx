@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { NPS_TIERS, NPS_TIER_ORDER, npsTier, joinAnswers } from '../utils/nps';
+import { Icon } from './icons';
 import SurveyModal from './SurveyModal';
 import styles from '../styles/SurveysView.module.css';
 
@@ -13,9 +14,10 @@ const formatDate = (ts) => {
   return `${mm}-${dd}`;
 };
 
-export default function SurveysView({ surveys, loading, error }) {
+export default function SurveysView({ surveys, loading, error, setArchived }) {
   const [tierFilter, setTierFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
+  const [showArchived, setShowArchived] = useState(false);
   const [selected, setSelected] = useState(null);
 
   const brands = useMemo(() => {
@@ -23,9 +25,18 @@ export default function SurveysView({ surveys, loading, error }) {
     return [...set].sort();
   }, [surveys]);
 
+  const archivedCount = useMemo(() => surveys.filter((s) => s.archived === true).length, [surveys]);
+
+  // Arquivar é o "já tratei": some da lista principal e só aparece na aba
+  // Arquivadas. Os contadores por faixa seguem a aba em que se está.
+  const visible = useMemo(
+    () => surveys.filter((s) => (showArchived ? s.archived === true : s.archived !== true)),
+    [surveys, showArchived]
+  );
+
   const byBrand = useMemo(
-    () => (brandFilter === 'all' ? surveys : surveys.filter((s) => s.brand === brandFilter)),
-    [surveys, brandFilter]
+    () => (brandFilter === 'all' ? visible : visible.filter((s) => s.brand === brandFilter)),
+    [visible, brandFilter]
   );
 
   const tierCounts = useMemo(() => {
@@ -51,7 +62,7 @@ export default function SurveysView({ surveys, loading, error }) {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>Avaliações</h2>
+        <h2>{showArchived ? 'Avaliações — Arquivadas' : 'Avaliações'}</h2>
         <div className={styles.headerActions}>
           <button
             className={`${styles.sectionTab} ${tierFilter === 'all' ? styles.sectionTabActive : ''}`}
@@ -68,6 +79,12 @@ export default function SurveysView({ surveys, loading, error }) {
               {NPS_TIERS[key].label} ({tierCounts[key]})
             </button>
           ))}
+          <button
+            className={`${styles.sectionTab} ${showArchived ? styles.sectionTabActive : ''}`}
+            onClick={() => setShowArchived((v) => !v)}
+          >
+            {showArchived ? 'Voltar' : `Arquivadas (${archivedCount})`}
+          </button>
         </div>
       </div>
 
@@ -113,7 +130,7 @@ export default function SurveysView({ surveys, loading, error }) {
 
       {!loading && !error && surveys.length > 0 && rows.length === 0 && (
         <div className={styles.empty}>
-          <p>Nenhuma avaliação nesse filtro.</p>
+          <p>{showArchived ? 'Nenhuma avaliação arquivada.' : 'Nenhuma avaliação nesse filtro.'}</p>
         </div>
       )}
 
@@ -125,6 +142,7 @@ export default function SurveysView({ surveys, loading, error }) {
               <th>Cliente</th>
               <th className={styles.colNota}>Nota</th>
               <th>Comentário</th>
+              <th className={styles.colAcao} aria-label="Ações" />
             </tr>
           </thead>
           <tbody>
@@ -149,6 +167,16 @@ export default function SurveysView({ surveys, loading, error }) {
                   </td>
                   <td data-label="Comentário" className={styles.comment}>
                     {comment || <span className={styles.noComment}>—</span>}
+                  </td>
+                  <td className={styles.colAcao}>
+                    <button
+                      className={styles.acaoBtn}
+                      title={showArchived ? 'Desarquivar' : 'Arquivar'}
+                      aria-label={showArchived ? 'Desarquivar' : 'Arquivar'}
+                      onClick={() => setArchived(s.id, !showArchived)}
+                    >
+                      <Icon k={showArchived ? 'archiveRestore' : 'archive'} />
+                    </button>
                   </td>
                 </tr>
               );

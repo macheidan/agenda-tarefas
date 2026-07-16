@@ -1,12 +1,17 @@
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { useState, useEffect, useCallback } from 'react';
+import { collection, doc, onSnapshot, query, orderBy, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
 
 /**
  * Pesquisas de satisfação (NPS) importadas do Delivery Direto.
- * Coleção `surveys` — escrita só pelo script scripts/importSurveys.mjs
- * (Admin SDK), leitura em tempo real aqui. Ver useReviews (removido) no git
- * para as avaliações internas que esta seção substituiu.
+ * Coleção `surveys` — o conteúdo da pesquisa é escrito só pelo script
+ * scripts/importSurveys.mjs (Admin SDK); leitura em tempo real aqui. Ver
+ * useReviews (removido) no git para as avaliações internas que esta seção
+ * substituiu.
+ *
+ * `archived` é o ÚNICO campo que o cliente escreve (as firestore.rules barram
+ * o resto do documento) — é o "já tratei essa avaliação", e vale pra todo
+ * mundo, não por usuário.
  */
 export function useSurveys() {
   const [surveys, setSurveys] = useState([]);
@@ -56,5 +61,13 @@ export function useSurveys() {
     };
   }, []);
 
-  return { surveys, loading, error };
+  // deleteField ao desarquivar: o doc volta ao shape que o import grava, então
+  // o `archived` não fica como lixo `false` em todas as pesquisas.
+  const setArchived = useCallback(async (surveyId, archived) => {
+    await updateDoc(doc(db, 'surveys', surveyId), {
+      archived: archived ? true : deleteField(),
+    });
+  }, []);
+
+  return { surveys, loading, error, setArchived };
 }
