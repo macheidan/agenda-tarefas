@@ -123,6 +123,48 @@ function Group({ title, desc, children }) {
   );
 }
 
+// Categorias que têm sub-permissões próprias (sub-seções, lojas ou edição).
+// Quando ligadas, a linha expande e mostra esses ajustes aninhados logo abaixo,
+// em vez de largá-los num bloco separado longe da categoria.
+const HAS_SUB = new Set(['precosInsumos', 'motoboys', 'reviews', 'departamentoPessoal', 'shopping']);
+
+/** Linha de categoria em "Seções visíveis". Quando `expandable`, a parte
+ *  esquerda (chevron + ícone + texto) vira botão que abre/fecha o painel
+ *  aninhado com as sub-permissões (`children`). O switch fica sempre à direita. */
+function SectionRow({ sec, checked, onToggle, expandable, open, onToggleOpen, children }) {
+  const head = (
+    <>
+      <span className={`${styles.chevron} ${expandable && open ? styles.chevronOpen : ''}`} aria-hidden="true">
+        {expandable ? '›' : ''}
+      </span>
+      <span className={styles.rowIcon} aria-hidden="true">
+        <TabIcon k={sec.tab} />
+      </span>
+      <span className={styles.rowText}>
+        <span className={styles.rowTitle}>{sec.label}</span>
+        {sec.desc && <span className={styles.rowDesc}>{sec.desc}</span>}
+      </span>
+    </>
+  );
+  return (
+    <div className={styles.expandable}>
+      <div className={styles.row}>
+        {expandable ? (
+          <button type="button" className={styles.rowMainBtn} onClick={onToggleOpen} aria-expanded={open}>
+            {head}
+          </button>
+        ) : (
+          <div className={styles.rowMain}>{head}</div>
+        )}
+        <div className={styles.rowControl}>
+          <Switch label={sec.label} checked={checked} onChange={onToggle} />
+        </div>
+      </div>
+      {expandable && open && <div className={styles.subPanel}>{children}</div>}
+    </div>
+  );
+}
+
 export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
@@ -132,6 +174,14 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
   const [apiKeyStatus, setApiKeyStatus] = useState('');
   const [dpStores, setDpStores] = useState([]);
   const [permUid, setPermUid] = useState(user.uid);
+  const [openTabs, setOpenTabs] = useState(() => new Set());
+  const toggleOpen = (tab) =>
+    setOpenTabs((prev) => {
+      const next = new Set(prev);
+      if (next.has(tab)) next.delete(tab);
+      else next.add(tab);
+      return next;
+    });
 
   // Lojas do Departamento Pessoal (para visibilidade por usuário).
   useEffect(() => {
@@ -310,6 +360,114 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
   const permTarget = permUsers.some((u) => u.uid === permUid) ? permUid : user.uid;
   const s = userSettings[permTarget] || {};
 
+  // Sub-permissões aninhadas de cada categoria (renderizadas dentro da linha
+  // expandida). Só chamado quando a categoria está ligada.
+  const renderSub = (tab) => {
+    switch (tab) {
+      case 'precosInsumos':
+        return PRECOS_SUBSECTIONS.map((sub) => (
+          <Row key={sub.key} title={sub.label}>
+            <Switch
+              label={sub.label}
+              checked={s[sub.key] !== false}
+              onChange={(v) => toggleSection(permTarget, sub.key, v)}
+            />
+          </Row>
+        ));
+      case 'motoboys':
+        return (
+          <>
+            {MOTOBOYS_SUBSECTIONS.map((sub) => (
+              <Row key={sub.view} title={sub.label}>
+                <span className={styles.pairCtl}>
+                  <span className={styles.pairLabel}>vê</span>
+                  <Switch
+                    label={`${sub.label} — vê`}
+                    checked={s[sub.view] !== false}
+                    onChange={(v) => toggleMotoboyPerm(permTarget, sub.view, v)}
+                  />
+                </span>
+                <span className={styles.pairCtl}>
+                  <span className={styles.pairLabel}>edita</span>
+                  <Switch
+                    label={`${sub.label} — edita`}
+                    checked={s[sub.edit] === true || s.motoboysEditor === true}
+                    onChange={(v) => toggleMotoboyPerm(permTarget, sub.edit, v)}
+                  />
+                </span>
+              </Row>
+            ))}
+            {MOTOBOYS_LOJAS.map((l) => (
+              <Row key={l.flag} title={l.label} desc="Loja visível na conferência">
+                <Switch
+                  label={`Motoboys — ${l.label}`}
+                  checked={s[l.flag] !== false}
+                  onChange={(v) => toggleSection(permTarget, l.flag, v)}
+                />
+              </Row>
+            ))}
+            <Row title="Cadastro" desc="Adiciona, renomeia e arquiva nomes de motoboys">
+              <Switch
+                label="Motoboys — cadastro"
+                checked={s.motoboysRoster === true || s.motoboysEditor === true}
+                onChange={(v) => toggleMotoboyPerm(permTarget, 'motoboysRoster', v)}
+              />
+            </Row>
+          </>
+        );
+      case 'reviews':
+        return REVIEWS_LOJAS.map((l) => (
+          <Row key={l.flag} title={l.label} desc="Loja visível nas avaliações">
+            <Switch
+              label={`Avaliações — ${l.label}`}
+              checked={s[l.flag] !== false}
+              onChange={(v) => toggleSection(permTarget, l.flag, v)}
+            />
+          </Row>
+        ));
+      case 'departamentoPessoal':
+        return (
+          <>
+            <Row title="Edita escala e faltas" desc="Gerencia funcionários, lojas e marca faltas">
+              <Switch
+                label="Depto Pessoal — edita"
+                checked={s.dpEditor === true}
+                onChange={(v) => toggleSection(permTarget, 'dpEditor', v)}
+              />
+            </Row>
+            <Row title="Salários e Funcionários" desc="Dado sensível: só o admin edita, mesmo com isto ligado">
+              <Switch
+                label="Depto Pessoal — vê Salários"
+                checked={s.dpSalariosVisible === true}
+                onChange={(v) => toggleSection(permTarget, 'dpSalariosVisible', v)}
+              />
+            </Row>
+            {dpStores.map((store) => (
+              <Row key={store.id} title={store.name} desc="Loja visível na escala">
+                <Switch
+                  label={`Depto Pessoal — ${store.name}`}
+                  checked={!(s.dpHiddenStores || []).includes(store.id)}
+                  onChange={(v) => toggleStoreVisibility(permTarget, store.id, v)}
+                />
+              </Row>
+            ))}
+          </>
+        );
+      case 'shopping':
+        return (
+          <Row title="Editar" desc="Gerencia fornecedores e o catálogo de itens">
+            <Switch
+              label="Compras — edita"
+              checked={s.comprasEditor === true}
+              onChange={(v) => toggleSection(permTarget, 'comprasEditor', v)}
+            />
+          </Row>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className={styles.container}>
       <h2>Configurações</h2>
@@ -357,132 +515,25 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
           </label>
         </div>
 
-        <Group title="Seções visíveis" desc="O que aparece no menu lateral deste usuário.">
-          {SECTIONS.map((sec) => (
-            <Row key={sec.key} title={sec.label} desc={sec.desc} tab={sec.tab}>
-              <Switch
-                label={sec.label}
-                checked={sec.defaultOff ? s[sec.key] === true : s[sec.key] !== false}
-                onChange={(v) => toggleSection(permTarget, sec.key, v)}
-              />
-            </Row>
-          ))}
+        <Group title="Seções visíveis" desc="O que aparece no menu lateral deste usuário. Categorias com ajustes extras mostram um ›: clique para expandir e configurar sub-seções, lojas e permissões de edição ali mesmo.">
+          {SECTIONS.map((sec) => {
+            const checked = sec.defaultOff ? s[sec.key] === true : s[sec.key] !== false;
+            const expandable = checked && HAS_SUB.has(sec.tab);
+            return (
+              <SectionRow
+                key={sec.key}
+                sec={sec}
+                checked={checked}
+                onToggle={(v) => toggleSection(permTarget, sec.key, v)}
+                expandable={expandable}
+                open={openTabs.has(sec.tab)}
+                onToggleOpen={() => toggleOpen(sec.tab)}
+              >
+                {expandable && renderSub(sec.tab)}
+              </SectionRow>
+            );
+          })}
         </Group>
-
-        {s.precosInsumosEnabled !== false && (
-          <Group title="Preços — sub-seções" desc="Quais abas aparecem dentro de Preços.">
-            {PRECOS_SUBSECTIONS.map((sub) => (
-              <Row key={sub.key} title={sub.label}>
-                <Switch
-                  label={sub.label}
-                  checked={s[sub.key] !== false}
-                  onChange={(v) => toggleSection(permTarget, sub.key, v)}
-                />
-              </Row>
-            ))}
-          </Group>
-        )}
-
-        {s.motoboysEnabled === true && (
-          <Group title="Motoboys" desc="Ver e editar cada quadro da conferência.">
-            {MOTOBOYS_SUBSECTIONS.map((sub) => (
-              <Row key={sub.view} title={sub.label}>
-                <span className={styles.pairCtl}>
-                  <span className={styles.pairLabel}>vê</span>
-                  <Switch
-                    label={`${sub.label} — vê`}
-                    checked={s[sub.view] !== false}
-                    onChange={(v) => toggleMotoboyPerm(permTarget, sub.view, v)}
-                  />
-                </span>
-                <span className={styles.pairCtl}>
-                  <span className={styles.pairLabel}>edita</span>
-                  <Switch
-                    label={`${sub.label} — edita`}
-                    checked={s[sub.edit] === true || s.motoboysEditor === true}
-                    onChange={(v) => toggleMotoboyPerm(permTarget, sub.edit, v)}
-                  />
-                </span>
-              </Row>
-            ))}
-            {MOTOBOYS_LOJAS.map((l) => (
-              <Row key={l.flag} title={l.label} desc="Loja visível na conferência">
-                <Switch
-                  label={`Motoboys — ${l.label}`}
-                  checked={s[l.flag] !== false}
-                  onChange={(v) => toggleSection(permTarget, l.flag, v)}
-                />
-              </Row>
-            ))}
-            <Row title="Cadastro" desc="Adiciona, renomeia e arquiva nomes de motoboys">
-              <Switch
-                label="Motoboys — cadastro"
-                checked={s.motoboysRoster === true || s.motoboysEditor === true}
-                onChange={(v) => toggleMotoboyPerm(permTarget, 'motoboysRoster', v)}
-              />
-            </Row>
-          </Group>
-        )}
-
-        {s.reviewsEnabled !== false && (
-          <Group title="Avaliações — lojas" desc="De quais lojas este usuário vê as pesquisas.">
-            {REVIEWS_LOJAS.map((l) => (
-              <Row key={l.flag} title={l.label}>
-                <Switch
-                  label={`Avaliações — ${l.label}`}
-                  checked={s[l.flag] !== false}
-                  onChange={(v) => toggleSection(permTarget, l.flag, v)}
-                />
-              </Row>
-            ))}
-          </Group>
-        )}
-
-        {(s.departamentoPessoalEnabled === true || s.shoppingListEnabled !== false) && (
-          <Group title="Permissões de edição" desc="Sem isto o usuário só lê.">
-            {s.departamentoPessoalEnabled === true && (
-              <Row title="Depto Pessoal" desc="Gerencia funcionários, lojas e marca faltas">
-                <Switch
-                  label="Depto Pessoal — edita"
-                  checked={s.dpEditor === true}
-                  onChange={(v) => toggleSection(permTarget, 'dpEditor', v)}
-                />
-              </Row>
-            )}
-            {s.departamentoPessoalEnabled === true && (
-              <Row title="Salários e Funcionários" desc="Dado sensível: só o admin edita, mesmo com isto ligado">
-                <Switch
-                  label="Depto Pessoal — vê Salários"
-                  checked={s.dpSalariosVisible === true}
-                  onChange={(v) => toggleSection(permTarget, 'dpSalariosVisible', v)}
-                />
-              </Row>
-            )}
-            {s.shoppingListEnabled !== false && (
-              <Row title="Compras" desc="Gerencia fornecedores e o catálogo de itens">
-                <Switch
-                  label="Compras — edita"
-                  checked={s.comprasEditor === true}
-                  onChange={(v) => toggleSection(permTarget, 'comprasEditor', v)}
-                />
-              </Row>
-            )}
-          </Group>
-        )}
-
-        {s.departamentoPessoalEnabled === true && dpStores.length > 0 && (
-          <Group title="Depto Pessoal — lojas" desc="Quais lojas aparecem na escala deste usuário.">
-            {dpStores.map((store) => (
-              <Row key={store.id} title={store.name}>
-                <Switch
-                  label={`Depto Pessoal — ${store.name}`}
-                  checked={!(s.dpHiddenStores || []).includes(store.id)}
-                  onChange={(v) => toggleStoreVisibility(permTarget, store.id, v)}
-                />
-              </Row>
-            ))}
-          </Group>
-        )}
       </section>
 
       {/* ---- Usuários: renomear e remover acesso ---- */}
