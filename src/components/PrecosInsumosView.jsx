@@ -1132,6 +1132,36 @@ function SubiramView({ precos, ocultos }) {
     );
   }, [alertas, busca]);
 
+  // Ordenacao por clique no cabecalho. Default = Variacao desc (maior alta no
+  // topo), que e como `alertas` ja vem ordenado.
+  const [sortBy, setSortBy] = useState({ col: 'variacao', dir: 'desc' });
+  const sortValue = (i, col) => {
+    switch (col) {
+      case 'label': return (i.label || '').toLowerCase();
+      case 'fornecedor': return (i.fornecedor || '').toLowerCase();
+      case 'baseline': return i.baseline;
+      case 'atual': return i.atual;
+      case 'variacao': return i.pct;
+      default: return 0;
+    }
+  };
+  const ordenados = useMemo(() => {
+    const { col, dir } = sortBy;
+    const arr = filtrados.slice();
+    arr.sort((a, b) => {
+      const va = sortValue(a, col);
+      const vb = sortValue(b, col);
+      const c = typeof va === 'string' ? va.localeCompare(vb, 'pt-BR') : va - vb;
+      return dir === 'asc' ? c : -c;
+    });
+    return arr;
+  }, [filtrados, sortBy]);
+  // Texto vira asc; numero comeca desc (alta no topo). Reclica inverte.
+  const toggleSort = (col) => setSortBy(prev => prev.col === col
+    ? { col, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+    : { col, dir: (col === 'label' || col === 'fornecedor') ? 'asc' : 'desc' });
+  const arrow = (col) => (sortBy.col === col ? (sortBy.dir === 'asc' ? ' ▲' : ' ▼') : '');
+
   const nVistos = Object.keys(vistos).length;
   const marcarTodos = () => marcarVarios(alertas.map(a => ({ key: a.key, preco: a.atual, data: a.atualData })));
 
@@ -1185,16 +1215,16 @@ function SubiramView({ precos, ocultos }) {
             <table className="subiuTable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
-                  <th style={thS}>Produto (planilha)</th>
-                  <th style={thS}>Fornecedor</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>Baseline</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>Atual</th>
-                  <th style={{ ...thS, textAlign: 'right' }}>Variação</th>
+                  <th style={thSort} onClick={() => toggleSort('label')} title="Ordenar por produto">Produto (planilha){arrow('label')}</th>
+                  <th style={thSort} onClick={() => toggleSort('fornecedor')} title="Ordenar por fornecedor">Fornecedor{arrow('fornecedor')}</th>
+                  <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('baseline')} title="Ordenar por baseline">Baseline{arrow('baseline')}</th>
+                  <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('atual')} title="Ordenar por preço atual">Atual{arrow('atual')}</th>
+                  <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('variacao')} title="Ordenar por variação">Variação{arrow('variacao')}</th>
                   <th style={{ ...thS, textAlign: 'center' }}></th>
                 </tr>
               </thead>
               <tbody>
-                {filtrados.map(i => (
+                {ordenados.map(i => (
                   <tr
                     key={i.key}
                     onClick={() => abrirPrecosDoItem(i.label)}
@@ -2089,6 +2119,8 @@ const inputS = { padding: '7px 10px', borderRadius: IS_V2 ? 8 : 6, border: '1px 
 
 // th. v2 (medido): 12/500 gray-500, SEM uppercase.
 const thS = { padding: '8px 10px', fontSize: 12, fontWeight: IS_V2 ? 500 : 600, color: IS_V2 ? 'var(--text-muted)' : undefined, textAlign: 'left', whiteSpace: 'nowrap' };
+// Cabecalho ordenavel (clicavel) da tabela Subiram.
+const thSort = { ...thS, cursor: 'pointer', userSelect: 'none' };
 
 // td. O demo usa 14/500 — e aqui NÃO dá. Esta tabela é deliberadamente densa:
 // a `<table>` roda em 13px, o nome do produto em 11px e as colunas numéricas em
