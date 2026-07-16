@@ -1059,20 +1059,29 @@ function valorComparavel(p) {
   return calcResultado(p.preco_normalizado, p.fator_regra3);
 }
 
-// Sub-pagina "Subiram": alerta de alta de preco por item (produto planilha).
+// Sub-pagina "Subiram": alerta de alta de preco por produto bruto (produto_id).
 // Em vez de comparar so as duas ultimas compras (que perde altas acumuladas numa
-// semana sem olhar), compara o preco ATUAL contra o baseline "visto" — o preco da
-// ultima vez que o item foi marcado como visto. Sem nunca ter visto, usa o MENOR
-// preco anterior da janela (12 meses) pra pegar altas acumuladas. Marcar "Visto"
-// fixa o baseline no atual: some da lista ate haver um novo topo — isso evita a
-// cauda longa de hortifruti que oscila dentro de uma banda.
+// semana sem olhar), compara o Resultado ATUAL contra o baseline "visto" — o
+// Resultado da ultima vez que o item foi marcado como visto. Sem nunca ter visto,
+// usa o MENOR Resultado anterior da janela (12 meses) pra pegar altas acumuladas.
+// Marcar "Visto" fixa o baseline no atual: some da lista ate haver um novo topo —
+// isso evita a cauda longa de hortifruti que oscila dentro de uma banda.
+//
+// O agrupamento e por `produto_id` (produto bruto) — a MESMA granularidade da
+// secao Produtos, onde o Fator/Resultado e revisado. Agrupar por `nome_padrao`
+// misturava produtos, fornecedores e unidades diferentes (kg x un x ml) sob um
+// mesmo nome de planilha: o baseline caia num Resultado de outro produto/linha
+// (ex.: uma linha-lixo de R$0,01/ml derrubava a base de um item de R$3,50),
+// gerando altas absurdas (+34900%) que nao batiam com nenhum Resultado do item.
+// Comparando dentro do produto_id, baseline e atual saem sempre da mesma relacao.
 function SubiramView({ precos, ocultos }) {
   const { vistos, marcarVisto, marcarVarios, desfazerVisto } = usePrecosVistos();
   const [busca, setBusca] = useState('');
   const [limiar, setLimiar] = useState(0); // % minimo de alta pra alertar
   const [showVistos, setShowVistos] = useState(false);
 
-  // Agrupa por produto planilha (nome_padrao); sem ele, cai no produto bruto.
+  // Agrupa por produto bruto (produto_id). O rotulo mostra o nome de planilha
+  // (mais legivel); o fornecedor do atual desambigua itens homonimos.
   const grupos = useMemo(() => {
     const byKey = {};
     for (const p of precos) {
@@ -1080,7 +1089,7 @@ function SubiramView({ precos, ocultos }) {
       if (ocultos.has(p.fornecedor || '(sem)')) continue;
       const v = valorComparavel(p);
       if (v == null) continue; // sem Resultado (sem fator) nao entra no alerta
-      const key = p.produto_padrao ? `pl:${p.produto_padrao}` : `id:${p.produto_id}`;
+      const key = `id:${p.produto_id}`;
       const label = p.produto_padrao || p.produto || '(sem)';
       (byKey[key] ||= { key, label, rows: [] }).rows.push({ ...p, v });
     }
