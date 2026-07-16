@@ -3,6 +3,7 @@ import { useUsers } from '../hooks/useUsers';
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { TabIcon } from './tabIcons';
 import styles from '../styles/SettingsView.module.css';
 
 const TAB_LABELS = {
@@ -23,19 +24,20 @@ const TAB_LABELS = {
 // Seções do menu. `defaultOff` = nasce desmarcada; as demais são visíveis a
 // menos que a flag esteja explicitamente em false. O Dashboard repete essa
 // polaridade ao ler (`=== true` vs `!== false`) — mexeu aqui, confira lá.
+// `tab` é a chave da aba: dá o mesmo ícone que a seção tem no menu (tabIcons).
 const SECTIONS = [
-  { key: 'calendarEnabled', label: 'Calendário', desc: 'Agenda de tarefas, recorrências e lembretes' },
-  { key: 'contentPlanEnabled', label: 'Content Plan', desc: 'Planejamento de conteúdo do mês' },
-  { key: 'reelsEnabled', label: 'Instagram', desc: 'Reels, stories, roteiros e arquivados' },
-  { key: 'influencersEnabled', label: 'Influencers', desc: 'Cadastro e acompanhamento de parcerias' },
-  { key: 'ideasEnabled', label: 'Ideias', desc: 'Mural de ideias com comentários' },
-  { key: 'notesEnabled', label: 'Anotações', desc: 'Notas compartilhadas com a equipe' },
-  { key: 'shoppingListEnabled', label: 'Compras', desc: 'Lista de compras e fornecedores' },
-  { key: 'reviewsEnabled', label: 'Avaliações', desc: 'Pesquisas de satisfação (NPS) do Delivery Direto' },
-  { key: 'knowledgeEnabled', label: 'Conhecimento', desc: 'Base de conhecimento e chat com IA' },
-  { key: 'precosInsumosEnabled', label: 'Preços', desc: 'Preços de insumos, fornecedores e fichas técnicas' },
-  { key: 'departamentoPessoalEnabled', label: 'Depto Pessoal', desc: 'Escala, faltas e folha de pagamento', defaultOff: true },
-  { key: 'motoboysEnabled', label: 'Motoboys', desc: 'Conferência semanal de entregas', defaultOff: true },
+  { key: 'calendarEnabled', tab: 'calendar', label: 'Calendário', desc: 'Agenda de tarefas, recorrências e lembretes' },
+  { key: 'contentPlanEnabled', tab: 'contentPlan', label: 'Content Plan', desc: 'Planejamento de conteúdo do mês' },
+  { key: 'reelsEnabled', tab: 'reels', label: 'Instagram', desc: 'Reels, stories, roteiros e arquivados' },
+  { key: 'influencersEnabled', tab: 'influencers', label: 'Influencers', desc: 'Cadastro e acompanhamento de parcerias' },
+  { key: 'ideasEnabled', tab: 'ideas', label: 'Ideias', desc: 'Mural de ideias com comentários' },
+  { key: 'notesEnabled', tab: 'notes', label: 'Anotações', desc: 'Notas compartilhadas com a equipe' },
+  { key: 'shoppingListEnabled', tab: 'shopping', label: 'Compras', desc: 'Lista de compras e fornecedores' },
+  { key: 'reviewsEnabled', tab: 'reviews', label: 'Avaliações', desc: 'Pesquisas de satisfação (NPS) do Delivery Direto' },
+  { key: 'knowledgeEnabled', tab: 'knowledge', label: 'Conhecimento', desc: 'Base de conhecimento e chat com IA' },
+  { key: 'precosInsumosEnabled', tab: 'precosInsumos', label: 'Preços', desc: 'Preços de insumos, fornecedores e fichas técnicas' },
+  { key: 'departamentoPessoalEnabled', tab: 'departamentoPessoal', label: 'Depto Pessoal', desc: 'Escala, faltas e folha de pagamento', defaultOff: true },
+  { key: 'motoboysEnabled', tab: 'motoboys', label: 'Motoboys', desc: 'Conferência semanal de entregas', defaultOff: true },
 ];
 
 // Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em
@@ -89,13 +91,21 @@ function Switch({ checked, onChange, disabled, label }) {
 }
 
 /** Linha de configuração: título + descrição à esquerda, controle à direita.
- *  Divisória entre linhas; a última não tem. Empilha no mobile. */
-function Row({ title, desc, children }) {
+ *  Divisória entre linhas; a última não tem. Empilha no mobile.
+ *  `tab` = chave de aba: desenha o mesmo ícone que a seção tem no menu. */
+function Row({ title, desc, tab, children }) {
   return (
     <div className={styles.row}>
-      <div className={styles.rowText}>
-        <span className={styles.rowTitle}>{title}</span>
-        {desc && <p className={styles.rowDesc}>{desc}</p>}
+      <div className={styles.rowMain}>
+        {tab && (
+          <span className={styles.rowIcon} aria-hidden="true">
+            <TabIcon k={tab} />
+          </span>
+        )}
+        <div className={styles.rowText}>
+          <span className={styles.rowTitle}>{title}</span>
+          {desc && <p className={styles.rowDesc}>{desc}</p>}
+        </div>
       </div>
       <div className={styles.rowControl}>{children}</div>
     </div>
@@ -349,7 +359,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
 
         <Group title="Seções visíveis" desc="O que aparece no menu lateral deste usuário.">
           {SECTIONS.map((sec) => (
-            <Row key={sec.key} title={sec.label} desc={sec.desc}>
+            <Row key={sec.key} title={sec.label} desc={sec.desc} tab={sec.tab}>
               <Switch
                 label={sec.label}
                 checked={sec.defaultOff ? s[sec.key] === true : s[sec.key] !== false}
@@ -552,6 +562,9 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
           {tabsOrder.map((key, idx) => (
             <li key={key} className={styles.orderItem}>
               <span className={styles.orderIndex}>{idx + 1}</span>
+              <span className={styles.rowIcon} aria-hidden="true">
+                <TabIcon k={key} />
+              </span>
               <span className={styles.orderLabel}>{TAB_LABELS[key] || key}</span>
               <div className={styles.orderActions}>
                 <button

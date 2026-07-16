@@ -130,6 +130,30 @@
   border-bottom: none;
 }
 
+/* Ícone + texto andam juntos; o controle é que vai pra direita. */
+.rowMain {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Mesmo tamanho e cor do ícone na sidebar (AppShellV2 .navIcon = 18px). */
+.rowIcon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.rowIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
 .rowText {
   min-width: 0;
 }
