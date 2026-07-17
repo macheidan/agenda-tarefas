@@ -111,7 +111,10 @@ export default function DepartamentoPessoalView() {
   // de pointerdown/mousedown com janela de tempo pra ignorar o "toque fantasma",
   // mas a ordem dos eventos touch→mouse varia entre WebViews Android e às vezes
   // fechava o menu no mesmo toque que o abria (parecia "não abrir"). O backdrop
-  // só existe DEPOIS do toque de abertura, então não há corrida de eventos.
+  // só existe DEPOIS do toque de abertura — mas alguns WebViews (Samsung A05,
+  // Moto G24) disparam um "ghost click" ~300ms depois, nas coordenadas da célula,
+  // que cai no backdrop e fecha o menu. Por isso o dismiss ignora eventos na
+  // janela GHOST_MS após abrir (ver dismissPopover).
   useEffect(() => {
     if (!popover) return;
     const onKey = (e) => { if (e.key === 'Escape') setPopover(null); };
@@ -201,7 +204,14 @@ export default function DepartamentoPessoalView() {
     if (!canEdit) return; // só editores/admin marcam faltas
     const date = `${year}-${pad(month + 1)}-${pad(day)}`;
     const rect = e.currentTarget.getBoundingClientRect();
-    setPopover({ employeeId: emp.id, store: emp.store, date, x: rect.left, y: rect.bottom });
+    setPopover({ employeeId: emp.id, store: emp.store, date, x: rect.left, y: rect.bottom, openedAt: e.timeStamp });
+  };
+
+  // Fecha o menu ao tocar no backdrop, mas ignora o "ghost click" atrasado que
+  // alguns WebViews Android disparam logo após o toque de abertura.
+  const dismissPopover = (e) => {
+    if (popover && e.timeStamp - (popover.openedAt || 0) < 500) return;
+    setPopover(null);
   };
 
   const applyType = (typeKey) => {
@@ -933,7 +943,7 @@ export default function DepartamentoPessoalView() {
       {popover && (
         <div
           className={styles.popBackdrop}
-          onClick={() => setPopover(null)}
+          onClick={dismissPopover}
         />
       )}
       {popover && (
