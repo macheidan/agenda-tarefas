@@ -1007,9 +1007,10 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   );
 }
 
-// Baseline "visto" por item (produto planilha) pra alerta de alta de preco.
-// Guarda, por chave de item, o preco na ultima vez que o Fabio marcou "Visto".
-// Persistido em settings/global.precosAlertasVistos (array {key, preco, data}),
+// "Visto" por EVENTO de alta (nao por item): a chave e a compra "de cima" do par
+// (ev:<id da linha em precos>). Marcar esconde aquela alta especifica da lista.
+// Guarda preco/data/label so pra exibir no painel de desfazer. Persistido em
+// settings/global.precosAlertasVistos (array {key, preco, data, label}),
 // compartilhado entre computadores. Leitura liberada; escrita so admin.
 function usePrecosVistos() {
   const [vistos, setVistos] = useState({});
@@ -1023,7 +1024,7 @@ function usePrecosVistos() {
         if (!Array.isArray(arr)) { setVistos({}); return; }
         const m = {};
         for (const it of arr) {
-          if (it && it.key != null) m[it.key] = { preco: Number(it.preco) || 0, data: it.data || '' };
+          if (it && it.key != null) m[it.key] = { preco: Number(it.preco) || 0, data: it.data || '', label: it.label || '' };
         }
         setVistos(m);
       },
@@ -1034,19 +1035,19 @@ function usePrecosVistos() {
 
   // Grava o mapa inteiro (array) — usado por marcar/desfazer, individual ou lote.
   const persist = useCallback((mapa) => {
-    const arr = Object.entries(mapa).map(([key, v]) => ({ key, preco: v.preco, data: v.data || '' }));
+    const arr = Object.entries(mapa).map(([key, v]) => ({ key, preco: v.preco, data: v.data || '', label: v.label || '' }));
     setDoc(doc(db, 'settings', 'global'), { precosAlertasVistos: arr }, { merge: true })
       .catch(e => console.error('[precos] erro ao salvar vistos:', e));
   }, []);
 
-  const marcarVisto = useCallback((key, preco, data) => {
-    setVistos(prev => { const next = { ...prev, [key]: { preco, data: data || '' } }; persist(next); return next; });
+  const marcarVisto = useCallback((key, preco, data, label) => {
+    setVistos(prev => { const next = { ...prev, [key]: { preco, data: data || '', label: label || '' } }; persist(next); return next; });
   }, [persist]);
 
   const marcarVarios = useCallback((entries) => {
     setVistos(prev => {
       const next = { ...prev };
-      for (const e of entries) next[e.key] = { preco: e.preco, data: e.data || '' };
+      for (const e of entries) next[e.key] = { preco: e.preco, data: e.data || '', label: e.label || '' };
       persist(next); return next;
     });
   }, [persist]);
@@ -1065,29 +1066,33 @@ function valorComparavel(p) {
   return calcResultado(p.preco_normalizado, p.fator_regra3);
 }
 
-// Sub-pagina "Subiram": alerta de alta de preco por Produto (planilha), cross-
-// fornecedor. Compara o Resultado ATUAL contra o baseline "visto" — o Resultado
-// da ultima vez que o item foi marcado como visto. Sem nunca ter visto, usa o
-// MENOR Resultado anterior da janela (12 meses) pra pegar altas acumuladas.
-// Marcar "Visto" fixa o baseline no atual: some da lista ate haver um novo topo —
-// isso evita a cauda longa de hortifruti que oscila dentro de uma banda.
+// Janela da aba: so entram altas cuja compra "de cima" caiu nos ultimos N dias.
+const SUBIRAM_DIAS = 60;
+
+// Sub-pagina "Subiram": lista de EVENTOS de alta de preco por Produto (planilha),
+// cross-fornecedor. Cada compra que ficou acima da compra IMEDIATAMENTE ANTERIOR
+// do mesmo item (>0,1%) vira uma linha — entao o mesmo produto pode aparecer
+// varias vezes (uma por alta). Queda ou preco igual nao entra. So mostra altas
+// cuja compra de cima aconteceu nos ultimos SUBIRAM_DIAS dias (a compra anterior
+// do par pode ser mais antiga). Ex.: R$1 -> R$2 (alta) -> R$0,80 (queda, fora) ->
+// R$0,90 (alta vs 0,80, entra mesmo sendo < R$2).
 //
 // O agrupamento e por `nome_padrao` (Produto de planilha) + `unidade_normalizada`,
-// somando TODOS os fornecedores daquele item: comprar o mesmo insumo mais caro de
-// outro fornecedor tambem dispara o alerta. A unidade entra na chave DE PROPOSITO
-// — agrupar so pelo nome misturava kg x un x ml sob o mesmo item (uma compra em
-// R$/un contra outra em R$/kg gerava altas absurdas, tipo +34900%). Fixando a
-// unidade, baseline e atual saem sempre na mesma base. Sem nome_padrao (produto
-// ainda nao vinculado a uma linha da planilha), cai no produto bruto (produto_id)
-// + unidade, que ao menos compara o item consigo mesmo.
+// somando TODOS os fornecedores: a compra anterior do par pode ser de outro
+// fornecedor. A unidade entra na chave DE PROPOSITO — agrupar so pelo nome
+// misturava kg x un x ml sob o mesmo item (uma compra em R$/un contra outra em
+// R$/kg gerava altas absurdas, tipo +34900%). Sem nome_padrao (produto ainda nao
+// vinculado a uma linha da planilha), cai no produto bruto (produto_id) + unidade.
+//
+// "Visto" esconde UM evento (chave = id da compra de cima). Nao volta — mas altas
+// futuras (compras novas que subam) viram eventos novos, com chave nova.
 function SubiramView({ precos, ocultos }) {
   const { vistos, marcarVisto, marcarVarios, desfazerVisto } = usePrecosVistos();
   const [busca, setBusca] = useState('');
-  const [limiar, setLimiar] = useState(0); // % minimo de alta pra alertar
+  const [limiar, setLimiar] = useState(0); // % minimo de alta pra alertar (piso 0,1%)
   const [showVistos, setShowVistos] = useState(false);
 
-  // Agrupa por produto bruto (produto_id). O rotulo mostra o nome de planilha
-  // (mais legivel); o fornecedor do atual desambigua itens homonimos.
+  // Agrupa as compras por Produto (planilha) + unidade, cross-fornecedor.
   const grupos = useMemo(() => {
     const byKey = {};
     for (const p of precos) {
@@ -1095,8 +1100,6 @@ function SubiramView({ precos, ocultos }) {
       if (ocultos.has(p.fornecedor || '(sem)')) continue;
       const v = valorComparavel(p);
       if (v == null) continue; // sem Resultado (sem fator) nao entra no alerta
-      // Chave = Produto (planilha) + unidade, cross-fornecedor. Sem nome_padrao,
-      // cai no produto bruto. A unidade evita comparar kg com un/ml do mesmo item.
       const unidade = p.unidade_normalizada || '';
       const key = p.produto_padrao
         ? `pl:${p.produto_padrao}|${unidade}`
@@ -1107,8 +1110,11 @@ function SubiramView({ precos, ocultos }) {
     return byKey;
   }, [precos, ocultos]);
 
+  // Um evento por par consecutivo (anterior -> atual) em que subiu > piso, com a
+  // compra de cima dentro da janela de SUBIRAM_DIAS dias. Vistos somem da lista.
   const alertas = useMemo(() => {
-    const fator = 1 + (Number(limiar) || 0) / 100;
+    const fatorMin = 1 + Math.max(Number(limiar) || 0, 0.1) / 100; // piso de 0,1%
+    const desde = daysAgo(SUBIRAM_DIAS);
     const out = [];
     for (const key in grupos) {
       const g = grupos[key];
@@ -1116,23 +1122,22 @@ function SubiramView({ precos, ocultos }) {
         if (a.data !== b.data) return a.data < b.data ? -1 : 1;
         return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
       });
-      if (rows.length < 2) continue;
-      const atual = rows[rows.length - 1];
-      const anteriores = rows.slice(0, -1);
-      const visto = vistos[key];
-      // baseline: preco visto, senao o menor preco anterior da janela.
-      const baseline = visto ? visto.preco : Math.min(...anteriores.map(r => r.v));
-      if (!(baseline > 0)) continue;
-      if (atual.v > baseline * fator + 1e-9) {
-        const diff = atual.v - baseline;
-        out.push({
-          key, label: g.label, unidade: atual.unidade_normalizada, fornecedor: atual.fornecedor,
-          baseline, baselineData: visto?.data, baselineVisto: !!visto,
-          atual: atual.v, atualData: atual.data, diff, pct: (diff / baseline) * 100,
-        });
+      for (let i = 1; i < rows.length; i++) {
+        const cur = rows[i];
+        const prev = rows[i - 1];
+        if (cur.data < desde) continue;   // alta fora da janela de 60 dias
+        if (!(prev.v > 0)) continue;
+        if (cur.v > prev.v * fatorMin + 1e-9) {
+          const diff = cur.v - prev.v;
+          out.push({
+            key: `ev:${cur.id}`, label: g.label, unidade: cur.unidade_normalizada, fornecedor: cur.fornecedor,
+            baseline: prev.v, baselineData: prev.data,
+            atual: cur.v, atualData: cur.data, diff, pct: (diff / prev.v) * 100,
+          });
+        }
       }
     }
-    return out.sort((a, b) => b.pct - a.pct);
+    return out.filter(e => !vistos[e.key]).sort((a, b) => b.pct - a.pct);
   }, [grupos, vistos, limiar]);
 
   const filtrados = useMemo(() => {
@@ -1174,8 +1179,11 @@ function SubiramView({ precos, ocultos }) {
     : { col, dir: (col === 'label' || col === 'fornecedor') ? 'asc' : 'desc' });
   const arrow = (col) => (sortBy.col === col ? (sortBy.dir === 'asc' ? ' ▲' : ' ▼') : '');
 
-  const nVistos = Object.keys(vistos).length;
-  const marcarTodos = () => marcarVarios(alertas.map(a => ({ key: a.key, preco: a.atual, data: a.atualData })));
+  // So os vistos no formato novo (por evento, ev:<id>) entram no painel — vistos
+  // antigos (chave por item, da logica anterior) ficam ignorados e nao poluem.
+  const vistosEv = useMemo(() => Object.entries(vistos).filter(([k]) => k.startsWith('ev:')), [vistos]);
+  const nVistos = vistosEv.length;
+  const marcarTodos = () => marcarVarios(alertas.map(a => ({ key: a.key, preco: a.atual, data: a.atualData, label: a.label })));
 
   // Abre a sub-pagina Preços numa NOVA aba do navegador, ja filtrada pelo item.
   // Deep-link via query params (?tab=precosInsumos&precoBusca=<item>) lidos no
@@ -1200,28 +1208,28 @@ function SubiramView({ precos, ocultos }) {
           onChange={e => setBusca(e.target.value)}
           style={{ ...inputS, flex: '1 1 220px', maxWidth: 300 }}
         />
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }} title="Só alerta quando a alta for maior ou igual a este %">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }} title="Só mostra altas maiores ou iguais a este % (piso de 0,1%)">
           Alerta ≥
           <input type="number" min={0} step={1} value={limiar} onChange={e => setLimiar(e.target.value)} style={{ ...inputS, width: 64 }} />
           %
         </label>
         <div style={{ flex: '1 1 150px', minWidth: 130 }}>
-          <StatCard label="Itens em alta" value={alertas.length} />
+          <StatCard label="Altas (60 dias)" value={alertas.length} />
         </div>
       </div>
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>
-        Alerta quando o <strong>Resultado</strong> atual passa do <strong>visto</strong> (última vez que você marcou o item). Sem baseline visto, compara com o menor Resultado da janela. Itens sem fator (sem Resultado) não entram aqui. Marque <strong>Visto ✓</strong> pra fixar o atual e limpar o alerta até um novo topo.
+        Cada linha é uma <strong>alta</strong>: uma compra que ficou acima da <strong>compra anterior</strong> do mesmo Produto (planilha), somando todos os fornecedores. Mostra as altas dos <strong>últimos 60 dias</strong> — o mesmo item pode aparecer mais de uma vez. Itens sem fator (sem Resultado) não entram. Marque <strong>Visto ✓</strong> pra esconder aquela alta; compras novas que subirem viram linhas novas.
       </p>
 
       {alertas.length === 0 ? (
-        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum item acima do baseline. 🎉</p>
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma alta nos últimos 60 dias. 🎉</p>
       ) : filtrados.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum item encontrado para "{busca}".</p>
       ) : (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-            <button onClick={marcarTodos} style={btnS} title="Fixa o baseline de todos os itens em alta no preço atual">✓ Marcar todos como visto</button>
+            <button onClick={marcarTodos} style={btnS} title="Esconde todas as altas listadas">✓ Marcar todos como visto</button>
           </div>
           <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
             <table className="subiuTable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -1229,7 +1237,7 @@ function SubiramView({ precos, ocultos }) {
                 <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
                   <th style={thSort} onClick={() => toggleSort('label')} title="Ordenar por produto">Produto (planilha){arrow('label')}</th>
                   <th style={thSort} onClick={() => toggleSort('fornecedor')} title="Ordenar por fornecedor">Fornecedor{arrow('fornecedor')}</th>
-                  <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('baseline')} title="Ordenar por baseline">Baseline{arrow('baseline')}</th>
+                  <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('baseline')} title="Ordenar pela compra anterior">Anterior{arrow('baseline')}</th>
                   <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('atual')} title="Ordenar por preço atual">Atual{arrow('atual')}</th>
                   <th style={thSort} onClick={() => toggleSort('data')} title="Ordenar por data">Data{arrow('data')}</th>
                   <th style={{ ...thSort, textAlign: 'right' }} onClick={() => toggleSort('variacao')} title="Ordenar por variação">Variação{arrow('variacao')}</th>
@@ -1249,7 +1257,7 @@ function SubiramView({ precos, ocultos }) {
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       R$ {i.baseline.toFixed(2)}{i.unidade ? `/${i.unidade}` : ''}
                       <span style={{ display: 'block', fontSize: 10 }}>
-                        {i.baselineVisto ? `visto ${i.baselineData ? formatDate(i.baselineData) : ''}` : 'menor da janela'}
+                        {i.baselineData ? `compra ${formatDate(i.baselineData)}` : 'compra anterior'}
                       </span>
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -1261,9 +1269,9 @@ function SubiramView({ precos, ocultos }) {
                     </td>
                     <td style={{ ...tdS, textAlign: 'center' }}>
                       <button
-                        onClick={(e) => { e.stopPropagation(); marcarVisto(i.key, i.atual, i.atualData); }}
+                        onClick={(e) => { e.stopPropagation(); marcarVisto(i.key, i.atual, i.atualData, i.label); }}
                         style={{ ...btnS, fontSize: 11, padding: '3px 8px' }}
-                        title="Fixa este preço como baseline — some da lista até subir de novo"
+                        title="Esconde esta alta da lista"
                       >
                         Visto ✓
                       </button>
@@ -1280,20 +1288,21 @@ function SubiramView({ precos, ocultos }) {
       {nVistos > 0 && (
         <div style={{ marginTop: 16 }}>
           <button onClick={() => setShowVistos(v => !v)} style={{ ...btnS, fontSize: 12 }}>
-            {showVistos ? '▾' : '▸'} {nVistos} {nVistos === 1 ? 'item marcado como visto' : 'itens marcados como vistos'}
+            {showVistos ? '▾' : '▸'} {nVistos} {nVistos === 1 ? 'alta escondida' : 'altas escondidas'}
           </button>
           {showVistos && (
             <div style={{ marginTop: 8, padding: 12, border: '1px dashed var(--border, #e5e5e5)', borderRadius: 8, background: 'var(--bg, #f9fafb)', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {Object.entries(vistos)
-                .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+              {vistosEv
+                .slice()
+                .sort((a, b) => (b[1].data || '').localeCompare(a[1].data || ''))
                 .map(([key, v]) => (
                   <button
                     key={key}
                     onClick={() => desfazerVisto(key)}
-                    title="Remover baseline visto — volta a comparar pelo menor da janela"
+                    title="Mostrar esta alta de novo"
                     style={{ ...btnS, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
-                    <span>{key.replace(/^(pl:|id:)/, '')} · R$ {v.preco.toFixed(2)}</span>
+                    <span>{(v.label || key.replace(/^ev:/, '')) + ' · R$ ' + v.preco.toFixed(2) + (v.data ? ' · ' + formatDate(v.data) : '')}</span>
                     <span style={{ color: 'var(--accent)', fontWeight: 700 }}>↺</span>
                   </button>
                 ))}
