@@ -229,7 +229,13 @@ function normalizeLoja(raw) {
 export default function PrecosInsumosView() {
   // Sub-paginas (mesmo estilo de navegacao do Depto Pessoal): 'precos' = tabela
   // de notas; 'fornecedores' = total de compras por fornecedor/produto/mes.
-  const [subPage, setSubPage] = useState('precos');
+  // Abre em "Subiram" por padrao (alerta de alta e o que se olha no dia a dia);
+  // mas se veio pelo deep-link ?precoBusca (clique num item de Subiram, que abre
+  // Produtos ja filtrado), comeca em "Produtos".
+  const [subPage, setSubPage] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('precoBusca') ? 'precos' : 'subiram'; }
+    catch { return 'subiram'; }
+  });
   const [precos, setPrecos] = useState([]);
   const [loading, setLoading] = useState(true);
   // Visibilidade das sub-seções por usuário (Configurações). Sub-seção com flag
