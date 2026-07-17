@@ -148,9 +148,18 @@ service cloud.firestore {
 
     // Configurações: dono lê as suas, admin lê/escreve todas.
     // settings/global é lido por qualquer logado (ordem do menu, etc).
+    // Exceção de escrita: os campos COMPARTILHADOS de Preços em settings/global
+    // (alertas "vistos" da aba Subiram e fornecedores/produtos ocultos) podem ser
+    // atualizados por qualquer logado — mas SÓ esses campos (hasOnly), mesmo padrão
+    // de readBy (adminMessages) e archived (surveys). Sem isso, o não-admin que vê
+    // a aba Subiram clica "Visto", a escrita é rejeitada, o cache otimista é
+    // revertido e a linha reaparece. O doc já existe em produção, então update basta.
     match /settings/{uid} {
       allow read: if isOwner(uid) || isAdmin() || uid == 'global';
       allow write: if isAdmin();
+      allow update: if uid == 'global' && isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['precosAlertasVistos', 'precosFornecedoresOcultos', 'precosProdutosOcultos']);
     }
 
     // Base de conhecimento: qualquer logado lê, admin escreve
