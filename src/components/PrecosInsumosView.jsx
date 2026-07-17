@@ -1059,21 +1059,21 @@ function valorComparavel(p) {
   return calcResultado(p.preco_normalizado, p.fator_regra3);
 }
 
-// Sub-pagina "Subiram": alerta de alta de preco por produto bruto (produto_id).
-// Em vez de comparar so as duas ultimas compras (que perde altas acumuladas numa
-// semana sem olhar), compara o Resultado ATUAL contra o baseline "visto" — o
-// Resultado da ultima vez que o item foi marcado como visto. Sem nunca ter visto,
-// usa o MENOR Resultado anterior da janela (12 meses) pra pegar altas acumuladas.
+// Sub-pagina "Subiram": alerta de alta de preco por Produto (planilha), cross-
+// fornecedor. Compara o Resultado ATUAL contra o baseline "visto" — o Resultado
+// da ultima vez que o item foi marcado como visto. Sem nunca ter visto, usa o
+// MENOR Resultado anterior da janela (12 meses) pra pegar altas acumuladas.
 // Marcar "Visto" fixa o baseline no atual: some da lista ate haver um novo topo —
 // isso evita a cauda longa de hortifruti que oscila dentro de uma banda.
 //
-// O agrupamento e por `produto_id` (produto bruto) — a MESMA granularidade da
-// secao Produtos, onde o Fator/Resultado e revisado. Agrupar por `nome_padrao`
-// misturava produtos, fornecedores e unidades diferentes (kg x un x ml) sob um
-// mesmo nome de planilha: o baseline caia num Resultado de outro produto/linha
-// (ex.: uma linha-lixo de R$0,01/ml derrubava a base de um item de R$3,50),
-// gerando altas absurdas (+34900%) que nao batiam com nenhum Resultado do item.
-// Comparando dentro do produto_id, baseline e atual saem sempre da mesma relacao.
+// O agrupamento e por `nome_padrao` (Produto de planilha) + `unidade_normalizada`,
+// somando TODOS os fornecedores daquele item: comprar o mesmo insumo mais caro de
+// outro fornecedor tambem dispara o alerta. A unidade entra na chave DE PROPOSITO
+// — agrupar so pelo nome misturava kg x un x ml sob o mesmo item (uma compra em
+// R$/un contra outra em R$/kg gerava altas absurdas, tipo +34900%). Fixando a
+// unidade, baseline e atual saem sempre na mesma base. Sem nome_padrao (produto
+// ainda nao vinculado a uma linha da planilha), cai no produto bruto (produto_id)
+// + unidade, que ao menos compara o item consigo mesmo.
 function SubiramView({ precos, ocultos }) {
   const { vistos, marcarVisto, marcarVarios, desfazerVisto } = usePrecosVistos();
   const [busca, setBusca] = useState('');
@@ -1089,7 +1089,12 @@ function SubiramView({ precos, ocultos }) {
       if (ocultos.has(p.fornecedor || '(sem)')) continue;
       const v = valorComparavel(p);
       if (v == null) continue; // sem Resultado (sem fator) nao entra no alerta
-      const key = `id:${p.produto_id}`;
+      // Chave = Produto (planilha) + unidade, cross-fornecedor. Sem nome_padrao,
+      // cai no produto bruto. A unidade evita comparar kg com un/ml do mesmo item.
+      const unidade = p.unidade_normalizada || '';
+      const key = p.produto_padrao
+        ? `pl:${p.produto_padrao}|${unidade}`
+        : `id:${p.produto_id}|${unidade}`;
       const label = p.produto_padrao || p.produto || '(sem)';
       (byKey[key] ||= { key, label, rows: [] }).rows.push({ ...p, v });
     }
@@ -1236,13 +1241,13 @@ function SubiramView({ precos, ocultos }) {
                     <td style={{ ...tdS, fontWeight: 500 }}>{i.label}</td>
                     <td style={tdS}>{i.fornecedor}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      R$ {i.baseline.toFixed(2)}
+                      R$ {i.baseline.toFixed(2)}{i.unidade ? `/${i.unidade}` : ''}
                       <span style={{ display: 'block', fontSize: 10 }}>
                         {i.baselineVisto ? `visto ${i.baselineData ? formatDate(i.baselineData) : ''}` : 'menor da janela'}
                       </span>
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      R$ {i.atual.toFixed(2)}
+                      R$ {i.atual.toFixed(2)}{i.unidade ? `/${i.unidade}` : ''}
                     </td>
                     <td style={{ ...tdS, fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(i.atualData)}</td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 16, color: 'var(--danger)', fontWeight: 600, whiteSpace: 'nowrap' }}>
