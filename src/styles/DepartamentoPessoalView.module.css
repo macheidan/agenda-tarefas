@@ -911,6 +911,70 @@
   background: var(--danger-bg);
 }
 
+/* ---- Mobile: bottom sheet ----
+   Em vez de posicionar o menu por coordenadas (que caía fora da tela ou era
+   fechado pelo "ghost click" em alguns WebViews Android — Samsung A05, Moto G24),
+   no mobile o menu vira uma folha ancorada na base da tela, em posição fixa e
+   conhecida. Some a chance de "não aparecer". */
+.popBackdropMobile {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.popSheet {
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-radius: 16px 16px 0 0;
+  padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  gap: 4px;
+  box-shadow: 0 -6px 24px var(--shadow-hover);
+  animation: sheetUp 0.18s ease-out;
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.popSheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.popSheetTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.popSheetClose {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* Alvos de toque maiores dentro da folha */
+.popSheet .popItem {
+  font-size: 15px;
+  padding: 12px 8px;
+}
+
+.popSheet .popClear {
+  font-size: 15px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
 .rowActionsVisible {
   opacity: 1;
 }

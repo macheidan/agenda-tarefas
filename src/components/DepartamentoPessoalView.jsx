@@ -942,18 +942,30 @@ export default function DepartamentoPessoalView() {
           o toque fora pra fechar — sem listener global nem corrida de eventos. */}
       {popover && (
         <div
-          className={styles.popBackdrop}
+          className={`${styles.popBackdrop} ${isMobile ? styles.popBackdropMobile : ''}`}
           onClick={dismissPopover}
         />
       )}
       {popover && (
         <div
-          className={styles.popover}
-          style={{
-            top: Math.max(8, Math.min(popover.y + 4, window.innerHeight - 260)),
-            left: Math.max(8, Math.min(popover.x, window.innerWidth - 220)),
-          }}
+          className={`${styles.popover} ${isMobile ? styles.popSheet : ''}`}
+          style={
+            isMobile
+              ? undefined
+              : {
+                  top: Math.max(8, Math.min(popover.y + 4, window.innerHeight - 260)),
+                  left: Math.max(8, Math.min(popover.x, window.innerWidth - 220)),
+                }
+          }
         >
+          {isMobile && (
+            <div className={styles.popSheetHeader}>
+              <span className={styles.popSheetTitle}>
+                {popover.date ? popover.date.split('-').reverse().join('/') : 'Marcar dia'}
+              </span>
+              <button className={styles.popSheetClose} onClick={() => setPopover(null)} title="Fechar">✕</button>
+            </div>
+          )}
           {ABSENCE_TYPES.map((t) => (
             <button key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
               <span className={styles.popDot} style={{ background: t.color }}>{t.short}</span>
