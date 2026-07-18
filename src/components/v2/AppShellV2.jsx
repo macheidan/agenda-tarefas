@@ -20,7 +20,7 @@ import styles from '../../styles/AppShellV2.module.css';
 const NAV_GROUPS = [
   { label: 'Operação', keys: ['calendar', 'shopping', 'precosInsumos'] },
   { label: 'Equipe', keys: ['departamentoPessoal', 'motoboys'] },
-  { label: 'Marketing', keys: ['reels', 'contentPlan', 'influencers', 'reviews'] },
+  { label: 'Marketing', keys: ['reels', 'contentPlan', 'influencers', 'reviews', 'postiz'] },
   { label: 'Ferramentas', keys: ['notes', 'ideas', 'knowledge'] },
 ];
 
@@ -63,6 +63,9 @@ export default function AppShellV2({
     precosInsumos: { enabled: precosInsumosEnabled, key: 'precosInsumos', label: 'Preços' },
     departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
     motoboys: { enabled: motoboysEnabled, key: 'motoboys', label: 'Motoboys' },
+    // Link externo — abre o Postiz (agendador de redes) numa aba nova. Não tem
+    // "view" interna no Dashboard; o item só navega para href.
+    postiz: { enabled: true, key: 'postiz', label: 'Postiz', href: 'https://prolonged-cloning-skimpily.ngrok-free.dev' },
   };
 
   // Ordem custom do usuário, aplicada dentro de cada grupo.
@@ -179,20 +182,35 @@ export default function AppShellV2({
           {grouped.map((g) => (
             <div key={g.label}>
               <div className={styles.navGroupLabel}>{g.label}</div>
-              {g.items.map((t) => (
-                <button
-                  key={t.key}
-                  className={`${styles.navItem} ${activeTab === t.key ? styles.navItemActive : ''}`}
-                  onClick={() => handleTabChange(t.key)}
-                  title={collapsed ? t.label : undefined}
-                >
-                  <span className={styles.navIcon}><TabIcon k={t.key} /></span>
-                  <span className={styles.navLabel}>{t.label}</span>
-                  {t.unread > 0 && (
-                    <span className={`${styles.navBadge} ${styles.navBadgeAlert}`}>{t.unread}</span>
-                  )}
-                </button>
-              ))}
+              {g.items.map((t) =>
+                t.href ? (
+                  <a
+                    key={t.key}
+                    href={t.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.navItem}
+                    style={{ textDecoration: 'none' }}
+                    title={collapsed ? t.label : undefined}
+                  >
+                    <span className={styles.navIcon}><TabIcon k={t.key} /></span>
+                    <span className={styles.navLabel}>{t.label}</span>
+                  </a>
+                ) : (
+                  <button
+                    key={t.key}
+                    className={`${styles.navItem} ${activeTab === t.key ? styles.navItemActive : ''}`}
+                    onClick={() => handleTabChange(t.key)}
+                    title={collapsed ? t.label : undefined}
+                  >
+                    <span className={styles.navIcon}><TabIcon k={t.key} /></span>
+                    <span className={styles.navLabel}>{t.label}</span>
+                    {t.unread > 0 && (
+                      <span className={`${styles.navBadge} ${styles.navBadgeAlert}`}>{t.unread}</span>
+                    )}
+                  </button>
+                )
+              )}
             </div>
           ))}
         </nav>

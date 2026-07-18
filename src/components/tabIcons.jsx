@@ -14,6 +14,7 @@ const I = {
   departamentoPessoal: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><rect x="16" y="3" width="6" height="8" rx="1" /></>,
   motoboys: <><circle cx="5.5" cy="17" r="2.5" /><circle cx="18.5" cy="17" r="2.5" /><path d="M8 17h7" /><path d="M18.5 17l-2.5-7.5h-3.5" /></>,
   completed: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" /></>,
+  postiz: <><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></>,
 };
 
 export function TabIcon({ k }) {
