@@ -311,9 +311,15 @@ function LinesTable({ lines: linesProp, onCommit, opcoes, custoBase, benefCusto,
                   </td>
                   {SIZES.map(([k]) => (
                     <td key={k} style={{ ...tdS, textAlign: 'right' }}>
-                      <input inputMode="decimal" value={l[k] ?? ''} onChange={e => setCell(i, k, e.target.value)} onBlur={() => commit(lines)}
-                        disabled={locked} title={locked ? 'Peso replicado da Base — edite na Base' : undefined}
-                        style={{ ...inputS, width: 70, textAlign: 'right', ...(locked ? { color: 'var(--text-muted)', background: 'var(--bg-secondary, #fafafa)', cursor: 'not-allowed' } : {}) }} />
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}>
+                        <input inputMode="decimal" value={l[k] ?? ''} onChange={e => setCell(i, k, e.target.value)} onBlur={() => commit(lines)}
+                          disabled={locked} title={locked ? 'Peso replicado da Base — edite na Base' : undefined}
+                          style={{ ...inputS, width: 70, textAlign: 'right', ...(locked ? { color: 'var(--text-muted)', background: 'var(--bg-secondary, #fafafa)', cursor: 'not-allowed' } : {}) }} />
+                        {/* Custo da linha nesse tamanho (peso × custo/un), atualiza enquanto digita. */}
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', opacity: 0.75, minWidth: 52, textAlign: 'left', whiteSpace: 'nowrap' }}>
+                          {num(l[k]) > 0 && cu ? fmt(num(l[k]) * cu) : ''}
+                        </span>
+                      </span>
                     </td>
                   ))}
                   <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)' }}>{cu ? fmt(cu) : '—'}</td>
