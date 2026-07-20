@@ -10,6 +10,27 @@ import { CMV_SEED } from '../data/cmvSeed';
 //   cmvSabores/{id}      — { nome, lines: [{ ref, tipo, qtdP, qtdM, qtdG, qtdS }], order }
 // O CUSTO não é gravado: é calculado no cliente a partir do Resultado (custo/kg)
 // de cada Produto (planilha), vindo da seção Preços. Ver CmvView.
+
+const SIZE_KEYS = ['qtdP', 'qtdM', 'qtdG', 'qtdS'];
+
+// Replica o peso dos ingredientes da BASE nas linhas de um sabor: linha com o
+// mesmo ingrediente (ref + tipo) de uma linha da base tem os 4 tamanhos
+// forçados aos valores da base — a base é a fonte única do peso.
+function applyBaseToLines(lines, baseLines) {
+  if (!Array.isArray(baseLines) || !baseLines.length) return { lines: lines || [], changed: false };
+  let changed = false;
+  const out = (lines || []).map((l) => {
+    const b = baseLines.find((bl) => bl.ref === l.ref && (bl.tipo || 'base') === (l.tipo || 'base'));
+    if (!b) return l;
+    const upd = { ...l };
+    for (const k of SIZE_KEYS) {
+      const v = Number(b[k]) || 0;
+      if ((Number(l[k]) || 0) !== v) { upd[k] = v; changed = true; }
+    }
+    return upd;
+  });
+  return { lines: out, changed };
+}
 export function useCmv() {
   const [beneficiados, setBeneficiados] = useState([]);
   const [sabores, setSabores] = useState([]);
@@ -30,10 +51,16 @@ export function useCmv() {
   }, []);
 
   const updateBases = useCallback(async (next) => {
-    await setDoc(doc(db, 'cmvConfig', 'bases'), {
-      salgada: next.salgada || [], doce: next.doce || [],
-    });
-  }, []);
+    const bs = { salgada: next.salgada || [], doce: next.doce || [] };
+    await setDoc(doc(db, 'cmvConfig', 'bases'), bs);
+    // Replica o peso dos ingredientes da base para todo sabor da categoria
+    // que contém o ingrediente na própria ficha (doces e salgadas separadas).
+    await Promise.all(sabores.map(async (s) => {
+      const cat = s.categoria || 'salgada';
+      const { lines, changed } = applyBaseToLines(s.lines, bs[cat]);
+      if (changed) await updateDoc(doc(db, 'cmvSabores', s.id), { lines });
+    }));
+  }, [sabores]);
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -92,8 +119,18 @@ export function useCmv() {
   }, []);
 
   const updateSabor = useCallback(async (id, updates) => {
-    await updateDoc(doc(db, 'cmvSabores', id), updates);
-  }, []);
+    const next = { ...updates };
+    // Mexeu nas linhas ou na categoria? Reaplica o peso da base da categoria
+    // resultante — inclusive quando um ingrediente da base acabou de entrar
+    // na ficha (o peso já chega preenchido).
+    if (next.lines || next.categoria) {
+      const cur = sabores.find((s) => s.id === id);
+      const cat = next.categoria || cur?.categoria || 'salgada';
+      const { lines, changed } = applyBaseToLines(next.lines || cur?.lines || [], bases[cat]);
+      if (next.lines || changed) next.lines = lines;
+    }
+    await updateDoc(doc(db, 'cmvSabores', id), next);
+  }, [sabores, bases]);
 
   const deleteSabor = useCallback(async (id) => {
     await deleteDoc(doc(db, 'cmvSabores', id));

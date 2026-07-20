@@ -65,11 +65,15 @@ function calcBeneficiado(b, custoBase) {
 
 // Total de custo de um sabor por tamanho (P/M/G/S) = Σ (qtd × custo do ingrediente),
 // incluindo a BASE da categoria do sabor (mussarela/orégano/caixa que vão em todas).
+// Ingrediente da base que JÁ está na ficha do sabor não soma de novo: a linha
+// do sabor carrega o peso replicado da base (ver useCmv/applyBaseToLines).
 function calcSabor(s, custoBase, benefCusto, bases) {
   const cat = s.categoria || 'salgada';
-  const baseLines = (bases && bases[cat]) || [];
+  const own = s.lines || [];
+  const ownKeys = new Set(own.map((l) => `${l.tipo || 'base'}:${l.ref}`));
+  const baseLines = ((bases && bases[cat]) || []).filter((l) => !ownKeys.has(`${l.tipo || 'base'}:${l.ref}`));
   const t = { qtdP: 0, qtdM: 0, qtdG: 0, qtdS: 0 };
-  for (const l of [...(s.lines || []), ...baseLines]) {
+  for (const l of [...own, ...baseLines]) {
     const cu = l.tipo === 'beneficiado' ? (benefCusto[l.ref] || 0) : (custoBase[l.ref]?.custo || 0);
     for (const [k] of SIZES) t[k] += num(l[k]) * cu;
   }
@@ -259,7 +263,7 @@ function BeneficiadoFicha({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
 }
 
 // ── Editor de linhas (ingrediente × 4 tamanhos) — reutilizado por Sabor e Base ──
-function LinesTable({ lines: linesProp, onCommit, opcoes, custoBase, benefCusto }) {
+function LinesTable({ lines: linesProp, onCommit, opcoes, custoBase, benefCusto, lockedKeys }) {
   const sig = JSON.stringify(linesProp || []);
   const [lines, setLines] = useState(linesProp || []);
   const [prevSig, setPrevSig] = useState(sig);
@@ -288,6 +292,7 @@ function LinesTable({ lines: linesProp, onCommit, opcoes, custoBase, benefCusto 
             {lines.map((l, i) => {
               const cu = custoUnit(l);
               const selVal = `${l.tipo || 'base'}:${l.ref}`;
+              const locked = !!lockedKeys?.has(selVal);
               return (
                 <tr key={i} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                   <td style={tdS}>
@@ -306,7 +311,9 @@ function LinesTable({ lines: linesProp, onCommit, opcoes, custoBase, benefCusto 
                   </td>
                   {SIZES.map(([k]) => (
                     <td key={k} style={{ ...tdS, textAlign: 'right' }}>
-                      <input inputMode="decimal" value={l[k] ?? ''} onChange={e => setCell(i, k, e.target.value)} onBlur={() => commit(lines)} style={{ ...inputS, width: 70, textAlign: 'right' }} />
+                      <input inputMode="decimal" value={l[k] ?? ''} onChange={e => setCell(i, k, e.target.value)} onBlur={() => commit(lines)}
+                        disabled={locked} title={locked ? 'Peso replicado da Base — edite na Base' : undefined}
+                        style={{ ...inputS, width: 70, textAlign: 'right', ...(locked ? { color: 'var(--text-muted)', background: 'var(--bg-secondary, #fafafa)', cursor: 'not-allowed' } : {}) }} />
                     </td>
                   ))}
                   <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)' }}>{cu ? fmt(cu) : '—'}</td>
@@ -335,7 +342,7 @@ function BaseConfig({ bases, opcoes, custoBase, benefCusto, onUpdate }) {
       {open && (
         <div style={{ marginTop: 10 }}>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>
-            Ingredientes comuns a todo sabor da categoria (ex.: mussarela, orégano, caixa). Somam no custo de cada sabor conforme a categoria dele. Doce costuma ser mussarela em peso diferente e sem orégano.
+            Ingredientes comuns a todo sabor da categoria (ex.: mussarela, orégano, caixa). Somam no custo de cada sabor conforme a categoria dele. O peso definido aqui <strong>replica para todos os sabores</strong> da categoria que têm o ingrediente na ficha (e fica travado lá). Doce costuma ser mussarela em peso diferente e sem orégano.
           </p>
           <div style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px' }}>Salgadas</div>
           <LinesTable lines={(bases && bases.salgada) || []} onCommit={ls => onUpdate({ ...bases, salgada: ls })} opcoes={opcoes} custoBase={custoBase} benefCusto={benefCusto} />
@@ -351,7 +358,11 @@ function BaseConfig({ bases, opcoes, custoBase, benefCusto, onUpdate }) {
 // Renderizado embutido na linha do resumo (nome e totais por tamanho já aparecem lá).
 function SaborFicha({ s, custoBase, benefCusto, bases, opcoes, onUpdate, onDelete }) {
   const categoria = s.categoria || 'salgada';
-  const baseRefs = (((bases && bases[categoria]) || []).map(l => l.ref).filter(Boolean));
+  const baseLinesCat = (bases && bases[categoria]) || [];
+  const baseRefs = baseLinesCat.map(l => l.ref).filter(Boolean);
+  // Ingrediente que está na Base tem o peso travado na ficha do sabor — a
+  // fonte do peso é a Base, replicada pra todos os sabores da categoria.
+  const lockedKeys = new Set(baseLinesCat.map(l => `${l.tipo || 'base'}:${l.ref}`));
 
   return (
     <div style={fichaS}>
@@ -364,9 +375,9 @@ function SaborFicha({ s, custoBase, benefCusto, bases, opcoes, onUpdate, onDelet
         <button style={{ ...btnS, color: 'var(--danger)', borderColor: 'var(--danger)' }}
           onClick={() => { if (window.confirm(`Excluir o sabor "${s.nome}"?`)) onDelete(s.id); }} title="Excluir sabor">Excluir</button>
       </div>
-      <LinesTable lines={s.lines} onCommit={ls => onUpdate(s.id, { lines: ls })} opcoes={opcoes} custoBase={custoBase} benefCusto={benefCusto} />
+      <LinesTable lines={s.lines} onCommit={ls => onUpdate(s.id, { lines: ls })} opcoes={opcoes} custoBase={custoBase} benefCusto={benefCusto} lockedKeys={lockedKeys} />
       {baseRefs.length > 0 && (
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 0 0' }}>+ base {categoria} (em todas): {baseRefs.join(', ')}</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 0 0' }}>+ base {categoria} (em todas): {baseRefs.join(', ')} — peso vem da Base (não soma em dobro se o ingrediente estiver na ficha)</p>
       )}
     </div>
   );
