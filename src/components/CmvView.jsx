@@ -91,12 +91,21 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
   const [novoBenef, setNovoBenef] = useState('');
   const [novoSabor, setNovoSabor] = useState('');
   const [importando, setImportando] = useState(false);
+  // Mostra os itens arquivados da aba atual no lugar dos ativos.
+  const [verArquivados, setVerArquivados] = useState(false);
   // Ids abertos por aba: cada linha expande sua ficha (ingredientes) pela seta.
   const [abertosB, setAbertosB] = useState(() => new Set());
   const [abertosS, setAbertosS] = useState(() => new Set());
   const abertos = aba === 'beneficiados' ? abertosB : abertosS;
   const setAbertos = aba === 'beneficiados' ? setAbertosB : setAbertosS;
-  const idsAba = (aba === 'beneficiados' ? beneficiados : sabores).map(x => x.id);
+
+  const benefAtivos = beneficiados.filter(b => !b.archived);
+  const benefArquivados = beneficiados.filter(b => b.archived);
+  const saboresAtivos = sabores.filter(s => !s.archived);
+  const saboresArquivados = sabores.filter(s => s.archived);
+  const listaB = verArquivados ? benefArquivados : benefAtivos;
+  const listaS = verArquivados ? saboresArquivados : saboresAtivos;
+  const idsAba = (aba === 'beneficiados' ? listaB : listaS).map(x => x.id);
   const todosAbertos = idsAba.length > 0 && idsAba.every(id => abertos.has(id));
   const toggle = (id) => setAbertos(prev => {
     const next = new Set(prev);
@@ -112,8 +121,10 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
   }, [beneficiados, custoBase]);
 
   // Opcoes do dropdown de ingrediente do SABOR: beneficiados + produtos planilha.
+  // Arquivados ficam fora do dropdown, mas seguem custeando sabores que já os usam
+  // (benefCusto acima considera todos).
   const opcoesSabor = useMemo(() => ({
-    beneficiados: beneficiados.map(b => b.nome).sort((a, b) => a.localeCompare(b)),
+    beneficiados: beneficiados.filter(b => !b.archived).map(b => b.nome).sort((a, b) => a.localeCompare(b)),
     base: [...nomesPadrao].sort((a, b) => a.localeCompare(b)),
   }), [beneficiados, nomesPadrao]);
 
@@ -142,8 +153,8 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
             `display:contents`, então os 2 botões seguem filhos diretos do flex
             de cima — layout idêntico ao de antes. */}
         <div style={tabTrackS}>
-          <button style={IS_V2 ? segBtnS(aba === 'beneficiados') : { ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({beneficiados.length})</button>
-          <button style={IS_V2 ? segBtnS(aba === 'sabores') : { ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({sabores.length})</button>
+          <button style={IS_V2 ? segBtnS(aba === 'beneficiados') : { ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({benefAtivos.length})</button>
+          <button style={IS_V2 ? segBtnS(aba === 'sabores') : { ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({saboresAtivos.length})</button>
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text, #222)' }} title="Abre ou fecha as fichas de todos os itens da aba. Cada linha também abre pela seta.">
           <input type="checkbox" checked={todosAbertos} onChange={e => setAbertos(e.target.checked ? new Set(idsAba) : new Set())} /> Expandir tudo
@@ -168,11 +179,15 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
               style={{ ...inputS, flex: '1 1 240px', maxWidth: 320 }} />
             <button style={{ ...btnS, borderColor: 'var(--success)', color: 'var(--success)' }}
               onClick={() => { if (novoBenef.trim()) { addBeneficiado(novoBenef); setNovoBenef(''); } }}>+ Novo</button>
+            <button style={{ ...btnS, ...(verArquivados ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : { color: 'var(--text-muted)' }) }}
+              onClick={() => setVerArquivados(v => !v)} title="Alterna entre itens ativos e arquivados">
+              Arquivados ({benefArquivados.length})</button>
           </div>
-          {beneficiados.length === 0 ? (
-            <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum beneficiado. Crie um acima ou importe da planilha.</p>
+          {listaB.length === 0 ? (
+            <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
+              {verArquivados ? 'Nenhum beneficiado arquivado.' : 'Nenhum beneficiado. Crie um acima ou importe da planilha.'}</p>
           ) : (
-            <BeneficiadosResumo beneficiados={beneficiados} custoBase={custoBase} nomesPadrao={opcoesSabor.base}
+            <BeneficiadosResumo beneficiados={listaB} custoBase={custoBase} nomesPadrao={opcoesSabor.base}
               abertos={abertosB} onToggle={toggle} onUpdate={updateBeneficiado} onDelete={deleteBeneficiado} />
           )}
         </>
@@ -184,12 +199,16 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
               style={{ ...inputS, flex: '1 1 240px', maxWidth: 320 }} />
             <button style={{ ...btnS, borderColor: 'var(--success)', color: 'var(--success)' }}
               onClick={() => { if (novoSabor.trim()) { addSabor(novoSabor); setNovoSabor(''); } }}>+ Novo</button>
+            <button style={{ ...btnS, ...(verArquivados ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : { color: 'var(--text-muted)' }) }}
+              onClick={() => setVerArquivados(v => !v)} title="Alterna entre itens ativos e arquivados">
+              Arquivados ({saboresArquivados.length})</button>
           </div>
           <BaseConfig bases={bases} opcoes={opcoesSabor} custoBase={custoBase} benefCusto={benefCusto} onUpdate={updateBases} />
-          {sabores.length === 0 ? (
-            <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum sabor. Crie um acima ou importe da planilha.</p>
+          {listaS.length === 0 ? (
+            <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
+              {verArquivados ? 'Nenhum sabor arquivado.' : 'Nenhum sabor. Crie um acima ou importe da planilha.'}</p>
           ) : (
-            <SaboresResumo sabores={sabores} custoBase={custoBase} benefCusto={benefCusto} bases={bases} opcoes={opcoesSabor}
+            <SaboresResumo sabores={listaS} custoBase={custoBase} benefCusto={benefCusto} bases={bases} opcoes={opcoesSabor}
               abertos={abertosS} onToggle={toggle} onUpdate={updateSabor} onDelete={deleteSabor} />
           )}
         </>
@@ -227,6 +246,10 @@ function BeneficiadoFicha({ b, custoBase, nomesPadrao, onUpdate, onDelete }) {
             placeholder="kg" style={{ ...inputS, width: 70 }} />
         </label>
         <span style={{ flex: 1 }} />
+        <button style={{ ...btnS, color: 'var(--text-muted)' }}
+          onClick={() => onUpdate(b.id, { archived: !b.archived })}
+          title={b.archived ? 'Devolver aos ativos' : 'Tirar da lista sem excluir (sabores que o usam seguem custeando)'}>
+          {b.archived ? 'Desarquivar' : 'Arquivar'}</button>
         <button style={{ ...btnS, color: 'var(--danger)', borderColor: 'var(--danger)' }}
           onClick={() => { if (window.confirm(`Excluir o beneficiado "${b.nome}"?`)) onDelete(b.id); }} title="Excluir beneficiado">Excluir</button>
       </div>
@@ -378,6 +401,10 @@ function SaborFicha({ s, custoBase, benefCusto, bases, opcoes, onUpdate, onDelet
           <option value="doce">Doce</option>
         </select>
         <span style={{ flex: 1 }} />
+        <button style={{ ...btnS, color: 'var(--text-muted)' }}
+          onClick={() => onUpdate(s.id, { archived: !s.archived })}
+          title={s.archived ? 'Devolver aos ativos' : 'Tirar da lista sem excluir'}>
+          {s.archived ? 'Desarquivar' : 'Arquivar'}</button>
         <button style={{ ...btnS, color: 'var(--danger)', borderColor: 'var(--danger)' }}
           onClick={() => { if (window.confirm(`Excluir o sabor "${s.nome}"?`)) onDelete(s.id); }} title="Excluir sabor">Excluir</button>
       </div>
