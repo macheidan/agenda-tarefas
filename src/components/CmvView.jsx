@@ -464,17 +464,36 @@ function BeneficiadosResumo({ beneficiados, custoBase, nomesPadrao, abertos, onT
 }
 
 function SaboresResumo({ sabores, custoBase, benefCusto, bases, opcoes, abertos, onToggle, onUpdate, onDelete }) {
+  // Ordenação por coluna: nome ou custo de um tamanho. null = ordem original (order).
+  const [sort, setSort] = useState(null); // { key, dir: 1 | -1 }
+  const clickSort = (key) => setSort(prev =>
+    prev?.key !== key ? { key, dir: 1 } : prev.dir === 1 ? { key, dir: -1 } : null);
+  const setaSort = (key) => sort?.key === key ? (sort.dir === 1 ? ' ▲' : ' ▼') : '';
+  const thSortS = { ...thS, cursor: 'pointer', userSelect: 'none' };
+
+  const linhas = useMemo(() => {
+    const ls = sabores.map(s => ({ s, t: calcSabor(s, custoBase, benefCusto, bases) }));
+    if (sort) {
+      ls.sort((a, b) => sort.dir * (sort.key === 'nome'
+        ? a.s.nome.localeCompare(b.s.nome)
+        : a.t[sort.key] - b.t[sort.key]));
+    }
+    return ls;
+  }, [sabores, custoBase, benefCusto, bases, sort]);
+
   return (
     <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
           <th style={{ ...thS, width: 28 }}></th>
-          <th style={thS}>Sabor</th>
-          {SIZES.map(([k, label]) => <th key={k} style={{ ...thS, textAlign: 'right' }}>{label}</th>)}
+          <th style={thSortS} onClick={() => clickSort('nome')} title="Ordenar por nome">Sabor{setaSort('nome')}</th>
+          {SIZES.map(([k, label]) => (
+            <th key={k} style={{ ...thSortS, textAlign: 'right' }} onClick={() => clickSort(k)} title={`Ordenar pelo custo ${label}`}>
+              {label}{setaSort(k)}</th>
+          ))}
         </tr></thead>
         <tbody>
-          {sabores.map(s => {
-            const t = calcSabor(s, custoBase, benefCusto, bases);
+          {linhas.map(({ s, t }) => {
             const aberto = abertos.has(s.id);
             return (
               <Fragment key={s.id}>
