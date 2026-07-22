@@ -42,6 +42,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === '--fonte') args.fonte = argv[++i];
     else if (a === '--semana') args.semana = argv[++i];
+    else if (a === '--loja') args.loja = argv[++i];
     else if (a === '--check-done') args.checkDone = true;
     else if (a === '--dry') args.dry = true;
     else if (!a.startsWith('--')) args.file = a;
@@ -152,9 +153,11 @@ function novoMid() {
 }
 
 // Índice da taxa da intranet com valor mais próximo do valor do Saipos
-// (ex.: R$10,00 do Saipos → Taxa 1 R$10,50). Valores <= 0 não mapeiam.
+// (ex.: R$9,90 → Taxa 1 R$10,50 · R$12,90 → Taxa 2 R$13,00). Comissão zerada
+// (R$0,00) também mapeia — a entrega aconteceu e precisa contar no quadro por
+// taxa; cai na taxa de menor valor, que é a mais próxima de zero.
 function taxaMaisProxima(valor, taxas) {
-  if (!(valor > 0)) return null;
+  if (!(valor >= 0)) return null;
   let melhor = null;
   let melhorDiff = Infinity;
   (taxas || []).forEach((t, i) => {
@@ -361,8 +364,12 @@ async function main() {
   }
 
   if (!args.file) {
-    console.error('uso: node scripts/motoboys/importar_pa.mjs <pa-YYYY-MM-DD.json> [--fonte 3h|9h|manual] [--dry]');
+    console.error('uso: node scripts/motoboys/importar_pa.mjs <pa-YYYY-MM-DD.json> [--fonte 3h|9h|manual] [--loja dame|lov] [--dry]');
     process.exit(1);
+  }
+  if (args.loja && !LOJAS.includes(args.loja)) {
+    console.error(`loja inválida: ${args.loja} (use ${LOJAS.join(' ou ')})`);
+    process.exit(2);
   }
   const dados = JSON.parse(readFileSync(args.file, 'utf8'));
   const semana = dados.semana;
@@ -371,6 +378,7 @@ async function main() {
     process.exit(2);
   }
   for (const loja of LOJAS) {
+    if (args.loja && loja !== args.loja) continue;
     await importarLoja(db, loja, semana, dados.lojas?.[loja], args.fonte, args.dry);
   }
   console.log('\nOK');
