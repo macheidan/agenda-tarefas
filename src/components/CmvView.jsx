@@ -394,13 +394,15 @@ function BeneficiadosResumo({ beneficiados, custoBase, nomesPadrao, abertos, onT
           <th style={{ ...thS, width: 28 }}></th>
           <th style={thS}>Beneficiado</th>
           <th style={{ ...thS, textAlign: 'right' }}>Peso bruto</th>
+          <th style={{ ...thS, textAlign: 'right' }} title="Peso que divide o custo total (kg de saída após o preparo). Vazio = peso bruto (sem perda).">Rendimento</th>
           <th style={{ ...thS, textAlign: 'right' }}>Custo total</th>
-          <th style={{ ...thS, textAlign: 'right' }}>Custo/kg</th>
+          <th style={{ ...thS, textAlign: 'right' }} title="Custo total ÷ rendimento">Custo/kg</th>
         </tr></thead>
         <tbody>
           {beneficiados.map(b => {
             const c = calcBeneficiado(b, custoBase);
             const aberto = abertos.has(b.id);
+            const temRend = num(b.rendimento) > 0;
             return (
               <Fragment key={b.id}>
                 <tr className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)', cursor: 'pointer' }}
@@ -408,12 +410,16 @@ function BeneficiadosResumo({ beneficiados, custoBase, nomesPadrao, abertos, onT
                   <td style={{ ...tdS, textAlign: 'center' }}><Seta aberto={aberto} /></td>
                   <td style={{ ...tdS, fontWeight: 500 }}>{b.nome}</td>
                   <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)' }}>{c.pesoBruto.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg</td>
+                  <td style={{ ...tdS, textAlign: 'right', ...(temRend ? { fontWeight: 600 } : { color: 'var(--text-muted)' }) }}
+                    title={temRend ? 'Rendimento informado — é o peso que divide o custo total' : 'Sem rendimento informado: usando o peso bruto (sem perda). Preencha na ficha.'}>
+                    {c.rendimento.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg{temRend ? '' : ' *'}
+                  </td>
                   <td style={{ ...tdS, textAlign: 'right' }}>{fmt(c.custoTotal)}</td>
                   <td style={{ ...tdS, textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>{fmt(c.custoPorKg)}</td>
                 </tr>
                 {aberto && (
                   <tr style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-                    <td colSpan={5} style={{ padding: 0 }}>
+                    <td colSpan={6} style={{ padding: 0 }}>
                       <BeneficiadoFicha b={b} custoBase={custoBase} nomesPadrao={nomesPadrao} onUpdate={onUpdate} onDelete={onDelete} />
                     </td>
                   </tr>
@@ -423,6 +429,11 @@ function BeneficiadosResumo({ beneficiados, custoBase, nomesPadrao, abertos, onT
           })}
         </tbody>
       </table>
+      {beneficiados.some(b => !(num(b.rendimento) > 0)) && (
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 8px 8px' }}>
+          * sem rendimento informado — o custo/kg está usando o peso bruto (sem perda). Abra a ficha e preencha o Rendimento.
+        </p>
+      )}
     </div>
   );
 }
