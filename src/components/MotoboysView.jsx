@@ -222,6 +222,9 @@ export default function MotoboysView() {
             </button>
           ))}
         </div>
+        {secaoEfetiva === 'cadastro' && (
+          <span className={styles.avisoNomeSaipos}>⚠️ NOME DEVE SER EXATAMENTE IGUAL À SAIPOS</span>
+        )}
       </div>
 
       {secaoEfetiva === 'semana' && (<>

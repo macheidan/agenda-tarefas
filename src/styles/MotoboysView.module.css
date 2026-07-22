@@ -62,6 +62,23 @@
 .storeBar {
   display: flex;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Aviso do Cadastro: o nome precisa bater com o Saipos pro import casar */
+.avisoNomeSaipos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--warning-bg);
+  border: 2px solid var(--warning-border);
+  color: var(--warning-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
 }
 
 .storeTabs {
