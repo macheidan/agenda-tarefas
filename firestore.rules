@@ -231,6 +231,12 @@ service cloud.firestore {
     match /motoboySemanas/{id} {
       allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');
       allow write: if isMotoboysEditor();
+      // Checkbox "Conferido": qualquer usuário da seção pode marcar/desmarcar.
+      // O update só passa se mexer exclusivamente no mapa `conferidos`
+      // (+ atualizadoEm) — o resto do doc continua restrito a editor.
+      allow update: if (isAdmin() || hasSettingFlag('motoboysEnabled')) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['conferidos', 'atualizadoEm']);
     }
     match /motoboyConfig/{id} {
       allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');

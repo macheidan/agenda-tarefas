@@ -376,8 +376,7 @@ export default function MotoboysView() {
                     <input
                       type="checkbox"
                       className={styles.diaCheck}
-                      checked={mb.conferido === true}
-                      disabled={!canEditGerente}
+                      checked={(semana?.conferidos?.[mb.mid] ?? mb.conferido) === true}
                       onChange={(e) => setConferido(mb.mid, e.target.checked)}
                     />
                     Conferido

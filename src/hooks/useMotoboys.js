@@ -251,11 +251,15 @@ export function useMotoboys(loja, segunda, author) {
   );
 
   // Checkbox "Conferido" do motoboy na semana. Mora no doc da semana, então o
-  // estado é o mesmo para todos os usuários (não é por usuário).
+  // estado é o mesmo para todos os usuários (não é por usuário). Vive no mapa
+  // top-level `conferidos` (fora de `motoboys`) para as rules liberarem esse
+  // campo a qualquer usuário da seção sem abrir o resto do doc. Grava `false`
+  // explícito no desmarcar porque semanas antigas têm o legado
+  // motoboys.{mid}.conferido, que é o fallback da leitura.
   const setConferido = useCallback(
     async (mid, marcado) => {
       await updateDoc(doc(db, 'motoboySemanas', docId), {
-        [`motoboys.${mid}.conferido`]: marcado ? true : deleteField(),
+        [`conferidos.${mid}`]: marcado === true,
         atualizadoEm: Timestamp.now(),
       });
     },
