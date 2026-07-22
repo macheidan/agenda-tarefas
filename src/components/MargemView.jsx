@@ -47,13 +47,16 @@ export default function MargemView({ custoBase = {} }) {
   const [marca, setMarca] = useState('todas'); // 'todas' | 'dame' | 'lov'
   const [sort, setSort] = useState(null); // { key, dir: 1 | -1 }
 
-  // custo/kg de cada beneficiado + custo por tamanho de cada ficha do CMV,
-  // indexado pelo slug do nome (mesma conta da aba CMV).
-  const cmvCustoBySlug = useMemo(() => {
+  // custo/kg de cada beneficiado + ficha de cada sabor do CMV (custo por
+  // tamanho e flag de arquivado), indexado pelo slug do nome — mesma conta da
+  // aba CMV. Sabor arquivado lá fica FORA da margem.
+  const cmvBySlug = useMemo(() => {
     const benefCusto = {};
     for (const b of beneficiados) benefCusto[b.nome] = calcBeneficiado(b, custoBase).custoPorKg;
     const map = {};
-    for (const s of cmvSabores) map[normalizarSabor(s.nome)] = calcSabor(s, custoBase, benefCusto, cmvBases);
+    for (const s of cmvSabores) {
+      map[normalizarSabor(s.nome)] = { custos: calcSabor(s, custoBase, benefCusto, cmvBases), archived: !!s.archived };
+    }
     return map;
   }, [beneficiados, cmvSabores, cmvBases, custoBase]);
 
@@ -65,7 +68,9 @@ export default function MargemView({ custoBase = {} }) {
     for (const sab of planilha.sabores) {
       if (marca === 'dame' && !sab.dame) continue;
       if (marca === 'lov' && !sab.lov) continue;
-      const custos = lookupCmv(cmvCustoBySlug, sab.slug); // { qtdP..qtdS } ou undefined
+      const ficha = lookupCmv(cmvBySlug, sab.slug);
+      if (ficha?.archived) continue; // arquivado no CMV = fora da margem
+      const custos = ficha?.custos; // { qtdP..qtdS } ou undefined
       for (const t of tamanhos) {
         const custo = custos ? custos[t.sizeKey] : null;
         // Fruki 2L de brinde na Super (Lov) — só quando a visão inclui a Lov.
@@ -82,7 +87,7 @@ export default function MargemView({ custoBase = {} }) {
       }
     }
     return out;
-  }, [planilha, tamanho, marca, cmvCustoBySlug, config]);
+  }, [planilha, tamanho, marca, cmvBySlug, config]);
 
   const sorted = useMemo(() => {
     if (!sort) return rows;
@@ -128,8 +133,14 @@ export default function MargemView({ custoBase = {} }) {
   // Sabores do cardápio sem ficha no CMV (higiene de dados).
   const semFicha = useMemo(() => {
     if (!planilha) return [];
-    return planilha.sabores.filter((s) => !lookupCmv(cmvCustoBySlug, s.slug)).map((s) => s.nome);
-  }, [planilha, cmvCustoBySlug]);
+    return planilha.sabores.filter((s) => !lookupCmv(cmvBySlug, s.slug)).map((s) => s.nome);
+  }, [planilha, cmvBySlug]);
+
+  // Sabores do cardápio cuja ficha está arquivada no CMV (escondidos da tabela).
+  const arquivados = useMemo(() => {
+    if (!planilha) return [];
+    return planilha.sabores.filter((s) => lookupCmv(cmvBySlug, s.slug)?.archived).map((s) => s.nome);
+  }, [planilha, cmvBySlug]);
 
   if (loading && !planilha) return <p style={{ padding: 20, textAlign: 'center' }}>Carregando planilha do cardápio...</p>;
   if (error && !planilha) {
@@ -271,6 +282,11 @@ export default function MargemView({ custoBase = {} }) {
       {semFicha.length > 0 && (
         <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '10px 0 0' }}>
           Sem ficha técnica no CMV (margem não calculada): {semFicha.join(', ')}. Cadastre na aba CMV com o mesmo nome do cardápio.
+        </p>
+      )}
+      {arquivados.length > 0 && (
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '6px 0 0' }}>
+          Arquivados no CMV (fora da margem): {arquivados.join(', ')}. Desarquive na aba CMV pra voltarem.
         </p>
       )}
     </div>
