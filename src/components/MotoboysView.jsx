@@ -403,17 +403,20 @@ export default function MotoboysView() {
                         <th className={styles.stickyCol}></th>
                         {diasIso.map((d, i) => (
                           <th key={d} className={colCls(i)}>
-                            <label className={styles.diaHead} title="Marcado: dia sem acréscimo (garantia) e sem moto-dia (taxa coop)">
-                              <input
-                                type="checkbox"
-                                className={styles.diaCheck}
-                                checked={diaSemGar[i]}
-                                disabled={!canEditGerente}
-                                onChange={(e) => setDiaSemGarantia(mb.mid, i, e.target.checked)}
-                              />
+                            <label className={styles.diaHead} title="Apoio: dia sem acréscimo (garantia) e sem moto-dia (taxa coop)">
                               <span>
                                 <span className={styles.diaNome}>{DIAS_CURTOS[i]}</span>
                                 <span className={styles.diaData}>{formatDiaCurto(d)}</span>
+                              </span>
+                              <span className={styles.diaApoio}>
+                                <input
+                                  type="checkbox"
+                                  className={styles.diaCheck}
+                                  checked={diaSemGar[i]}
+                                  disabled={!canEditGerente}
+                                  onChange={(e) => setDiaSemGarantia(mb.mid, i, e.target.checked)}
+                                />
+                                Apoio
                               </span>
                             </label>
                           </th>

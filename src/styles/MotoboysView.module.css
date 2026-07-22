@@ -440,13 +440,25 @@
   white-space: nowrap;
 }
 
-/* Checkbox de confirmação do dia no cabeçalho do bloco */
+/* Cabeçalho do dia: nome + data em cima, checkbox "Apoio" embaixo */
 .diaHead {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 3px;
   cursor: pointer;
+}
+
+.diaApoio {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .diaCheck {
