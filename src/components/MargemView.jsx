@@ -237,7 +237,9 @@ export default function MargemView({ custoBase = {} }) {
           </thead>
           <tbody>
             {sorted.map((r) => (
-              <tr key={`${r.sab.slug}-${r.tamanho}`} className="mgRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+              {/* key pelo NOME (único na planilha) — o slug colide em "Da casa (LOV)"
+                  × "Da casa (DAME)" e key duplicada faz o React duplicar linha ao ordenar */}
+              <tr key={`${r.sab.nome}-${r.tamanho}`} className="mgRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
                 <td style={{ ...tdS, fontWeight: 500, whiteSpace: 'nowrap' }}>
                   {r.sab.nome}
                   {marca === 'todas' && (!r.sab.dame || !r.sab.lov) && (
