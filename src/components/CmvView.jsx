@@ -1,5 +1,6 @@
 import { Fragment, useState, useMemo } from 'react';
 import { useCmv } from '../hooks/useCmv';
+import { SIZES, num, calcBeneficiado, calcSabor } from '../lib/cmvCalc';
 import { IS_V2 } from '../lib/v2';
 
 // ── Estilos locais (mesmo tema por CSS vars da intranet) ────────────────────
@@ -34,50 +35,13 @@ const tdS = { padding: '5px 8px', fontSize: 12, color: 'var(--text, #222)' };
 const cardS = { background: 'var(--card-bg, #fff)', borderRadius: IS_V2 ? 12 : 8, border: '1px solid var(--border, #e5e5e5)', padding: 12, marginBottom: 12 };
 // Ficha aberta dentro da linha do resumo (fundo recuado pra separar do restante da tabela).
 const fichaS = { background: 'var(--bg-secondary, #fafafa)', padding: '10px 12px 12px', borderLeft: '2px solid var(--accent)' };
-const SIZES = [['qtdP', 'Pequena'], ['qtdM', 'Média'], ['qtdG', 'Grande'], ['qtdS', 'Super']];
+// SIZES/num/calcBeneficiado/calcSabor moram em lib/cmvCalc.js (compartilhados com a Margem).
 // Hover nas linhas de dados das tabelas (inline styles não suportam :hover).
 const rowHoverCss = '.cmvRow{transition:background .12s}.cmvRow:hover{background:var(--card-hover,#f6f7f9)}'
   + '.cmvArrow{display:inline-block;transition:transform .12s;color:var(--text-muted)}.cmvArrow.open{transform:rotate(90deg)}';
 
 function fmt(n) {
   return 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-// Aceita virgula decimal; '' -> 0.
-function num(v) {
-  if (v === '' || v == null) return 0;
-  const n = Number(String(v).replace(',', '.').trim());
-  return Number.isNaN(n) ? 0 : n;
-}
-
-// Custo por kg de um beneficiado: soma(qtd x custo do ingrediente) / rendimento
-// (rendimento vazio => usa o peso bruto, ou seja, sem perda).
-function calcBeneficiado(b, custoBase) {
-  let pesoBruto = 0, custoTotal = 0;
-  for (const l of b.lines || []) {
-    const q = num(l.qtd);
-    pesoBruto += q;
-    custoTotal += q * (custoBase[l.ref]?.custo || 0);
-  }
-  const rend = num(b.rendimento) > 0 ? num(b.rendimento) : pesoBruto;
-  const custoPorKg = rend > 0 ? custoTotal / rend : 0;
-  return { pesoBruto, custoTotal, rendimento: rend, custoPorKg };
-}
-
-// Total de custo de um sabor por tamanho (P/M/G/S) = Σ (qtd × custo do ingrediente),
-// incluindo a BASE da categoria do sabor (mussarela/orégano/caixa que vão em todas).
-// Ingrediente da base que JÁ está na ficha do sabor não soma de novo: a linha
-// do sabor carrega o peso replicado da base (ver useCmv/applyBaseToLines).
-function calcSabor(s, custoBase, benefCusto, bases) {
-  const cat = s.categoria || 'salgada';
-  const own = s.lines || [];
-  const ownKeys = new Set(own.map((l) => `${l.tipo || 'base'}:${l.ref}`));
-  const baseLines = ((bases && bases[cat]) || []).filter((l) => !ownKeys.has(`${l.tipo || 'base'}:${l.ref}`));
-  const t = { qtdP: 0, qtdM: 0, qtdG: 0, qtdS: 0 };
-  for (const l of [...own, ...baseLines]) {
-    const cu = l.tipo === 'beneficiado' ? (benefCusto[l.ref] || 0) : (custoBase[l.ref]?.custo || 0);
-    for (const [k] of SIZES) t[k] += num(l[k]) * cu;
-  }
-  return t;
 }
 
 export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {

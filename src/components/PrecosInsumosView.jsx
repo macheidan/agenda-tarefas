@@ -3,6 +3,7 @@ import { supabase } from '../utils/supabase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CmvView from './CmvView';
+import MargemView from './MargemView';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useFatorSugestao } from '../hooks/useFatorSugestao';
@@ -18,6 +19,7 @@ const SUBPAGES = [
   { key: 'cadastrar', label: 'Cadastrar', flag: 'precosSubCadastrar', color: 'var(--success)' },
   { key: 'subiram', label: 'Subiram', flag: 'precosSubSubiram', color: 'var(--danger)' },
   { key: 'cmv', label: 'CMV', flag: 'precosSubCmv', color: 'var(--accent)' },
+  { key: 'margem', label: 'Margem', flag: 'precosSubMargem', color: 'var(--accent)' },
 ];
 
 const OCULTOS_KEY = 'precos_fornecedores_ocultos';
@@ -561,6 +563,15 @@ export default function PrecosInsumosView() {
       <div>
         {header}
         <CmvView custoBase={custoPorPlanilha} nomesPadrao={nomesPadrao} />
+      </div>
+    );
+  }
+
+  if (activeSub === 'margem') {
+    return (
+      <div>
+        {header}
+        <MargemView custoBase={custoPorPlanilha} />
       </div>
     );
   }
