@@ -50,6 +50,7 @@ const PRECOS_SUBSECTIONS = [
   { key: 'precosSubSubiram', label: 'Subiram' },
   { key: 'precosSubCmv', label: 'CMV' },
   { key: 'precosSubMargem', label: 'Margem' },
+  { key: 'precosSubSkus', label: 'SKUs' },
 ];
 
 // Sub-seções de Motoboys: ver (default ligado) e editar (default desligado)
