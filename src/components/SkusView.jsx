@@ -25,6 +25,8 @@ const btnAtivoS = { borderColor: 'var(--accent)', color: 'var(--accent)', fontWe
 const cardS = { background: 'var(--card-bg, #fff)', borderRadius: IS_V2 ? 12 : 8, border: '1px solid var(--border, #e5e5e5)', padding: 0, marginBottom: 12, overflow: 'auto', maxHeight: '72vh' };
 
 const thS = { padding: '6px 8px', fontSize: IS_V2 ? 12 : 11, color: 'var(--text-muted)', fontWeight: IS_V2 ? 500 : 600, textAlign: 'left', whiteSpace: 'nowrap' };
+// Cabeçalho ordenável das colunas de resumo (mesmo padrão do SaboresResumo do CMV).
+const thSortS = { ...thS, cursor: 'pointer', userSelect: 'none' };
 const tdS = { padding: '4px 8px', fontSize: 12, color: 'var(--text, #222)' };
 
 // Primeira coluna (nome do produto) fica fixa na rolagem horizontal — com ~60
@@ -76,6 +78,18 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
   const [busca, setBusca] = useState('');
   const [catSabor, setCatSabor] = useState('todas'); // todas | salgada | doce
   const [soUsados, setSoUsados] = useState(false); // esconde sabor sem nenhum item marcado
+  // Ordenação pelas colunas de resumo. null = alfabética (padrão da tela).
+  // Coluna numérica começa por "mais" (o que se quer ver primeiro é o insumo que
+  // entra em mais sabores); 2º clique inverte pra "menos"; 3º volta ao alfabético.
+  const [sort, setSort] = useState(null); // { key: 'nome'|'custo'|'benef'|'sabores', dir: 1 | -1 }
+
+  const clickSort = useCallback((key) => setSort((prev) => {
+    const inicial = key === 'nome' ? 1 : -1;
+    if (prev?.key !== key) return { key, dir: inicial };
+    return prev.dir === inicial ? { key, dir: -inicial } : null;
+  }), []);
+
+  const setaSort = (key) => (sort?.key === key ? (sort.dir === 1 ? ' ▲' : ' ▼') : '');
 
   // Crosshair: <style> mutado na mão + último alvo, pra só reescrever a regra
   // quando o cursor de fato troca de célula.
@@ -168,16 +182,32 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
 
   // Linhas: tudo que compramos (nome_padrao das notas) + refs usados em ficha que
   // não aparecem nas compras dos últimos 12 meses (produto que parou de ser comprado).
+  // A ordenação vale dentro de cada categoria — Insumos e Outros seguem separados.
   const linhas = useMemo(() => {
     const todos = [...new Set([...nomesPadrao, ...produtosEmFicha])].filter(Boolean);
     const f = busca.trim().toLowerCase();
     const filtrados = f ? todos.filter(n => n.toLowerCase().includes(f)) : todos;
+
+    const valor = {
+      nome: (n) => n,
+      custo: (n) => custoBase[n]?.custo ?? -1,
+      benef: (n) => (usosBenef[n] || []).length,
+      sabores: (n) => Object.keys(usos[n] || {}).length,
+    };
+    // Sem ordenação escolhida = alfabética (como a tela abre). Com ordenação
+    // numérica, empate cai no alfabético pra lista não dançar entre renders.
+    const cmp = !sort
+      ? (a, b) => a.localeCompare(b)
+      : sort.key === 'nome'
+        ? (a, b) => sort.dir * a.localeCompare(b)
+        : (a, b) => sort.dir * (valor[sort.key](a) - valor[sort.key](b)) || a.localeCompare(b);
+
     const insumos = [], outros = [];
-    for (const n of filtrados.sort((a, b) => a.localeCompare(b))) {
-      (produtosEmFicha.has(n) ? insumos : outros).push(n);
-    }
+    for (const n of filtrados) (produtosEmFicha.has(n) ? insumos : outros).push(n);
+    insumos.sort(cmp);
+    outros.sort(cmp);
     return { insumos, outros };
-  }, [nomesPadrao, produtosEmFicha, busca]);
+  }, [nomesPadrao, produtosEmFicha, busca, sort, usos, usosBenef, custoBase]);
 
   // Sabor sem nenhum item marcado (ficha ainda vazia) — o toggle "só sabores com
   // ficha" tira essas colunas pra tabela não ficar cheia de vão.
@@ -266,10 +296,14 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
         <table className="skuTable" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
-              <th style={stickyThS}>Produto (planilha)</th>
-              <th style={{ ...thS, textAlign: 'right', verticalAlign: 'bottom' }}>Custo/un</th>
-              <th style={{ ...thS, textAlign: 'center', verticalAlign: 'bottom' }} title="Em quantos beneficiados o produto entra">Benef.</th>
-              <th style={{ ...thS, textAlign: 'center', verticalAlign: 'bottom' }} title="Em quantos sabores o produto entra (direto, base ou via beneficiado)">Sabores</th>
+              <th style={{ ...stickyThS, ...thSortS }} onClick={() => clickSort('nome')} title="Ordenar por nome">
+                Produto (planilha){setaSort('nome')}</th>
+              <th style={{ ...thSortS, textAlign: 'right', verticalAlign: 'bottom' }} onClick={() => clickSort('custo')} title="Ordenar pelo custo">
+                Custo/un{setaSort('custo')}</th>
+              <th style={{ ...thSortS, textAlign: 'center', verticalAlign: 'bottom' }} onClick={() => clickSort('benef')} title="Em quantos beneficiados o produto entra — clique pra ordenar (mais / menos)">
+                Benef.{setaSort('benef')}</th>
+              <th style={{ ...thSortS, textAlign: 'center', verticalAlign: 'bottom' }} onClick={() => clickSort('sabores')} title="Em quantos sabores o produto entra (direto, base ou via beneficiado) — clique pra ordenar (mais / menos)">
+                Sabores{setaSort('sabores')}</th>
               {colunasVisiveis.map(s => (
                 <th key={s.id} style={saborThS} title={`${s.nome} (${s.categoria || 'salgada'}) — ${totalPorSabor[s.id] || 0} itens`}>
                   <div style={saborLabelS}>{s.nome}</div>
