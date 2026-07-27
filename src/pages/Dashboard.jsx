@@ -1,4 +1,4 @@
-import { useState, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../hooks/useTasks';
 import { useUsers } from '../hooks/useUsers';
@@ -51,6 +51,18 @@ const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPes
 const ComprasView = lazy(() => import('../components/ComprasView'));
 const MotoboysView = lazy(() => import('../components/MotoboysView'));
 
+// Rótulos curtos das abas — usados na barra de navegação mobile e no título da
+// janela do navegador (assim a aba do Chrome mostra em que página a pessoa está).
+const NAV_LABELS = {
+  calendar: 'Agenda', reels: 'Instagram', contentPlan: 'Conteúdo', influencers: 'Influencers',
+  notes: 'Notas', shopping: 'Compras', ideas: 'Ideias', reviews: 'Avaliações',
+  knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
+  motoboys: 'Motoboys',
+};
+
+// Abas que só existem pro admin (não entram no menu/nav comum).
+const ADMIN_TABS = { completed: 'Concluídas', archived: 'Arquivadas', settings: 'Configurações' };
+
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
@@ -61,7 +73,12 @@ export default function Dashboard() {
   const [selectedUid, setSelectedUid] = useState(user.uid);
   // Deep-link por query param (?tab=...): permite abrir uma aba especifica numa
   // nova aba do navegador (ex: clicar num item em "Subiram" abre Preços filtrado).
-  const [activeTab, setActiveTab] = useState(() => {
+  // A aba ativa também é ESCRITA de volta na URL (efeito mais abaixo), então F5
+  // volta pra onde a pessoa estava em vez de cair na Agenda.
+  // `tabEscolhida` é o que a pessoa clicou; `activeTab` (derivado mais abaixo) é
+  // o que de fato aparece — pode diferir se a aba escolhida não estiver mais
+  // disponível.
+  const [tabEscolhida, setActiveTab] = useState(() => {
     try { return new URLSearchParams(window.location.search).get('tab') || 'calendar'; }
     catch { return 'calendar'; }
   });
@@ -136,14 +153,9 @@ export default function Dashboard() {
     setModalOpen(true);
   };
 
-  // Abas para a barra de navegação mobile (rótulos curtos). Segue a mesma
-  // ordem/visibilidade do menu; as 4 primeiras ficam fixas, o resto vai em "Mais".
-  const NAV_LABELS = {
-    calendar: 'Agenda', reels: 'Instagram', contentPlan: 'Conteúdo', influencers: 'Influencers',
-    notes: 'Notas', shopping: 'Compras', ideas: 'Ideias', reviews: 'Avaliações',
-    knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
-    motoboys: 'Motoboys',
-  };
+  // Abas para a barra de navegação mobile (rótulos em NAV_LABELS, no topo do
+  // arquivo). Segue a mesma ordem/visibilidade do menu; as 4 primeiras ficam
+  // fixas, o resto vai em "Mais".
   const NAV_ENABLED = {
     calendar: calendarEnabled, reels: reelsEnabled, contentPlan: contentPlanEnabled,
     influencers: influencersEnabled, notes: notesEnabled, shopping: shoppingListEnabled,
@@ -159,6 +171,35 @@ export default function Dashboard() {
       label: NAV_LABELS[k] || k,
       badge: k === 'ideas' && ideasUnread > 0 ? navDot : null,
     }));
+
+  // ── Onde eu estou / F5 não me joga pra Agenda ─────────────────────────────
+  // A aba que veio da URL pode não valer mais: feature desligada nas
+  // Configurações, usuário sem permissão de admin, ou chave antiga de uma
+  // versão anterior. Sem isso o conteúdo abriria em branco. Nesse caso cai na 1ª
+  // aba visível — derivando, sem corrigir o estado num efeito.
+  const abaOk = settingsLoading
+    || (tabEscolhida in NAV_ENABLED ? NAV_ENABLED[tabEscolhida] : tabEscolhida in ADMIN_TABS ? isAdmin : false);
+  const activeTab = abaOk ? tabEscolhida : (bottomTabs[0]?.key || 'calendar');
+
+  // Sem router: a aba ativa é escrita de volta na URL (?tab=…) com replaceState
+  // — replace e não push, pra não encher o histórico do botão Voltar com cada
+  // troca de aba. Recarregar a página cai no mesmo lugar, o link fica
+  // compartilhável e a barra de endereço mostra em que página se está.
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('tab') === activeTab) return;
+      url.searchParams.set('tab', activeTab);
+      window.history.replaceState(null, '', url);
+    } catch { /* URL malformada: navegação por estado segue funcionando */ }
+  }, [activeTab]);
+
+  // O nome da página também vai pro título da janela — é o que identifica a aba
+  // no navegador quando há várias abertas.
+  useEffect(() => {
+    const nome = NAV_LABELS[activeTab] || ADMIN_TABS[activeTab];
+    document.title = nome ? `${nome} · Intranet` : 'Intranet';
+  }, [activeTab]);
 
   // Props do shell — o Header (v1) e o AppShellV2 (v2) consomem as MESMAS.
   const shellProps = {

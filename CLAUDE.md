@@ -79,7 +79,7 @@ Hooks em `src/hooks/` são a fonte da verdade sobre shape dos documentos. Coleç
 
 **9. Gemini no KnowledgeView.** Admin edita base de conhecimento + persona em Settings. O chat monta o system prompt concatenando persona e base. Modelo escolhido via dropdown no Settings.
 
-**10. Sem router.** Navegação entre tabs é puro `useState`. Não usar URLs para links profundos a menos que adicione react-router explicitamente.
+**10. Sem router.** Navegação entre tabs é puro `useState` — mas o estado é **espelhado na query string** com `history.replaceState`: `?tab=` (aba, em `Dashboard.jsx`) e `?sub=` (sub-seção de Preços). É o que faz o F5 cair na mesma página em vez de voltar pra Agenda, e o que põe o nome da página no `document.title`. Ao criar uma seção com sub-navegação, siga o mesmo padrão (ler o param no `useState` inicial + efeito que grava a sub-página **exibida**). Não adicionar react-router.
 
 ## Convenções de código
 

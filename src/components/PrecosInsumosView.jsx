@@ -235,10 +235,16 @@ export default function PrecosInsumosView() {
   // de notas; 'fornecedores' = total de compras por fornecedor/produto/mes.
   // Abre em "Subiram" por padrao (alerta de alta e o que se olha no dia a dia);
   // mas se veio pelo deep-link ?precoBusca (clique num item de Subiram, que abre
-  // Produtos ja filtrado), comeca em "Produtos".
+  // Produtos ja filtrado), comeca em "Produtos". Fora esses dois casos, a
+  // sub-pagina vem do ?sub= — escrito na URL pelo efeito abaixo, pra que o F5
+  // volte na mesma sub-secao e nao no "Subiram".
   const [subPage, setSubPage] = useState(() => {
-    try { return new URLSearchParams(window.location.search).get('precoBusca') ? 'precos' : 'subiram'; }
-    catch { return 'subiram'; }
+    try {
+      const q = new URLSearchParams(window.location.search);
+      if (q.get('precoBusca')) return 'precos';
+      const sub = q.get('sub');
+      return SUBPAGES.some(sp => sp.key === sub) ? sub : 'subiram';
+    } catch { return 'subiram'; }
   });
   const [precos, setPrecos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -252,6 +258,18 @@ export default function PrecosInsumosView() {
     return v;
   }, [settings]);
   const activeSub = subVisible[subPage] ? subPage : (SUBPAGES.find(sp => subVisible[sp.key])?.key || 'precos');
+  // Espelha a sub-pagina na URL (?sub=), como o Dashboard faz com ?tab=. Grava a
+  // sub-pagina EXIBIDA (activeSub), nao a escolhida — se a escolhida estiver
+  // oculta nas Configuracoes, o que vale e a que aparece. replaceState pra nao
+  // encher o historico do botao Voltar.
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('sub') === activeSub) return;
+      url.searchParams.set('sub', activeSub);
+      window.history.replaceState(null, '', url);
+    } catch { /* URL malformada: navegacao por estado segue funcionando */ }
+  }, [activeSub]);
   // Fornecedores ocultos (compartilhado pelas 3 sub-paginas).
   const { ocultos, toggle: toggleOculto } = useFornecedoresOcultos();
   const ocultosSet = useMemo(() => new Set(ocultos), [ocultos]);
