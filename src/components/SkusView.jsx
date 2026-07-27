@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useCmv } from '../hooks/useCmv';
 import { IS_V2 } from '../lib/v2';
 
@@ -40,8 +40,31 @@ const celS = { ...tdS, padding: '4px 2px', textAlign: 'center', width: 28, minWi
 
 const secaoS = { padding: '8px 10px', fontSize: 13, fontWeight: 700, color: 'var(--text, #222)', background: 'var(--bg-secondary, #fafafa)', position: 'sticky', left: 0 };
 
-const rowHoverCss = '.skuRow{transition:background .12s}.skuRow:hover{background:var(--card-hover,#f6f7f9)}'
-  + '.skuRow:hover .skuSticky{background:var(--card-hover,#f6f7f9)}';
+// Realce cruzado (crosshair): passar o mouse numa célula acende a LINHA e a
+// COLUNA inteiras — numa matriz de ~200 produtos x ~60 sabores é a única forma
+// de saber de que produto/sabor é a marcação sob o cursor.
+//
+// O realce é pintado com `background-image` (gradiente chapado) e não com
+// `background-color`: assim ele se SOBREPÕE ao fundo já existente em vez de
+// substituí-lo — a coluna fixa continua opaca durante a rolagem horizontal e a
+// linha de seção mantém o cinza dela.
+// A regra é injetada mutando o textContent de um <style> por ref, sem passar
+// por estado do React: re-renderizar 12 mil células a cada mousemove travaria.
+const CROSS = 'background-image:linear-gradient(var(--accent-light),var(--accent-light))';
+// Célula sob o cursor: mesmo realce + anel accent (outline pra dentro, que não
+// desloca nada numa tabela com border-collapse).
+const CROSS_CELL = `${CROSS};outline:1px solid var(--accent);outline-offset:-1px`;
+
+function crossCss(row, col) {
+  const rules = [
+    `.skuTable tbody td:nth-child(${col}),.skuTable thead th:nth-child(${col}){${CROSS}}`,
+  ];
+  if (row != null) {
+    rules.push(`.skuTable tbody tr[data-r="${row}"] td{${CROSS}}`);
+    rules.push(`.skuTable tbody tr[data-r="${row}"] td:nth-child(${col}){${CROSS_CELL}}`);
+  }
+  return rules.join('');
+}
 
 function fmt(n) {
   return 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -53,6 +76,33 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
   const [busca, setBusca] = useState('');
   const [catSabor, setCatSabor] = useState('todas'); // todas | salgada | doce
   const [soUsados, setSoUsados] = useState(false); // esconde sabor sem nenhum item marcado
+
+  // Crosshair: <style> mutado na mão + último alvo, pra só reescrever a regra
+  // quando o cursor de fato troca de célula.
+  const crossRef = useRef(null);
+  const ultimoRef = useRef('');
+
+  const onCruzar = useCallback((e) => {
+    const node = crossRef.current;
+    if (!node) return;
+    const cel = e.target.closest?.('td, th');
+    // Linha de seção / estado vazio (colSpan) não tem cruzamento que faça sentido.
+    if (!cel || !cel.parentElement || cel.colSpan > 1) {
+      if (ultimoRef.current !== '') { ultimoRef.current = ''; node.textContent = ''; }
+      return;
+    }
+    const col = cel.cellIndex + 1;
+    const row = cel.parentElement.dataset.r;
+    const chave = `${row ?? ''}|${col}`;
+    if (chave === ultimoRef.current) return;
+    ultimoRef.current = chave;
+    node.textContent = crossCss(row, col);
+  }, []);
+
+  const onSair = useCallback(() => {
+    ultimoRef.current = '';
+    if (crossRef.current) crossRef.current.textContent = '';
+  }, []);
 
   // Sabores que viram colunas (arquivados ficam de fora).
   const colunas = useMemo(() => {
@@ -166,13 +216,16 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
     );
   };
 
-  const linhaProduto = (ref) => {
+  // `data-r` é o índice da linha na tabela toda (Insumos + Outros) — é a chave
+  // que o crosshair usa no seletor, então precisa ser único e sem caracteres
+  // que quebrem CSS (nome de produto não serviria).
+  const linhaProduto = (ref, idx) => {
     const custo = custoBase[ref]?.custo;
     const benefs = usosBenef[ref] || [];
     const nSabores = Object.keys(usos[ref] || {}).length;
     return (
-      <tr key={ref} className="skuRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-        <td className="skuSticky" style={stickyTdS}>{ref}</td>
+      <tr key={ref} data-r={idx} style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+        <td style={stickyTdS}>{ref}</td>
         <td style={{ ...tdS, textAlign: 'right', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
           {custo == null ? '—' : fmt(custo)}
         </td>
@@ -189,7 +242,8 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
 
   return (
     <div>
-      <style>{rowHoverCss}</style>
+      {/* Regra do crosshair — reescrita direto no DOM pelo onCruzar. */}
+      <style ref={crossRef} />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <input type="search" placeholder="Buscar produto…" value={busca} onChange={e => setBusca(e.target.value)}
@@ -205,11 +259,11 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>
         <strong>Insumos</strong> = produto que entra em algum sabor ou beneficiado; <strong>Outros</strong> = o resto do que compramos (limpeza, bobina, embalagem…).
-        {' '}<span style={{ color: 'var(--accent)' }}>●</span> na ficha do sabor ou na base · <span>○</span> via beneficiado (Massa, Molho…). Passe o mouse na marcação pra ver a origem.
+        {' '}<span style={{ color: 'var(--accent)' }}>●</span> na ficha do sabor ou na base · <span>○</span> via beneficiado (Massa, Molho…). O mouse acende a linha e a coluna da célula; o tooltip mostra a origem.
       </p>
 
-      <div style={cardS}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div style={cardS} onMouseOver={onCruzar} onMouseLeave={onSair}>
+        <table className="skuTable" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
               <th style={stickyThS}>Produto (planilha)</th>
@@ -234,12 +288,12 @@ export default function SkusView({ custoBase = {}, nomesPadrao = [] }) {
             <tr><td colSpan={nCols} style={secaoS}>Insumos ({linhas.insumos.length})</td></tr>
             {linhas.insumos.length === 0
               ? <tr><td colSpan={nCols} style={{ ...tdS, padding: 16, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum insumo. As fichas do CMV ainda não usam nenhum produto.</td></tr>
-              : linhas.insumos.map(linhaProduto)}
+              : linhas.insumos.map((ref, i) => linhaProduto(ref, i))}
 
             <tr><td colSpan={nCols} style={secaoS}>Outros ({linhas.outros.length})</td></tr>
             {linhas.outros.length === 0
               ? <tr><td colSpan={nCols} style={{ ...tdS, padding: 16, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum produto fora das fichas.</td></tr>
-              : linhas.outros.map(linhaProduto)}
+              : linhas.outros.map((ref, i) => linhaProduto(ref, linhas.insumos.length + i))}
           </tbody>
         </table>
       </div>
