@@ -851,26 +851,31 @@
   font-weight: 700;
 }
 
-/* ---- Popover ---- */
-/* Backdrop invisível de tela cheia: fecha o menu ao tocar/clicar fora. Fica
-   logo abaixo do popover no empilhamento e só é montado enquanto o menu está
-   aberto, então não intercepta o toque que abriu o menu. */
-.popBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
+/* ---- Popover de marcação (dialog nativo) ----
+   <dialog>/showModal() delega ao navegador o backdrop, o Esc e o foco — mesmo
+   comportamento em desktop e em qualquer WebView mobile, sem hack de posição
+   por coordenadas nem "ghost click" (problema do popover antigo). O dialog em
+   si fica sem padding/borda própria pra não roubar clique de "fora"; quem tem
+   a aparência de cartão é o .popoverContent interno. */
+.popoverDialog {
+  border: none;
+  padding: 0;
+  margin: auto;
   background: transparent;
+  max-width: min(260px, 92vw);
+  width: 100%;
 }
 
-.popover {
-  position: fixed;
-  z-index: 100;
+.popoverDialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.popoverContent {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 6px 24px var(--shadow-hover);
   padding: 6px;
-  width: 210px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -880,12 +885,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 8px;
+  padding: 10px 8px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
   cursor: pointer;
 }
@@ -896,46 +901,19 @@
 
 .popClear {
   margin-top: 4px;
-  padding: 7px 8px;
+  padding: 10px 8px;
   border: none;
   border-top: 1px solid var(--border-light);
   border-radius: 0 0 6px 6px;
   background: transparent;
   color: var(--danger);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .popClear:hover {
   background: var(--danger-bg);
-}
-
-/* ---- Mobile: bottom sheet ----
-   Em vez de posicionar o menu por coordenadas (que caía fora da tela ou era
-   fechado pelo "ghost click" em alguns WebViews Android — Samsung A05, Moto G24),
-   no mobile o menu vira uma folha ancorada na base da tela, em posição fixa e
-   conhecida. Some a chance de "não aparecer". */
-.popBackdropMobile {
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.popSheet {
-  top: auto;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  border-radius: 16px 16px 0 0;
-  padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px));
-  gap: 4px;
-  box-shadow: 0 -6px 24px var(--shadow-hover);
-  animation: sheetUp 0.18s ease-out;
-}
-
-@keyframes sheetUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
 }
 
 .popSheetHeader {
@@ -961,18 +939,6 @@
   line-height: 1;
   padding: 4px 8px;
   cursor: pointer;
-}
-
-/* Alvos de toque maiores dentro da folha */
-.popSheet .popItem {
-  font-size: 15px;
-  padding: 12px 8px;
-}
-
-.popSheet .popClear {
-  font-size: 15px;
-  padding: 12px 8px;
-  text-align: center;
 }
 
 .rowActionsVisible {

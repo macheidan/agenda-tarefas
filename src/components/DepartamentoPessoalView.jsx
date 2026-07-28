@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -106,20 +106,15 @@ export default function DepartamentoPessoalView() {
   const [editingStore, setEditingStore] = useState(null);
   const [editingStoreName, setEditingStoreName] = useState('');
 
-  // Fechar com Esc (teclado/desktop). O fechar-ao-tocar-fora fica por conta do
-  // backdrop renderizado junto com o popover — antes usávamos um listener global
-  // de pointerdown/mousedown com janela de tempo pra ignorar o "toque fantasma",
-  // mas a ordem dos eventos touch→mouse varia entre WebViews Android e às vezes
-  // fechava o menu no mesmo toque que o abria (parecia "não abrir"). O backdrop
-  // só existe DEPOIS do toque de abertura — mas alguns WebViews (Samsung A05,
-  // Moto G24) disparam um "ghost click" ~300ms depois, nas coordenadas da célula,
-  // que cai no backdrop e fecha o menu. Por isso o dismiss ignora eventos na
-  // janela GHOST_MS após abrir (ver dismissPopover).
+  // Popover de marcação vira um <dialog> nativo: o navegador cuida de Esc,
+  // clique fora (backdrop) e foco/acessibilidade de forma idêntica em
+  // qualquer dispositivo — sem hack de "ghost click" de WebView Android.
+  const popoverRef = useRef(null);
   useEffect(() => {
-    if (!popover) return;
-    const onKey = (e) => { if (e.key === 'Escape') setPopover(null); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    const dialog = popoverRef.current;
+    if (!dialog) return;
+    if (popover && !dialog.open) dialog.showModal();
+    if (!popover && dialog.open) dialog.close();
   }, [popover]);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -203,15 +198,7 @@ export default function DepartamentoPessoalView() {
   const handleCellClick = (e, emp, day) => {
     if (!canEdit) return; // só editores/admin marcam faltas
     const date = `${year}-${pad(month + 1)}-${pad(day)}`;
-    const rect = e.currentTarget.getBoundingClientRect();
-    setPopover({ employeeId: emp.id, store: emp.store, date, x: rect.left, y: rect.bottom, openedAt: e.timeStamp });
-  };
-
-  // Fecha o menu ao tocar no backdrop, mas ignora o "ghost click" atrasado que
-  // alguns WebViews Android disparam logo após o toque de abertura.
-  const dismissPopover = (e) => {
-    if (popover && e.timeStamp - (popover.openedAt || 0) < 500) return;
-    setPopover(null);
+    setPopover({ employeeId: emp.id, store: emp.store, date, empName: emp.name });
   };
 
   const applyType = (typeKey) => {
@@ -938,43 +925,32 @@ export default function DepartamentoPessoalView() {
         </div>
       )}
 
-      {/* Popover de seleção de tipo. O backdrop (invisível, tela cheia) captura
-          o toque fora pra fechar — sem listener global nem corrida de eventos. */}
-      {popover && (
-        <div
-          className={`${styles.popBackdrop} ${isMobile ? styles.popBackdropMobile : ''}`}
-          onClick={dismissPopover}
-        />
-      )}
-      {popover && (
-        <div
-          className={`${styles.popover} ${isMobile ? styles.popSheet : ''}`}
-          style={
-            isMobile
-              ? undefined
-              : {
-                  top: Math.max(8, Math.min(popover.y + 4, window.innerHeight - 260)),
-                  left: Math.max(8, Math.min(popover.x, window.innerWidth - 220)),
-                }
-          }
-        >
-          {isMobile && (
+      {/* Popover de seleção de tipo como <dialog> nativo: o navegador cuida do
+          backdrop, do Esc e do foco de forma idêntica em qualquer dispositivo. */}
+      <dialog
+        ref={popoverRef}
+        className={styles.popoverDialog}
+        onClose={() => setPopover(null)}
+        onClick={(e) => { if (e.target === popoverRef.current) setPopover(null); }}
+      >
+        {popover && (
+          <div className={styles.popoverContent}>
             <div className={styles.popSheetHeader}>
               <span className={styles.popSheetTitle}>
-                {popover.date ? popover.date.split('-').reverse().join('/') : 'Marcar dia'}
+                {popover.empName} — {popover.date.split('-').reverse().join('/')}
               </span>
               <button className={styles.popSheetClose} onClick={() => setPopover(null)} title="Fechar">✕</button>
             </div>
-          )}
-          {ABSENCE_TYPES.map((t) => (
-            <button key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
-              <span className={styles.popDot} style={{ background: t.color }}>{t.short}</span>
-              {t.label}
-            </button>
-          ))}
-          <button className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
-        </div>
-      )}
+            {ABSENCE_TYPES.map((t) => (
+              <button key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
+                <span className={styles.popDot} style={{ background: t.color }}>{t.short}</span>
+                {t.label}
+              </button>
+            ))}
+            <button className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
+          </div>
+        )}
+      </dialog>
       </>)}
     </div>
   );
