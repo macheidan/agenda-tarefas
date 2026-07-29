@@ -70,6 +70,9 @@ export default function MotoboysView() {
   const canEditGerente = isAdmin || legacyEditor || settings?.motoboysEditGerente === true;
   const canEditAdm = isAdmin || legacyEditor || settings?.motoboysEditAdm === true;
   const canEditResultado = isAdmin || legacyEditor || settings?.motoboysEditResultado === true;
+  // Quem vê o lançamento (Gerente) também vê os valores calculados — as linhas
+  // de resultado aparecem para Gerente OU Resultado.
+  const canViewValores = canViewResultado || canViewGerente;
   const canViewTaxas = isAdmin || settings?.motoboysVerTaxas !== false;
   const canEditTaxas = isAdmin || legacyEditor || settings?.motoboysEditTaxas === true;
   const canRoster = isAdmin || legacyEditor || settings?.motoboysRoster === true;
@@ -179,7 +182,7 @@ export default function MotoboysView() {
       semana,
       config,
       mostrarLancamentos: canViewGerente,
-      mostrarResultado: canViewResultado,
+      mostrarResultado: canViewValores,
     });
     if (!ok) window.alert('O navegador bloqueou a janela do PDF. Libere o pop-up para este site e tente de novo.');
   };
@@ -299,7 +302,7 @@ export default function MotoboysView() {
             {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
           </button>
         )}
-        {semana && listaMotoboys.length > 0 && canExportar && (canViewGerente || canViewResultado) && (
+        {semana && listaMotoboys.length > 0 && canExportar && (canViewGerente || canViewValores) && (
           <button className={styles.toolBtn} onClick={exportarPdf} title="Gerar PDF desta semana">
             Exportar
           </button>
@@ -406,7 +409,7 @@ export default function MotoboysView() {
                     />
                     Conferido
                   </label>
-                  {canViewResultado && <span className={styles.blocoTotal}>{formatBRL(r.total.valor)}</span>}
+                  {canViewValores && <span className={styles.blocoTotal}>{formatBRL(r.total.valor)}</span>}
                   {canEditGerente && (
                     <button
                       className={styles.removeBtn}
@@ -556,7 +559,7 @@ export default function MotoboysView() {
                           </td>
                         </tr>
                       )}
-                      {canViewResultado && (
+                      {canViewValores && (
                         <tr className={styles.calcRow}>
                           <td className={styles.stickyCol}>
                             <span className={styles.taxaLabel}>Total bandas</span>
@@ -568,7 +571,7 @@ export default function MotoboysView() {
                           <td className={styles.totalCol}>{r.total.bandas ? formatBRL(r.total.bandas) : ''}</td>
                         </tr>
                       )}
-                      {canViewResultado && (
+                      {canViewValores && (
                         <tr className={styles.acrescimoRow}>
                           <td className={styles.stickyCol}>
                             <span className={styles.taxaLabel}>Acréscimo</span>
@@ -582,7 +585,7 @@ export default function MotoboysView() {
                           <td className={styles.totalCol}>{r.total.acrescimo ? formatBRL(r.total.acrescimo) : ''}</td>
                         </tr>
                       )}
-                      {canViewResultado && (
+                      {canViewValores && (
                         <tr className={styles.valorRow}>
                           <td className={styles.stickyCol}>
                             <span className={styles.taxaLabel}>Valor a receber</span>
@@ -696,7 +699,7 @@ export default function MotoboysView() {
           )}
 
           {/* ---- Resumo da semana ---- */}
-          {canViewResultado && (
+          {canViewValores && (
             <div className={styles.resumoCards}>
               <div className={styles.resumoCard}>
                 <span className={styles.resumoLabel}>Entregas</span>
