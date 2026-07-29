@@ -20,22 +20,16 @@ export const LOJA_KEY = 'comprasLoja';
 export const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 // Lojas do Estoque Mensal (mesmo padrão de Motoboys/Avaliações): cada loja conta
-// o MESMO produto no seu próprio campo do item, e tem permissão de ver e de
+// o MESMO produto no seu próprio doc de contagem, e tem permissão de ver e de
 // editar separadas. `ver` nasce ligado (!== false); `editar` nasce desligado
 // (=== true), como toda permissão de escrita.
 export const ESTOQUE_LOJAS = [
-  { id: 'dame', nome: 'Dáme', field: 'estoqueQtyDame', verFlag: 'estoqueVerDame', editFlag: 'estoqueEditarDame' },
-  { id: 'lov', nome: 'Lov', field: 'estoqueQtyLov', verFlag: 'estoqueVerLov', editFlag: 'estoqueEditarLov' },
+  { id: 'dame', nome: 'Dáme', verFlag: 'estoqueVerDame', editFlag: 'estoqueEditarDame' },
+  { id: 'lov', nome: 'Lov', verFlag: 'estoqueVerLov', editFlag: 'estoqueEditarLov' },
 ];
-
-// Campos de contagem — usados nas regras do Firestore e na limpeza.
-export const ESTOQUE_FIELDS = ESTOQUE_LOJAS.map((l) => l.field);
 
 // Valor contado: preenchido (0 conta — significa "acabou").
 export const isContado = (v) => v !== null && v !== undefined && v !== '';
-
-// Item com contagem em alguma das lojas (usado no contador do submenu).
-export const temContagem = (item) => ESTOQUE_FIELDS.some((f) => isContado(item?.[f]));
 
 // Número no formato da mensagem copiada (inteiro sem casas, decimal com vírgula).
 export const fmtQty = (value) => {
@@ -87,3 +81,6 @@ export const fmtBRL = (n) =>
 // Id do relatório congelado: um doc por mês E por loja (cada loja fecha a sua
 // contagem quando termina, sem esperar a outra).
 export const relatorioId = (mes, lojaId) => `${mes}_${lojaId}`;
+
+// Id da contagem do Estoque Mensal — mesmo endereçamento (mês + loja).
+export const contagemId = (mes, lojaId) => `${mes}_${lojaId}`;

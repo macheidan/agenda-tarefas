@@ -28,10 +28,11 @@ function resolvePlanilha(item, nomesPorNorm) {
   return achado ? { nome: achado, auto: true } : { nome: '', auto: false };
 }
 
-export default function RelatorioEstoqueView({ compras }) {
+export default function RelatorioEstoqueView({ compras, contagens }) {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
   const { fornecedores, itens, setPlanilhaNome } = compras;
+  const { qtysDe } = contagens;
 
   const [mes, setMes] = useState(mesAtual);
   const [salvando, setSalvando] = useState(false);
@@ -64,16 +65,21 @@ export default function RelatorioEstoqueView({ compras }) {
     return m;
   }, [fornecedores]);
 
-  // Linhas ao vivo: todo item COM contagem na loja ativa (o 0 conta — significa
-  // "acabou"), na ordem do catálogo, agrupado por fornecedor.
+  // Linhas ao vivo: todo item COM contagem no mês e na loja ativos (o 0 conta —
+  // significa "acabou"), na ordem do catálogo, agrupado por fornecedor.
+  const lojaAtivaId = loja?.id || null;
+  const qtysMes = useMemo(
+    () => (lojaAtivaId ? qtysDe(mes, lojaAtivaId) : {}),
+    [qtysDe, mes, lojaAtivaId]
+  );
   const linhasVivas = useMemo(() => {
     if (!loja) return [];
     return itens
-      .filter((i) => isContado(i[loja.field]))
+      .filter((i) => isContado(qtysMes[i.id]))
       .map((i) => {
         const { nome, auto } = resolvePlanilha(i, nomesPorNorm);
         const preco = nome ? custos[nome] : null;
-        const qtd = Number(i[loja.field]) || 0;
+        const qtd = Number(qtysMes[i.id]) || 0;
         return {
           itemId: i.id,
           produto: i.produto || '',
@@ -92,7 +98,7 @@ export default function RelatorioEstoqueView({ compras }) {
       .sort((a, b) =>
         a.fornecedor.localeCompare(b.fornecedor, 'pt', { sensitivity: 'base' }) ||
         a.produto.localeCompare(b.produto, 'pt', { sensitivity: 'base' }));
-  }, [itens, loja, custos, nomesPorNorm, fornecNome]);
+  }, [itens, loja, qtysMes, custos, nomesPorNorm, fornecNome]);
 
   const linhas = salvo ? (salvo.linhas || []) : linhasVivas;
   const total = salvo ? (Number(salvo.total) || 0) : linhas.reduce((s, l) => s + l.total, 0);
@@ -165,11 +171,11 @@ export default function RelatorioEstoqueView({ compras }) {
         </div>
       )}
 
-      <div className={tbl.toolbar}>
-        <label className={tbl.mesLabel}>
+      <div className={styles.mesRow}>
+        <label className={styles.mesLabel}>
           Mês de referência
           <input
-            className={tbl.mesInput}
+            className={styles.mesInput}
             type="month"
             value={mes}
             onChange={(e) => setMes(e.target.value || mesAtual())}
@@ -230,8 +236,9 @@ export default function RelatorioEstoqueView({ compras }) {
         <p className={tbl.vazio}>Carregando preços...</p>
       ) : linhas.length === 0 ? (
         <p className={tbl.vazio}>
-          Nenhum item contado na <strong>{loja.nome}</strong>. Faça a contagem em{' '}
-          <strong>Estoque Mensal</strong> — o relatório valoriza o que estiver lá.
+          Nenhum item contado na <strong>{loja.nome}</strong> em <strong>{fmtMes(mes)}</strong>.
+          Faça a contagem em <strong>Estoque Mensal</strong>, no mesmo mês — o relatório valoriza o
+          que estiver lá.
         </p>
       ) : (
         <div className={tbl.tableWrap}>

@@ -209,8 +209,7 @@ service cloud.firestore {
     // (fornecedores e cadastro de itens) é só de admin/editor; mas qualquer
     // logado pode ajustar a quantidade do pedido (campo qty) — por isso update
     // de comprasItens libera alteração exclusiva de qty para não-editores.
-    // A contagem do estoque vive no mesmo doc, num campo por loja, e tem alçada
-    // própria: só quem pode editar aquela loja escreve aquele campo.
+    // A contagem do estoque não fica aqui: vive em estoqueContagens, por mês.
     match /comprasFornecedores/{fornecedorId} {
       allow read: if isSignedIn();
       allow write: if isComprasEditor();
@@ -222,17 +221,20 @@ service cloud.firestore {
         isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
       ) || (
-        isEstoqueEditor('estoqueEditarDame') &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estoqueQtyDame'])
-      ) || (
-        isEstoqueEditor('estoqueEditarLov') &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estoqueQtyLov'])
-      ) || (
         // Vínculo do item com o Produto (planilha), feito na tela do Relatório
         // Estoque — não mexe em catálogo nem em contagem.
         isRelatorioEstoqueEditor() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['planilhaNome'])
       );
+    }
+
+    // Contagem do Estoque Mensal: um doc por mês e loja ('2026-07_dame'), com o
+    // mapa itemId -> quantidade. Qualquer logado lê; escreve só quem pode editar
+    // AQUELA loja — a loja está no id do doc, então a regra a lê de lá.
+    match /estoqueContagens/{id} {
+      allow read: if isSignedIn();
+      allow write: if (id.matches('.*_dame') && isEstoqueEditor('estoqueEditarDame'))
+                   || (id.matches('.*_lov') && isEstoqueEditor('estoqueEditarLov'));
     }
 
     // Relatório Estoque congelado: um doc por mês e loja ('YYYY-MM_dame').

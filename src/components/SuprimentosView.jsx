@@ -2,12 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useCompras } from '../hooks/useCompras';
+import { useEstoqueContagens } from '../hooks/useEstoqueContagens';
 import ComprasView from './ComprasView';
 import EstoqueView from './EstoqueView';
 import RelatorioEstoqueView from './RelatorioEstoqueView';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
-import { temContagem } from '../lib/suprimentos';
+import { ESTOQUE_LOJAS, isContado, mesAtual } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 // Sub-seções da aba Suprimentos. Compras é a original (visível pra quem tem a
@@ -24,6 +25,7 @@ export default function SuprimentosView() {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
   const compras = useCompras();
+  const contagens = useEstoqueContagens();
   const { itens } = compras;
 
   // Sub-página vem do ?sub= (mesmo padrão de Preços), pra que o F5 volte na
@@ -53,12 +55,22 @@ export default function SuprimentosView() {
     } catch { /* URL malformada: navegação por estado segue funcionando */ }
   }, [activeSub]);
 
-  // Contadores do submenu: itens no pedido (qty > 0) e itens contados em alguma
-  // das lojas.
-  const counts = useMemo(() => ({
-    compras: itens.filter((i) => Number(i.qty) > 0).length,
-    estoque: itens.filter(temContagem).length,
-  }), [itens]);
+  // Contadores do submenu: itens no pedido (qty > 0) e itens contados no MÊS
+  // CORRENTE em alguma das lojas (o contador é um lembrete do que está aberto
+  // agora — meses passados já foram fechados).
+  const { qtysDe } = contagens;
+  const counts = useMemo(() => {
+    const mes = mesAtual();
+    const contados = new Set();
+    for (const l of ESTOQUE_LOJAS) {
+      const qtys = qtysDe(mes, l.id);
+      for (const itemId in qtys) if (isContado(qtys[itemId])) contados.add(itemId);
+    }
+    return {
+      compras: itens.filter((i) => Number(i.qty) > 0).length,
+      estoque: contados.size,
+    };
+  }, [itens, qtysDe]);
 
   const visibleSubs = SUBPAGES.filter((sp) => subVisible[sp.key]);
 
@@ -84,8 +96,8 @@ export default function SuprimentosView() {
         )}
       </div>
 
-      {activeSub === 'relatorio' ? <RelatorioEstoqueView compras={compras} />
-        : activeSub === 'estoque' ? <EstoqueView compras={compras} />
+      {activeSub === 'relatorio' ? <RelatorioEstoqueView compras={compras} contagens={contagens} />
+        : activeSub === 'estoque' ? <EstoqueView compras={compras} contagens={contagens} />
         : <ComprasView compras={compras} />}
     </div>
   );

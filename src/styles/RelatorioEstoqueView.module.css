@@ -1,39 +1,7 @@
-/* Relatório Estoque (sub-seção de Suprimentos). O cartão, o header e as abas de
-   loja vêm de ComprasView.module.css — aqui mora só a barra de mês, o resumo e
-   a tabela de valorização. */
-
-.toolbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.mesLabel {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.mesInput {
-  padding: 7px 10px;
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-md);
-  background: var(--card);
-  color: var(--text);
-  font-size: 14px;
-  font-family: inherit;
-}
-
-.mesInput:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+/* Relatório Estoque (sub-seção de Suprimentos). O cartão, o header, as abas de
+   loja e a barra de mês (.mesRow/.mesLabel/.mesInput, compartilhada com o
+   Estoque Mensal) vêm de ComprasView.module.css — aqui mora só o resumo e a
+   tabela de valorização. */
 
 .toolbarActions {
   display: flex;
@@ -327,11 +295,5 @@
     width: auto;
     border-top: none;
     background: transparent;
-  }
-}
-
-@media (max-width: 480px) {
-  .mesInput {
-    font-size: 16px;
   }
 }

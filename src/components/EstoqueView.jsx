@@ -1,26 +1,31 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
-import { FORNEC_COLORS, ALL, ESTOQUE_LOJAS, norm, isContado, fmtQty } from '../lib/suprimentos';
+import {
+  FORNEC_COLORS, ALL, ESTOQUE_LOJAS, norm, isContado, mesAtual, fmtMes,
+} from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 // Sub-seção de Suprimentos: contagem mensal do estoque. Usa o MESMO catálogo de
 // Compras (comprasFornecedores/comprasItens) — mesmos produtos, mesma ordem —,
-// só que o número digitado vai pro campo de contagem da loja (estoqueQtyDame /
-// estoqueQtyLov), separado do `qty` do pedido. Nada aqui fala de compra: sem dia
-// de entrega e sem cadastro de item/fornecedor (isso continua em Compras).
-export default function EstoqueView({ compras }) {
+// mas o número digitado vai pro doc de contagem do MÊS escolhido (coleção
+// estoqueContagens, um doc por mês e loja), não pro item. Assim a contagem de
+// cada mês fica registrada e o Relatório Estoque consegue valorizar qualquer um
+// deles. Nada aqui fala de compra: sem dia de entrega e sem cadastro de item ou
+// fornecedor (isso continua em Compras).
+export default function EstoqueView({ compras, contagens }) {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
 
-  const { fornecedores, itens, loading, updateEstoque, clearAllEstoque } = compras;
+  const { fornecedores, itens, loading } = compras;
+  const { qtysDe, setQty, clearMes, loading: loadingContagens } = contagens;
 
   const [selectedId, setSelectedId] = useState(null);
-  const [copied, setCopied] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [query, setQuery] = useState('');
+  const [mes, setMes] = useState(mesAtual);
 
   // Abas de loja (padrão Motoboys/Depto Pessoal): quem vê cada loja é decidido
   // em Configurações. Ver nasce ligado; editar, desligado. `estoqueEditar` é a
@@ -28,8 +33,19 @@ export default function EstoqueView({ compras }) {
   const lojasVisiveis = ESTOQUE_LOJAS.filter((l) => isAdmin || settings?.[l.verFlag] !== false);
   const [lojaId, setLojaId] = useState(ESTOQUE_LOJAS[0].id);
   const loja = lojasVisiveis.find((l) => l.id === lojaId) || lojasVisiveis[0] || null;
-  const campo = loja?.field;
   const canEdit = !!loja && (isAdmin || settings?.estoqueEditar === true || settings?.[loja.editFlag] === true);
+
+  const lojaAtivaId = loja?.id || null;
+  const qtys = useMemo(
+    () => (lojaAtivaId ? qtysDe(mes, lojaAtivaId) : {}),
+    [qtysDe, mes, lojaAtivaId]
+  );
+
+  // Valor sendo digitado, por item. O que está no banco só muda no commit
+  // (blur ou Enter) — é lá que mora a confirmação de sobrescrita, e digitar
+  // sem confirmar não pode alterar nada.
+  const [draft, setDraft] = useState({});
+  useEffect(() => { setDraft({}); }, [mes, lojaId]);
 
   // Mesma ordem de Compras: fornecedores em ordem alfabética, itens na ordem do
   // catálogo (o hook já entrega ordenado por `order`).
@@ -80,8 +96,50 @@ export default function EstoqueView({ compras }) {
     return itens.filter((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)).length;
   }, [searching, query, itens]);
 
+  const contados = useMemo(
+    () => Object.values(qtys).filter(isContado).length,
+    [qtys]
+  );
+
+  // Confirma antes de mexer numa contagem que já existe — o valor no banco é o
+  // que alguém contou na loja, e trocar por engano (dedo no campo errado) sai
+  // caro no relatório. Campo ainda em branco grava direto.
+  const commit = async (item) => {
+    const digitado = draft[item.id];
+    if (digitado === undefined) return;
+    const limpar = () => setDraft((prev) => {
+      const next = { ...prev };
+      delete next[item.id];
+      return next;
+    });
+
+    const salvoRaw = qtys[item.id];
+    const salvo = isContado(salvoRaw) ? String(salvoRaw) : '';
+    const novo = String(digitado).trim();
+    if (novo === salvo) { limpar(); return; }
+
+    if (salvo !== '') {
+      const unid = item.unid ? ` ${item.unid}` : '';
+      const destino = novo === '' ? 'apagar a contagem' : `trocar para ${novo}${unid}`;
+      const ok = window.confirm(
+        `${item.produto} já está contado em ${salvo}${unid} neste mês. Deseja ${destino}?`
+      );
+      if (!ok) { limpar(); return; }
+    }
+
+    try {
+      await setQty(mes, loja.id, item.id, novo);
+    } catch (e) {
+      window.alert(`Erro ao salvar a contagem: ${e?.message || e}`);
+    }
+    limpar();
+  };
+
   const renderItem = (item, fornecId, highlight = false) => {
-    const contado = isContado(item[campo]);
+    const salvo = qtys[item.id];
+    const digitado = draft[item.id];
+    const valor = digitado !== undefined ? digitado : (isContado(salvo) ? String(salvo) : '');
+    const contado = isContado(salvo);
     return (
       <div
         key={item.id}
@@ -101,9 +159,11 @@ export default function EstoqueView({ compras }) {
             min="0"
             step="any"
             placeholder="—"
-            value={contado ? item[campo] : ''}
+            value={valor}
             disabled={!canEdit}
-            onChange={(e) => updateEstoque(item.id, campo, e.target.value)}
+            onChange={(e) => setDraft((prev) => ({ ...prev, [item.id]: e.target.value }))}
+            onBlur={() => commit(item)}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
             style={{ borderColor: cor(fornecId) }}
           />
         </div>
@@ -133,58 +193,17 @@ export default function EstoqueView({ compras }) {
     </div>
   );
 
-  // Bloco de contagem de um fornecedor: entra só o que foi DIGITADO — inclusive
-  // o que foi contado como 0 (acabou). Item em branco fica de fora.
-  const buildBlock = (fornec, items) => {
-    const contados = items.filter((i) => isContado(i[campo]));
-    if (!contados.length) return null;
-    const linhas = contados.map((i) => {
-      const marca = i.marca ? ` ${i.marca}` : '';
-      return `${fmtQty(i[campo])}${i.unid || ''} - ${i.produto}${marca}`;
-    });
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    return [
-      `*ESTOQUE ${fornec.name}*`,
-      `*Contagem ${hoje}*`,
-      '',
-      ...linhas,
-    ].join('\n');
-  };
-
-  const copyCount = () => {
-    let txt;
-    if (isAll) {
-      const blocks = allGroups.map((g) => buildBlock(g.fornec, g.items)).filter(Boolean);
-      if (!blocks.length) {
-        window.alert('Nenhum item contado ainda.');
-        return;
-      }
-      txt = blocks.join('\n\n———\n\n');
-    } else {
-      if (!activeFornec) return;
-      txt = buildBlock(activeFornec, fornecItems);
-      if (!txt) {
-        window.alert(`Nenhum item contado em ${activeFornec.name}.`);
-        return;
-      }
-    }
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(txt).then(
-        () => { setCopied(true); setTimeout(() => setCopied(false), 1500); },
-        () => {}
-      );
-    }
-  };
-
-  // Limpa a contagem da loja ativa, em todos os fornecedores (começar o mês do
-  // zero). A outra loja não é tocada.
+  // Limpa a contagem do mês selecionado na loja ativa, em todos os fornecedores.
+  // A outra loja e os outros meses não são tocados.
   const handleClear = async () => {
-    if (!window.confirm(`Tem certeza que deseja LIMPAR a contagem da ${loja.nome} em TODOS os fornecedores? Esta ação não pode ser desfeita.`)) {
+    if (!window.confirm(
+      `Tem certeza que deseja LIMPAR a contagem de ${fmtMes(mes)} da ${loja.nome} em TODOS os fornecedores? Esta ação não pode ser desfeita.`
+    )) {
       return;
     }
     setClearing(true);
     try {
-      await clearAllEstoque(campo);
+      await clearMes(mes, loja.id);
     } catch (e) {
       window.alert(`Erro ao limpar: ${e?.message || e}`);
     } finally {
@@ -218,6 +237,24 @@ export default function EstoqueView({ compras }) {
         </div>
       )}
 
+      {/* ---- Mês da contagem ---- */}
+      <div className={styles.mesRow}>
+        <label className={styles.mesLabel}>
+          Mês da contagem
+          <input
+            className={styles.mesInput}
+            type="month"
+            value={mes}
+            onChange={(e) => setMes(e.target.value || mesAtual())}
+          />
+        </label>
+        <span className={styles.mesInfo}>
+          {contados > 0
+            ? `${contados} ${contados === 1 ? 'item contado' : 'itens contados'} em ${fmtMes(mes)}`
+            : `Nada contado em ${fmtMes(mes)} ainda`}
+        </span>
+      </div>
+
       {fornecedores.length > 0 && (
         <div className={styles.topRow}>
           <div className={styles.searchRow}>
@@ -238,7 +275,7 @@ export default function EstoqueView({ compras }) {
         </div>
       )}
 
-      {/* Fornecedor (esquerda) + Limpar · Loja · Copiar (direita) */}
+      {/* Fornecedor (esquerda) + Limpar (direita) */}
       {fornecedores.length > 0 && (
         <div className={styles.toolbar}>
           <select
@@ -253,15 +290,10 @@ export default function EstoqueView({ compras }) {
               <option key={f.id} value={f.id}>{f.name}</option>
             ))}
           </select>
-          {(activeFornec || isAll) && (
+          {(activeFornec || isAll) && canEdit && (
             <div className={styles.toolbarActions}>
-              {canEdit && (
-                <button className={styles.resetBtn} onClick={handleClear} disabled={clearing}>
-                  {clearing ? 'Limpando...' : 'Limpar'}
-                </button>
-              )}
-              <button className={styles.copyBtn} onClick={copyCount}>
-                {copied ? 'Copiado!' : '+ Copiar'}
+              <button className={styles.resetBtn} onClick={handleClear} disabled={clearing}>
+                {clearing ? 'Limpando...' : 'Limpar'}
               </button>
             </div>
           )}
@@ -275,7 +307,7 @@ export default function EstoqueView({ compras }) {
         </p>
       )}
 
-      {loading ? (
+      {loading || loadingContagens ? (
         <p className={styles.empty}>Carregando...</p>
       ) : fornecedores.length === 0 ? (
         <p className={styles.empty}>

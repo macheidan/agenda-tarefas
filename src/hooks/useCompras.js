@@ -10,7 +10,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { COMPRAS_SEED } from '../data/comprasSeed';
-import { ESTOQUE_FIELDS } from '../lib/suprimentos';
 
 export function useCompras() {
   const [fornecedores, setFornecedores] = useState([]);
@@ -105,34 +104,6 @@ export function useCompras() {
     await deleteDoc(doc(db, 'comprasItens', id));
   }, []);
 
-  // ---- Estoque Mensal ----
-  // A contagem vive no MESMO doc do item, num campo por loja (estoqueQtyDame /
-  // estoqueQtyLov), separada do campo qty do pedido de compras. Assim a lista de
-  // produtos e a ordem são as mesmas das duas telas sem duplicar catálogo, e
-  // cada loja conta o seu. `null` = não contado; 0 = contado como zerado (o item
-  // aparece na mensagem copiada).
-  const updateEstoque = useCallback(async (id, field, value) => {
-    if (!ESTOQUE_FIELDS.includes(field)) return;
-    const raw = typeof value === 'string' ? value.trim() : value;
-    const n = raw === '' || raw === null || raw === undefined ? null : Number(raw);
-    await updateDoc(doc(db, 'comprasItens', id), {
-      [field]: Number.isFinite(n) ? n : null,
-    });
-  }, []);
-
-  // Limpa a contagem de TODOS os itens numa loja. Só grava nos que têm valor,
-  // pra minimizar escritas (mesmo critério do resetAllQuantities).
-  const clearAllEstoque = useCallback(async (field) => {
-    if (!ESTOQUE_FIELDS.includes(field)) return 0;
-    const toClear = itensRef.current.filter(
-      (i) => i[field] !== null && i[field] !== undefined
-    );
-    await Promise.all(
-      toClear.map((i) => updateDoc(doc(db, 'comprasItens', i.id), { [field]: null }))
-    );
-    return toClear.length;
-  }, []);
-
   // ---- Relatório Estoque ----
   // Vínculo do item do catálogo com o "Produto (planilha)" (produtos.nome_padrao
   // na base de Preços). É o que dá preço ao item contado. Fica no próprio doc do
@@ -199,8 +170,6 @@ export function useCompras() {
     updateItem,
     deleteItem,
     resetAllQuantities,
-    updateEstoque,
-    clearAllEstoque,
     setPlanilhaNome,
     seedInitialData,
   };
