@@ -38,6 +38,12 @@ service cloud.firestore {
       return isAdmin() || hasSettingFlag('estoqueEditar') || hasSettingFlag(lojaFlag);
     }
 
+    // Relatório Estoque (sub-seção de Suprimentos): quem fecha o mês. Congela o
+    // relatório (estoqueRelatorios) e vincula o item ao Produto (planilha).
+    function isRelatorioEstoqueEditor() {
+      return isAdmin() || hasSettingFlag('relatorioEstoqueEditar');
+    }
+
     function isMotoboysEditor() {
       return isAdmin() || hasSettingFlag('motoboysEditor') ||
         hasSettingFlag('motoboysEditGerente') || hasSettingFlag('motoboysEditAdm') ||
@@ -221,7 +227,20 @@ service cloud.firestore {
       ) || (
         isEstoqueEditor('estoqueEditarLov') &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estoqueQtyLov'])
+      ) || (
+        // Vínculo do item com o Produto (planilha), feito na tela do Relatório
+        // Estoque — não mexe em catálogo nem em contagem.
+        isRelatorioEstoqueEditor() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['planilhaNome'])
       );
+    }
+
+    // Relatório Estoque congelado: um doc por mês e loja ('YYYY-MM_dame').
+    // Qualquer logado lê (a tela já filtra por permissão); só quem fecha o mês
+    // escreve — salvar sobrescreve e reabrir apaga.
+    match /estoqueRelatorios/{id} {
+      allow read: if isSignedIn();
+      allow write: if isRelatorioEstoqueEditor();
     }
 
     // CMV (fichas técnicas): beneficiados e sabores. Qualquer logado lê;

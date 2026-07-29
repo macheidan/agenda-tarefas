@@ -511,6 +511,20 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                 </Row>
               </Fragment>
             ))}
+            <Row title="Relatório Estoque" desc="Mostra a sub-seção que valoriza a contagem pelos preços da planilha">
+              <Switch
+                label="Relatório Estoque — vê"
+                checked={s.relatorioEstoqueVer === true}
+                onChange={(v) => toggleSection(permTarget, 'relatorioEstoqueVer', v)}
+              />
+            </Row>
+            <Row title="Relatório Estoque — fechar mês" desc="Vincula produtos, salva e reabre o relatório do mês">
+              <Switch
+                label="Relatório Estoque — fecha o mês"
+                checked={s.relatorioEstoqueEditar === true}
+                onChange={(v) => toggleSection(permTarget, 'relatorioEstoqueEditar', v)}
+              />
+            </Row>
           </>
         );
       default:

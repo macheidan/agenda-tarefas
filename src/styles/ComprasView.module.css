@@ -54,33 +54,76 @@
   align-items: center;
 }
 
-/* ---- Submenu (Compras · Estoque Mensal) ---- */
-/* Botões outline coloridos na linha do título; preenchem quando ativos. A cor
-   de cada sub-seção vem por style inline (SuprimentosView). */
+/* ---- Submenu (Compras · Estoque Mensal · Relatório Estoque) ---- */
+/* MESMO visual do submenu de Preços — que é o padrão da casa pra sub-seções:
+   v1 = pílula outline que preenche com o accent quando ativa; v2 = segmented
+   control (trilho cinza, segmento ativo branco com sombra). Sem cor própria por
+   sub-seção: quem diferencia é a posição, não a cor. */
 .subTabs {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .subTab {
-  padding: 7px 14px;
-  border: 2px solid var(--input-border);
+  padding: 5px 12px;
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  background: transparent;
+  background: none;
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
+  line-height: 1.4;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background 0.15s, color 0.15s;
 }
 
 .subTab:hover {
-  filter: brightness(1.05);
+  background: var(--card-hover);
+  color: var(--text);
 }
 
-.subTabActive {
-  box-shadow: var(--shadow-sm);
+.subTabActive,
+.subTabActive:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* v2: segmented control (docs/tailadmin-medido.md), igual ao de Preços. */
+:global(:root[data-v2]) .subTabs {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .subTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .subTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .subTabActive,
+:global(:root[data-v2]) .subTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
 }
 
 /* ---- Abas de loja do Estoque Mensal (mesmo visual do Motoboys) ---- */

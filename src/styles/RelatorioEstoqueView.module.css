@@ -1,0 +1,337 @@
+/* Relatório Estoque (sub-seção de Suprimentos). O cartão, o header e as abas de
+   loja vêm de ComprasView.module.css — aqui mora só a barra de mês, o resumo e
+   a tabela de valorização. */
+
+.toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.mesLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.mesInput {
+  padding: 7px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.mesInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  padding: 8px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnGhost:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.chipSalvo {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ---- Resumo ---- */
+.resumo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.resumoBox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resumoLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.resumoValor {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.resumoInfo {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.aviso {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 152, 0, 0.1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Vazio: texto corrido (o .empty de Compras é flex-column e quebraria cada
+   <strong> numa linha). */
+.vazio {
+  padding: 32px 20px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ---- Tabela ---- */
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background: var(--bg-secondary);
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+.table tfoot td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.totalCel {
+  font-weight: 600;
+}
+
+.produto {
+  font-weight: 600;
+}
+
+.marca,
+.medida {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.medida {
+  margin-left: 2px;
+}
+
+.dim {
+  color: var(--text-muted);
+}
+
+.rowSemPreco {
+  background: rgba(255, 152, 0, 0.06);
+}
+
+.select {
+  max-width: 220px;
+  padding: 5px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.selectVazio {
+  border-color: #ff9800;
+  color: var(--text-muted);
+}
+
+/* ---- Mobile: cada linha vira card ---- */
+@media (max-width: 768px) {
+  .tableWrap {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+  }
+
+  .table,
+  .table tbody,
+  .table tfoot,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 3px 0;
+    border-bottom: none;
+    text-align: left;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+  }
+
+  .table td[data-label='Produto']::before {
+    display: none;
+  }
+
+  .table td[data-label='Produto'] {
+    justify-content: flex-start;
+    padding-bottom: 6px;
+  }
+
+  .num {
+    text-align: right;
+  }
+
+  .select {
+    max-width: 60%;
+  }
+
+  .table tfoot tr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 4px 12px;
+  }
+
+  .table tfoot td {
+    width: auto;
+    border-top: none;
+    background: transparent;
+  }
+}
+
+@media (max-width: 480px) {
+  .mesInput {
+    font-size: 16px;
+  }
+}

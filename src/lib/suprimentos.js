@@ -42,3 +42,48 @@ export const fmtQty = (value) => {
   const n = Number(value);
   return Number.isInteger(n) ? String(n) : String(n).replace('.', ',');
 };
+
+// ---- Relatório Estoque ----
+
+// Mês de referência no formato 'YYYY-MM' (o mesmo do <input type="month">).
+// Usa a data local, não o UTC: no fuso de POA o toISOString() vira o mês
+// seguinte na virada.
+export const mesAtual = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+// Primeiro dia do mês SEGUINTE ('YYYY-MM-DD'). É o corte usado na consulta de
+// preços: "preço até o último dia do mês" vira `data < primeiroDoProximo`, o
+// que funciona tanto se a coluna for date quanto timestamp.
+export const inicioProximoMes = (mes) => {
+  const [y, m] = String(mes || '').split('-').map(Number);
+  if (!y || !m) return '';
+  const ny = m === 12 ? y + 1 : y;
+  const nm = m === 12 ? 1 : m + 1;
+  return `${ny}-${String(nm).padStart(2, '0')}-01`;
+};
+
+// Último dia do mês ('YYYY-MM-DD') — só pra exibir a data de corte na tela.
+export const fimDoMes = (mes) => {
+  const [y, m] = String(mes || '').split('-').map(Number);
+  if (!y || !m) return '';
+  const d = new Date(Date.UTC(y, m, 0));
+  return d.toISOString().slice(0, 10);
+};
+
+const MESES_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+export const fmtMes = (mes) => {
+  const [y, m] = String(mes || '').split('-').map(Number);
+  if (!y || !m) return mes || '';
+  return `${MESES_PT[m - 1]}/${y}`;
+};
+
+export const fmtBRL = (n) =>
+  (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// Id do relatório congelado: um doc por mês E por loja (cada loja fecha a sua
+// contagem quando termina, sem esperar a outra).
+export const relatorioId = (mes, lojaId) => `${mes}_${lojaId}`;

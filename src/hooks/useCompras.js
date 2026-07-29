@@ -133,6 +133,17 @@ export function useCompras() {
     return toClear.length;
   }, []);
 
+  // ---- Relatório Estoque ----
+  // Vínculo do item do catálogo com o "Produto (planilha)" (produtos.nome_padrao
+  // na base de Preços). É o que dá preço ao item contado. Fica no próprio doc do
+  // item porque é característica do produto, não do mês: uma vez vinculado, vale
+  // pra todo relatório daqui pra frente. `null` = desvinculado (volta a valer o
+  // casamento automático por nome).
+  const setPlanilhaNome = useCallback(async (id, nome) => {
+    const t = (nome || '').trim();
+    await updateDoc(doc(db, 'comprasItens', id), { planilhaNome: t || null });
+  }, []);
+
   // Zera a quantidade de TODOS os itens (de todos os fornecedores).
   // Só grava nos que não estão zerados, pra minimizar escritas.
   const resetAllQuantities = useCallback(async () => {
@@ -190,6 +201,7 @@ export function useCompras() {
     resetAllQuantities,
     updateEstoque,
     clearAllEstoque,
+    setPlanilhaNome,
     seedInitialData,
   };
 }

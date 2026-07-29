@@ -9,6 +9,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useFatorSugestao } from '../hooks/useFatorSugestao';
 import { IS_V2 } from '../lib/v2';
+// Leitura da base de preços (data e Resultado/Regra3) — compartilhada com o
+// Relatório Estoque, em Suprimentos.
+import { parseDataISO, calcResultado } from '../lib/precos';
 
 // Sub-seções da seção e ordem em que aparecem. A visibilidade de cada uma é por
 // usuário, controlada em Configurações (chaves precosSub* em settings/{uid};
@@ -114,19 +117,6 @@ function daysAgo(n) {
   return d.toISOString().slice(0, 10);
 }
 
-// Normaliza a data para 'YYYY-MM-DD' independente do formato de origem
-// (ISO com hora, 'DD/MM/YYYY' ou ja 'YYYY-MM-DD'). Sem isso, datas em
-// formato diferente quebram a comparacao de string usada no filtro.
-function parseDataISO(raw) {
-  if (!raw) return '';
-  const s = String(raw).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-  const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
-  const d = new Date(s);
-  return isNaN(d) ? '' : d.toISOString().slice(0, 10);
-}
-
 const PAGE_OPTIONS = [50, 100, 200];
 
 // Janela de dados: por padrao a tela abre nos ultimos 30 dias (paint rapido) e
@@ -193,20 +183,6 @@ function buildFatores(mapped) {
     }
   }
   return fmap;
-}
-
-// Regra3: o fator multiplica o preco/kg por padrao (ex: "2" -> x2). Com o
-// prefixo "/" ele divide (ex: "/2" -> dividido por 2). Aceita virgula decimal.
-// Retorna o resultado numerico ou null se o campo estiver vazio/invalido.
-function calcResultado(precoNorm, raw) {
-  if (raw === '' || raw == null) return null;
-  const s = String(raw).trim();
-  const isDiv = s.startsWith('/');
-  const numStr = (isDiv ? s.slice(1) : s).replace(',', '.').trim();
-  const n = Number(numStr);
-  if (numStr === '' || Number.isNaN(n)) return null;
-  if (isDiv) return n === 0 ? null : precoNorm / n;
-  return precoNorm * n;
 }
 
 // Alias de fornecedores que sao o mesmo negocio com CNPJ diferente. "Conservas

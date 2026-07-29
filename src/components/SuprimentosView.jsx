@@ -4,18 +4,20 @@ import { useSettings } from '../hooks/useSettings';
 import { useCompras } from '../hooks/useCompras';
 import ComprasView from './ComprasView';
 import EstoqueView from './EstoqueView';
+import RelatorioEstoqueView from './RelatorioEstoqueView';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
 import { temContagem } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 // Sub-seções da aba Suprimentos. Compras é a original (visível pra quem tem a
-// aba); Estoque Mensal nasce OFF e só aparece com a flag estoqueVer ligada nas
-// Configurações. As duas leem o MESMO catálogo — por isso o hook é instanciado
-// aqui uma vez só e desce por prop (um par de listeners, não dois).
+// aba); Estoque Mensal e Relatório Estoque nascem OFF e só aparecem com a flag
+// ligada nas Configurações. As três leem o MESMO catálogo — por isso o hook é
+// instanciado aqui uma vez só e desce por prop (um par de listeners, não três).
 const SUBPAGES = [
-  { key: 'compras', label: 'Compras', color: '#465fff' },
-  { key: 'estoque', label: 'Estoque Mensal', color: '#12b76a', flag: 'estoqueVer' },
+  { key: 'compras', label: 'Compras' },
+  { key: 'estoque', label: 'Estoque Mensal', flag: 'estoqueVer' },
+  { key: 'relatorio', label: 'Relatório Estoque', flag: 'relatorioEstoqueVer' },
 ];
 
 export default function SuprimentosView() {
@@ -68,30 +70,22 @@ export default function SuprimentosView() {
         </h2>
         {visibleSubs.length > 1 && (
           <div className={styles.subTabs}>
-            {visibleSubs.map((sp) => {
-              const active = activeSub === sp.key;
-              return (
-                <button
-                  key={sp.key}
-                  className={`${styles.subTab} ${active ? styles.subTabActive : ''}`}
-                  style={{
-                    borderColor: sp.color,
-                    color: active ? '#fff' : sp.color,
-                    background: active ? sp.color : 'transparent',
-                  }}
-                  onClick={() => setSubPage(sp.key)}
-                >
-                  {sp.label}
-                  {counts[sp.key] > 0 && ` (${counts[sp.key]})`}
-                </button>
-              );
-            })}
+            {visibleSubs.map((sp) => (
+              <button
+                key={sp.key}
+                className={`${styles.subTab} ${activeSub === sp.key ? styles.subTabActive : ''}`}
+                onClick={() => setSubPage(sp.key)}
+              >
+                {sp.label}
+                {counts[sp.key] > 0 && ` (${counts[sp.key]})`}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      {activeSub === 'estoque'
-        ? <EstoqueView compras={compras} />
+      {activeSub === 'relatorio' ? <RelatorioEstoqueView compras={compras} />
+        : activeSub === 'estoque' ? <EstoqueView compras={compras} />
         : <ComprasView compras={compras} />}
     </div>
   );
