@@ -3,10 +3,18 @@
 // catálogo (comprasFornecedores/comprasItens) — endereço de loja, paleta de
 // cores por fornecedor e normalização de busca precisam bater entre elas.
 
-export const LOJAS = ['Lov', 'Dáme'];
+// Lojas de Compras. O NOME é o valor guardado no localStorage e o que sai na
+// mensagem do pedido — por isso a lista é de objetos com nome + endereço, e não
+// de ids. Cada loja tem a sua permissão de ver (mesmo padrão do Estoque Mensal
+// e de Motoboys/Avaliações): nasce ligada (`!== false`) e o admin desliga por
+// usuário em Configurações, pra quem só pede para a própria loja.
+export const COMPRAS_LOJAS = [
+  { nome: 'Lov', endereco: 'Anita Garibaldi 1593', verFlag: 'comprasVerLov' },
+  { nome: 'Dáme', endereco: 'Carazinho 443', verFlag: 'comprasVerDame' },
+];
 
 // Endereço de cada loja, incluído ao lado do nome na mensagem copiada.
-export const LOJA_ENDERECO = { Lov: 'Anita Garibaldi 1593', Dáme: 'Carazinho 443' };
+export const LOJA_ENDERECO = Object.fromEntries(COMPRAS_LOJAS.map((l) => [l.nome, l.endereco]));
 
 export const FORNEC_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab', '#0d9488'];
 

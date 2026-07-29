@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
-import { LOJAS, LOJA_ENDERECO, FORNEC_COLORS, ALL, LOJA_KEY, norm } from '../lib/suprimentos';
+import { COMPRAS_LOJAS, LOJA_ENDERECO, FORNEC_COLORS, ALL, LOJA_KEY, norm } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
@@ -17,6 +17,12 @@ export default function ComprasView({ compras }) {
   // Editores (e o admin) gerenciam fornecedores e o catálogo de itens.
   // Qualquer usuário com a seção visível pode ajustar as quantidades do pedido.
   const canEdit = isAdmin || settings?.comprasEditor === true;
+  // Lojas que este usuário pode escolher no pedido (permissão por loja, nasce
+  // ligada). O admin vê todas.
+  const lojasVisiveis = useMemo(
+    () => COMPRAS_LOJAS.filter((l) => isAdmin || settings?.[l.verFlag] !== false),
+    [isAdmin, settings]
+  );
 
   const {
     fornecedores,
@@ -61,6 +67,14 @@ export default function ComprasView({ compras }) {
   useEffect(() => {
     try { localStorage.setItem(LOJA_KEY, loja); } catch { /* ignore */ }
   }, [loja]);
+
+  // Loja memorizada que saiu da permissão não fica selecionada; quem só enxerga
+  // uma loja já a recebe escolhida (não faz sentido pedir pra escolher).
+  useEffect(() => {
+    const permitida = loja && lojasVisiveis.some((l) => l.nome === loja);
+    if (permitida) return;
+    setLoja(lojasVisiveis.length === 1 ? lojasVisiveis[0].nome : '');
+  }, [loja, lojasVisiveis]);
 
   // Fornecedores em ordem alfabética (usado em todo lugar que exibe a lista).
   const sortedFornecedores = useMemo(
@@ -255,7 +269,9 @@ export default function ComprasView({ compras }) {
       return;
     }
     if (!loja) {
-      window.alert('Selecione a loja (Lov ou Dáme) antes de copiar o pedido.');
+      window.alert(lojasVisiveis.length === 0
+        ? 'Nenhuma loja liberada para você em Compras. Fale com o administrador.'
+        : `Selecione a loja (${lojasVisiveis.map((l) => l.nome).join(' ou ')}) antes de copiar o pedido.`);
       return;
     }
     let txt;
@@ -421,8 +437,8 @@ export default function ComprasView({ compras }) {
                 required
               >
                 <option value="">Loja</option>
-                {LOJAS.map((l) => (
-                  <option key={l} value={l}>{l}</option>
+                {lojasVisiveis.map((l) => (
+                  <option key={l.nome} value={l.nome}>{l.nome}</option>
                 ))}
               </select>
               <select

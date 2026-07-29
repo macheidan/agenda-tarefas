@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useUsers } from '../hooks/useUsers';
 import { useState, useEffect, Fragment } from 'react';
-import { ESTOQUE_LOJAS } from '../lib/suprimentos';
+import { COMPRAS_LOJAS, ESTOQUE_LOJAS } from '../lib/suprimentos';
 import { doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TabIcon } from './tabIcons';
@@ -486,6 +486,15 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
       case 'shopping':
         return (
           <>
+            {COMPRAS_LOJAS.map((l) => (
+              <Row key={l.verFlag} title={`Compras — ${l.nome}`} desc="Loja disponível ao montar e copiar o pedido">
+                <Switch
+                  label={`Compras — vê ${l.nome}`}
+                  checked={s[l.verFlag] !== false}
+                  onChange={(v) => toggleSection(permTarget, l.verFlag, v)}
+                />
+              </Row>
+            ))}
             <Row title="Compras — editar" desc="Gerencia fornecedores e o catálogo de itens">
               <Switch
                 label="Compras — edita"
