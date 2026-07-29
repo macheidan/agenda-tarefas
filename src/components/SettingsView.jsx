@@ -62,7 +62,7 @@ const MOTOBOYS_SUBSECTIONS = [
   { view: 'motoboysVerResultado', edit: 'motoboysEditResultado', label: 'Resultado' },
   { view: 'motoboysVerTaxas', edit: 'motoboysEditTaxas', label: 'Taxas' },
 ];
-const MOTOBOYS_EDIT_KEYS = ['motoboysEditGerente', 'motoboysEditAdm', 'motoboysEditResultado', 'motoboysEditTaxas', 'motoboysRoster'];
+const MOTOBOYS_EDIT_KEYS = ['motoboysEditGerente', 'motoboysEditAdm', 'motoboysEditResultado', 'motoboysEditTaxas', 'motoboysRoster', 'motoboysExportar'];
 
 // Lojas por seção — espelham MOTOBOY_LOJAS (MotoboysView) e LOJAS (SurveysView).
 const MOTOBOYS_LOJAS = [
@@ -434,6 +434,13 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                 label="Motoboys — cadastro"
                 checked={s.motoboysRoster === true || s.motoboysEditor === true}
                 onChange={(v) => toggleMotoboyPerm(permTarget, 'motoboysRoster', v)}
+              />
+            </Row>
+            <Row title="Exportar" desc="Botão que gera o PDF da semana">
+              <Switch
+                label="Motoboys — exportar"
+                checked={s.motoboysExportar === true || s.motoboysEditor === true}
+                onChange={(v) => toggleMotoboyPerm(permTarget, 'motoboysExportar', v)}
               />
             </Row>
           </>

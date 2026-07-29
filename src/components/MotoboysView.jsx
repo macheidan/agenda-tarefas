@@ -73,6 +73,8 @@ export default function MotoboysView() {
   const canViewTaxas = isAdmin || settings?.motoboysVerTaxas !== false;
   const canEditTaxas = isAdmin || legacyEditor || settings?.motoboysEditTaxas === true;
   const canRoster = isAdmin || legacyEditor || settings?.motoboysRoster === true;
+  // Botão Exportar (PDF da semana): default desligado, liberado por usuário.
+  const canExportar = isAdmin || legacyEditor || settings?.motoboysExportar === true;
   // Lojas visíveis por usuário (default: as duas).
   const lojasVisiveis = MOTOBOY_LOJAS.filter((l) =>
     isAdmin || (l.id === 'dame' ? settings?.motoboysVerDame !== false : settings?.motoboysVerLov !== false)
@@ -297,7 +299,7 @@ export default function MotoboysView() {
             {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
           </button>
         )}
-        {semana && listaMotoboys.length > 0 && (canViewGerente || canViewResultado) && (
+        {semana && listaMotoboys.length > 0 && canExportar && (canViewGerente || canViewResultado) && (
           <button className={styles.toolBtn} onClick={exportarPdf} title="Gerar PDF desta semana">
             Exportar
           </button>
