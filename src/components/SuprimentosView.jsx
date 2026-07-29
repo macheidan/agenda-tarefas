@@ -6,7 +6,7 @@ import ComprasView from './ComprasView';
 import EstoqueView from './EstoqueView';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
-import { isContado } from '../lib/suprimentos';
+import { temContagem } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 // Sub-seções da aba Suprimentos. Compras é a original (visível pra quem tem a
@@ -51,10 +51,11 @@ export default function SuprimentosView() {
     } catch { /* URL malformada: navegação por estado segue funcionando */ }
   }, [activeSub]);
 
-  // Contadores do submenu: itens no pedido (qty > 0) e itens já contados.
+  // Contadores do submenu: itens no pedido (qty > 0) e itens contados em alguma
+  // das lojas.
   const counts = useMemo(() => ({
     compras: itens.filter((i) => Number(i.qty) > 0).length,
-    estoque: itens.filter(isContado).length,
+    estoque: itens.filter(temContagem).length,
   }), [itens]);
 
   const visibleSubs = SUBPAGES.filter((sp) => subVisible[sp.key]);

@@ -3,21 +3,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
-import { FORNEC_COLORS, ALL, norm, isContado, fmtQty } from '../lib/suprimentos';
+import { FORNEC_COLORS, ALL, ESTOQUE_LOJAS, norm, isContado, fmtQty } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 // Sub-seção de Suprimentos: contagem mensal do estoque. Usa o MESMO catálogo de
 // Compras (comprasFornecedores/comprasItens) — mesmos produtos, mesma ordem —,
-// só que o número digitado vai pro campo `estoqueQty` do item, separado do `qty`
-// do pedido. Nada aqui fala de compra: sem dia de entrega e sem cadastro de
-// item/fornecedor (isso continua em Compras).
+// só que o número digitado vai pro campo de contagem da loja (estoqueQtyDame /
+// estoqueQtyLov), separado do `qty` do pedido. Nada aqui fala de compra: sem dia
+// de entrega e sem cadastro de item/fornecedor (isso continua em Compras).
 export default function EstoqueView({ compras }) {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
-  // Quem vê a sub-seção é decidido em Configurações (estoqueVer); editar a
-  // contagem é uma permissão à parte (estoqueEditar). Sem ela, os campos ficam
-  // só de leitura.
-  const canEdit = isAdmin || settings?.estoqueEditar === true;
 
   const { fornecedores, itens, loading, updateEstoque, clearAllEstoque } = compras;
 
@@ -25,6 +21,15 @@ export default function EstoqueView({ compras }) {
   const [copied, setCopied] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [query, setQuery] = useState('');
+
+  // Abas de loja (padrão Motoboys/Depto Pessoal): quem vê cada loja é decidido
+  // em Configurações. Ver nasce ligado; editar, desligado. `estoqueEditar` é a
+  // permissão antiga (antes da separação por loja) e vale pelas duas.
+  const lojasVisiveis = ESTOQUE_LOJAS.filter((l) => isAdmin || settings?.[l.verFlag] !== false);
+  const [lojaId, setLojaId] = useState(ESTOQUE_LOJAS[0].id);
+  const loja = lojasVisiveis.find((l) => l.id === lojaId) || lojasVisiveis[0] || null;
+  const campo = loja?.field;
+  const canEdit = !!loja && (isAdmin || settings?.estoqueEditar === true || settings?.[loja.editFlag] === true);
 
   // Mesma ordem de Compras: fornecedores em ordem alfabética, itens na ordem do
   // catálogo (o hook já entrega ordenado por `order`).
@@ -76,7 +81,7 @@ export default function EstoqueView({ compras }) {
   }, [searching, query, itens]);
 
   const renderItem = (item, fornecId, highlight = false) => {
-    const contado = isContado(item);
+    const contado = isContado(item[campo]);
     return (
       <div
         key={item.id}
@@ -96,9 +101,9 @@ export default function EstoqueView({ compras }) {
             min="0"
             step="any"
             placeholder="—"
-            value={contado ? item.estoqueQty : ''}
+            value={contado ? item[campo] : ''}
             disabled={!canEdit}
-            onChange={(e) => updateEstoque(item.id, e.target.value)}
+            onChange={(e) => updateEstoque(item.id, campo, e.target.value)}
             style={{ borderColor: cor(fornecId) }}
           />
         </div>
@@ -131,11 +136,11 @@ export default function EstoqueView({ compras }) {
   // Bloco de contagem de um fornecedor: entra só o que foi DIGITADO — inclusive
   // o que foi contado como 0 (acabou). Item em branco fica de fora.
   const buildBlock = (fornec, items) => {
-    const contados = items.filter(isContado);
+    const contados = items.filter((i) => isContado(i[campo]));
     if (!contados.length) return null;
     const linhas = contados.map((i) => {
       const marca = i.marca ? ` ${i.marca}` : '';
-      return `${fmtQty(i.estoqueQty)}${i.unid || ''} - ${i.produto}${marca}`;
+      return `${fmtQty(i[campo])}${i.unid || ''} - ${i.produto}${marca}`;
     });
     const hoje = new Date().toLocaleDateString('pt-BR');
     return [
@@ -171,14 +176,15 @@ export default function EstoqueView({ compras }) {
     }
   };
 
-  // Limpa a contagem de todos os fornecedores (começar o mês do zero).
+  // Limpa a contagem da loja ativa, em todos os fornecedores (começar o mês do
+  // zero). A outra loja não é tocada.
   const handleClear = async () => {
-    if (!window.confirm('Tem certeza que deseja LIMPAR a contagem de TODOS os fornecedores? Esta ação não pode ser desfeita.')) {
+    if (!window.confirm(`Tem certeza que deseja LIMPAR a contagem da ${loja.nome} em TODOS os fornecedores? Esta ação não pode ser desfeita.`)) {
       return;
     }
     setClearing(true);
     try {
-      await clearAllEstoque();
+      await clearAllEstoque(campo);
     } catch (e) {
       window.alert(`Erro ao limpar: ${e?.message || e}`);
     } finally {
@@ -186,8 +192,32 @@ export default function EstoqueView({ compras }) {
     }
   };
 
+  if (!loja) {
+    return (
+      <p className={styles.empty}>
+        Nenhuma loja liberada pra você no Estoque Mensal. Peça ao admin em
+        Configurações → Permissões → Suprimentos.
+      </p>
+    );
+  }
+
   return (
     <>
+      {/* ---- Abas de loja (padrão Motoboys) ---- */}
+      {lojasVisiveis.length > 1 && (
+        <div className={styles.lojaTabs}>
+          {lojasVisiveis.map((l) => (
+            <button
+              key={l.id}
+              className={`${styles.lojaTab} ${loja.id === l.id ? styles.lojaTabActive : ''}`}
+              onClick={() => setLojaId(l.id)}
+            >
+              {l.nome}
+            </button>
+          ))}
+        </div>
+      )}
+
       {fornecedores.length > 0 && (
         <div className={styles.topRow}>
           <div className={styles.searchRow}>
@@ -240,8 +270,8 @@ export default function EstoqueView({ compras }) {
 
       {!canEdit && fornecedores.length > 0 && (
         <p className={styles.readOnlyMsg}>
-          Você pode ver a contagem, mas não editar. Peça ao admin a permissão
-          <strong> Estoque Mensal — edita</strong>.
+          Você pode ver a contagem da <strong>{loja.nome}</strong>, mas não editar. Peça ao admin a
+          permissão <strong>Estoque Mensal — {loja.nome} edita</strong>.
         </p>
       )}
 

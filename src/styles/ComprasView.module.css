@@ -83,6 +83,71 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* ---- Abas de loja do Estoque Mensal (mesmo visual do Motoboys) ---- */
+.lojaTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.lojaTab {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lojaTab:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.lojaTabActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* v2: segmented control (docs/tailadmin-medido.md), igual ao do Motoboys. */
+:global(:root[data-v2]) .lojaTabs {
+  display: inline-flex;
+  width: fit-content;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .lojaTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .lojaTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .lojaTabActive,
+:global(:root[data-v2]) .lojaTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
+
 /* ---- Busca (esquerda) + ações do catálogo (direita) ---- */
 .topRow {
   display: flex;

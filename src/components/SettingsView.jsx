@@ -1,6 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useUsers } from '../hooks/useUsers';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
+import { ESTOQUE_LOJAS } from '../lib/suprimentos';
 import { doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TabIcon } from './tabIcons';
@@ -465,20 +466,31 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                 onChange={(v) => toggleSection(permTarget, 'comprasEditor', v)}
               />
             </Row>
-            <Row title="Estoque Mensal — ver" desc="Mostra a sub-seção de contagem de estoque">
+            <Row title="Estoque Mensal" desc="Mostra a sub-seção de contagem de estoque">
               <Switch
                 label="Estoque Mensal — vê"
                 checked={s.estoqueVer === true}
                 onChange={(v) => toggleSection(permTarget, 'estoqueVer', v)}
               />
             </Row>
-            <Row title="Estoque Mensal — editar" desc="Digita as quantidades contadas e limpa a contagem">
-              <Switch
-                label="Estoque Mensal — edita"
-                checked={s.estoqueEditar === true}
-                onChange={(v) => toggleSection(permTarget, 'estoqueEditar', v)}
-              />
-            </Row>
+            {ESTOQUE_LOJAS.map((l) => (
+              <Fragment key={l.id}>
+                <Row title={`Estoque Mensal — ${l.nome}`} desc="Loja visível na contagem">
+                  <Switch
+                    label={`Estoque Mensal — vê ${l.nome}`}
+                    checked={s[l.verFlag] !== false}
+                    onChange={(v) => toggleSection(permTarget, l.verFlag, v)}
+                  />
+                </Row>
+                <Row title={`Estoque Mensal — ${l.nome} edita`} desc={`Digita e limpa a contagem da ${l.nome}`}>
+                  <Switch
+                    label={`Estoque Mensal — edita ${l.nome}`}
+                    checked={s[l.editFlag] === true || s.estoqueEditar === true}
+                    onChange={(v) => toggleSection(permTarget, l.editFlag, v)}
+                  />
+                </Row>
+              </Fragment>
+            ))}
           </>
         );
       default:
