@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
-import { LOJAS, LOJA_ENDERECO, FORNEC_COLORS, ALL, LOJA_KEY, norm, isContado, fmtQty } from '../lib/suprimentos';
+import { FORNEC_COLORS, ALL, norm, isContado, fmtQty } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 // Sub-seção de Suprimentos: contagem mensal do estoque. Usa o MESMO catálogo de
@@ -22,16 +22,9 @@ export default function EstoqueView({ compras }) {
   const { fornecedores, itens, loading, updateEstoque, clearAllEstoque } = compras;
 
   const [selectedId, setSelectedId] = useState(null);
-  const [loja, setLoja] = useState(() => {
-    try { return localStorage.getItem(LOJA_KEY) || ''; } catch { return ''; }
-  });
   const [copied, setCopied] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    try { localStorage.setItem(LOJA_KEY, loja); } catch { /* ignore */ }
-  }, [loja]);
 
   // Mesma ordem de Compras: fornecedores em ordem alfabética, itens na ordem do
   // catálogo (o hook já entrega ordenado por `order`).
@@ -147,7 +140,6 @@ export default function EstoqueView({ compras }) {
     const hoje = new Date().toLocaleDateString('pt-BR');
     return [
       `*ESTOQUE ${fornec.name}*`,
-      `*${loja}${LOJA_ENDERECO[loja] ? ` - ${LOJA_ENDERECO[loja]}` : ''}*`,
       `*Contagem ${hoje}*`,
       '',
       ...linhas,
@@ -155,10 +147,6 @@ export default function EstoqueView({ compras }) {
   };
 
   const copyCount = () => {
-    if (!loja) {
-      window.alert('Selecione a loja (Lov ou Dáme) antes de copiar a contagem.');
-      return;
-    }
     let txt;
     if (isAll) {
       const blocks = allGroups.map((g) => buildBlock(g.fornec, g.items)).filter(Boolean);
@@ -242,17 +230,6 @@ export default function EstoqueView({ compras }) {
                   {clearing ? 'Limpando...' : 'Limpar'}
                 </button>
               )}
-              <select
-                className={`${styles.daySelect} ${!loja ? styles.selectEmpty : ''}`}
-                value={loja}
-                onChange={(e) => setLoja(e.target.value)}
-                required
-              >
-                <option value="">Loja</option>
-                {LOJAS.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
               <button className={styles.copyBtn} onClick={copyCount}>
                 {copied ? 'Copiado!' : '+ Copiar'}
               </button>
