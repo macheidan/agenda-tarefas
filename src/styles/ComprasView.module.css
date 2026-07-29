@@ -54,13 +54,51 @@
   align-items: center;
 }
 
-/* ---- Busca ---- */
+/* ---- Submenu (Compras · Estoque Mensal) ---- */
+/* Botões outline coloridos na linha do título; preenchem quando ativos. A cor
+   de cada sub-seção vem por style inline (SuprimentosView). */
+.subTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.subTab {
+  padding: 7px 14px;
+  border: 2px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.subTab:hover {
+  filter: brightness(1.05);
+}
+
+.subTabActive {
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Busca (esquerda) + ações do catálogo (direita) ---- */
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
 .searchRow {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  margin-bottom: 12px;
+  flex: 1;
+  min-width: 220px;
   border: 1px solid var(--input-border);
   border-radius: var(--radius-md);
   background: var(--input-bg);
@@ -596,10 +634,43 @@
   max-width: 420px;
 }
 
+/* Aviso de somente-leitura (Estoque Mensal sem permissão de edição). */
+.readOnlyMsg {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Campo de contagem desabilitado: continua legível, mas sem cara de editável. */
+.qtyInput:disabled {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 16px;
     padding-top: 0;
+  }
+  /* Submenu ocupa a linha inteira abaixo do título e rola no eixo X se faltar
+     espaço (mesma ideia da toolbar). */
+  .subTabs {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .subTab {
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .topRow .headerActions {
+    width: 100%;
   }
   /* Mantém produto (esquerda) e quantidade/ações (direita) na mesma linha;
      o texto longo do produto quebra dentro da própria coluna.

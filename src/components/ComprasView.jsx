@@ -1,23 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
-import { useCompras } from '../hooks/useCompras';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
+import { LOJAS, LOJA_ENDERECO, FORNEC_COLORS, ALL, LOJA_KEY, norm } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
 const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-const LOJAS = ['Lov', 'Dáme'];
-// Endereço de cada loja, incluído ao lado do nome na mensagem copiada.
-const LOJA_ENDERECO = { Lov: 'Anita Garibaldi 1593', Dáme: 'Carazinho 443' };
-const FORNEC_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab', '#0d9488'];
-const ALL = '__all__';
-const LOJA_KEY = 'comprasLoja';
 
-// Normaliza para busca: minúsculas e sem acentos.
-const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-
-export default function ComprasView() {
+// Sub-seção de Suprimentos: o cartão e o título ficam no SuprimentosView, que
+// também instancia o hook e passa os dados por prop (o Estoque Mensal lê o
+// mesmo catálogo — um par de listeners serve as duas telas).
+export default function ComprasView({ compras }) {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
   // Editores (e o admin) gerenciam fornecedores e o catálogo de itens.
@@ -37,7 +31,7 @@ export default function ComprasView() {
     deleteItem,
     resetAllQuantities,
     seedInitialData,
-  } = useCompras();
+  } = compras;
 
   const [selectedId, setSelectedId] = useState(null);
   const [day, setDay] = useState(''); // '' = não selecionado (entrega obrigatória)
@@ -304,19 +298,33 @@ export default function ComprasView() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        {/* v2: o emoji vira SVG que herda currentColor (segue tema e cor);
-            na v1 o título continua exatamente "🛒 Compras". */}
-        <h2>{IS_V2 ? <><span className={styles.titleIcon}><Icon k="cart" /></span>Compras</> : '🛒 Compras'}</h2>
-        {fornecedores.length > 0 && (
-          <div className={styles.headerActions}>
-            {canEdit && activeFornec && (
-              <button className={styles.newBtn} onClick={openAdd}>
-                {formMode === 'add' ? 'Cancelar' : '+ Item'}
+    <>
+      {/* Busca à esquerda + ações do catálogo à direita. Com o submenu ocupando
+          a linha do título (SuprimentosView), os botões desceram pra cá. */}
+      {fornecedores.length > 0 && (
+        <div className={styles.topRow}>
+          <div className={styles.searchRow}>
+            <span className={styles.searchIcon}>{IS_V2 ? <Icon k="search" /> : '🔎'}</span>
+            <input
+              className={styles.searchInput}
+              type="text"
+              placeholder="Buscar produto em todos os fornecedores..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {searching && (
+              <button className={styles.clearSearch} onClick={() => setQuery('')} title="Limpar busca">
+                {IS_V2 ? <Icon k="x" /> : '✕'}
               </button>
             )}
-            {canEdit && (
+          </div>
+          {canEdit && (
+            <div className={styles.headerActions}>
+              {activeFornec && (
+                <button className={styles.newBtn} onClick={openAdd}>
+                  {formMode === 'add' ? 'Cancelar' : '+ Item'}
+                </button>
+              )}
               <button
                 className={styles.manageBtn}
                 onClick={() => setManaging((v) => !v)}
@@ -324,25 +332,7 @@ export default function ComprasView() {
               >
                 {managing ? 'Fechar' : '+ Fornecedores'}
               </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {fornecedores.length > 0 && (
-        <div className={styles.searchRow}>
-          <span className={styles.searchIcon}>{IS_V2 ? <Icon k="search" /> : '🔎'}</span>
-          <input
-            className={styles.searchInput}
-            type="text"
-            placeholder="Buscar produto em todos os fornecedores..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {searching && (
-            <button className={styles.clearSearch} onClick={() => setQuery('')} title="Limpar busca">
-              {IS_V2 ? <Icon k="x" /> : '✕'}
-            </button>
+            </div>
           )}
         </div>
       )}
@@ -554,6 +544,6 @@ export default function ComprasView() {
           {fornecItems.map((item) => renderItem(item, activeId))}
         </div>
       )}
-    </div>
+    </>
   );
 }

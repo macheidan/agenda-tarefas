@@ -104,6 +104,31 @@ export function useCompras() {
     await deleteDoc(doc(db, 'comprasItens', id));
   }, []);
 
+  // ---- Estoque Mensal ----
+  // A contagem vive no MESMO doc do item (campo estoqueQty), separada do campo
+  // qty do pedido de compras. Assim a lista de produtos e a ordem são as mesmas
+  // das duas telas sem duplicar catálogo. `null` = não contado; 0 = contado como
+  // zerado (o item aparece na mensagem copiada).
+  const updateEstoque = useCallback(async (id, value) => {
+    const raw = typeof value === 'string' ? value.trim() : value;
+    const n = raw === '' || raw === null || raw === undefined ? null : Number(raw);
+    await updateDoc(doc(db, 'comprasItens', id), {
+      estoqueQty: Number.isFinite(n) ? n : null,
+    });
+  }, []);
+
+  // Limpa a contagem de TODOS os itens. Só grava nos que têm valor, pra
+  // minimizar escritas (mesmo critério do resetAllQuantities).
+  const clearAllEstoque = useCallback(async () => {
+    const toClear = itensRef.current.filter(
+      (i) => i.estoqueQty !== null && i.estoqueQty !== undefined
+    );
+    await Promise.all(
+      toClear.map((i) => updateDoc(doc(db, 'comprasItens', i.id), { estoqueQty: null }))
+    );
+    return toClear.length;
+  }, []);
+
   // Zera a quantidade de TODOS os itens (de todos os fornecedores).
   // Só grava nos que não estão zerados, pra minimizar escritas.
   const resetAllQuantities = useCallback(async () => {
@@ -159,6 +184,8 @@ export function useCompras() {
     updateItem,
     deleteItem,
     resetAllQuantities,
+    updateEstoque,
+    clearAllEstoque,
     seedInitialData,
   };
 }

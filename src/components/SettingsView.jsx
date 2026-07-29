@@ -12,7 +12,7 @@ const TAB_LABELS = {
   contentPlan: 'Content Plan',
   influencers: 'Influencers',
   notes: 'Anotações',
-  shopping: 'Compras',
+  shopping: 'Suprimentos',
   ideas: 'Ideias',
   reviews: 'Avaliações',
   knowledge: 'Conhecimento',
@@ -32,7 +32,7 @@ const SECTIONS = [
   { key: 'influencersEnabled', tab: 'influencers', label: 'Influencers', desc: 'Cadastro e acompanhamento de parcerias' },
   { key: 'ideasEnabled', tab: 'ideas', label: 'Ideias', desc: 'Mural de ideias com comentários' },
   { key: 'notesEnabled', tab: 'notes', label: 'Anotações', desc: 'Notas compartilhadas com a equipe' },
-  { key: 'shoppingListEnabled', tab: 'shopping', label: 'Compras', desc: 'Lista de compras e fornecedores' },
+  { key: 'shoppingListEnabled', tab: 'shopping', label: 'Suprimentos', desc: 'Pedido por fornecedor (Compras) e contagem de estoque' },
   { key: 'reviewsEnabled', tab: 'reviews', label: 'Avaliações', desc: 'Pesquisas de satisfação (NPS) do Delivery Direto' },
   { key: 'knowledgeEnabled', tab: 'knowledge', label: 'Conhecimento', desc: 'Base de conhecimento e chat com IA' },
   { key: 'precosInsumosEnabled', tab: 'precosInsumos', label: 'Preços', desc: 'Preços de insumos, fornecedores e fichas técnicas' },
@@ -457,13 +457,29 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
         );
       case 'shopping':
         return (
-          <Row title="Editar" desc="Gerencia fornecedores e o catálogo de itens">
-            <Switch
-              label="Compras — edita"
-              checked={s.comprasEditor === true}
-              onChange={(v) => toggleSection(permTarget, 'comprasEditor', v)}
-            />
-          </Row>
+          <>
+            <Row title="Compras — editar" desc="Gerencia fornecedores e o catálogo de itens">
+              <Switch
+                label="Compras — edita"
+                checked={s.comprasEditor === true}
+                onChange={(v) => toggleSection(permTarget, 'comprasEditor', v)}
+              />
+            </Row>
+            <Row title="Estoque Mensal — ver" desc="Mostra a sub-seção de contagem de estoque">
+              <Switch
+                label="Estoque Mensal — vê"
+                checked={s.estoqueVer === true}
+                onChange={(v) => toggleSection(permTarget, 'estoqueVer', v)}
+              />
+            </Row>
+            <Row title="Estoque Mensal — editar" desc="Digita as quantidades contadas e limpa a contagem">
+              <Switch
+                label="Estoque Mensal — edita"
+                checked={s.estoqueEditar === true}
+                onChange={(v) => toggleSection(permTarget, 'estoqueEditar', v)}
+              />
+            </Row>
+          </>
         );
       default:
         return null;

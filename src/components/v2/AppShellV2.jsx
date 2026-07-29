@@ -56,7 +56,7 @@ export default function AppShellV2({
     contentPlan: { enabled: contentPlanEnabled, key: 'contentPlan', label: 'Content Plan' },
     influencers: { enabled: influencersEnabled, key: 'influencers', label: 'Influencers' },
     notes: { enabled: notesEnabled, key: 'notes', label: 'Anotações' },
-    shopping: { enabled: shoppingListEnabled, key: 'shopping', label: 'Compras' },
+    shopping: { enabled: shoppingListEnabled, key: 'shopping', label: 'Suprimentos' },
     ideas: { enabled: ideasEnabled, key: 'ideas', label: 'Ideias', unread: ideasUnread },
     reviews: { enabled: reviewsEnabled, key: 'reviews', label: 'Avaliações' },
     knowledge: { enabled: knowledgeEnabled, key: 'knowledge', label: 'Conhecimento' },

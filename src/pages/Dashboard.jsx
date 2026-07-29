@@ -48,14 +48,14 @@ const SurveysView = lazy(() => import('../components/SurveysView'));
 const KnowledgeView = lazy(() => import('../components/KnowledgeView'));
 const PrecosInsumosView = lazy(() => import('../components/PrecosInsumosView'));
 const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPessoalView'));
-const ComprasView = lazy(() => import('../components/ComprasView'));
+const SuprimentosView = lazy(() => import('../components/SuprimentosView'));
 const MotoboysView = lazy(() => import('../components/MotoboysView'));
 
 // Rótulos curtos das abas — usados na barra de navegação mobile e no título da
 // janela do navegador (assim a aba do Chrome mostra em que página a pessoa está).
 const NAV_LABELS = {
   calendar: 'Agenda', reels: 'Instagram', contentPlan: 'Conteúdo', influencers: 'Influencers',
-  notes: 'Notas', shopping: 'Compras', ideas: 'Ideias', reviews: 'Avaliações',
+  notes: 'Notas', shopping: 'Suprimentos', ideas: 'Ideias', reviews: 'Avaliações',
   knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
   motoboys: 'Motoboys',
 };
@@ -328,7 +328,7 @@ export default function Dashboard() {
             onReorder={reorderNotes}
           />
         )}
-        {activeTab === 'shopping' && shoppingListEnabled && <ComprasView />}
+        {activeTab === 'shopping' && shoppingListEnabled && <SuprimentosView />}
         {activeTab === 'reviews' && reviewsEnabled && (
           <SurveysView
             surveys={surveys}

@@ -30,6 +30,12 @@ service cloud.firestore {
       return isAdmin() || hasSettingFlag('comprasEditor');
     }
 
+    // Estoque Mensal (sub-seção de Suprimentos): permissão própria, separada da
+    // de Compras — só ela libera escrever o campo estoqueQty dos itens.
+    function isEstoqueEditor() {
+      return isAdmin() || hasSettingFlag('estoqueEditar');
+    }
+
     function isMotoboysEditor() {
       return isAdmin() || hasSettingFlag('motoboysEditor') ||
         hasSettingFlag('motoboysEditGerente') || hasSettingFlag('motoboysEditAdm') ||
@@ -191,10 +197,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Compras: qualquer logado lê. O catálogo (fornecedores e cadastro de itens)
-    // é só de admin/editor; mas qualquer logado pode ajustar a quantidade do
-    // pedido (campo qty) — por isso update de comprasItens libera alteração
-    // exclusiva de qty para não-editores.
+    // Suprimentos (Compras + Estoque Mensal): qualquer logado lê. O catálogo
+    // (fornecedores e cadastro de itens) é só de admin/editor; mas qualquer
+    // logado pode ajustar a quantidade do pedido (campo qty) — por isso update
+    // de comprasItens libera alteração exclusiva de qty para não-editores.
+    // A contagem do estoque (campo estoqueQty) vive no mesmo doc e tem alçada
+    // própria: só quem tem estoqueEditar.
     match /comprasFornecedores/{fornecedorId} {
       allow read: if isSignedIn();
       allow write: if isComprasEditor();
@@ -205,6 +213,9 @@ service cloud.firestore {
       allow update: if isComprasEditor() || (
         isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
+      ) || (
+        isEstoqueEditor() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estoqueQty'])
       );
     }
 
