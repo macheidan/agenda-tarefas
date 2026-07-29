@@ -61,16 +61,5 @@ export function useEstoqueContagens() {
     );
   }, []);
 
-  // Zera a contagem do mês inteiro numa loja (recomeçar a contagem do zero).
-  // Os outros meses e a outra loja não são tocados.
-  const clearMes = useCallback(async (mes, lojaId) => {
-    await setDoc(doc(db, 'estoqueContagens', contagemId(mes, lojaId)), {
-      mes,
-      loja: lojaId,
-      qtys: {},
-      updatedAt: Timestamp.now(),
-    });
-  }, []);
-
-  return { contagens, loading, qtysDe, setQty, clearMes };
+  return { contagens, loading, qtysDe, setQty };
 }

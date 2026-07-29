@@ -1,0 +1,5378 @@
+[
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 118.191
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 12.9
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 23.04
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 78.82
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 9.764
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 6.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 5.01
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 17.53
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 25.544
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 5.84
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 4.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 22.022
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Paulet de Frango",
+  "medida": "kg",
+  "qtd": 0.23
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Paulet de Frango",
+  "medida": "kg",
+  "qtd": 3.82
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Paulet de Frango",
+  "medida": "kg",
+  "qtd": 2.334
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Peito de Frango",
+  "medida": "kg",
+  "qtd": 19.03
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Peito de Frango",
+  "medida": "kg",
+  "qtd": 21.47
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Peito de Frango",
+  "medida": "kg",
+  "qtd": 25.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 28.212
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 11.93
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 3.168
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 6.88
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 23.4
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 15.28
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 15.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 15.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 12.3
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 10.152
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 15.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 17.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 10.65
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 13.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Brocolis Congelado",
+  "medida": "kg",
+  "qtd": 11.08
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Brocolis Congelado",
+  "medida": "kg",
+  "qtd": 1.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Brocolis Congelado",
+  "medida": "kg",
+  "qtd": 7.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Brocolis Congelado",
+  "medida": "kg",
+  "qtd": 33.134
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Presunto cru italiano fatiado",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Presunto cru italiano fatiado",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 50.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 2.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 300.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 235.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Sêmola de Trigo",
+  "medida": "kg",
+  "qtd": 0.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Sêmola de Trigo",
+  "medida": "kg",
+  "qtd": 10.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 12.054
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 16.63
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 14.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 18.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Batata Palha",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Batata Palha",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bisnaga Choco Preto Borda",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bisnaga Choco Preto Borda",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga Choco Preto Borda",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bisnaga Choco Branco Borda",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bisnaga Choco Branco Borda",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga Choco Branco Borda",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bisnaga Avelã Borda",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bisnaga Avelã Borda",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga Avelã Borda",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga Doce de Leite Borda",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bisnaga Requeijão Borda",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bisnaga Requeijão Borda",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga Requeijão Borda",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 2.52
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 4.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 5.1
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 14.07
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 7.626
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 6.25
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 2.134
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 8.218
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 26.324
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 33.25
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 2.816
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 33.23
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 11.9
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 6.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 10.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 6.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Pepperoni Fatiado",
+  "medida": "kg",
+  "qtd": 2.11
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Pepperoni Fatiado",
+  "medida": "kg",
+  "qtd": 2.4
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Pepperoni Fatiado",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 50.4
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 260.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 963.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 79.08
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Queijo Parmesão Ralado",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Queijo Provolone",
+  "medida": "kg",
+  "qtd": 1.32
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Queijo Provolone",
+  "medida": "kg",
+  "qtd": 3.33
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Queijo Provolone",
+  "medida": "kg",
+  "qtd": 1.604
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Manteiga 5kg",
+  "medida": "kg",
+  "qtd": 0.344
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Manteiga 5kg",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Manteiga 5kg",
+  "medida": "kg",
+  "qtd": 2.7
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 9.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 12.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 39.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Queijo Gorgonzola",
+  "medida": "kg",
+  "qtd": 0.61
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Queijo Gorgonzola",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Queijo Gorgonzola",
+  "medida": "kg",
+  "qtd": 7.986
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 2.21
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 1.45
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Azeit Preta inteira",
+  "medida": "kg",
+  "qtd": 5.9
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Azeit Preta inteira",
+  "medida": "kg",
+  "qtd": 0.85
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Azeit Preta inteira",
+  "medida": "kg",
+  "qtd": 2.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Champignon Bag",
+  "medida": "kg",
+  "qtd": 5.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Champignon Bag",
+  "medida": "kg",
+  "qtd": 3.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Champignon Bag",
+  "medida": "kg",
+  "qtd": 5.4
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Damasco",
+  "medida": "kg",
+  "qtd": 2.1
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Damasco",
+  "medida": "kg",
+  "qtd": 2.23
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Damasco",
+  "medida": "kg",
+  "qtd": 1.91
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 1.28
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 0.21
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 2.912
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Orégano",
+  "medida": "kg",
+  "qtd": 6.33
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Orégano",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Orégano",
+  "medida": "kg",
+  "qtd": 9.704
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Palmito",
+  "medida": "kg",
+  "qtd": 1.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Palmito",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Palmito",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Tomate seco",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Tomate seco",
+  "medida": "kg",
+  "qtd": 3.4
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Tomate seco",
+  "medida": "kg",
+  "qtd": 5.11
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 0.35
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 1.838
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Alho Poró",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Alho Poró",
+  "medida": "un",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Alho Poró",
+  "medida": "un",
+  "qtd": 0.618
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Banana prata",
+  "medida": "kg",
+  "qtd": 0.205
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Banana prata",
+  "medida": "kg",
+  "qtd": 1.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Banana prata",
+  "medida": "kg",
+  "qtd": 4.12
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Berinjela",
+  "medida": "kg",
+  "qtd": 7.86
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Berinjela",
+  "medida": "kg",
+  "qtd": 5.93
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Berinjela",
+  "medida": "kg",
+  "qtd": 3.164
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 27.776
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 40.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 15.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 8.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Cebola Roxa",
+  "medida": "kg",
+  "qtd": 3.25
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Cebola Roxa",
+  "medida": "kg",
+  "qtd": 6.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Cebola Roxa",
+  "medida": "kg",
+  "qtd": 2.7
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Manjericão",
+  "medida": "kg",
+  "qtd": 3.11
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Manjericão",
+  "medida": "kg",
+  "qtd": 1.38
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Manjericão",
+  "medida": "kg",
+  "qtd": 0.12
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 0.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 2.853
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 1.37
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 5.8
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 2.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 1.23
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 1.3
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 0.556
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 0.438
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 0.88
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 0.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 1.546
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 1.548
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Pimentão vermelho",
+  "medida": "kg",
+  "qtd": 1.235
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Pimentão vermelho",
+  "medida": "kg",
+  "qtd": 2.11
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Pimentão vermelho",
+  "medida": "kg",
+  "qtd": 1.254
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Salsa",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Tempero Verde",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Tempero Verde",
+  "medida": "un",
+  "qtd": 0.06
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Tempero Verde",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 0.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 0.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 0.25
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 0.214
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 20.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 35.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 25.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 20.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 10.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 40.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 45.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 15.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "25cm - Dáme (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 197.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "25cm - Dáme (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 103.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "25cm - Dáme (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 421.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "25cm - Dáme (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 384.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "35cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 261.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "35cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 329.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "35cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 266.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "45cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 189.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "45cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 388.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "45cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 267.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "45cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 167.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "25cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "30cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "35cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "45cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "45cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 10.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Mesinhas 500un",
+  "medida": "cx",
+  "qtd": 9.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Mesinhas 500un",
+  "medida": "cx",
+  "qtd": 10.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Mesinhas 500un",
+  "medida": "cx",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Abacaxi Picado",
+  "medida": "kg",
+  "qtd": 11.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Abacaxi Picado",
+  "medida": "kg",
+  "qtd": 3.6
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Abacaxi Picado",
+  "medida": "kg",
+  "qtd": 3.56
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Abacaxi Picado",
+  "medida": "kg",
+  "qtd": 13.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Açúcar Refinado",
+  "medida": "kg",
+  "qtd": 20.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Açúcar Refinado",
+  "medida": "kg",
+  "qtd": 12.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Açúcar Refinado",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Caldo de Carne",
+  "medida": "kg",
+  "qtd": 4.08
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Caldo de Carne",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Caldo de Carne",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Caldo de Carne",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Caldo de Galinha",
+  "medida": "kg",
+  "qtd": 4.08
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Caldo de Galinha",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Caldo de Galinha",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Caldo de Galinha",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 2.11
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Creme de Leite",
+  "medida": "L",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Creme de Leite",
+  "medida": "L",
+  "qtd": 2.22
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Creme de Leite",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Extrato de Tomate",
+  "medida": "kg",
+  "qtd": 8.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Extrato de Tomate",
+  "medida": "kg",
+  "qtd": 4.1
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Extrato de Tomate",
+  "medida": "kg",
+  "qtd": 4.1
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Extrato de Tomate",
+  "medida": "kg",
+  "qtd": 12.3
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Farofa de Negresco",
+  "medida": "kg",
+  "qtd": 0.1
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Farofa de Negresco",
+  "medida": "kg",
+  "qtd": 0.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 7.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 2.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 2.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 18.89
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 7.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Molho de Alho",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Nescau de 2kg",
+  "medida": "kg",
+  "qtd": 4.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Nescau de 2kg",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Nescau de 2kg",
+  "medida": "kg",
+  "qtd": 0.652
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 4.06
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 1.155
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 0.525
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 0.84
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Amaciante Carne de",
+  "medida": "kg",
+  "qtd": 4.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Amaciante Carne de",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Amaciante Carne de",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 0.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 41.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 15.3
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 18.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 18.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Sal",
+  "medida": "kg",
+  "qtd": 11.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Sal",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Sal",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 21.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 27.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 20.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 64.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 32.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 13.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 12.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 12.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Água Sanitária 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Álcool Líquido 5L",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Álcool Líquido 5L",
+  "medida": "L",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Álcool Líquido 5L",
+  "medida": "L",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Bobina Plástica 25x35 3kg",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Bobina Plástica 25x35 3kg",
+  "medida": "un",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bobina Plástica 25x35 3kg",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Bobina Plástica 25x35 3kg",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Copo Plástico Transparente 300ml com 100",
+  "medida": "un",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Copo Plástico Transparente 300ml com 100",
+  "medida": "un",
+  "qtd": 200.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Desinfetante Lavanda 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Desinfetante Lavanda 5L",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Detergente Neutro Concentrado 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Detergente Neutro Concentrado 5L",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Detergente Neutro Concentrado 5L",
+  "medida": "L",
+  "qtd": 5.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Guardanapo 30x30 (2000f)",
+  "medida": "un",
+  "qtd": 8.2
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Guardanapo 30x30 (2000f)",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Luva Vinil M com 100un",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Luva Vinil M com 100un",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Pano Microfibra Varias Cores com 4",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Papel Toalha Interfolhado (1000)",
+  "medida": "un",
+  "qtd": 4.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Papel Toalha Interfolhado (1000)",
+  "medida": "un",
+  "qtd": 4.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Papel Toalha Interfolhado (1000)",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Papel Toalha Rolo Cozinha com 2",
+  "medida": "un",
+  "qtd": 8.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Papel Toalha Rolo Cozinha com 2",
+  "medida": "un",
+  "qtd": 4.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Papel Toalha Rolo Cozinha com 2",
+  "medida": "un",
+  "qtd": 11.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Sache Catchup",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Sache Catchup",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Sache Catchup",
+  "medida": "cx",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Sache Maionese",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Sache Maionese",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Sache Maionese",
+  "medida": "cx",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Sache Mostarda",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Sache Mostarda",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Sache Mostarda",
+  "medida": "cx",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Saco Lixo 105LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 110.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Saco Lixo 105LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 100.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Saco Lixo 105LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 35.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Saco Lixo 60LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 16.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Sacola Reciclada de 3kg 38x48",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Sacola Reciclada de 3kg 38x48",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 38.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 15.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 10.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 18.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 25.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 26.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 12.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 26.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 51.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 76.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 43.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 104.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Coca cola zero 2L",
+  "medida": "un",
+  "qtd": 31.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Coca cola zero 2L",
+  "medida": "un",
+  "qtd": 25.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Coca cola zero 2L",
+  "medida": "un",
+  "qtd": 71.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 32.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 10.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 36.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 17.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Coca cola zero lata",
+  "medida": "un",
+  "qtd": 14.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Coca cola zero lata",
+  "medida": "un",
+  "qtd": 15.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Coca cola zero lata",
+  "medida": "un",
+  "qtd": 31.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Coca cola zero lata",
+  "medida": "un",
+  "qtd": 10.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 70.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 48.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 26.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 53.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Fruki Zero 2L",
+  "medida": "un",
+  "qtd": 45.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Fruki Zero 2L",
+  "medida": "un",
+  "qtd": 66.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Fruki Zero 2L",
+  "medida": "un",
+  "qtd": 74.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 0.54
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 0.81
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 1.15
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Colorau",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Colorau",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Pano perfex azul (28cm x 240m)",
+  "medida": "un",
+  "qtd": 0.5
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "laranja umbigo importada",
+  "medida": "kg",
+  "qtd": 0.233
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "laranja umbigo importada",
+  "medida": "kg",
+  "qtd": 0.66
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Banha",
+  "medida": "kg",
+  "qtd": 26.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Banha",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Banha",
+  "medida": "kg",
+  "qtd": 14.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-06",
+  "produto": "Banha",
+  "medida": "kg",
+  "qtd": 7.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-03",
+  "produto": "Esponja de louça (10 un)",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-04",
+  "produto": "Molho de Alho 1,01LT",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Bisnaga gorgonzola (Focatto)",
+  "medida": "Kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "dame",
+  "mes": "2026-05",
+  "produto": "Queijo Mussarela Santa Clara",
+  "medida": "Kg",
+  "qtd": 32.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 28.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 102.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 41.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Calabresa Reta",
+  "medida": "kg",
+  "qtd": 105.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 29.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 26.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 16.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Coração Frango Congelado",
+  "medida": "kg",
+  "qtd": 21.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 187.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 11.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 9.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Lombo defumado",
+  "medida": "kg",
+  "qtd": 22.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Paulet de Frango",
+  "medida": "kg",
+  "qtd": 9.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Paulet de Frango",
+  "medida": "kg",
+  "qtd": 6.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Paulet de Frango",
+  "medida": "kg",
+  "qtd": 3.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Peito de Frango",
+  "medida": "kg",
+  "qtd": 28.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Peito de Frango",
+  "medida": "kg",
+  "qtd": 4.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Peito de Frango",
+  "medida": "kg",
+  "qtd": 23.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Peito de Frango",
+  "medida": "kg",
+  "qtd": 30.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 9.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 5.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 8.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Presunto",
+  "medida": "kg",
+  "qtd": 1.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 20.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 23.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 4.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Chocolate ao leite ralado",
+  "medida": "kg",
+  "qtd": 17.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 21.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 22.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 11.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Chocolate branco ralado",
+  "medida": "kg",
+  "qtd": 18.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 12.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 10.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 8.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Costela Desfiada",
+  "medida": "kg",
+  "qtd": 11.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Brocolis Congelado",
+  "medida": "kg",
+  "qtd": 11.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Brocolis Congelado",
+  "medida": "kg",
+  "qtd": 8.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Brocolis Congelado",
+  "medida": "kg",
+  "qtd": 13.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Presunto cru italiano fatiado",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Presunto cru italiano fatiado",
+  "medida": "kg",
+  "qtd": 4.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Presunto cru italiano fatiado",
+  "medida": "kg",
+  "qtd": 11.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Presunto cru italiano fatiado",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Salmão Defumado",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 245.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 405.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 320.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Farinha Tipo Pizza",
+  "medida": "kg",
+  "qtd": 140.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Sêmola de Trigo",
+  "medida": "kg",
+  "qtd": 20.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Sêmola de Trigo",
+  "medida": "kg",
+  "qtd": 2.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Sêmola de Trigo",
+  "medida": "kg",
+  "qtd": 25.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Sêmola de Trigo",
+  "medida": "kg",
+  "qtd": 23.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 26.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 16.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 22.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bacon Fatiado",
+  "medida": "kg",
+  "qtd": 6.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Batata Palha",
+  "medida": "kg",
+  "qtd": 1.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Batata Palha",
+  "medida": "kg",
+  "qtd": 1.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Batata Palha",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Batata Palha",
+  "medida": "kg",
+  "qtd": 1.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Bisnaga Choco Preto Borda",
+  "medida": "kg",
+  "qtd": 7.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Bisnaga Choco Preto Borda",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bisnaga Choco Preto Borda",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga Choco Preto Borda",
+  "medida": "kg",
+  "qtd": 7.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Bisnaga Choco Branco Borda",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Bisnaga Choco Branco Borda",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bisnaga Choco Branco Borda",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga Choco Branco Borda",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Bisnaga Avelã Borda",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Bisnaga Avelã Borda",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bisnaga Avelã Borda",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga Avelã Borda",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga Doce de Leite Borda",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Bisnaga Requeijão Borda",
+  "medida": "kg",
+  "qtd": 7.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bisnaga Requeijão Borda",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga Requeijão Borda",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 4.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga Cheddar Borda",
+  "medida": "kg",
+  "qtd": 6.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 6.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 5.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 6.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Camarão (G)",
+  "medida": "kg",
+  "qtd": 6.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 11.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 36.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 4.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Carne de Primeira (Tatu)",
+  "medida": "kg",
+  "qtd": 7.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 46.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 7.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 29.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Carne Iscas Especial",
+  "medida": "kg",
+  "qtd": 59.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 20.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 18.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 10.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Milho de 2kg",
+  "medida": "kg",
+  "qtd": 20.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Pepperoni Fatiado",
+  "medida": "kg",
+  "qtd": 2.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Pepperoni Fatiado",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Pepperoni Fatiado",
+  "medida": "kg",
+  "qtd": 2.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Pepperoni Fatiado",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 86.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 2.18
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 68.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Queijo Mussarela",
+  "medida": "kg",
+  "qtd": 123.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Queijo Parmesão Ralado",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Queijo Provolone",
+  "medida": "kg",
+  "qtd": 8.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Queijo Provolone",
+  "medida": "kg",
+  "qtd": 6.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Queijo Provolone",
+  "medida": "kg",
+  "qtd": 10.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Queijo Provolone",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Manteiga 5kg",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 16.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 26.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 9.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga Requeijão Sta Clara",
+  "medida": "kg",
+  "qtd": 27.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Queijo Gorgonzola",
+  "medida": "kg",
+  "qtd": 9.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Queijo Gorgonzola",
+  "medida": "kg",
+  "qtd": 2.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Queijo Gorgonzola",
+  "medida": "kg",
+  "qtd": 6.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 3.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 4.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 3.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Copa Fatiada",
+  "medida": "kg",
+  "qtd": 3.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Azeit Preta inteira",
+  "medida": "kg",
+  "qtd": 5.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Azeit Preta inteira",
+  "medida": "kg",
+  "qtd": 8.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Azeit Preta inteira",
+  "medida": "kg",
+  "qtd": 8.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Azeit Preta inteira",
+  "medida": "kg",
+  "qtd": 9.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Champignon Bag",
+  "medida": "kg",
+  "qtd": 12.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Champignon Bag",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Champignon Bag",
+  "medida": "kg",
+  "qtd": 7.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Champignon Bag",
+  "medida": "kg",
+  "qtd": 7.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Damasco",
+  "medida": "kg",
+  "qtd": 2.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Damasco",
+  "medida": "kg",
+  "qtd": 2.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Damasco",
+  "medida": "kg",
+  "qtd": 1.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Damasco",
+  "medida": "kg",
+  "qtd": 2.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 0.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 2.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 0.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Nozes Picados",
+  "medida": "kg",
+  "qtd": 0.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Orégano",
+  "medida": "kg",
+  "qtd": 4.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Orégano",
+  "medida": "kg",
+  "qtd": 5.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Orégano",
+  "medida": "kg",
+  "qtd": 3.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Orégano",
+  "medida": "kg",
+  "qtd": 12.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Palmito",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Tomate seco",
+  "medida": "kg",
+  "qtd": 6.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Tomate seco",
+  "medida": "kg",
+  "qtd": 8.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tomate seco",
+  "medida": "kg",
+  "qtd": 3.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 1.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 4.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 1.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Alho Descascado",
+  "medida": "kg",
+  "qtd": 1.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Alho Poró",
+  "medida": "un",
+  "qtd": 4.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Alho Poró",
+  "medida": "un",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Alho Poró",
+  "medida": "un",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Banana prata",
+  "medida": "kg",
+  "qtd": 7.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Banana prata",
+  "medida": "kg",
+  "qtd": 0.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Banana prata",
+  "medida": "kg",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Berinjela",
+  "medida": "kg",
+  "qtd": 2.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Berinjela",
+  "medida": "kg",
+  "qtd": 3.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Berinjela",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Berinjela",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 30.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 21.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 32.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Cebola Grande",
+  "medida": "kg",
+  "qtd": 24.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Cebola Roxa",
+  "medida": "kg",
+  "qtd": 6.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Cebola Roxa",
+  "medida": "kg",
+  "qtd": 6.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Cebola Roxa",
+  "medida": "kg",
+  "qtd": 5.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Cebola Roxa",
+  "medida": "kg",
+  "qtd": 7.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Manjericão",
+  "medida": "kg",
+  "qtd": 0.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Manjericão",
+  "medida": "kg",
+  "qtd": 33.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Manjericão",
+  "medida": "kg",
+  "qtd": 1.08
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Manjericão",
+  "medida": "kg",
+  "qtd": 1.08
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 0.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 13.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 0.75
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Morangos",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 7.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Ovos",
+  "medida": "dz",
+  "qtd": 7.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 1.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 0.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 0.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Pimentão amarelo",
+  "medida": "kg",
+  "qtd": 1.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 1.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 1.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 0.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Pimentão verde",
+  "medida": "kg",
+  "qtd": 1.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Pimentão vermelho",
+  "medida": "kg",
+  "qtd": 1.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Pimentão vermelho",
+  "medida": "kg",
+  "qtd": 0.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Pimentão vermelho",
+  "medida": "kg",
+  "qtd": 0.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Pimentão vermelho",
+  "medida": "kg",
+  "qtd": 1.1
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Salsa",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Tempero Verde",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Tempero Verde",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Tempero Verde",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tempero Verde",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 0.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 0.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tomate Cereja",
+  "medida": "kg",
+  "qtd": 0.75
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 21.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 43.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 19.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tomate lv ii",
+  "medida": "kg",
+  "qtd": 26.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 19.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 37.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 12.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tomate Rasteiro",
+  "medida": "kg",
+  "qtd": 21.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "25cm - Dáme (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 45.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "25cm - Dáme (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "35cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 100.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "35cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "45cm - Dáme (Colombo)",
+  "medida": "cx",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "25cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 86.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "25cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 188.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "25cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 132.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "25cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 116.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "30cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 411.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "30cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 434.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "30cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 365.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "30cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 701.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "35cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 351.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "35cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 458.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "35cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 334.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "35cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 727.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "45cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 255.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "45cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 239.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "45cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 172.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "45cm - Lov (Cia Gráfica)",
+  "medida": "cx",
+  "qtd": 445.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Mesinhas 500un",
+  "medida": "cx",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Abacaxi Picado",
+  "medida": "kg",
+  "qtd": 6.56
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Abacaxi Picado",
+  "medida": "kg",
+  "qtd": 15.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Abacaxi Picado",
+  "medida": "kg",
+  "qtd": 4.4
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Açúcar Refinado",
+  "medida": "kg",
+  "qtd": 22.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Açúcar Refinado",
+  "medida": "kg",
+  "qtd": 15.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Açúcar Refinado",
+  "medida": "kg",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Açúcar Refinado",
+  "medida": "kg",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Caldo de Carne",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Caldo de Galinha",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 2.5
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Coloreti",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Creme de Leite",
+  "medida": "L",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Extrato de Tomate",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Farofa de Negresco",
+  "medida": "kg",
+  "qtd": 2.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Farofa de Negresco",
+  "medida": "kg",
+  "qtd": 2.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Farofa de Negresco",
+  "medida": "kg",
+  "qtd": 1.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Farofa de Negresco",
+  "medida": "kg",
+  "qtd": 1.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Fermento Biológico Seco 500g",
+  "medida": "kg",
+  "qtd": 9.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 6.3
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 5.8
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Leite Condensado de 5kg",
+  "medida": "un",
+  "qtd": 5.9
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Molho de Alho",
+  "medida": "L",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Nescau de 2kg",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 4.34
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 2.64
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 1.05
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Atum Ralado em Óleo",
+  "medida": "kg",
+  "qtd": 1.68
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Amaciante Carne de",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Amaciante Carne de",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Café Torrado Preto de 500g",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 25.2
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 18.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 12.6
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Óleo Soja",
+  "medida": "L",
+  "qtd": 20.7
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Sal",
+  "medida": "kg",
+  "qtd": 16.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Sal",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Sal",
+  "medida": "kg",
+  "qtd": 7.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Sal",
+  "medida": "kg",
+  "qtd": 8.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 17.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 28.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 37.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Cerveja Corona",
+  "medida": "un",
+  "qtd": 32.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 28.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 19.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 29.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Cerveja Heineken",
+  "medida": "un",
+  "qtd": 31.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Água Sanitária 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Água Sanitária 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Água Sanitária 5L",
+  "medida": "L",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Água Sanitária 5L",
+  "medida": "L",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Álcool Líquido 5L",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Álcool Líquido 5L",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Álcool Líquido 5L",
+  "medida": "L",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Bobina Plástica 25x35 3kg",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bobina Plástica 25x35 3kg",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bobina Plástica 25x35 3kg",
+  "medida": "un",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Copo Plástico Transparente 300ml com 100",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Copo Plástico Transparente 300ml com 100",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Copo Plástico Transparente 300ml com 100",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Copo Plástico Transparente 300ml com 100",
+  "medida": "un",
+  "qtd": 100.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Desinfetante Lavanda 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Desinfetante Lavanda 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Desinfetante Lavanda 5L",
+  "medida": "L",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Desinfetante Lavanda 5L",
+  "medida": "L",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Detergente Neutro Concentrado 5L",
+  "medida": "L",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Detergente Neutro Concentrado 5L",
+  "medida": "L",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Detergente Neutro Concentrado 5L",
+  "medida": "L",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Detergente Neutro Concentrado 5L",
+  "medida": "L",
+  "qtd": 5.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Guardanapo 30x30 (2000f)",
+  "medida": "un",
+  "qtd": 13.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Guardanapo 30x30 (2000f)",
+  "medida": "un",
+  "qtd": 11.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Guardanapo 30x30 (2000f)",
+  "medida": "un",
+  "qtd": 10.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Guardanapo 30x30 (2000f)",
+  "medida": "un",
+  "qtd": 6.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Luva Vinil M com 100un",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Luva Vinil M com 100un",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Luva Vinil M com 100un",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Luva Vinil M com 100un",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Pano Microfibra Varias Cores com 4",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Pano Microfibra Varias Cores com 4",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Pano Microfibra Varias Cores com 4",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Pano Microfibra Varias Cores com 4",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Papel Toalha Interfolhado (1000)",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Papel Toalha Interfolhado (1000)",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Papel Toalha Interfolhado (1000)",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Papel Toalha Interfolhado (1000)",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Papel Toalha Rolo Cozinha com 2",
+  "medida": "un",
+  "qtd": 13.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Papel Toalha Rolo Cozinha com 2",
+  "medida": "un",
+  "qtd": 4.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Papel Toalha Rolo Cozinha com 2",
+  "medida": "un",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Sache Catchup",
+  "medida": "cx",
+  "qtd": 3.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Sache Catchup",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Sache Catchup",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Sache Catchup",
+  "medida": "cx",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Sache Maionese",
+  "medida": "cx",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Sache Maionese",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Sache Maionese",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Sache Maionese",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Sache Mostarda",
+  "medida": "cx",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Sache Mostarda",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Sache Mostarda",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Sache Mostarda",
+  "medida": "cx",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Saco Lixo 105LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Saco Lixo 105LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Saco Lixo 105LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 50.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Saco Lixo 105LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Saco Lixo 60LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Saco Lixo 60LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Saco Lixo 60LT 0.10m com 100 sacos",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Sacola Reciclada de 3kg 38x48",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Sacola Reciclada de 3kg 38x48",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Sacola Reciclada de 3kg 38x48",
+  "medida": "un",
+  "qtd": 1.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Sacola Reciclada de 3kg 38x48",
+  "medida": "un",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 30.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 34.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 31.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Água com gás 500ml",
+  "medida": "un",
+  "qtd": 29.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 36.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 28.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 22.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Água sem gás 500ml",
+  "medida": "un",
+  "qtd": 13.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 51.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 34.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 42.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Coca cola 2L",
+  "medida": "un",
+  "qtd": 14.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Coca cola zero 2L",
+  "medida": "un",
+  "qtd": 39.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Coca cola zero 2L",
+  "medida": "un",
+  "qtd": 56.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Coca cola zero 2L",
+  "medida": "un",
+  "qtd": 47.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Coca cola zero 2L",
+  "medida": "un",
+  "qtd": 83.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 24.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 27.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 20.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Coca cola Lata",
+  "medida": "un",
+  "qtd": 59.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Coca cola zero lata",
+  "medida": "un",
+  "qtd": 20.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Coca cola zero lata",
+  "medida": "un",
+  "qtd": 12.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Coca cola zero lata",
+  "medida": "un",
+  "qtd": 26.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 78.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 80.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 47.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Fruki 2L",
+  "medida": "un",
+  "qtd": 80.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Fruki Zero 2L",
+  "medida": "un",
+  "qtd": 98.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Fruki Zero 2L",
+  "medida": "un",
+  "qtd": 86.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Fruki Zero 2L",
+  "medida": "un",
+  "qtd": 54.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Fruki Zero 2L",
+  "medida": "un",
+  "qtd": 153.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 0.675
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Creme Balsamico",
+  "medida": "kg",
+  "qtd": 2.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Colorau",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Pano perfex azul (28cm x 240m)",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "laranja umbigo importada",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "fatias brancas (embalagem fatia de pizza)",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Banha",
+  "medida": "kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-03",
+  "produto": "Cerveja Stella",
+  "medida": "un",
+  "qtd": 42.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-04",
+  "produto": "Cerveja Stella",
+  "medida": "un",
+  "qtd": 35.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Cerveja Stella",
+  "medida": "un",
+  "qtd": 30.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Cerveja Stella",
+  "medida": "un",
+  "qtd": 28.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Esponja de louça (10 un)",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Sabão em pó",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Rolão 300mt pacote (c/8 unid)",
+  "medida": "pc",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bobina térmica 80x80m",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bobina térmica 80x40m",
+  "medida": "un",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Canela em pó",
+  "medida": "Kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Molho de Alho 1,01LT",
+  "medida": "L",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-05",
+  "produto": "Bisnaga gorgonzola (Focatto)",
+  "medida": "Kg",
+  "qtd": 4.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Bisnaga gorgonzola (Focatto)",
+  "medida": "Kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Queijo Mussarela Santa Clara",
+  "medida": "Kg",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tempero tipo Sazon  (12un 5g) carne",
+  "medida": "pc",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tempero tipo Sazon  (12un 5g) galinha",
+  "medida": "pc",
+  "qtd": 0.0
+ },
+ {
+  "loja": "lov",
+  "mes": "2026-06",
+  "produto": "Tempero tipo Sazon  (12un 5g) legumes",
+  "medida": "pc",
+  "qtd": 0.0
+ }
+]

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { Icon } from './icons';
@@ -7,6 +7,9 @@ import {
   FORNEC_COLORS, ALL, ESTOQUE_LOJAS, norm, isContado, mesAtual, fmtMes,
 } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
+
+// Mapa vazio estável — evita recriar {} a cada render quando não há loja.
+const EMPTY = {};
 
 // Sub-seção de Suprimentos: contagem mensal do estoque. Usa o MESMO catálogo de
 // Compras (comprasFornecedores/comprasItens) — mesmos produtos, mesma ordem —,
@@ -20,10 +23,9 @@ export default function EstoqueView({ compras, contagens }) {
   const { settings } = useSettings(user.uid);
 
   const { fornecedores, itens, loading } = compras;
-  const { qtysDe, setQty, clearMes, loading: loadingContagens } = contagens;
+  const { qtysDe, setQty, loading: loadingContagens } = contagens;
 
   const [selectedId, setSelectedId] = useState(null);
-  const [clearing, setClearing] = useState(false);
   const [query, setQuery] = useState('');
   const [mes, setMes] = useState(mesAtual);
 
@@ -35,17 +37,13 @@ export default function EstoqueView({ compras, contagens }) {
   const loja = lojasVisiveis.find((l) => l.id === lojaId) || lojasVisiveis[0] || null;
   const canEdit = !!loja && (isAdmin || settings?.estoqueEditar === true || settings?.[loja.editFlag] === true);
 
-  const lojaAtivaId = loja?.id || null;
-  const qtys = useMemo(
-    () => (lojaAtivaId ? qtysDe(mes, lojaAtivaId) : {}),
-    [qtysDe, mes, lojaAtivaId]
-  );
+  const qtys = loja ? qtysDe(mes, loja.id) : EMPTY;
 
   // Valor sendo digitado, por item. O que está no banco só muda no commit
   // (blur ou Enter) — é lá que mora a confirmação de sobrescrita, e digitar
-  // sem confirmar não pode alterar nada.
+  // sem confirmar não pode alterar nada. Trocar de mês ou de loja descarta o
+  // que estava sendo digitado (senão o número apareceria na contagem errada).
   const [draft, setDraft] = useState({});
-  useEffect(() => { setDraft({}); }, [mes, lojaId]);
 
   // Mesma ordem de Compras: fornecedores em ordem alfabética, itens na ordem do
   // catálogo (o hook já entrega ordenado por `order`).
@@ -96,10 +94,7 @@ export default function EstoqueView({ compras, contagens }) {
     return itens.filter((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)).length;
   }, [searching, query, itens]);
 
-  const contados = useMemo(
-    () => Object.values(qtys).filter(isContado).length,
-    [qtys]
-  );
+  const contados = Object.values(qtys).filter(isContado).length;
 
   // Confirma antes de mexer numa contagem que já existe — o valor no banco é o
   // que alguém contou na loja, e trocar por engano (dedo no campo errado) sai
@@ -193,24 +188,6 @@ export default function EstoqueView({ compras, contagens }) {
     </div>
   );
 
-  // Limpa a contagem do mês selecionado na loja ativa, em todos os fornecedores.
-  // A outra loja e os outros meses não são tocados.
-  const handleClear = async () => {
-    if (!window.confirm(
-      `Tem certeza que deseja LIMPAR a contagem de ${fmtMes(mes)} da ${loja.nome} em TODOS os fornecedores? Esta ação não pode ser desfeita.`
-    )) {
-      return;
-    }
-    setClearing(true);
-    try {
-      await clearMes(mes, loja.id);
-    } catch (e) {
-      window.alert(`Erro ao limpar: ${e?.message || e}`);
-    } finally {
-      setClearing(false);
-    }
-  };
-
   if (!loja) {
     return (
       <p className={styles.empty}>
@@ -229,7 +206,7 @@ export default function EstoqueView({ compras, contagens }) {
             <button
               key={l.id}
               className={`${styles.lojaTab} ${loja.id === l.id ? styles.lojaTabActive : ''}`}
-              onClick={() => setLojaId(l.id)}
+              onClick={() => { setLojaId(l.id); setDraft({}); }}
             >
               {l.nome}
             </button>
@@ -245,7 +222,7 @@ export default function EstoqueView({ compras, contagens }) {
             className={styles.mesInput}
             type="month"
             value={mes}
-            onChange={(e) => setMes(e.target.value || mesAtual())}
+            onChange={(e) => { setMes(e.target.value || mesAtual()); setDraft({}); }}
           />
         </label>
         <span className={styles.mesInfo}>
@@ -275,7 +252,9 @@ export default function EstoqueView({ compras, contagens }) {
         </div>
       )}
 
-      {/* Fornecedor (esquerda) + Limpar (direita) */}
+      {/* Fornecedor. Não existe "Limpar" aqui: a contagem de um mês é registro
+          — apagar tudo de uma vez seria perder o mês inteiro num clique. Item
+          errado se corrige no próprio campo, esvaziando o valor. */}
       {fornecedores.length > 0 && (
         <div className={styles.toolbar}>
           <select
@@ -290,13 +269,6 @@ export default function EstoqueView({ compras, contagens }) {
               <option key={f.id} value={f.id}>{f.name}</option>
             ))}
           </select>
-          {(activeFornec || isAll) && canEdit && (
-            <div className={styles.toolbarActions}>
-              <button className={styles.resetBtn} onClick={handleClear} disabled={clearing}>
-                {clearing ? 'Limpando...' : 'Limpar'}
-              </button>
-            </div>
-          )}
         </div>
       )}
 

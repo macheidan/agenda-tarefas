@@ -21,17 +21,17 @@ import tbl from '../styles/RelatorioEstoqueView.module.css';
 // nas abas de estoque de cada loja (Último valor · Contagem · Total).
 
 // Casa o item do catálogo com o Produto (planilha) pelo nome, sem acento e sem
-// caixa. O vínculo manual (item.planilhaNome) sempre ganha do automático.
+// caixa. `item.planilhaNome` é um vínculo explícito (gravado por importação) e
+// ganha do casamento por nome.
 function resolvePlanilha(item, nomesPorNorm) {
-  if (item.planilhaNome) return { nome: item.planilhaNome, auto: false };
-  const achado = nomesPorNorm.get(norm(item.produto));
-  return achado ? { nome: achado, auto: true } : { nome: '', auto: false };
+  if (item.planilhaNome) return { nome: item.planilhaNome };
+  return { nome: nomesPorNorm.get(norm(item.produto)) || '' };
 }
 
 export default function RelatorioEstoqueView({ compras, contagens }) {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
-  const { fornecedores, itens, setPlanilhaNome } = compras;
+  const { fornecedores, itens } = compras;
   const { qtysDe } = contagens;
 
   const [mes, setMes] = useState(mesAtual);
@@ -50,7 +50,8 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
 
   const salvo = loja ? relatorios[relatorioId(mes, loja.id)] : null;
 
-  // Nomes de Produto (planilha) disponíveis — opções do vínculo manual.
+  // Nomes de Produto (planilha) que têm preço, indexados sem acento/caixa pra
+  // casar com o nome do item no catálogo de Compras.
   const nomesPlanilha = useMemo(() => Object.keys(custos).sort((a, b) =>
     a.localeCompare(b, 'pt', { sensitivity: 'base' })), [custos]);
   const nomesPorNorm = useMemo(() => {
@@ -77,7 +78,7 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
     return itens
       .filter((i) => isContado(qtysMes[i.id]))
       .map((i) => {
-        const { nome, auto } = resolvePlanilha(i, nomesPorNorm);
+        const { nome } = resolvePlanilha(i, nomesPorNorm);
         const preco = nome ? custos[nome] : null;
         const qtd = Number(qtysMes[i.id]) || 0;
         return {
@@ -87,7 +88,6 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
           unid: i.unid || '',
           fornecedor: fornecNome[i.fornecedorId] || '',
           planilha: nome,
-          planilhaAuto: auto,
           medida: preco?.medida || '',
           precoData: preco?.data || '',
           preco: preco ? preco.custo : null,
@@ -226,9 +226,9 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
       {!salvo && semPreco > 0 && (
         <p className={tbl.aviso}>
           <strong>{semPreco}</strong> {semPreco === 1 ? 'item contado não tem preço' : 'itens contados não têm preço'}:
-          {' '}sem vínculo com um Produto (planilha) ou sem compra registrada nos últimos 12 meses.
-          {canEdit ? ' Escolha o produto na coluna “Produto (planilha)”.' : ''}
-          {' '}Eles entram no total como R$ 0,00.
+          {' '}o nome do item em Compras não bate com nenhum Produto (planilha) da seção Preços, ou
+          o produto não teve compra registrada nos últimos 12 meses. Eles entram no total como
+          R$ 0,00.
         </p>
       )}
 
@@ -262,19 +262,7 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
                   </td>
                   <td data-label="Fornecedor" className={tbl.dim}>{l.fornecedor || '—'}</td>
                   <td data-label="Planilha">
-                    {salvo || !canEdit ? (
-                      <span className={l.planilha ? '' : tbl.dim}>{l.planilha || 'sem vínculo'}</span>
-                    ) : (
-                      <select
-                        className={`${tbl.select} ${l.planilha ? '' : tbl.selectVazio}`}
-                        value={l.planilha}
-                        onChange={(e) => setPlanilhaNome(l.itemId, e.target.value)}
-                        title={l.planilhaAuto ? 'Casado automaticamente pelo nome' : undefined}
-                      >
-                        <option value="">— sem vínculo —</option>
-                        {nomesPlanilha.map((n) => <option key={n} value={n}>{n}</option>)}
-                      </select>
-                    )}
+                    <span className={l.planilha ? '' : tbl.dim}>{l.planilha || 'sem vínculo'}</span>
                   </td>
                   <td data-label="Preço" className={tbl.num}>
                     {l.preco == null ? <span className={tbl.dim}>—</span> : (
