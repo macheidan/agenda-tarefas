@@ -16,6 +16,7 @@ import {
   calcResumoSemana,
   normalizarNome,
 } from '../hooks/useMotoboys';
+import { exportarSemanaPdf } from '../lib/motoboysPdf';
 import styles from '../styles/MotoboysView.module.css';
 
 // Input de quantidade (inteiro), commit no blur/Enter — mesmo padrão do MoneyInput.
@@ -167,6 +168,21 @@ export default function MotoboysView() {
 
   const navSemana = (n) => setSegunda((s) => addDaysIso(s, n * 7));
 
+  // Exporta a semana aberta em PDF (janela nova + "Salvar como PDF").
+  // Sai fora do PDF tudo o que veio da Saipos — só o que foi lançado aqui.
+  const exportarPdf = () => {
+    const ok = exportarSemanaPdf({
+      lojaNome: MOTOBOY_LOJAS.find((l) => l.id === loja)?.nome || loja,
+      segunda,
+      semana,
+      config,
+      extras,
+      mostrarLancamentos: canViewGerente,
+      mostrarResultado: canViewResultado,
+    });
+    if (!ok) window.alert('O navegador bloqueou a janela do PDF. Libere o pop-up para este site e tente de novo.');
+  };
+
   const toggleBloco = (mid) =>
     setExpandidos((prev) => {
       const next = new Set(prev);
@@ -280,6 +296,11 @@ export default function MotoboysView() {
         {semana && listaMotoboys.length > 0 && (
           <button className={styles.toolBtn} onClick={expandirTodos}>
             {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
+          </button>
+        )}
+        {semana && listaMotoboys.length > 0 && (canViewGerente || canViewResultado) && (
+          <button className={styles.toolBtn} onClick={exportarPdf} title="Gerar PDF desta semana">
+            Exportar
           </button>
         )}
         {canViewAdm && semana && (
