@@ -241,6 +241,26 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     }));
   };
 
+  // Permissão de edição do Estoque Mensal: a flag legada `estoqueEditar` (de
+  // antes da separação por loja) liberava as duas lojas de uma vez. Enquanto ela
+  // estiver ligada, os dois switches aparecem ON e desligar um deles não teria
+  // efeito nenhum — então, no primeiro toque, ela vira flags explícitas por loja
+  // e sai de cena. Mesmo tratamento que motoboysEditor recebe abaixo.
+  const toggleEstoquePerm = async (uid, key, enabled) => {
+    const s = userSettings[uid] || {};
+    const patch = {};
+    if (s.estoqueEditar === true) {
+      ESTOQUE_LOJAS.forEach((l) => { patch[l.editFlag] = true; });
+      patch.estoqueEditar = false;
+    }
+    patch[key] = enabled;
+    await setDoc(doc(db, 'settings', uid), patch, { merge: true });
+    setUserSettings((prev) => ({
+      ...prev,
+      [uid]: { ...prev[uid], ...patch },
+    }));
+  };
+
   // Permissão de Motoboys: ao mexer numa flag de edição de quem ainda usa a
   // flag legada (motoboysEditor), expande a legada em flags explícitas antes.
   const toggleMotoboyPerm = async (uid, key, enabled) => {
@@ -486,7 +506,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                   <Switch
                     label={`Estoque Mensal — edita ${l.nome}`}
                     checked={s[l.editFlag] === true || s.estoqueEditar === true}
-                    onChange={(v) => toggleSection(permTarget, l.editFlag, v)}
+                    onChange={(v) => toggleEstoquePerm(permTarget, l.editFlag, v)}
                   />
                 </Row>
               </Fragment>
