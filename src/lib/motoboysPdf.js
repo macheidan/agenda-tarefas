@@ -6,6 +6,8 @@
 // REGRA: o PDF NÃO leva nada vindo da Saipos (linha "Saipos + bandas extras",
 // os "/ n" ao lado das quantidades, badges de divergência e a lista de nomes
 // não casados). O relatório é o que foi lançado pelo gerente.
+// A tabela de bandas extras também fica de fora — é controle interno; as
+// quantidades já entram nos lançamentos do dia.
 
 import { formatBRL } from '../utils/money';
 import {
@@ -68,8 +70,6 @@ const CSS = `
   .totCol { background: #f4f4f4; font-weight: 700; }
   tr.sep td, tr.sep th { border-top: 2px solid #bbb; }
   tr.valor td { font-weight: 700; background: #f0f6ff; }
-  h2 { font-size: 14px; margin: 18px 0 6px; }
-  table.extras td, table.extras th { text-align: left; }
   .resumo { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; page-break-inside: avoid; }
   .card {
     border: 1px solid #d8d8d8; border-radius: 6px; padding: 8px 12px; min-width: 130px;
@@ -87,7 +87,6 @@ export function montarHtmlSemana({
   segunda,
   semana,
   config,
-  extras = [],
   mostrarLancamentos = true,
   mostrarResultado = true,
 }) {
@@ -208,31 +207,6 @@ export function montarHtmlSemana({
     })
     .join('');
 
-  const blocoExtras =
-    mostrarLancamentos && extras.length > 0
-      ? `
-        <h2>Bandas extras</h2>
-        <table class="extras">
-          <thead>
-            <tr><th>Data</th><th>Motoboy</th><th>Qtd</th><th>Taxa</th><th>Justificativa</th></tr>
-          </thead>
-          <tbody>
-            ${extras
-              .map(
-                (e) => `
-                  <tr>
-                    <td>${esc(formatDiaCurto(e.data))}</td>
-                    <td>${esc(e.nome || motoboys[e.mid]?.nome || '—')}</td>
-                    <td>${esc(e.quantidade)}</td>
-                    <td>${esc(taxas[e.taxaIdx]?.label || `Taxa ${(e.taxaIdx ?? 0) + 1}`)}</td>
-                    <td>${esc(e.justificativa)}</td>
-                  </tr>`
-              )
-              .join('')}
-          </tbody>
-        </table>`
-      : '';
-
   const blocoResumo = mostrarResultado
     ? `
       <div class="resumo">
@@ -266,7 +240,6 @@ export function montarHtmlSemana({
     String(lojaNome).toUpperCase()
   )} NOS DIAS ${esc(periodo)}</div>
   ${blocos || '<p class="vazio">Nenhum motoboy lançado nesta semana.</p>'}
-  ${blocoExtras}
   ${blocoResumo}
   <div class="rodape">Gerado em ${esc(new Date().toLocaleString('pt-BR'))} pela intranet.</div>
 </body>

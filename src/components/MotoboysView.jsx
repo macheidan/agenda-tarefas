@@ -176,7 +176,6 @@ export default function MotoboysView() {
       segunda,
       semana,
       config,
-      extras,
       mostrarLancamentos: canViewGerente,
       mostrarResultado: canViewResultado,
     });
