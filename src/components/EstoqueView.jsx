@@ -5,6 +5,7 @@ import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
 import {
   FORNEC_COLORS, ALL, ESTOQUE_LOJAS, norm, isContado, mesAtual, fmtMes,
+  congelarCatalogo, elencoDoMes,
 } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 
@@ -23,7 +24,7 @@ export default function EstoqueView({ compras, contagens }) {
   const { settings } = useSettings(user.uid);
 
   const { fornecedores, itens, loading } = compras;
-  const { qtysDe, setQty, loading: loadingContagens } = contagens;
+  const { qtysDe, catalogoDe, setQty, loading: loadingContagens } = contagens;
 
   const [selectedId, setSelectedId] = useState(null);
   const [query, setQuery] = useState('');
@@ -38,6 +39,7 @@ export default function EstoqueView({ compras, contagens }) {
   const canEdit = !!loja && (isAdmin || settings?.estoqueEditar === true || settings?.[loja.editFlag] === true);
 
   const qtys = loja ? qtysDe(mes, loja.id) : EMPTY;
+  const congelado = loja ? catalogoDe(mes, loja.id) : null;
 
   // Valor sendo digitado, por item. O que está no banco só muda no commit
   // (blur ou Enter) — é lá que mora a confirmação de sobrescrita, e digitar
@@ -45,18 +47,35 @@ export default function EstoqueView({ compras, contagens }) {
   // que estava sendo digitado (senão o número apareceria na contagem errada).
   const [draft, setDraft] = useState({});
 
-  // Mesma ordem de Compras: fornecedores em ordem alfabética, itens na ordem do
-  // catálogo (o hook já entrega ordenado por `order`).
-  const sortedFornecedores = useMemo(
-    () => [...fornecedores].sort((a, b) =>
-      (a.name || '').localeCompare(b.name || '', 'pt', { sensitivity: 'base' })),
-    [fornecedores]
-  );
-  const colorIndex = useMemo(() => {
+  // A lista do mês é o ELENCO daquele mês: o catálogo de Compras como estava
+  // quando a contagem começou. Enquanto ninguém contou nada, é o catálogo de
+  // hoje — e é ele que será congelado na primeira contagem. Assim, cadastrar ou
+  // apagar produto em Compras não mexe em mês nenhum que já foi contado.
+  const fornecNome = useMemo(() => {
     const m = {};
-    sortedFornecedores.forEach((f, i) => { m[f.id] = i; });
+    fornecedores.forEach((f) => { m[f.id] = f.name; });
     return m;
-  }, [sortedFornecedores]);
+  }, [fornecedores]);
+
+  const catalogoAtual = useMemo(
+    () => congelarCatalogo(itens, fornecNome),
+    [itens, fornecNome]
+  );
+  const elenco = elencoDoMes(congelado, itens, fornecNome, qtys);
+  const mesIniciado = !!congelado?.length;
+
+  // Fornecedores do elenco, em ordem alfabética (a cor vem da posição).
+  const sortedFornecedores = (() => {
+    const m = new Map();
+    for (const i of elenco) {
+      if (!i.fornecedorId || m.has(i.fornecedorId)) continue;
+      m.set(i.fornecedorId, { id: i.fornecedorId, name: i.fornecedor || '(sem fornecedor)' });
+    }
+    return [...m.values()].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt', { sensitivity: 'base' }));
+  })();
+  const colorIndex = {};
+  sortedFornecedores.forEach((f, i) => { colorIndex[f.id] = i; });
   const cor = (fornecId) => FORNEC_COLORS[(colorIndex[fornecId] ?? 0) % FORNEC_COLORS.length];
 
   const validIds = [...sortedFornecedores.map((f) => f.id), ALL];
@@ -65,15 +84,11 @@ export default function EstoqueView({ compras, contagens }) {
   const isAll = activeId === ALL;
   const activeFornec = isAll ? null : sortedFornecedores.find((f) => f.id === activeId) || null;
 
-  const fornecItems = useMemo(
-    () => itens.filter((i) => i.fornecedorId === activeId),
-    [itens, activeId]
-  );
-
-  const allGroups = useMemo(
-    () => sortedFornecedores.map((f) => ({ fornec: f, items: itens.filter((i) => i.fornecedorId === f.id) })),
-    [sortedFornecedores, itens]
-  );
+  const fornecItems = elenco.filter((i) => i.fornecedorId === activeId);
+  const allGroups = sortedFornecedores.map((f) => ({
+    fornec: f,
+    items: elenco.filter((i) => i.fornecedorId === f.id),
+  }));
 
   // Busca por produto em todos os fornecedores (idêntica à de Compras).
   const searching = query.trim().length > 0;
@@ -81,18 +96,11 @@ export default function EstoqueView({ compras, contagens }) {
     const nq = norm(query.trim());
     return norm(item.produto).includes(nq) || norm(item.marca).includes(nq);
   };
-  const searchGroups = useMemo(() => {
-    if (!searching) return [];
-    const nq = norm(query.trim());
-    return sortedFornecedores
-      .map((f) => ({ fornec: f, items: itens.filter((i) => i.fornecedorId === f.id) }))
-      .filter((g) => g.items.some((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)));
-  }, [searching, query, sortedFornecedores, itens]);
-  const matchCount = useMemo(() => {
-    if (!searching) return 0;
-    const nq = norm(query.trim());
-    return itens.filter((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)).length;
-  }, [searching, query, itens]);
+  const nq = norm(query.trim());
+  const searchGroups = !searching ? [] : allGroups
+    .filter((g) => g.items.some((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)));
+  const matchCount = !searching ? 0
+    : elenco.filter((i) => norm(i.produto).includes(nq) || norm(i.marca).includes(nq)).length;
 
   const contados = Object.values(qtys).filter(isContado).length;
 
@@ -123,13 +131,15 @@ export default function EstoqueView({ compras, contagens }) {
     }
 
     try {
-      await setQty(mes, loja.id, item.id, novo);
+      await setQty(mes, loja.id, item.id, novo, catalogoAtual);
     } catch (e) {
       window.alert(`Erro ao salvar a contagem: ${e?.message || e}`);
     }
     limpar();
   };
 
+  // `fornecId` null = item fora do catálogo: a borda usa a cor neutra, já que
+  // não há fornecedor com cor pra ele.
   const renderItem = (item, fornecId, highlight = false) => {
     const salvo = qtys[item.id];
     const digitado = draft[item.id];
@@ -159,7 +169,7 @@ export default function EstoqueView({ compras, contagens }) {
             onChange={(e) => setDraft((prev) => ({ ...prev, [item.id]: e.target.value }))}
             onBlur={() => commit(item)}
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-            style={{ borderColor: cor(fornecId) }}
+            style={{ borderColor: fornecId ? cor(fornecId) : 'var(--border)' }}
           />
         </div>
       </div>
@@ -229,6 +239,9 @@ export default function EstoqueView({ compras, contagens }) {
           {contados > 0
             ? `${contados} ${contados === 1 ? 'item contado' : 'itens contados'} em ${fmtMes(mes)}`
             : `Nada contado em ${fmtMes(mes)} ainda`}
+          {mesIniciado
+            ? ` · lista de ${elenco.length} produtos fixada no início da contagem`
+            : ` · ${elenco.length} produtos, pela lista de Compras de hoje`}
         </span>
       </div>
 
@@ -315,6 +328,7 @@ export default function EstoqueView({ compras, contagens }) {
           {fornecItems.map((item) => renderItem(item, activeId))}
         </div>
       )}
+
     </>
   );
 }

@@ -31,6 +31,45 @@ export const ESTOQUE_LOJAS = [
 // Valor contado: preenchido (0 conta — significa "acabou").
 export const isContado = (v) => v !== null && v !== undefined && v !== '';
 
+// Elenco do mês: a lista de Compras achatada num formato que não depende mais
+// do catálogo (nome do fornecedor junto, vínculo da planilha junto). É o que é
+// congelado no doc da contagem quando o mês começa a ser preenchido.
+export const congelarCatalogo = (itens, fornecNome = {}) => (itens || []).map((i) => ({
+  id: i.id,
+  produto: i.produto || '',
+  marca: i.marca || '',
+  unid: i.unid || '',
+  fornecedorId: i.fornecedorId || '',
+  fornecedor: fornecNome[i.fornecedorId] || '',
+  planilha: i.planilhaNome || '',
+}));
+
+// Itens que o mês exibe: o elenco congelado quando ele existe, senão a lista de
+// Compras de hoje (mês ainda não iniciado). Uma contagem de item que não está
+// no elenco — só acontece com dado antigo — entra no fim, para nunca sumir.
+export function elencoDoMes(catalogoCongelado, itensAtuais, fornecNome = {}, qtys = {}) {
+  const base = catalogoCongelado?.length
+    ? catalogoCongelado
+    : congelarCatalogo(itensAtuais, fornecNome);
+  const vistos = new Set(base.map((i) => i.id));
+  const soltos = Object.keys(qtys)
+    .filter((id) => isContado(qtys[id]) && !vistos.has(id))
+    .map((id) => {
+      const atual = (itensAtuais || []).find((i) => i.id === id);
+      return atual
+        ? congelarCatalogo([atual], fornecNome)[0]
+        : { id, produto: '(produto removido)', marca: '', unid: '', fornecedorId: '', fornecedor: '', planilha: '' };
+    });
+  return base.concat(soltos);
+}
+
+// Linhas contadas de um mês, montadas sobre o elenco (ver acima).
+export function itensContados(qtys, elenco) {
+  return (elenco || [])
+    .filter((i) => isContado(qtys?.[i.id]))
+    .map((i) => ({ ...i, itemId: i.id, qtd: Number(qtys[i.id]) || 0 }));
+}
+
 // Número no formato da mensagem copiada (inteiro sem casas, decimal com vírgula).
 export const fmtQty = (value) => {
   const n = Number(value);

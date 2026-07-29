@@ -3,8 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { usePrecosPlanilha, useRelatoriosEstoque } from '../hooks/useEstoqueRelatorio';
 import {
-  ESTOQUE_LOJAS, norm, isContado, mesAtual, inicioProximoMes, fimDoMes, fmtMes,
-  fmtBRL, fmtQty, relatorioId,
+  ESTOQUE_LOJAS, norm, mesAtual, inicioProximoMes, fimDoMes, fmtMes,
+  fmtBRL, fmtQty, relatorioId, itensContados, elencoDoMes,
 } from '../lib/suprimentos';
 import styles from '../styles/ComprasView.module.css';
 import tbl from '../styles/RelatorioEstoqueView.module.css';
@@ -20,19 +20,18 @@ import tbl from '../styles/RelatorioEstoqueView.module.css';
 // mais, mesmo que uma nota nova entre no banco depois. É o que a planilha faz
 // nas abas de estoque de cada loja (Último valor · Contagem · Total).
 
-// Casa o item do catálogo com o Produto (planilha) pelo nome, sem acento e sem
-// caixa. `item.planilhaNome` é um vínculo explícito (gravado por importação) e
-// ganha do casamento por nome.
-function resolvePlanilha(item, nomesPorNorm) {
-  if (item.planilhaNome) return { nome: item.planilhaNome };
-  return { nome: nomesPorNorm.get(norm(item.produto)) || '' };
+// Produto (planilha) da linha: o vínculo explícito do item (planilhaNome, vindo
+// do catálogo ou do retrato do mês) ganha; sem ele, casa pelo nome sem acento e
+// sem caixa.
+function resolvePlanilha(linha, nomesPorNorm) {
+  return linha.planilha || nomesPorNorm.get(norm(linha.produto)) || '';
 }
 
 export default function RelatorioEstoqueView({ compras, contagens }) {
   const { user, isAdmin } = useAuth();
   const { settings } = useSettings(user.uid);
   const { fornecedores, itens } = compras;
-  const { qtysDe } = contagens;
+  const { qtysDe, catalogoDe } = contagens;
 
   const [mes, setMes] = useState(mesAtual);
   const [salvando, setSalvando] = useState(false);
@@ -73,26 +72,24 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
     () => (lojaAtivaId ? qtysDe(mes, lojaAtivaId) : {}),
     [qtysDe, mes, lojaAtivaId]
   );
+  // O mês é lido pelo elenco congelado quando a contagem começou — produto que
+  // saiu de Compras depois continua no mês, e produto novo não entra nele.
+  const congelado = lojaAtivaId ? catalogoDe(mes, lojaAtivaId) : null;
+  const elenco = elencoDoMes(congelado, itens, fornecNome, qtysMes);
   const linhasVivas = useMemo(() => {
     if (!loja) return [];
-    return itens
-      .filter((i) => isContado(qtysMes[i.id]))
-      .map((i) => {
-        const { nome } = resolvePlanilha(i, nomesPorNorm);
+    // As linhas saem do elenco daquele mês, não do catálogo de hoje.
+    return itensContados(qtysMes, elenco)
+      .map((l) => {
+        const nome = resolvePlanilha(l, nomesPorNorm);
         const preco = nome ? custos[nome] : null;
-        const qtd = Number(qtysMes[i.id]) || 0;
         return {
-          itemId: i.id,
-          produto: i.produto || '',
-          marca: i.marca || '',
-          unid: i.unid || '',
-          fornecedor: fornecNome[i.fornecedorId] || '',
+          ...l,
           planilha: nome,
           medida: preco?.medida || '',
           precoData: preco?.data || '',
           preco: preco ? preco.custo : null,
-          qtd,
-          total: preco ? preco.custo * qtd : 0,
+          total: preco ? preco.custo * l.qtd : 0,
         };
       })
       // Ordena pela primeira coluna (o Produto (planilha)), com o fornecedor
@@ -100,7 +97,7 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
       .sort((a, b) =>
         (a.planilha || a.produto).localeCompare(b.planilha || b.produto, 'pt', { sensitivity: 'base' }) ||
         a.fornecedor.localeCompare(b.fornecedor, 'pt', { sensitivity: 'base' }));
-  }, [itens, loja, qtysMes, custos, nomesPorNorm, fornecNome]);
+  }, [loja, qtysMes, elenco, custos, nomesPorNorm]);
 
   const linhas = salvo ? (salvo.linhas || []) : linhasVivas;
   const total = salvo ? (Number(salvo.total) || 0) : linhas.reduce((s, l) => s + l.total, 0);
@@ -258,8 +255,13 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
               {linhas.map((l) => (
                 <tr key={l.itemId} className={l.preco == null ? tbl.rowSemPreco : ''}>
                   <td data-label="Produto (planilha)">
-                    <span className={l.planilha ? tbl.produto : tbl.dim}>
-                      {l.planilha || 'sem vínculo'}
+                    {/* Sem vínculo a linha não pode ficar anônima: cai no nome
+                        do item em Compras, em cinza. */}
+                    <span
+                      className={l.planilha ? tbl.produto : tbl.dim}
+                      title={l.planilha ? undefined : 'Sem vínculo com um produto da seção Preços'}
+                    >
+                      {l.planilha || l.produto}
                     </span>
                   </td>
                   <td data-label="Fornecedor" className={tbl.dim}>{l.fornecedor || '—'}</td>
