@@ -67,7 +67,7 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
   }, [fornecedores]);
 
   // Linhas ao vivo: todo item COM contagem no mês e na loja ativos (o 0 conta —
-  // significa "acabou"), na ordem do catálogo, agrupado por fornecedor.
+  // significa "acabou").
   const lojaAtivaId = loja?.id || null;
   const qtysMes = useMemo(
     () => (lojaAtivaId ? qtysDe(mes, lojaAtivaId) : {}),
@@ -95,9 +95,11 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
           total: preco ? preco.custo * qtd : 0,
         };
       })
+      // Ordena pela primeira coluna (o Produto (planilha)), com o fornecedor
+      // como desempate quando dois itens do catálogo caem no mesmo produto.
       .sort((a, b) =>
-        a.fornecedor.localeCompare(b.fornecedor, 'pt', { sensitivity: 'base' }) ||
-        a.produto.localeCompare(b.produto, 'pt', { sensitivity: 'base' }));
+        (a.planilha || a.produto).localeCompare(b.planilha || b.produto, 'pt', { sensitivity: 'base' }) ||
+        a.fornecedor.localeCompare(b.fornecedor, 'pt', { sensitivity: 'base' }));
   }, [itens, loja, qtysMes, custos, nomesPorNorm, fornecNome]);
 
   const linhas = salvo ? (salvo.linhas || []) : linhasVivas;
@@ -226,8 +228,8 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
       {!salvo && semPreco > 0 && (
         <p className={tbl.aviso}>
           <strong>{semPreco}</strong> {semPreco === 1 ? 'item contado não tem preço' : 'itens contados não têm preço'}:
-          {' '}o nome do item em Compras não bate com nenhum Produto (planilha) da seção Preços, ou
-          o produto não teve compra registrada nos últimos 12 meses. Eles entram no total como
+          {' '}o Produto (planilha) não teve compra registrada nos últimos 12 meses, ou o item de
+          Compras ainda não está vinculado a um produto da seção Preços. Eles entram no total como
           R$ 0,00.
         </p>
       )}
@@ -245,9 +247,8 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
           <table className={tbl.table}>
             <thead>
               <tr>
-                <th>Produto</th>
-                <th>Fornecedor</th>
                 <th>Produto (planilha)</th>
+                <th>Fornecedor</th>
                 <th className={tbl.num}>Preço</th>
                 <th className={tbl.num}>Contagem</th>
                 <th className={tbl.num}>Total</th>
@@ -256,14 +257,12 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
             <tbody>
               {linhas.map((l) => (
                 <tr key={l.itemId} className={l.preco == null ? tbl.rowSemPreco : ''}>
-                  <td data-label="Produto">
-                    <span className={tbl.produto}>{l.produto}</span>
-                    {l.marca && <span className={tbl.marca}>{l.marca}</span>}
+                  <td data-label="Produto (planilha)">
+                    <span className={l.planilha ? tbl.produto : tbl.dim}>
+                      {l.planilha || 'sem vínculo'}
+                    </span>
                   </td>
                   <td data-label="Fornecedor" className={tbl.dim}>{l.fornecedor || '—'}</td>
-                  <td data-label="Planilha">
-                    <span className={l.planilha ? '' : tbl.dim}>{l.planilha || 'sem vínculo'}</span>
-                  </td>
                   <td data-label="Preço" className={tbl.num}>
                     {l.preco == null ? <span className={tbl.dim}>—</span> : (
                       <>
@@ -281,7 +280,7 @@ export default function RelatorioEstoqueView({ compras, contagens }) {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={5}>Total</td>
+                <td colSpan={4}>Total</td>
                 <td className={tbl.num}>{fmtBRL(total)}</td>
               </tr>
             </tfoot>

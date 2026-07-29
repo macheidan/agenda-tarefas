@@ -175,15 +175,10 @@
   font-weight: 600;
 }
 
-.marca,
-.medida {
-  margin-left: 6px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
 .medida {
   margin-left: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .dim {
@@ -244,11 +239,11 @@
     flex-shrink: 0;
   }
 
-  .table td[data-label='Produto']::before {
+  .table td[data-label='Produto (planilha)']::before {
     display: none;
   }
 
-  .table td[data-label='Produto'] {
+  .table td[data-label='Produto (planilha)'] {
     justify-content: flex-start;
     padding-bottom: 6px;
   }

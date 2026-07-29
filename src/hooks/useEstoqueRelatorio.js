@@ -39,7 +39,7 @@ async function fetchPrecosNoIntervalo(desde, ate) {
   for (let p = 0; p < 30; p++) {
     const { data, error } = await supabase
       .from('precos')
-      .select('id, data, preco_normalizado, unidade_normalizada, produto_id, produtos(nome_padrao, medida_padrao, fator_regra3)')
+      .select('id, data, preco_normalizado, unidade_normalizada, produto_id, produtos(nome, nome_padrao, medida_padrao, fator_regra3)')
       .gte('data', desde)
       .lt('data', ate)
       .order('data', { ascending: false })
@@ -55,10 +55,15 @@ async function fetchPrecosNoIntervalo(desde, ate) {
 // Reduz as linhas ao ÚLTIMO preço de cada Produto (planilha). O custo é o
 // Resultado (preço normalizado × Regra3); sem fator, o próprio preço
 // normalizado — exatamente o que o CMV usa como custo/kg.
+//
+// A chave é o nome_padrao definido na seção Preços → Produtos (é ele o "Produto
+// (planilha)"); quando o produto ainda não foi padronizado por lá, vale o
+// próprio nome do produto. É a mesma chave que o vínculo do item de Compras
+// (comprasItens.planilhaNome) guarda.
 function reduzirPorPlanilha(rows) {
   const latest = {};
   for (const r of rows) {
-    const nome = r.produtos?.nome_padrao;
+    const nome = r.produtos?.nome_padrao || r.produtos?.nome;
     if (!nome) continue;
     const data = parseDataISO(r.data);
     const cur = latest[nome];

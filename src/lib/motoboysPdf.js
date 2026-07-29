@@ -16,6 +16,15 @@ import {
   calcResumoSemana,
 } from '../hooks/useMotoboys';
 
+// Cabeçalho fixo do relatório (identificação da cooperativa).
+const COOPALE = 'COOPALE - COOPERATIVA DE MOTOBOYS - CNPJ 07.460.795/0001-60';
+
+// 'YYYY-MM-DD' → 'DD/MM/AAAA' (o cabeçalho leva a data cheia).
+const formatDiaLongo = (iso) => {
+  const [y, m, d] = String(iso).split('-');
+  return `${d}/${m}/${y}`;
+};
+
 const esc = (s) =>
   String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -32,8 +41,8 @@ const CSS = `
     color: #1a1a1a;
     font-size: 12px;
   }
-  h1 { font-size: 18px; margin: 0 0 2px; }
-  .sub { font-size: 12px; color: #666; margin-bottom: 16px; }
+  h1 { font-size: 15px; margin: 0; letter-spacing: .01em; }
+  .sub { font-size: 13px; font-weight: 700; margin: 4px 0 16px; }
   .bloco { margin-bottom: 14px; page-break-inside: avoid; }
   .blocoTitulo {
     display: flex; align-items: baseline; gap: 10px;
@@ -241,7 +250,8 @@ export function montarHtmlSemana({
       </div>`
     : '';
 
-  const titulo = `Motoboys ${lojaNome} — ${formatDiaCurto(segunda)} a ${formatDiaCurto(fim)}`;
+  const periodo = `${formatDiaLongo(segunda)} A ${formatDiaLongo(fim)}`;
+  const titulo = `${COOPALE} — ${lojaNome} — ${formatDiaCurto(segunda)} a ${formatDiaCurto(fim)}`;
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -251,8 +261,10 @@ export function montarHtmlSemana({
 <style>${CSS}</style>
 </head>
 <body>
-  <h1>${esc(titulo)}</h1>
-  <div class="sub">Semana de ${esc(formatDiaCurto(segunda))} a ${esc(formatDiaCurto(fim))} · ${esc(lojaNome)}</div>
+  <h1>${esc(COOPALE)}</h1>
+  <div class="sub">MOTOBOYS COOPERADOS QUE TRABALHARAM PARA ${esc(
+    String(lojaNome).toUpperCase()
+  )} NOS DIAS ${esc(periodo)}</div>
   ${blocos || '<p class="vazio">Nenhum motoboy lançado nesta semana.</p>'}
   ${blocoExtras}
   ${blocoResumo}
