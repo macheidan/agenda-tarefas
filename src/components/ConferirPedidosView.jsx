@@ -3,14 +3,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useComprasPedidos } from '../hooks/useComprasPedidos';
 import {
-  useNotasCandidatas, useConferencias, useFornecedoresNota, maisDias,
+  useNotasCandidatas, useConferencias, useFornecedoresNota,
+  useLinhasNotaRecentes, maisDias,
 } from '../hooks/useConferencia';
 import {
   COMPRAS_LOJAS, hojeISO, fmtDiaMes, fmtBRL,
 } from '../lib/suprimentos';
 import {
   normNome, perfilPedido, converter, situacao, sugereEquivalencia, nfNumero,
-  SITUACAO_LABEL, fmtNum,
+  pendenciasDeUnidade, SITUACAO_LABEL, fmtNum,
 } from '../lib/conferencia';
 import styles from '../styles/ComprasView.module.css';
 import tbl from '../styles/ConferirPedidosView.module.css';
@@ -59,6 +60,7 @@ export default function ConferirPedidosView({ compras }) {
   const [lojaFiltro, setLojaFiltro] = useState('');
   const [abertoId, setAbertoId] = useState(null);
   const [mostraDePara, setMostraDePara] = useState(false);
+  const [mostraUnidades, setMostraUnidades] = useState(false);
 
   const desde = useMemo(() => maisDias(hojeISO(), -dias), [dias]);
   const { pedidos, loading, error } = useComprasPedidos(desde);
@@ -146,10 +148,21 @@ export default function ConferirPedidosView({ compras }) {
             </span>
           )}
           {canEdit && (
-            <button className={tbl.btnGhost} onClick={() => setMostraDePara((v) => !v)}>
-              {mostraDePara ? 'Fechar' : 'Fornecedores da nota'}
-              {semVinculo.length > 0 && ` (${semVinculo.length})`}
-            </button>
+            <>
+              <button
+                className={tbl.btnGhost}
+                onClick={() => { setMostraDePara((v) => !v); setMostraUnidades(false); }}
+              >
+                {mostraDePara ? 'Fechar' : 'Fornecedores da nota'}
+                {semVinculo.length > 0 && ` (${semVinculo.length})`}
+              </button>
+              <button
+                className={tbl.btnGhost}
+                onClick={() => { setMostraUnidades((v) => !v); setMostraDePara(false); }}
+              >
+                {mostraUnidades ? 'Fechar' : 'Unidades'}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -162,6 +175,10 @@ export default function ConferirPedidosView({ compras }) {
           onVincular={vincularFornecedorNota}
           onConfirmarTodas={confirmarSugestoes}
         />
+      )}
+
+      {mostraUnidades && canEdit && (
+        <Unidades itens={itens} onEquiv={updateItem} />
       )}
 
       {error && (
@@ -293,6 +310,140 @@ function DePara({ fornecedores, fornecedoresNota, comSugestao, onVincular, onCon
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Caixa "Unidades": levanta de uma vez TODOS os pares (item × unidade da nota)
+ * que ainda não convertem sozinhos, com o palpite pré-preenchido onde ele é
+ * seguro, e grava tudo num clique.
+ *
+ * Existe porque a alternativa é a assistente descobrir esses ~70 pares um a um,
+ * espalhados por semanas de conferência. Numa sentada, a conferência sai de 60%
+ * automática pra quase toda automática já na primeira semana.
+ */
+function Unidades({ itens, onEquiv }) {
+  const { linhas, loading, error } = useLinhasNotaRecentes(true);
+  const [valores, setValores] = useState({});
+  const [salvando, setSalvando] = useState(false);
+  const [salvos, setSalvos] = useState(0);
+
+  const pendencias = useMemo(
+    () => pendenciasDeUnidade(itens, linhas),
+    [itens, linhas]
+  );
+
+  // O palpite entra como valor inicial do campo, mas só onde é seguro (ver
+  // palpiteEquivalencia): pedido em unidade genérica × embalagem nomeada.
+  const valorDe = (p) => valores[p.chave] ?? (p.palpite != null ? String(p.palpite) : '');
+
+  const preenchidas = pendencias.filter((p) => Number(String(valorDe(p)).replace(',', '.')) > 0);
+
+  const salvarTodas = async () => {
+    if (!preenchidas.length) return;
+    if (!window.confirm(
+      `Salvar ${preenchidas.length} ${preenchidas.length === 1 ? 'equivalência' : 'equivalências'}?\n\n` +
+      'Elas passam a valer em todas as conferências, inclusive nas que ainda não foram fechadas.'
+    )) return;
+    setSalvando(true);
+    try {
+      // Um item pode ter mais de uma unidade pendente — junta tudo num update
+      // só por item, senão o segundo update sobrescreveria o primeiro.
+      const porItem = new Map();
+      for (const p of preenchidas) {
+        const n = Number(String(valorDe(p)).replace(',', '.'));
+        const atual = porItem.get(p.item.id) || { ...(p.item.equiv || {}) };
+        atual[p.unidNota] = n;
+        porItem.set(p.item.id, atual);
+      }
+      for (const [itemId, equiv] of porItem) {
+        await onEquiv(itemId, { equiv });
+      }
+      setSalvos(preenchidas.length);
+      setValores({});
+    } catch (e) {
+      window.alert(`Erro ao salvar: ${e?.message || e}`);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <div className={tbl.caixa}>
+      <div className={tbl.caixaHead}>
+        <h4 className={tbl.caixaTitulo}>
+          Unidades que a conferência ainda não sabe traduzir
+          {pendencias.length > 0 && ` (${pendencias.length})`}
+        </h4>
+        {preenchidas.length > 0 && (
+          <button className={tbl.btnPrimary} onClick={salvarTodas} disabled={salvando}>
+            {salvando ? 'Salvando...' : `Salvar ${preenchidas.length}`}
+          </button>
+        )}
+      </div>
+      <p className={tbl.caixaHint}>
+        Cada linha é um produto cuja nota vem numa unidade diferente da que o gerente pede.
+        Responda uma vez e a conferência faz sozinha daí em diante. As mais frequentes vêm
+        primeiro — são elas que pagam a maior parte do trabalho.
+        {' '}<strong>Onde o palpite era arriscado o campo veio vazio de propósito</strong>
+        {' '}(um fardo de refri tem 6 unidades, não 1).
+      </p>
+
+      {error && <p className={tbl.aviso}>Não foi possível levantar as unidades: {error}</p>}
+      {salvos > 0 && (
+        <p className={tbl.aviso}>
+          {salvos} {salvos === 1 ? 'equivalência salva' : 'equivalências salvas'}. As linhas
+          resolvidas saem da lista.
+        </p>
+      )}
+
+      {loading ? (
+        <p className={tbl.caixaHint}>Levantando as notas dos últimos 90 dias...</p>
+      ) : pendencias.length === 0 ? (
+        <p className={tbl.caixaHint}>
+          Nenhuma unidade pendente — tudo que apareceu em nota nos últimos 90 dias já converte
+          sozinho.
+        </p>
+      ) : (
+        <div className={tbl.tableWrap}>
+          <table className={tbl.table}>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Equivalência</th>
+                <th className={tbl.num}>Linhas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendencias.map((p) => (
+                <tr key={p.chave} className={p.palpite == null ? tbl.rowConfirmar : ''}>
+                  <td data-label="Produto">
+                    <span className={tbl.produto}>{p.item.produto}</span>
+                    {p.item.marca && <span className={tbl.medida}> {p.item.marca}</span>}
+                  </td>
+                  <td data-label="Equivalência">
+                    <span className={tbl.ensinaTexto}>
+                      1 <strong>{p.item.unid || 'un'}</strong> =
+                      <input
+                        className={tbl.ensinaInput}
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="?"
+                        value={valorDe(p)}
+                        onChange={(e) => setValores((v) => ({ ...v, [p.chave]: e.target.value }))}
+                      />
+                      <strong>{p.unidNota}</strong>
+                    </span>
+                  </td>
+                  <td data-label="Linhas" className={tbl.num}>{p.n}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

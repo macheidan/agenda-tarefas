@@ -150,6 +150,61 @@ export function useConferencias(desde) {
   return { conferencias, loading, fechar, reabrir };
 }
 
+/**
+ * Todas as linhas de nota de uma janela (padrão 90 dias), pra caixa "Unidades"
+ * levantar de uma vez tudo que ainda não converte.
+ *
+ * Só busca quando `ativo` — são ~2000 linhas, caro demais pra carregar em toda
+ * visita da tela quando a caixa costuma ficar fechada.
+ */
+export function useLinhasNotaRecentes(ativo, dias = 90) {
+  const [linhas, setLinhas] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!ativo) return undefined;
+    let vivo = true;
+    setLoading(true);
+    (async () => {
+      try {
+        const desde = maisDias(new Date().toISOString().slice(0, 10), -dias);
+        const PAGE = 1000;
+        let todas = [];
+        for (let p = 0; p < 30; p += 1) {
+          const { data, error: err } = await supabase
+            .from('precos')
+            .select('id, qtd_embalagem, unidade_embalagem, produtos(nome, nome_padrao)')
+            .gte('data', desde)
+            .range(p * PAGE, p * PAGE + PAGE - 1);
+          if (err) throw new Error(err.message || String(err));
+          if (!data?.length) break;
+          todas = todas.concat(data);
+          if (data.length < PAGE) break;
+        }
+        if (!vivo) return;
+        setLinhas(todas.map((r) => ({
+          id: r.id,
+          produto: r.produtos?.nome || '',
+          planilha: r.produtos?.nome_padrao || r.produtos?.nome || '',
+          qtd: Number(r.qtd_embalagem) || 0,
+          unid: r.unidade_embalagem || '',
+        })));
+        setError(null);
+      } catch (e) {
+        if (!vivo) return;
+        console.error('[conferencia] erro ao levantar unidades pendentes:', e);
+        setError(e?.message || String(e));
+      } finally {
+        if (vivo) setLoading(false);
+      }
+    })();
+    return () => { vivo = false; };
+  }, [ativo, dias]);
+
+  return { linhas, loading, error };
+}
+
 /** Fornecedores do Supabase, pro de-para. Lista curta, cabe numa consulta só. */
 export function useFornecedoresNota() {
   const [fornecedores, setFornecedores] = useState([]);

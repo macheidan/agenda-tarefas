@@ -210,6 +210,62 @@ export function sugereEquivalencia(qtdPedida, qtdNota) {
   return null;
 }
 
+/**
+ * Palpite de equivalência para um par (item, unidade da nota) que nenhuma regra
+ * converteu — usado pra PRÉ-PREENCHER a lista de unidades pendentes, sem
+ * nenhum número observado à mão.
+ *
+ * Só arrisca no caso em que o palpite é quase certo: o gerente pede em unidade
+ * GENÉRICA ('un') e a nota conta uma embalagem qualquer ('GL', 'PC', 'FD').
+ * Aí "1 un" É o galão — a nota só deu nome ao que ele conta solto. 1:1.
+ *
+ * Quando o pedido nomeia a embalagem ('fardo', 'cx', 'pente') e a nota nomeia
+ * OUTRA ('UN', 'PT', 'DZ'), 1:1 é justamente o palpite errado: um fardo de
+ * Fruki tem 6 unidades, e chutar 1 esconderia falta. Devolve null — a tela
+ * pergunta.
+ */
+export function palpiteEquivalencia(unidPedido, unidNota) {
+  const p = parseUnid(unidPedido);
+  const n = parseUnidNota(unidNota);
+  if (!p || !n) return null;
+  const generico = p.emb === 'UN' && !p.conteudo && !p.med;
+  return generico && n.tipo === 'emb' && n.cod !== 'UN' ? 1 : null;
+}
+
+/**
+ * Pares (item × unidade da nota) que ainda não convertem, com quantas linhas de
+ * nota cada um derruba — é a fila de trabalho da caixa "Unidades".
+ * Mais frequente primeiro: os primeiros da lista pagam a maior parte.
+ */
+export function pendenciasDeUnidade(itens, linhasNota) {
+  const porNome = new Map();
+  for (const i of itens) {
+    for (const k of [normNome(i.planilhaNome), normNome(i.produto)]) {
+      if (k && !porNome.has(k)) porNome.set(k, i);
+    }
+  }
+  const mapa = new Map();
+  for (const r of linhasNota) {
+    const item = porNome.get(normNome(r.planilha)) || porNome.get(normNome(r.produto));
+    if (!item) continue;
+    if (converter(perfilPedido(item), r.qtd, r.unid, item.equiv)) continue;
+    const unidNota = String(r.unid || '').trim().toUpperCase();
+    if (!unidNota) continue;
+    const chave = `${item.id}|${unidNota}`;
+    if (!mapa.has(chave)) {
+      mapa.set(chave, {
+        chave,
+        item,
+        unidNota,
+        n: 0,
+        palpite: palpiteEquivalencia(item.unid, unidNota),
+      });
+    }
+    mapa.get(chave).n += 1;
+  }
+  return [...mapa.values()].sort((a, b) => b.n - a.n);
+}
+
 /** Nº da NF dentro da chave de acesso (posições 26–34 dos 44 dígitos). */
 export function nfNumero(chave) {
   const s = String(chave || '').replace(/\D/g, '');
