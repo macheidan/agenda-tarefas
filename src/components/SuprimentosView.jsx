@@ -4,6 +4,7 @@ import { useSettings } from '../hooks/useSettings';
 import { useCompras } from '../hooks/useCompras';
 import { useEstoqueContagens } from '../hooks/useEstoqueContagens';
 import ComprasView from './ComprasView';
+import ConferirPedidosView from './ConferirPedidosView';
 import EstoqueView from './EstoqueView';
 import RelatorioEstoqueView from './RelatorioEstoqueView';
 import { Icon } from './icons';
@@ -17,6 +18,7 @@ import styles from '../styles/ComprasView.module.css';
 // instanciado aqui uma vez só e desce por prop (um par de listeners, não três).
 const SUBPAGES = [
   { key: 'compras', label: 'Compras' },
+  { key: 'conferir', label: 'Conferir Pedidos', flag: 'conferenciaVer' },
   { key: 'estoque', label: 'Estoque Mensal', flag: 'estoqueVer' },
   { key: 'relatorio', label: 'Relatório Estoque', flag: 'relatorioEstoqueVer' },
 ];
@@ -98,6 +100,7 @@ export default function SuprimentosView() {
 
       {activeSub === 'relatorio' ? <RelatorioEstoqueView compras={compras} contagens={contagens} />
         : activeSub === 'estoque' ? <EstoqueView compras={compras} contagens={contagens} />
+        : activeSub === 'conferir' ? <ConferirPedidosView compras={compras} />
         : <ComprasView compras={compras} />}
     </div>
   );

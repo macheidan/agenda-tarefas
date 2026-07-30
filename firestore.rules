@@ -219,6 +219,12 @@ service cloud.firestore {
     match /comprasFornecedores/{fornecedorId} {
       allow read: if isSignedIn();
       allow write: if isComprasEditor();
+      // De-para do Conferir Pedidos (qual fornecedor do Supabase assina a nota):
+      // quem confere ajusta sozinha, sem virar editora do catálogo.
+      allow update: if isComprasEditor() || (
+        isConferenciaEditor() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notaFornecedorId'])
+      );
     }
     match /comprasItens/{itemId} {
       allow read: if isSignedIn();
@@ -226,6 +232,11 @@ service cloud.firestore {
       allow update: if isComprasEditor() || (
         isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
+      ) || (
+        // Equivalência de unidade ({ 'ML': 1 }): a assistente ensina a conversão
+        // na primeira vez que a linha aparece, e a tela nunca mais pergunta.
+        isConferenciaEditor() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['equiv'])
       );
     }
 

@@ -541,6 +541,20 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                 onChange={(v) => toggleSection(permTarget, 'relatorioEstoqueEditar', v)}
               />
             </Row>
+            <Row title="Conferir Pedidos" desc="Mostra a sub-seção que confere o pedido do gerente contra a nota fiscal">
+              <Switch
+                label="Conferir Pedidos — vê"
+                checked={s.conferenciaVer === true}
+                onChange={(v) => toggleSection(permTarget, 'conferenciaVer', v)}
+              />
+            </Row>
+            <Row title="Conferir Pedidos — conferir" desc="Marca como conferido, liga o fornecedor da nota e ensina as unidades">
+              <Switch
+                label="Conferir Pedidos — confere"
+                checked={s.conferenciaEditar === true}
+                onChange={(v) => toggleSection(permTarget, 'conferenciaEditar', v)}
+              />
+            </Row>
           </>
         );
       default:

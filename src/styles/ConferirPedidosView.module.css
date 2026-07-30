@@ -1,0 +1,658 @@
+/* Conferir Pedidos (sub-seção de Suprimentos). O cartão, o header e as abas de
+   loja vêm de ComprasView.module.css — aqui mora a barra de período, o de-para
+   de fornecedores, as notas candidatas e a tabela do cruzamento.
+   Só CSS vars do global.css; as cores de situação usam rgba() suave por cima
+   das vars de estado, como o resto do projeto faz. */
+
+/* ---- Barra de período ---- */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.periodo {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.periodoBtn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.periodoBtnActive {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.barraInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---- Botões ---- */
+.btnPrimary {
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  padding: 8px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnGhost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btnVoltar {
+  padding: 6px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnVoltar:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Sugestão do de-para: parece um atalho, não um botão de ação principal. */
+.btnSugestao {
+  padding: 5px 10px;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnEnsinar {
+  margin-left: 8px;
+  padding: 3px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnEnsinar:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---- Caixa de formulário (de-para) ---- */
+.caixa {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.caixaHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.caixaTitulo {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.caixaHint {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.deparaList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.deparaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deparaNome {
+  flex: 1;
+  min-width: 140px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.select {
+  padding: 7px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  min-width: 190px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.selectVazio {
+  border-color: var(--accent);
+}
+
+/* ---- Notas candidatas ---- */
+.notasBox {
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.notasHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.notasTitulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.folgaLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.folgaInput {
+  width: 56px;
+  padding: 5px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  text-align: right;
+}
+
+.folgaInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.notasList {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.notaChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.notaChipOn {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--text);
+}
+
+.notaUsada {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 152, 0, 0.16);
+  color: #b26a00;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ---- Cabeçalho do detalhe ---- */
+.detalheHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.detalheTitulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 180px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.detalheTitulo .dim {
+  font-size: 12px;
+}
+
+.detalheAcoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---- Resumo ---- */
+.resumo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.resumoChips,
+.chipsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.resumoInfo {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- Chips de situação ---- */
+.chipOk,
+.chipFaltou,
+.chipNaoVeio,
+.chipSobrou,
+.chipConfirmar,
+.chipPendente,
+.chipDiverg {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.chipOk {
+  background: rgba(18, 183, 106, 0.14);
+  color: #0a7a47;
+}
+
+.chipFaltou,
+.chipDiverg {
+  background: rgba(240, 68, 56, 0.12);
+  color: var(--danger);
+}
+
+.chipNaoVeio {
+  background: rgba(240, 68, 56, 0.2);
+  color: var(--danger);
+}
+
+.chipSobrou {
+  background: rgba(70, 95, 255, 0.14);
+  color: var(--accent);
+}
+
+.chipConfirmar,
+.chipPendente {
+  background: rgba(255, 152, 0, 0.16);
+  color: #b26a00;
+}
+
+/* Situação na célula da tabela (texto, não pílula — a linha já tem cor). */
+.sitok { color: #0a7a47; font-weight: 600; }
+.sitfaltou { color: var(--danger); font-weight: 600; }
+.sitnaoVeio { color: var(--danger); font-weight: 700; }
+.sitsobrou { color: var(--accent); font-weight: 600; }
+.sitconfirmar { color: #b26a00; font-weight: 600; }
+
+.aviso {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 152, 0, 0.1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.vazio {
+  padding: 32px 20px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ---- Tabela ---- */
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background: var(--bg-secondary);
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.produto {
+  font-weight: 600;
+}
+
+.medida {
+  margin-left: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dim {
+  color: var(--text-muted);
+}
+
+.cru {
+  color: #b26a00;
+  font-weight: 600;
+}
+
+.rowClick {
+  cursor: pointer;
+}
+
+.rowClick:hover {
+  background: var(--bg-secondary);
+}
+
+.rowFaltou { background: rgba(240, 68, 56, 0.06); }
+.rowNaoVeio { background: rgba(240, 68, 56, 0.1); }
+.rowSobrou { background: rgba(70, 95, 255, 0.06); }
+.rowConfirmar { background: rgba(255, 152, 0, 0.08); }
+.rowExtra { background: rgba(70, 95, 255, 0.04); }
+
+/* ---- Ensinar unidade ---- */
+.rowEnsinar td {
+  background: var(--bg-secondary);
+}
+
+.ensinaRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+
+.ensinaTexto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.ensinaInput {
+  width: 84px;
+  padding: 6px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  text-align: right;
+}
+
+.ensinaInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ensinaHint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ---- Extras e observação ---- */
+.extrasTitulo {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.obsLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.obsInput {
+  padding: 9px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.obsInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.obsSalva {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- Mobile: cada linha vira card ---- */
+@media (max-width: 768px) {
+  .tableWrap {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 3px 0;
+    border-bottom: none;
+    text-align: left;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+  }
+
+  .table td[data-label='Produto']::before,
+  .table td[data-label='Pedido']::before {
+    display: none;
+  }
+
+  .table td[data-label='Produto'],
+  .table td[data-label='Pedido'] {
+    justify-content: flex-start;
+    padding-bottom: 6px;
+  }
+
+  .num {
+    text-align: right;
+  }
+
+  .deparaNome {
+    min-width: 100%;
+  }
+
+  .select {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 16px evita o zoom automático do iOS ao focar o campo. */
+  .folgaInput,
+  .ensinaInput,
+  .select,
+  .obsInput {
+    font-size: 16px;
+  }
+}

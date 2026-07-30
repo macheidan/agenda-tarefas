@@ -67,6 +67,14 @@ export function useCompras() {
     await updateDoc(doc(db, 'comprasFornecedores', id), { name: (name || '').trim() });
   }, []);
 
+  // De-para do Conferir Pedidos: qual fornecedor do Supabase (o que assina a
+  // nota) corresponde a este fornecedor de Compras. Guarda o id como número,
+  // que é o tipo da coluna lá; '' desfaz o vínculo.
+  const vincularFornecedorNota = useCallback(async (id, notaFornecedorId) => {
+    const v = notaFornecedorId === '' || notaFornecedorId == null ? null : Number(notaFornecedorId);
+    await updateDoc(doc(db, 'comprasFornecedores', id), { notaFornecedorId: v });
+  }, []);
+
   // Remove o fornecedor e todos os seus itens.
   const deleteFornecedor = useCallback(async (id) => {
     const childIds = itensRef.current.filter((i) => i.fornecedorId === id).map((i) => i.id);
@@ -95,6 +103,11 @@ export function useCompras() {
     if (typeof updates?.unid === 'string') clean.unid = updates.unid.trim();
     if (updates && 'qty' in updates) clean.qty = Number(updates.qty) || 0;
     if (updates?.fornecedorId) clean.fornecedorId = updates.fornecedorId;
+    // Equivalência declarada do Conferir Pedidos: { DZ: 2.5 } = "1 pente (a
+    // unidade do PEDIDO) tem 2,5 DZ (a unidade da NOTA)". É o que ensina a tela
+    // a converter as unidades que nenhuma regra automática acerta — ver
+    // lib/conferencia.js, que explica por que a direção é essa.
+    if (updates && 'equiv' in updates) clean.equiv = updates.equiv || {};
     if (Object.keys(clean).length) {
       await updateDoc(doc(db, 'comprasItens', id), clean);
     }
@@ -154,6 +167,7 @@ export function useCompras() {
     error,
     addFornecedor,
     renameFornecedor,
+    vincularFornecedorNota,
     deleteFornecedor,
     addItem,
     updateItem,
