@@ -269,10 +269,30 @@ service cloud.firestore {
       allow update: if (isAdmin() || hasSettingFlag('motoboysEnabled')) &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['conferidos', 'atualizadoEm']);
+      // Adicionar motoboy na semana (aba Cadastro): livre para qualquer usuário
+      // da seção. Passa só se o update APENAS acrescentar nomes ao mapa
+      // `motoboys` — alterar ou remover entrada existente (ou seja, mexer em
+      // lançamento) continua exigindo editor pelo `allow write` acima.
+      allow update: if (isAdmin() || hasSettingFlag('motoboysEnabled')) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['motoboys', 'atualizadoEm']) &&
+        request.resource.data.motoboys.diff(resource.data.motoboys).removedKeys().size() == 0 &&
+        request.resource.data.motoboys.diff(resource.data.motoboys).changedKeys().size() == 0;
     }
     match /motoboyConfig/{id} {
       allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');
       allow write: if isMotoboysEditor();
+      // Mesma ideia do doc da semana: cadastrar nome novo é livre; renomear e
+      // arquivar/restaurar (alterar entrada existente) segue restrito à
+      // permissão de cadastro (`motoboysRoster`).
+      allow update: if (isAdmin() || hasSettingFlag('motoboysEnabled')) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['roster']) &&
+        request.resource.data.roster.diff(resource.data.roster).removedKeys().size() == 0 &&
+        request.resource.data.roster.diff(resource.data.roster).changedKeys().size() == 0;
+      // Loja sem doc de config ainda: o primeiro cadastro cria o doc só com o
+      // roster (a config cai no default do hook).
+      allow create: if (isAdmin() || hasSettingFlag('motoboysEnabled')) &&
+        request.resource.data.keys().hasOnly(['roster']);
     }
     match /motoboyExtras/{id} {
       allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');

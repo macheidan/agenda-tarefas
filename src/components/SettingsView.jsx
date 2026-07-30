@@ -429,7 +429,7 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                 />
               </Row>
             ))}
-            <Row title="Cadastro" desc="Adiciona, renomeia e arquiva nomes de motoboys">
+            <Row title="Cadastro" desc="Renomeia e arquiva nomes de motoboys (adicionar é livre para todos)">
               <Switch
                 label="Motoboys — cadastro"
                 checked={s.motoboysRoster === true || s.motoboysEditor === true}

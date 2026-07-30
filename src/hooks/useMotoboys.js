@@ -279,6 +279,9 @@ export function useMotoboys(loja, segunda, author) {
   );
 
   // Adiciona motoboy na semana (e no roster da loja, para as próximas semanas).
+  // Só grava o que ainda não existe: adicionar é livre para qualquer usuário da
+  // seção e as rules liberam apenas ADIÇÃO de chave — regravar uma entrada que
+  // já está lá conta como alteração e seria bloqueada para quem não é editor.
   const addMotoboy = useCallback(
     async (nome) => {
       const limpo = String(nome || '').trim();
@@ -286,18 +289,24 @@ export function useMotoboys(loja, segunda, author) {
       const norm = normalizarNome(limpo);
       // Reaproveita o mid do roster se o nome já existe.
       const roster = configLoja?.roster || {};
-      let mid = Object.keys(roster).find((k) => normalizarNome(roster[k].nome) === norm);
-      if (!mid) mid = novoMid();
-      const ordem = Object.keys(semana?.motoboys || {}).length;
-      await updateDoc(doc(db, 'motoboySemanas', docId), {
-        [`motoboys.${mid}`]: { nome: limpo, ordem, dias: {} },
-        atualizadoEm: Timestamp.now(),
-      });
-      await setDoc(
-        doc(db, 'motoboyConfig', loja),
-        { roster: { [mid]: { nome: limpo, ativo: true, ordem } } },
-        { merge: true }
+      const rosterMid = Object.keys(roster).find((k) => normalizarNome(roster[k].nome) === norm);
+      const mid = rosterMid || novoMid();
+      const naSemana = Object.entries(semana?.motoboys || {}).some(
+        ([k, mb]) => k === mid || normalizarNome(mb?.nome) === norm
       );
+      if (!naSemana) {
+        await updateDoc(doc(db, 'motoboySemanas', docId), {
+          [`motoboys.${mid}`]: { nome: limpo, ordem: Object.keys(semana?.motoboys || {}).length, dias: {} },
+          atualizadoEm: Timestamp.now(),
+        });
+      }
+      if (!rosterMid) {
+        await setDoc(
+          doc(db, 'motoboyConfig', loja),
+          { roster: { [mid]: { nome: limpo, ativo: true, ordem: Object.keys(roster).length } } },
+          { merge: true }
+        );
+      }
       return mid;
     },
     [docId, loja, semana, configLoja]
@@ -339,8 +348,11 @@ export function useMotoboys(loja, segunda, author) {
       const roster = configLoja?.roster || {};
       let mid = Object.keys(roster).find((k) => normalizarNome(roster[k].nome) === norm);
       if (mid) {
-        // Já existe: só garante ativo.
-        await setDoc(doc(db, 'motoboyConfig', loja), { roster: { [mid]: { ativo: true } } }, { merge: true });
+        // Já existe: só reativa se estiver arquivado (regravar entrada existente
+        // exige a permissão de cadastro; sem isso, nada a fazer).
+        if (roster[mid]?.ativo === false) {
+          await setDoc(doc(db, 'motoboyConfig', loja), { roster: { [mid]: { ativo: true } } }, { merge: true });
+        }
         return mid;
       }
       mid = novoMid();

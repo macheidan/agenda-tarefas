@@ -75,7 +75,10 @@ export default function MotoboysView() {
   const canViewValores = canViewResultado || canViewGerente;
   const canViewTaxas = isAdmin || settings?.motoboysVerTaxas !== false;
   const canEditTaxas = isAdmin || legacyEditor || settings?.motoboysEditTaxas === true;
-  const canRoster = isAdmin || legacyEditor || settings?.motoboysRoster === true;
+  // Cadastro: adicionar motoboy é livre para todo usuário da seção (a aba
+  // Cadastro sempre aparece). A flag `motoboysRoster` ficou só para as ações
+  // que mexem em nome já cadastrado — renomear e arquivar/restaurar.
+  const canRosterEdit = isAdmin || legacyEditor || settings?.motoboysRoster === true;
   // Botão Exportar (PDF da semana): default desligado, liberado por usuário.
   const canExportar = isAdmin || legacyEditor || settings?.motoboysExportar === true;
   // Lojas visíveis por usuário (default: as duas).
@@ -94,7 +97,7 @@ export default function MotoboysView() {
   // Seções no submenu do título (padrão Depto Pessoal): Semana | Taxas | Cadastro.
   const [secao, setSecao] = useState('semana');
   const secaoEfetiva =
-    (secao === 'taxas' && canViewTaxas) || (secao === 'cadastro' && canRoster) ? secao : 'semana';
+    (secao === 'taxas' && canViewTaxas) || secao === 'cadastro' ? secao : 'semana';
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
@@ -144,7 +147,6 @@ export default function MotoboysView() {
 
   // ---- Form de nova banda extra ----
   const [novoExtra, setNovoExtra] = useState({ dia: 0, mid: '', quantidade: 1, taxaIdx: 0, justificativa: '' });
-  const [novoNome, setNovoNome] = useState('');
 
   // ---- Cadastro de motoboys (roster) ----
   const [showArquivados, setShowArquivados] = useState(false);
@@ -156,6 +158,20 @@ export default function MotoboysView() {
     .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.nome.localeCompare(b.nome));
   const rosterAtivos = rosterEntries.filter((r) => r.ativo !== false);
   const rosterArquivados = rosterEntries.filter((r) => r.ativo === false);
+
+  // Cadastra o nome no roster da loja e, quando a semana aberta existe, já o
+  // coloca nela (é por aqui que os nomes entram na grade da Semana).
+  const cadastrarMotoboy = async () => {
+    const nome = novoRoster.trim();
+    if (!nome) return;
+    try {
+      if (semana) await addMotoboy(nome);
+      else await addRosterMotoboy(nome);
+      setNovoRoster('');
+    } catch (e) {
+      window.alert(`Não foi possível cadastrar: ${e?.message || e}`);
+    }
+  };
 
   const salvarExtra = async () => {
     if (!novoExtra.mid || !novoExtra.justificativa.trim()) return;
@@ -218,14 +234,12 @@ export default function MotoboysView() {
               Taxas
             </button>
           )}
-          {canRoster && (
-            <button
-              className={`${styles.sectionTab} ${secaoEfetiva === 'cadastro' ? styles.sectionTabActive : ''}`}
-              onClick={() => setSecao('cadastro')}
-            >
-              Cadastro
-            </button>
-          )}
+          <button
+            className={`${styles.sectionTab} ${secaoEfetiva === 'cadastro' ? styles.sectionTabActive : ''}`}
+            onClick={() => setSecao('cadastro')}
+          >
+            Cadastro
+          </button>
         </div>
       </div>
 
@@ -264,39 +278,6 @@ export default function MotoboysView() {
             Semana atual
           </button>
         </div>
-        {semana && canEditGerente && (
-          <div className={styles.addRow}>
-            <input
-              className={styles.addInput}
-              list="motoboyRoster"
-              placeholder="Nome do motoboy"
-              value={novoNome}
-              onChange={(e) => setNovoNome(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === 'Enter' && novoNome.trim()) {
-                  await addMotoboy(novoNome);
-                  setNovoNome('');
-                }
-              }}
-            />
-            <datalist id="motoboyRoster">
-              {Object.values(configLoja?.roster || {})
-                .filter((rr) => rr.ativo !== false)
-                .filter((rr) => !listaMotoboys.some((m) => normalizarNome(m.nome) === normalizarNome(rr.nome)))
-                .map((rr) => (
-                  <option key={rr.nome} value={rr.nome} />
-                ))}
-            </datalist>
-            <button
-              className={styles.primaryBtn}
-              disabled={!novoNome.trim()}
-              title="Adicionar motoboy na semana"
-              onClick={async () => { await addMotoboy(novoNome); setNovoNome(''); }}
-            >
-              +
-            </button>
-          </div>
-        )}
         {semana && listaMotoboys.length > 0 && (
           <button className={styles.toolBtn} onClick={expandirTodos}>
             {todosAbertos ? 'Recolher todos' : 'Expandir todos'}
@@ -333,7 +314,7 @@ export default function MotoboysView() {
         <section className={styles.divisao}>
           {listaMotoboys.length === 0 && (
             <p className={styles.muted}>
-              Nenhum motoboy nesta semana. Adicione pelo campo "Nome do motoboy" acima.
+              Nenhum motoboy nesta semana. Adicione pela aba <strong>Cadastro</strong>.
             </p>
           )}
           {/* ---- Blocos por motoboy: lançamento + conferência + resultado ---- */}
@@ -801,9 +782,32 @@ export default function MotoboysView() {
       )}
 
       {/* ================= CADASTRO (seção do submenu) ================= */}
-      {secaoEfetiva === 'cadastro' && canRoster && (
+      {secaoEfetiva === 'cadastro' && (
         <section className={styles.inlinePanel}>
-          {rosterArquivados.length > 0 && (
+          {/* Adicionar é livre; renomear/arquivar pede a permissão de cadastro. */}
+          <div className={styles.addRow}>
+            <input
+              className={styles.addInput}
+              placeholder="Nome do motoboy"
+              value={novoRoster}
+              onChange={(e) => setNovoRoster(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') cadastrarMotoboy(); }}
+            />
+            <button
+              className={styles.primaryBtn}
+              disabled={!novoRoster.trim()}
+              onClick={cadastrarMotoboy}
+            >
+              + Cadastrar
+            </button>
+            <span className={styles.divHint}>
+              {semana
+                ? `entra também na semana aberta (${formatDiaCurto(segunda)} a ${formatDiaCurto(fim)})`
+                : 'entra nas próximas semanas'}
+            </span>
+          </div>
+
+          {rosterArquivados.length > 0 && canRosterEdit && (
             <div className={styles.inlinePanelActions}>
               <button className={styles.primaryBtn} onClick={() => setShowArquivados((v) => !v)}>
                 <svg className={styles.btnIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -818,7 +822,9 @@ export default function MotoboysView() {
             {rosterAtivos.length === 0 && <p className={styles.muted}>Nenhum motoboy cadastrado.</p>}
             {rosterAtivos.map((r) => (
               <div key={r.mid} className={styles.rosterRow}>
-                {renMid === r.mid ? (
+                {!canRosterEdit ? (
+                  <span className={styles.rosterNome}>{r.nome}</span>
+                ) : renMid === r.mid ? (
                   <>
                     <input
                       className={styles.addInput}
@@ -858,7 +864,7 @@ export default function MotoboysView() {
             ))}
           </div>
 
-          {showArquivados && rosterArquivados.length > 0 && (
+          {showArquivados && rosterArquivados.length > 0 && canRosterEdit && (
             <div className={styles.rosterArquivados}>
               <h4>Arquivados</h4>
               {rosterArquivados.map((r) => (
@@ -869,25 +875,6 @@ export default function MotoboysView() {
               ))}
             </div>
           )}
-
-          <div className={styles.addRow}>
-            <input
-              className={styles.addInput}
-              placeholder="Novo motoboy (só cadastro; não entra na semana atual)"
-              value={novoRoster}
-              onChange={(e) => setNovoRoster(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === 'Enter' && novoRoster.trim()) { await addRosterMotoboy(novoRoster); setNovoRoster(''); }
-              }}
-            />
-            <button
-              className={styles.primaryBtn}
-              disabled={!novoRoster.trim()}
-              onClick={async () => { await addRosterMotoboy(novoRoster); setNovoRoster(''); }}
-            >
-              + Cadastrar
-            </button>
-          </div>
         </section>
       )}
     </div>
