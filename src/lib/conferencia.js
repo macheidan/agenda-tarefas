@@ -266,6 +266,50 @@ export function pendenciasDeUnidade(itens, linhasNota) {
   return [...mapa.values()].sort((a, b) => b.n - a.n);
 }
 
+/**
+ * Item de Compras que não acha nenhum produto da base de Preços — nem pelo
+ * vínculo (`planilhaNome`), nem pelo próprio nome. Enquanto ficar assim ele
+ * aparece como "não veio" em TODA conferência, e a linha da nota correspondente
+ * cai em "fora do pedido": duas mentiras por semana, sempre as mesmas.
+ */
+export function itensSemVinculo(itens, nomesConhecidos) {
+  const existe = new Set(nomesConhecidos.map(normNome));
+  return itens.filter((i) => {
+    const chaves = [normNome(i.planilhaNome), normNome(i.produto)].filter(Boolean);
+    return !chaves.some((k) => existe.has(k));
+  });
+}
+
+const palavras = (s) => new Set(normNome(s).split(' ').filter((w) => w.length > 2));
+
+/**
+ * Produto da base mais parecido com o item, por palavras em comum (Dice).
+ *
+ * Exige DUAS palavras em comum quando o item tem mais de uma — com uma só,
+ * "Sacos PP 0.05" casaria com "Saco Lixo 105LT" por conta de um único token
+ * genérico, e um vínculo errado é pior que vínculo nenhum: passa a somar a
+ * entrega de outro produto na linha errada.
+ *
+ * Devolve sempre uma SUGESTÃO, nunca um vínculo aplicado — quem escolhe é a
+ * assistente, com a lista inteira disponível ao lado.
+ */
+export function sugerePlanilha(item, nomesConhecidos) {
+  const a = palavras(item.produto);
+  if (!a.size) return null;
+  const minComuns = a.size > 1 ? 2 : 1;
+  let melhor = null;
+  let melhorScore = 0;
+  for (const nome of nomesConhecidos) {
+    const b = palavras(nome);
+    if (!b.size) continue;
+    const comuns = [...a].filter((w) => b.has(w)).length;
+    if (comuns < minComuns) continue;
+    const dice = (2 * comuns) / (a.size + b.size);
+    if (dice > melhorScore) { melhorScore = dice; melhor = nome; }
+  }
+  return melhorScore >= 0.5 ? { nome: melhor, score: melhorScore } : null;
+}
+
 /** Nº da NF dentro da chave de acesso (posições 26–34 dos 44 dígitos). */
 export function nfNumero(chave) {
   const s = String(chave || '').replace(/\D/g, '');

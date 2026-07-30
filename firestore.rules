@@ -233,10 +233,12 @@ service cloud.firestore {
         isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
       ) || (
-        // Equivalência de unidade ({ 'ML': 1 }): a assistente ensina a conversão
-        // na primeira vez que a linha aparece, e a tela nunca mais pergunta.
+        // Conferir Pedidos: a assistente ensina a conversão de unidade
+        // ({ 'ML': 1 }) e liga o item ao produto da seção Preços. Sem o vínculo
+        // o item aparece como "não veio" em toda conferência.
         isConferenciaEditor() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['equiv'])
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['equiv', 'planilhaNome'])
       );
     }
 

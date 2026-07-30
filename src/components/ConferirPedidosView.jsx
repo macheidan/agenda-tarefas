@@ -4,14 +4,15 @@ import { useSettings } from '../hooks/useSettings';
 import { useComprasPedidos } from '../hooks/useComprasPedidos';
 import {
   useNotasCandidatas, useConferencias, useFornecedoresNota,
-  useLinhasNotaRecentes, maisDias,
+  useLinhasNotaRecentes, useProdutosDeNota, maisDias,
 } from '../hooks/useConferencia';
 import {
   COMPRAS_LOJAS, hojeISO, fmtDiaMes, fmtBRL,
 } from '../lib/suprimentos';
 import {
   normNome, perfilPedido, converter, situacao, sugereEquivalencia, nfNumero,
-  pendenciasDeUnidade, SITUACAO_LABEL, fmtNum,
+  pendenciasDeUnidade, itensSemVinculo, sugerePlanilha,
+  SITUACAO_LABEL, fmtNum,
 } from '../lib/conferencia';
 import styles from '../styles/ComprasView.module.css';
 import tbl from '../styles/ConferirPedidosView.module.css';
@@ -61,6 +62,7 @@ export default function ConferirPedidosView({ compras }) {
   const [abertoId, setAbertoId] = useState(null);
   const [mostraDePara, setMostraDePara] = useState(false);
   const [mostraUnidades, setMostraUnidades] = useState(false);
+  const [mostraVinculos, setMostraVinculos] = useState(false);
 
   const desde = useMemo(() => maisDias(hojeISO(), -dias), [dias]);
   const { pedidos, loading, error } = useComprasPedidos(desde);
@@ -158,9 +160,19 @@ export default function ConferirPedidosView({ compras }) {
               </button>
               <button
                 className={tbl.btnGhost}
-                onClick={() => { setMostraUnidades((v) => !v); setMostraDePara(false); }}
+                onClick={() => {
+                  setMostraUnidades((v) => !v); setMostraDePara(false); setMostraVinculos(false);
+                }}
               >
                 {mostraUnidades ? 'Fechar' : 'Unidades'}
+              </button>
+              <button
+                className={tbl.btnGhost}
+                onClick={() => {
+                  setMostraVinculos((v) => !v); setMostraDePara(false); setMostraUnidades(false);
+                }}
+              >
+                {mostraVinculos ? 'Fechar' : 'Vínculos'}
               </button>
             </>
           )}
@@ -179,6 +191,10 @@ export default function ConferirPedidosView({ compras }) {
 
       {mostraUnidades && canEdit && (
         <Unidades itens={itens} onEquiv={updateItem} />
+      )}
+
+      {mostraVinculos && canEdit && (
+        <Vinculos itens={itens} onVincular={updateItem} />
       )}
 
       {error && (
@@ -438,6 +454,115 @@ function Unidades({ itens, onEquiv }) {
                     </span>
                   </td>
                   <td data-label="Linhas" className={tbl.num}>{p.n}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Caixa "Vínculos": itens de Compras que não acham nenhum produto da base de
+ * Preços. Cada um deles vira um "não veio" falso em TODA conferência, e a linha
+ * da nota correspondente cai em "fora do pedido" — duas mentiras por semana,
+ * sempre as mesmas.
+ *
+ * O vínculo aqui também dá preço ao item no Relatório Estoque, que hoje mostra
+ * esses mesmos itens como "sem preço".
+ */
+function Vinculos({ itens, onVincular }) {
+  const { nomes, loading } = useProdutosDeNota(true);
+  const [escolhas, setEscolhas] = useState({});
+  const [salvando, setSalvando] = useState(false);
+
+  const orfaos = useMemo(() => {
+    if (!nomes.length) return [];
+    return itensSemVinculo(itens, nomes)
+      .map((item) => ({ item, sugestao: sugerePlanilha(item, nomes) }))
+      // Com sugestão primeiro: são os que se resolvem num clique.
+      .sort((a, b) => (b.sugestao?.score || 0) - (a.sugestao?.score || 0));
+  }, [itens, nomes]);
+
+  const valorDe = (o) => escolhas[o.item.id] ?? o.sugestao?.nome ?? '';
+  const preenchidos = orfaos.filter((o) => valorDe(o));
+
+  const salvarTodos = async () => {
+    if (!preenchidos.length) return;
+    if (!window.confirm(
+      `Vincular ${preenchidos.length} ${preenchidos.length === 1 ? 'item' : 'itens'} ao produto da seção Preços?\n\n` +
+      'Confira as sugestões antes: um vínculo errado passa a somar a entrega de outro produto na linha errada.'
+    )) return;
+    setSalvando(true);
+    try {
+      for (const o of preenchidos) {
+        await onVincular(o.item.id, { planilhaNome: valorDe(o) });
+      }
+      setEscolhas({});
+    } catch (e) {
+      window.alert(`Erro ao vincular: ${e?.message || e}`);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <div className={tbl.caixa}>
+      <div className={tbl.caixaHead}>
+        <h4 className={tbl.caixaTitulo}>
+          Itens sem produto correspondente
+          {orfaos.length > 0 && ` (${orfaos.length})`}
+        </h4>
+        {preenchidos.length > 0 && (
+          <button className={tbl.btnPrimary} onClick={salvarTodos} disabled={salvando}>
+            {salvando ? 'Salvando...' : `Vincular ${preenchidos.length}`}
+          </button>
+        )}
+      </div>
+      <p className={tbl.caixaHint}>
+        Estes itens não acham nenhum produto da seção Preços, então aparecem como
+        <strong> &quot;não veio&quot;</strong> em toda conferência. A lista ao lado só traz produtos
+        que realmente chegam por nota fiscal — <strong>confira a sugestão antes de salvar</strong>,
+        vínculo errado é pior que vínculo nenhum.
+      </p>
+
+      {loading ? (
+        <p className={tbl.caixaHint}>Levantando os produtos que vêm em nota...</p>
+      ) : orfaos.length === 0 ? (
+        <p className={tbl.caixaHint}>
+          Todos os itens de Compras já acham um produto da seção Preços.
+        </p>
+      ) : (
+        <div className={tbl.tableWrap}>
+          <table className={tbl.table}>
+            <thead>
+              <tr>
+                <th>Item de Compras</th>
+                <th>Produto na nota</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orfaos.map((o) => (
+                <tr key={o.item.id} className={o.sugestao ? '' : tbl.rowConfirmar}>
+                  <td data-label="Item de Compras">
+                    <span className={tbl.produto}>{o.item.produto}</span>
+                    {o.item.marca && <span className={tbl.medida}> {o.item.marca}</span>}
+                  </td>
+                  <td data-label="Produto na nota">
+                    <select
+                      className={`${tbl.select} ${valorDe(o) ? '' : tbl.selectVazio}`}
+                      value={valorDe(o)}
+                      onChange={(e) => setEscolhas((v) => ({ ...v, [o.item.id]: e.target.value }))}
+                    >
+                      <option value="">— sem vínculo —</option>
+                      {nomes.map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                    {o.sugestao && !escolhas[o.item.id] && (
+                      <span className={tbl.ensinaHint}> sugerido</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

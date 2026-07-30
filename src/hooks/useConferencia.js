@@ -205,6 +205,57 @@ export function useLinhasNotaRecentes(ativo, dias = 90) {
   return { linhas, loading, error };
 }
 
+/**
+ * Nomes de produto que JÁ vieram numa nota fiscal importada (12 meses), pra
+ * caixa "Vínculos" sugerir e listar.
+ *
+ * Só os que vieram em NFe (`nfe_id` preenchido) de propósito: vincular um item
+ * a um produto que nunca chega por nota não resolve nada na conferência — ele
+ * continuaria aparecendo como "não veio" toda semana.
+ */
+export function useProdutosDeNota(ativo, dias = 365) {
+  const [nomes, setNomes] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!ativo) return undefined;
+    let vivo = true;
+    setLoading(true);
+    (async () => {
+      try {
+        const desde = maisDias(new Date().toISOString().slice(0, 10), -dias);
+        const PAGE = 1000;
+        const vistos = new Set();
+        for (let p = 0; p < 30; p += 1) {
+          const { data, error } = await supabase
+            .from('precos')
+            .select('produtos(nome, nome_padrao)')
+            .not('nfe_id', 'is', null)
+            .gte('data', desde)
+            .range(p * PAGE, p * PAGE + PAGE - 1);
+          if (error) throw new Error(error.message || String(error));
+          if (!data?.length) break;
+          for (const r of data) {
+            const n = r.produtos?.nome_padrao || r.produtos?.nome;
+            if (n) vistos.add(n);
+          }
+          if (data.length < PAGE) break;
+        }
+        if (!vivo) return;
+        setNomes([...vistos].sort((a, b) => a.localeCompare(b, 'pt', { sensitivity: 'base' })));
+      } catch (e) {
+        if (!vivo) return;
+        console.error('[conferencia] erro ao carregar produtos da nota:', e);
+      } finally {
+        if (vivo) setLoading(false);
+      }
+    })();
+    return () => { vivo = false; };
+  }, [ativo, dias]);
+
+  return { nomes, loading };
+}
+
 /** Fornecedores do Supabase, pro de-para. Lista curta, cabe numa consulta só. */
 export function useFornecedoresNota() {
   const [fornecedores, setFornecedores] = useState([]);

@@ -108,6 +108,10 @@ export function useCompras() {
     // a converter as unidades que nenhuma regra automática acerta — ver
     // lib/conferencia.js, que explica por que a direção é essa.
     if (updates && 'equiv' in updates) clean.equiv = updates.equiv || {};
+    // Vínculo com o Produto (planilha) da seção Preços. É a chave que faz a
+    // linha do pedido achar a linha da nota — e também o que dá preço ao item
+    // no Relatório Estoque.
+    if (typeof updates?.planilhaNome === 'string') clean.planilhaNome = updates.planilhaNome.trim();
     if (Object.keys(clean).length) {
       await updateDoc(doc(db, 'comprasItens', id), clean);
     }
