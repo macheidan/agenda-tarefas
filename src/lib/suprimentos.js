@@ -8,13 +8,20 @@
 // de ids. Cada loja tem a sua permissão de ver (mesmo padrão do Estoque Mensal
 // e de Motoboys/Avaliações): nasce ligada (`!== false`) e o admin desliga por
 // usuário em Configurações, pra quem só pede para a própria loja.
+// O `id` é minúsculo sem acento de propósito: é ele que vai no id do pedido
+// congelado e é o MESMO valor da coluna `loja` das notas fiscais no Supabase
+// ('dame'/'lov'), o que deixa a conferência cruzar as duas fontes sem de-para.
 export const COMPRAS_LOJAS = [
-  { nome: 'Lov', endereco: 'Anita Garibaldi 1593', verFlag: 'comprasVerLov' },
-  { nome: 'Dáme', endereco: 'Carazinho 443', verFlag: 'comprasVerDame' },
+  { id: 'lov', nome: 'Lov', endereco: 'Anita Garibaldi 1593', verFlag: 'comprasVerLov' },
+  { id: 'dame', nome: 'Dáme', endereco: 'Carazinho 443', verFlag: 'comprasVerDame' },
 ];
 
 // Endereço de cada loja, incluído ao lado do nome na mensagem copiada.
 export const LOJA_ENDERECO = Object.fromEntries(COMPRAS_LOJAS.map((l) => [l.nome, l.endereco]));
+
+// Nome exibido -> id (o <select> do pedido guarda o NOME, por causa do
+// localStorage antigo e da mensagem copiada).
+export const LOJA_ID = Object.fromEntries(COMPRAS_LOJAS.map((l) => [l.nome, l.id]));
 
 export const FORNEC_COLORS = ['#465fff', '#ff9800', '#12b76a', '#9c27b0', '#f04438', '#3949ab', '#0d9488'];
 
@@ -131,3 +138,45 @@ export const relatorioId = (mes, lojaId) => `${mes}_${lojaId}`;
 
 // Id da contagem do Estoque Mensal — mesmo endereçamento (mês + loja).
 export const contagemId = (mes, lojaId) => `${mes}_${lojaId}`;
+
+// ---- Pedido congelado (Conferir Pedidos) ----
+
+// Dias de entrega do pedido, na ordem do <select>. Ficam aqui porque a
+// conferência precisa traduzir o dia escolhido numa DATA de verdade.
+export const COMPRAS_WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
+// Data de hoje ('YYYY-MM-DD') no fuso local — o toISOString() cru viraria o dia
+// seguinte à noite em POA.
+export const hojeISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/**
+ * Traduz o dia de entrega escolhido ('Quarta') na PRÓXIMA data em que ele cai
+ * ('2026-08-05'), contando de `baseISO` (padrão: hoje) e aceitando o próprio
+ * dia — "entrega quarta após 16:30" pedido numa quarta é hoje mesmo.
+ *
+ * É essa data que permite achar a nota: sem ela o pedido guarda só o nome do
+ * dia, e nome de dia não casa com `data_emissao`.
+ */
+export const dataDaEntrega = (weekday, baseISO = hojeISO()) => {
+  const idx = COMPRAS_WEEKDAYS.indexOf(weekday);
+  if (idx < 0) return '';
+  const alvo = (idx + 1) % 7; // Segunda=1 ... Domingo=0, como o getDay()
+  const [y, m, d] = baseISO.split('-').map(Number);
+  const base = new Date(y, m - 1, d);
+  const delta = (alvo - base.getDay() + 7) % 7;
+  base.setDate(base.getDate() + delta);
+  return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+};
+
+// Id do pedido congelado: um doc por DIA, loja e fornecedor. Recopiar o mesmo
+// pedido no mesmo dia sobrescreve (é correção, não pedido novo).
+export const pedidoId = (dataISO, lojaId, fornecedorId) => `${dataISO}_${lojaId}_${fornecedorId}`;
+
+// Data ISO no formato curto de tela ('30/07').
+export const fmtDiaMes = (iso) => {
+  const [, m, d] = String(iso || '').split('-');
+  return m && d ? `${d}/${m}` : (iso || '');
+};

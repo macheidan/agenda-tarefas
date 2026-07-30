@@ -44,6 +44,12 @@ service cloud.firestore {
       return isAdmin() || hasSettingFlag('relatorioEstoqueEditar');
     }
 
+    // Conferir Pedidos (sub-seção de Suprimentos): quem fecha a conferência do
+    // pedido contra a nota fiscal — a assistente administrativa.
+    function isConferenciaEditor() {
+      return isAdmin() || hasSettingFlag('conferenciaEditar');
+    }
+
     function isMotoboysEditor() {
       return isAdmin() || hasSettingFlag('motoboysEditor') ||
         hasSettingFlag('motoboysEditGerente') || hasSettingFlag('motoboysEditAdm') ||
@@ -221,6 +227,24 @@ service cloud.firestore {
         isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
       );
+    }
+
+    // Pedido congelado no clique de "+ Copiar" ('2026-07-30_dame_{fornecedorId}').
+    // QUALQUER logado grava: quem monta o pedido é o gerente, que não é
+    // necessariamente editor do catálogo. Recopiar no mesmo dia sobrescreve, por
+    // isso create e update andam juntos. Apagar é só de admin/editor — o pedido
+    // é a prova do que foi pedido, não some por descuido.
+    match /comprasPedidos/{id} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isComprasEditor();
+    }
+
+    // Conferência fechada (pedido × nota fiscal), um doc por pedido. Snapshot
+    // imutável no padrão de estoqueRelatorios: reabrir = apagar o doc.
+    match /comprasConferencias/{id} {
+      allow read: if isSignedIn();
+      allow write: if isConferenciaEditor();
     }
 
     // Contagem do Estoque Mensal: um doc por mês e loja ('2026-07_dame'), com o

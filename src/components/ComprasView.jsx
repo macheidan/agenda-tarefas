@@ -3,10 +3,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { Icon } from './icons';
 import { IS_V2 } from '../lib/v2';
-import { COMPRAS_LOJAS, LOJA_ENDERECO, FORNEC_COLORS, ALL, LOJA_KEY, norm } from '../lib/suprimentos';
+import {
+  COMPRAS_LOJAS, LOJA_ENDERECO, LOJA_ID, FORNEC_COLORS, ALL, LOJA_KEY, norm,
+  COMPRAS_WEEKDAYS, hojeISO, dataDaEntrega,
+} from '../lib/suprimentos';
+import { salvarPedidos } from '../hooks/useComprasPedidos';
 import styles from '../styles/ComprasView.module.css';
-
-const WEEKDAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
 // Sub-seção de Suprimentos: o cartão e o título ficam no SuprimentosView, que
 // também instancia o hook e passa os dados por prop (o Estoque Mensal lê o
@@ -262,6 +264,34 @@ export default function ComprasView({ compras }) {
     ].join('\n');
   };
 
+  // Congela o pedido de um fornecedor no formato que a conferência lê depois.
+  // Guarda o nome do fornecedor e o vínculo da planilha DENTRO do doc: o
+  // catálogo muda (item renomeado, fornecedor removido) e a conferência de um
+  // pedido antigo tem que continuar contando a história de quando foi feito.
+  const buildPedido = (fornec, items) => {
+    const ativos = items.filter((i) => Number(i.qty) > 0);
+    if (!ativos.length) return null;
+    return {
+      data: hojeISO(),
+      lojaId: LOJA_ID[loja] || '',
+      lojaNome: loja,
+      fornecedorId: fornec.id,
+      fornecedorNome: fornec.name || '',
+      entregaDia: day,
+      entregaData: dataDaEntrega(day),
+      linhas: ativos.map((i) => ({
+        itemId: i.id,
+        produto: i.produto || '',
+        marca: i.marca || '',
+        unid: i.unid || '',
+        qty: Number(i.qty) || 0,
+        planilha: i.planilhaNome || '',
+      })),
+      autorUid: user.uid,
+      autorNome: user.displayName || user.email || '',
+    };
+  };
+
   // Copia o pedido. Seleção do dia de entrega e da loja são obrigatórias.
   const copyOrder = () => {
     if (!day) {
@@ -275,6 +305,7 @@ export default function ComprasView({ compras }) {
       return;
     }
     let txt;
+    let pedidos;
     if (isAll) {
       const blocks = allGroups.map((g) => buildBlock(g.fornec, g.items)).filter(Boolean);
       if (!blocks.length) {
@@ -282,6 +313,7 @@ export default function ComprasView({ compras }) {
         return;
       }
       txt = blocks.join('\n\n———\n\n');
+      pedidos = allGroups.map((g) => buildPedido(g.fornec, g.items)).filter(Boolean);
     } else {
       if (!activeFornec) return;
       txt = buildBlock(activeFornec, fornecItems);
@@ -289,6 +321,7 @@ export default function ComprasView({ compras }) {
         window.alert(`Nenhum item selecionado em ${activeFornec.name}.`);
         return;
       }
+      pedidos = [buildPedido(activeFornec, fornecItems)].filter(Boolean);
     }
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(txt).then(
@@ -296,6 +329,11 @@ export default function ComprasView({ compras }) {
         () => {}
       );
     }
+    // Congela o pedido pra conferência (sub-seção Conferir Pedidos). Copiar o
+    // texto é a função principal da tela — se o congelamento falhar (offline,
+    // permissão), ele não pode roubar a cena: só registra no console.
+    salvarPedidos(pedidos).catch((e) =>
+      console.error('[compras] pedido não foi congelado:', e));
   };
 
   // Zera todas as quantidades de todos os fornecedores (com confirmação).
@@ -448,7 +486,7 @@ export default function ComprasView({ compras }) {
                 required
               >
                 <option value="">Entrega</option>
-                {WEEKDAYS.map((d) => (
+                {COMPRAS_WEEKDAYS.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>

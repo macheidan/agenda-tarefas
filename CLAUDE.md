@@ -1,15 +1,10 @@
 # CLAUDE.md
 
-> **2nd Brain Vault:** `G:\Meu Drive AI\Vault\` | Contexto master: `00-meta/AGENT-START-HERE.md` | GitHub: github.com/macheidan/2ndbrain
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> **2nd Brain Vault:** `G:\Meu Drive\03 Pessoal\Vault\` | Contexto master: `00-meta/AGENT-START-HERE.md` | GitHub: github.com/macheidan/2ndbrain
 
 ## Commands
 
 ```bash
-npm run dev       # Vite dev server
-npm run build     # production build to dist/
-npm run lint      # ESLint
 npm run deploy:ftp  # PRODUÇÃO: build + publica em damepizza.com.br/intranet
 npm run deploy:v2   # publica a v2 (tema TailAdmin) em /intranet/v2
 npm run deploy      # legado: gh-pages (não usar — morto)
@@ -26,23 +21,6 @@ npm run deploy      # legado: gh-pages (não usar — morto)
 Precisa de `.env` na raiz com credenciais Firebase (`VITE_FIREBASE_*`) e `VITE_ADMIN_EMAIL`. Ver `README.md` para lista completa. O email em `VITE_ADMIN_EMAIL` também está hard-coded em `firestore.rules` (substituir `ADMIN_EMAIL_PLACEHOLDER` antes de publicar regras).
 
 ## Arquitetura
-
-**Stack:** React 19 + Vite + Firebase (Auth Google + Firestore em tempo real). Sem router — a navegação é por estado (`activeTab` em `Dashboard.jsx`).
-
-**Fluxo auth/data:**
-```
-AuthProvider (contexts/AuthContext.jsx)
-  └─ onAuthStateChanged → user, isAdmin (email === VITE_ADMIN_EMAIL)
-  └─ auto-cria users/{uid} no primeiro login
-       ↓
-App.jsx: se user, renderiza Dashboard; senão, Login
-       ↓
-Dashboard.jsx decide o tab ativo e instancia hooks (useTasks, useIdeas, useReels…)
-       ↓
-Cada hook faz onSnapshot numa coleção do Firestore e devolve dados + mutations
-       ↓
-Views (CalendarView, ReelsView, NotesView…) consomem hook e emitem mutations
-```
 
 Não tem backend próprio — toda lógica de permissão está em `firestore.rules` + checagem no cliente (`isAdmin`).
 
