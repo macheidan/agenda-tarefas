@@ -520,6 +520,10 @@
   background: var(--ch-flash);
 }
 
+.chDinheiroCell {
+  background: var(--ch-dinheiro);
+}
+
 /* Destaque no hover da linha do funcionário (ignora loja/subtotal/total). */
 .resumoTable tbody tr:not(.resumoStoreRow):not(.resumoSubtotal):not(.resumoGrand):hover td {
   background: color-mix(in srgb, var(--accent) 14%, var(--card));

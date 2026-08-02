@@ -124,7 +124,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
       if (s.year === year && s.month === month) docByEmp[s.employeeId] = s;
     }
     const storeIds = isAmbas ? visibleStores.map((s) => s.id) : [activeStore];
-    const zero = { dia5: 0, dia20: 0, extra: 0, flash5: 0, flash20: 0, total: 0 };
+    const zero = { dia5: 0, dia20: 0, extra: 0, flash5: 0, flash20: 0, dinheiro: 0, total: 0 };
     const groups = [];
     for (const sid of storeIds) {
       const emps = employees
@@ -138,13 +138,19 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
         const extra = num(d?.extra, 'banco');
         const flash5 = num(d?.dia5, 'flash');
         const flash20 = num(d?.dia20, 'flash');
-        // Total = tudo que o funcionário recebe no mês: banco + Flash.
-        return { id: e.id, name: e.name, dia5, dia20, extra, flash5, flash20, total: dia5 + dia20 + extra + flash5 + flash20 };
+        // Dinheiro ("por fora") do mês = soma das 3 linhas.
+        const dinheiro = LINES.reduce((t, [line]) => t + dinheiroDe(d?.[line] || {}), 0);
+        // Total = tudo que o funcionário recebe no mês: banco + Flash + dinheiro.
+        return {
+          id: e.id, name: e.name, dia5, dia20, extra, flash5, flash20, dinheiro,
+          total: dia5 + dia20 + extra + flash5 + flash20 + dinheiro,
+        };
       });
       const subtotal = rows.reduce(
         (t, r) => ({
           dia5: t.dia5 + r.dia5, dia20: t.dia20 + r.dia20, extra: t.extra + r.extra,
-          flash5: t.flash5 + r.flash5, flash20: t.flash20 + r.flash20, total: t.total + r.total,
+          flash5: t.flash5 + r.flash5, flash20: t.flash20 + r.flash20,
+          dinheiro: t.dinheiro + r.dinheiro, total: t.total + r.total,
         }),
         { ...zero }
       );
@@ -157,9 +163,10 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   const grandTotal = resumo.reduce(
     (t, g) => ({
       dia5: t.dia5 + g.subtotal.dia5, dia20: t.dia20 + g.subtotal.dia20, extra: t.extra + g.subtotal.extra,
-      flash5: t.flash5 + g.subtotal.flash5, flash20: t.flash20 + g.subtotal.flash20, total: t.total + g.subtotal.total,
+      flash5: t.flash5 + g.subtotal.flash5, flash20: t.flash20 + g.subtotal.flash20,
+      dinheiro: t.dinheiro + g.subtotal.dinheiro, total: t.total + g.subtotal.total,
     }),
-    { dia5: 0, dia20: 0, extra: 0, flash5: 0, flash20: 0, total: 0 }
+    { dia5: 0, dia20: 0, extra: 0, flash5: 0, flash20: 0, dinheiro: 0, total: 0 }
   );
 
   // Copia um valor único (formato colável em banco: "1234,56", sem R$ nem milhar).
@@ -302,6 +309,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                     <th>Banco 20</th>
                     <th>Flash 5</th>
                     <th>Flash 20</th>
+                    <th>Dinheiro</th>
                     {hasExtra && <th>Extra</th>}
                     <th>Total</th>
                   </tr>
@@ -311,7 +319,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                     <Fragment key={g.storeId}>
                       {isAmbas && (
                         <tr className={styles.resumoStoreRow}>
-                          <td colSpan={hasExtra ? 7 : 6}>
+                          <td colSpan={hasExtra ? 8 : 7}>
                             <span className={styles.storeTag} style={{ background: storeMeta[g.storeId]?.color || 'var(--text-secondary)' }}>
                               {(g.storeName || '?').slice(0, 1)}
                             </span>
@@ -378,6 +386,9 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                               </span>
                             ) : '—'}
                           </td>
+                          <td className={`${styles.chDinheiroCell} ${r.dinheiro < 0 ? styles.neg : ''}`} title="Pago por fora">
+                            {r.dinheiro ? formatBRL(r.dinheiro) : '—'}
+                          </td>
                           {hasExtra && <td className={styles.chBancoCell}>{r.extra ? formatBRL(r.extra) : '—'}</td>}
                           <td className={styles.resumoRowTotal}>{r.total ? formatBRL(r.total) : '—'}</td>
                         </tr>
@@ -388,6 +399,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                         <td>{formatBRL(g.subtotal.dia20) || 'R$ 0,00'}</td>
                         <td>{formatBRL(g.subtotal.flash5) || 'R$ 0,00'}</td>
                         <td>{formatBRL(g.subtotal.flash20) || 'R$ 0,00'}</td>
+                        <td className={g.subtotal.dinheiro < 0 ? styles.neg : ''}>{formatBRL(g.subtotal.dinheiro) || 'R$ 0,00'}</td>
                         {hasExtra && <td>{formatBRL(g.subtotal.extra) || 'R$ 0,00'}</td>}
                         <td>{formatBRL(g.subtotal.total) || 'R$ 0,00'}</td>
                       </tr>
@@ -400,6 +412,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                       <td>{formatBRL(grandTotal.dia20) || 'R$ 0,00'}</td>
                       <td>{formatBRL(grandTotal.flash5) || 'R$ 0,00'}</td>
                       <td>{formatBRL(grandTotal.flash20) || 'R$ 0,00'}</td>
+                      <td className={grandTotal.dinheiro < 0 ? styles.neg : ''}>{formatBRL(grandTotal.dinheiro) || 'R$ 0,00'}</td>
                       {hasExtra && <td>{formatBRL(grandTotal.extra) || 'R$ 0,00'}</td>}
                       <td>{formatBRL(grandTotal.total) || 'R$ 0,00'}</td>
                     </tr>
