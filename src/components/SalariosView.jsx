@@ -115,8 +115,9 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
 
   // ---- Resumo mensal por equipe ----
   // Foco: quanto depositar no BANCO de cada funcionário no dia 5 e no dia 20.
-  // Agrupa por loja (equipe), com subtotais e total geral. Só lê o campo `banco`
-  // de cada linha (dia5/dia20/extra) do doc de salário do mês selecionado.
+  // Agrupa por loja (equipe), com subtotais e total geral. Lê `banco` e `flash`
+  // de cada linha (dia5/dia20/extra) do doc de salário do mês selecionado — o
+  // Total da linha soma os dois (é o que o funcionário recebe no mês).
   const resumo = useMemo(() => {
     const docByEmp = {};
     for (const s of salarios) {
@@ -137,7 +138,8 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
         const extra = num(d?.extra, 'banco');
         const flash5 = num(d?.dia5, 'flash');
         const flash20 = num(d?.dia20, 'flash');
-        return { id: e.id, name: e.name, dia5, dia20, extra, flash5, flash20, total: dia5 + dia20 + extra };
+        // Total = tudo que o funcionário recebe no mês: banco + Flash.
+        return { id: e.id, name: e.name, dia5, dia20, extra, flash5, flash20, total: dia5 + dia20 + extra + flash5 + flash20 };
       });
       const subtotal = rows.reduce(
         (t, r) => ({
