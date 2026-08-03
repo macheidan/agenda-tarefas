@@ -74,3 +74,23 @@ export function transporteDetalhe(emp, absences, year, month) {
 export function transporteDiasNoMes(emp, absences, year, month) {
   return transporteDetalhe(emp, absences, year, month).dias;
 }
+
+// Ciclo que a FOLHA do dia 5 de `month` paga.
+//
+// As duas telas indexam a mesma conta por chaves diferentes:
+//   • Escala  → indexa pelo MÊS DO CICLO. A linha de Julho é o ciclo
+//     06/07→05/08 e o próprio resumo diz "pago em 05/08".
+//   • Salários → indexa pelo MÊS DO PAGAMENTO. A linha "Dia 5" de Agosto é
+//     o pagamento de 05/08.
+// Logo, a folha de 05/M paga o ciclo de M−1. Sem esse deslocamento, Salários
+// mostrava o ciclo 06/M→05/M+1 (um mês à frente do que a Escala diz que está
+// sendo pago) e o Flash saía com os dias do mês errado.
+// `month - 1` com month = 0 é resolvido pelo próprio Date (vira dezembro do
+// ano anterior) — não precisa de tratamento de virada.
+export function transporteDetalheFolha(emp, absences, year, month) {
+  return transporteDetalhe(emp, absences, year, month - 1);
+}
+
+export function transporteDiasFolha(emp, absences, year, month) {
+  return transporteDetalheFolha(emp, absences, year, month).dias;
+}

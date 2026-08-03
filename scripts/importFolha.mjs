@@ -23,7 +23,7 @@
 import { readFileSync } from 'node:fs';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { transporteDiasNoMes } from '../src/utils/transporte.js';
+import { transporteDiasFolha } from '../src/utils/transporte.js';
 
 const MONTHS_PT = {
   janeiro: 0, fevereiro: 1, 'março': 2, marco: 2, abril: 3, maio: 4, junho: 5,
@@ -141,7 +141,9 @@ async function main() {
 
     // Flash (J): só no dia 5. Dias = flag ou cálculo da Escala.
     if (args.line === 'dia5') {
-      const dias = args.flashDias != null ? args.flashDias : transporteDiasNoMes(emp, absences, year, month);
+      // Ciclo pago na folha de 05/month = 06/month-1 → 05/month (mesma conta da
+      // linha do mês anterior no resumo da Escala).
+      const dias = args.flashDias != null ? args.flashDias : transporteDiasFolha(emp, absences, year, month);
       patch.flash = dias * VALE_DIA;
     }
 
