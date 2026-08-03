@@ -2,7 +2,7 @@ import { useState, useMemo, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
 import { formatBRL } from '../utils/money';
-import { transporteDetalheFolha } from '../utils/transporte';
+import { transporteDetalhe } from '../utils/transporte';
 import styles from '../styles/SalariosView.module.css';
 
 const MONTHS = [
@@ -91,9 +91,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   }, [salarios, emp, year]);
   const doc = docsByMonth[month];
 
-  // Dias do ciclo que a folha do dia 5 deste mês paga (06/mês-1 → 05/mês) —
-  // é a linha do mês ANTERIOR no resumo da Escala.
-  const dias = emp ? transporteDetalheFolha(emp, absences, year, month).dias : 0;
+  const dias = emp ? transporteDetalhe(emp, absences, year, month).dias : 0;
   const flashEsperado = dias * VALE_DIA;
   const mode = emp?.salaryMode === 'fora' ? 'fora' : 'folha';
 
@@ -487,7 +485,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                   <span className={styles.monthLabel}>{MONTHS[month]} {year}</span>
                   <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
                 </div>
-                <span className={styles.transpInfo} title={`Ciclo pago em 05/${String(month + 1).padStart(2, '0')}: 06/${String(month || 12).padStart(2, '0')} a 05/${String(month + 1).padStart(2, '0')} — mesma conta da linha de ${MONTHS[(month + 11) % 12]} no resumo da Escala.`}>
+                <span className={styles.transpInfo}>
                   Transporte: <strong>{dias}</strong> dias · Flash esperado <strong>{formatBRL(flashEsperado)}</strong>
                   {isAdmin && dias > 0 && num(doc?.dia5, 'flash') !== flashEsperado && (
                     <button className={styles.applyBtn} title="Preencher o Flash do Dia 5 com transporte × R$12" onClick={() => commit('dia5', 'flash', flashEsperado)}>usar</button>
