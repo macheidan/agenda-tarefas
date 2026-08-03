@@ -17,6 +17,7 @@ export const ABSENCE_TYPES = [
   { key: 'falta_injustificada', label: 'Falta NÃO Justificada', short: 'F', color: '#f04438' },
   { key: 'feriado_trabalhado', label: 'Feriado Trabalhado', short: 'FT', color: '#12b76a' },
   { key: 'folga', label: 'Folga', short: 'FG', color: '#0d9488' },
+  { key: 'ferias', label: 'Férias', short: 'FE', color: '#7c3aed' },
 ];
 
 // Lojas padrão criadas na primeira vez (IDs fixos = seed idempotente).
