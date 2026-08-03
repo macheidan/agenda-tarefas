@@ -44,6 +44,9 @@ const OVERRIDES = [
   { match: 'birkheuer', storeName: 'lov', first: 'sergio' }, // Sergio: PDF Dame → aba Lov
   { match: 'trenntini', storeName: 'lov', first: 'julio' },  // Julio Trenntini → Lov
   { match: 'medina', storeName: 'dame', first: 'julio' },    // Julio Medina → Dame
+  // Apelidos: o cadastro da intranet usa o nome que a equipe chama.
+  { match: 'fabiana santos', storeName: 'dame', first: 'fabi' },   // Fabiana → aba/cadastro "Fabi"
+  { match: 'patricia gisele', storeName: 'dame', first: 'paty' },  // Patricia → cadastro "Paty"
 ];
 
 function parseArgs(argv) {
