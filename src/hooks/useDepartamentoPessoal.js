@@ -34,6 +34,11 @@ const SALARY_FIELDS = ['salaryMode', 'salaryBase', 'transporteRef', 'feriadoUnit
 export const salarioDocId = (employeeId, year, month) =>
   `${employeeId}_${year}-${pad(month + 1)}`;
 
+// Transporte (aba Transp): 1 doc por perfil/mês. O perfil é a "aba" da planilha
+// (rumi, patricia), não o id do funcionário — cada uma tem um cálculo próprio.
+export const transporteDocId = (perfil, year, month) =>
+  `${perfil}_${year}-${pad(month + 1)}`;
+
 export function useDepartamentoPessoal() {
   const [stores, setStores] = useState([]);
   const [loadingStores, setLoadingStores] = useState(true);
@@ -41,6 +46,7 @@ export function useDepartamentoPessoal() {
   const [employees, setEmployees] = useState([]);
   const [absences, setAbsences] = useState([]);
   const [salarios, setSalarios] = useState([]);
+  const [transportes, setTransportes] = useState([]);
 
   // Lojas (com seed das duas lojas padrão se a coleção estiver vazia).
   useEffect(() => {
@@ -103,6 +109,19 @@ export function useDepartamentoPessoal() {
     const unsub = onSnapshot(ref, (snap) => {
       setSalarios(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
+    return unsub;
+  }, []);
+
+  // Transporte (1 doc por perfil/mês) — só os campos editáveis; o resto é fórmula.
+  useEffect(() => {
+    const ref = collection(db, 'dpTransporte');
+    const unsub = onSnapshot(
+      ref,
+      (snap) => setTransportes(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      // Sem a flag de leitura o snapshot estoura permission-denied: não é erro
+      // de app, é só o usuário não tendo acesso à seção.
+      () => setTransportes([])
+    );
     return unsub;
   }, []);
 
@@ -218,6 +237,23 @@ export function useDepartamentoPessoal() {
     []
   );
 
+  // ---- Transporte ----
+  // Upsert de um campo editável do mês (dias, tarifas, rascunho).
+  const setTransporte = useCallback(async (perfil, year, month, patch, author) => {
+    await setDoc(
+      doc(db, 'dpTransporte', transporteDocId(perfil, year, month)),
+      {
+        perfil,
+        year,
+        month,
+        ...patch,
+        updatedAt: Timestamp.now(),
+        updatedBy: author?.uid || '',
+      },
+      { merge: true }
+    );
+  }, []);
+
   // ---- Faltas ----
   // type === null limpa a célula; senão cria/atualiza a ocorrência do dia.
   const setAbsence = useCallback(
@@ -251,6 +287,8 @@ export function useDepartamentoPessoal() {
     absences,
     salarios,
     setSalario,
+    transportes,
+    setTransporte,
     addStore,
     renameStore,
     deleteStore,

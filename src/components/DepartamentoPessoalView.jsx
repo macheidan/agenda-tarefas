@@ -6,6 +6,7 @@ import { getNamedHolidays } from '../utils/holidays';
 import { useDepartamentoPessoal, ABSENCE_TYPES } from '../hooks/useDepartamentoPessoal';
 import { transporteDetalhe, empFolgaWeekdays } from '../utils/transporte';
 import SalariosView from './SalariosView';
+import TransporteView from './TransporteView';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
 const MONTHS = [
@@ -43,6 +44,8 @@ export default function DepartamentoPessoalView() {
     absences,
     salarios,
     setSalario,
+    transportes,
+    setTransporte,
     addStore,
     renameStore,
     deleteStore,
@@ -56,7 +59,12 @@ export default function DepartamentoPessoalView() {
 
   // Sem acesso a Salários, a seção efetiva é sempre a Escala (fallback em render).
   // 'funcionarios' foi fundido em 'salarios' — normaliza legado.
-  const effectiveSection = canSalarios ? (dpSection === 'escala' ? 'escala' : 'salarios') : 'escala';
+  const effectiveSection =
+    dpSection === 'escala' || !canSalarios
+      ? 'escala'
+      : dpSection === 'transp'
+        ? 'transp'
+        : 'salarios';
 
   // Lojas escondidas para este usuário (configurado pelo admin em Settings).
   const hiddenSet = useMemo(
@@ -423,6 +431,14 @@ export default function DepartamentoPessoalView() {
                 Salários
               </button>
             )}
+            {canSalarios && (
+              <button type="button"
+                className={`${styles.sectionTab} ${effectiveSection === 'transp' ? styles.sectionTabActive : ''}`}
+                onClick={() => setDpSection('transp')}
+              >
+                Transp
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -436,6 +452,16 @@ export default function DepartamentoPessoalView() {
           salarios={salarios}
           setSalario={setSalario}
           updateEmployee={updateEmployee}
+          isAdmin={isAdmin}
+        />
+      )}
+
+      {effectiveSection === 'transp' && (
+        <TransporteView
+          employees={employees}
+          absences={absences}
+          transportes={transportes}
+          setTransporte={setTransporte}
           isAdmin={isAdmin}
         />
       )}

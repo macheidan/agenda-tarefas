@@ -1,0 +1,295 @@
+/* Aba Transp — espelho do bloco O1:R13 das planilhas de salário.
+   Amarelo = célula editável (mesma convenção da planilha). */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  --amarelo: color-mix(in srgb, #ffe600 32%, var(--card));
+  --verde: color-mix(in srgb, #6aa84f 22%, var(--card));
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.perfis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.perfilTab {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.perfilTab:hover {
+  background: var(--bg-secondary);
+}
+
+.perfilTabActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.perfilLoja {
+  opacity: 0.65;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navBtn {
+  border: 1px solid var(--border-light);
+  background: var(--card);
+  color: var(--text);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.navBtn:hover {
+  background: var(--bg-secondary);
+}
+
+.monthLabel {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 130px;
+  text-align: center;
+}
+
+.hint,
+.cadastro {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  max-width: 460px;
+}
+
+.diasRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.diasLabel {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.diasEscala {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.applyBtn {
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.applyBtn:hover {
+  background: var(--accent-light);
+}
+
+.cellInput {
+  width: 82px;
+  padding: 4px 6px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  text-align: right;
+}
+
+.cellInput:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.editavel {
+  background: var(--amarelo);
+  font-weight: 600;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabela th {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding-bottom: 4px;
+}
+
+.tabela td {
+  padding: 3px 0;
+  border-top: 1px solid var(--border-light);
+}
+
+.colLabel {
+  text-align: left;
+}
+
+.colQtd {
+  text-align: right;
+  width: 92px;
+  padding-right: 10px !important;
+}
+
+.colValor {
+  text-align: right;
+  width: 110px;
+  font-variant-numeric: tabular-nums;
+}
+
+.totalRow td {
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+
+.splitRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.splitBox {
+  flex: 1 1 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--verde);
+  border-radius: var(--radius-md);
+  padding: 7px 10px;
+}
+
+.splitLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.splitValor {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tarifas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 10px;
+}
+
+.blocoTitulo {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tarifaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tarifaRow > :last-child {
+  margin-left: auto;
+}
+
+.tarifaNota {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.notas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.rascunho {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.rascunho summary {
+  cursor: pointer;
+}
+
+.rascunhoGrid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.rascSub {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+@media (max-width: 768px) {
+  .card {
+    max-width: none;
+    padding: 12px;
+  }
+
+  .monthLabel {
+    min-width: 110px;
+  }
+}
