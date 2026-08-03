@@ -409,14 +409,14 @@ export default function DepartamentoPessoalView() {
           {/* .sectionTabs é o "track" do segmented control na v2. Na v1 ele é
               neutro (flex gap 8px = o que o headerActions já dava). */}
           <div className={styles.sectionTabs}>
-            <button
+            <button type="button"
               className={`${styles.sectionTab} ${effectiveSection === 'escala' ? styles.sectionTabActive : ''}`}
               onClick={() => setDpSection('escala')}
             >
               Escala
             </button>
             {canSalarios && (
-              <button
+              <button type="button"
                 className={`${styles.sectionTab} ${effectiveSection === 'salarios' ? styles.sectionTabActive : ''}`}
                 onClick={() => setDpSection('salarios')}
               >
@@ -445,7 +445,7 @@ export default function DepartamentoPessoalView() {
       <div className={styles.storeBar}>
         <div className={styles.storeTabs}>
           {visibleStores.map((s) => (
-            <button
+            <button type="button"
               key={s.id}
               className={`${styles.storeTab} ${s.id === activeStore ? styles.storeTabActive : ''}`}
               onClick={() => setSelectedStore(s.id)}
@@ -454,7 +454,7 @@ export default function DepartamentoPessoalView() {
             </button>
           ))}
           {visibleStores.length > 1 && (
-            <button
+            <button type="button"
               className={`${styles.storeTab} ${isAmbas ? styles.storeTabActive : ''}`}
               onClick={() => setSelectedStore(ALL_STORES)}
             >
@@ -466,7 +466,7 @@ export default function DepartamentoPessoalView() {
             segmented control e só pode conter os segmentos — "⚙ Lojas" é ação,
             não aba. O gap do .storeBar preserva o espaçamento da v1. */}
         {canEdit && (
-          <button
+          <button type="button"
             className={styles.manageStoresBtn}
             onClick={() => setManagingStores((v) => !v)}
             title="Gerenciar lojas"
@@ -493,14 +493,14 @@ export default function DepartamentoPessoalView() {
                         if (e.key === 'Enter') { renameStore(s.id, editingStoreName); setEditingStore(null); }
                       }}
                     />
-                    <button className={styles.smallBtn} onClick={() => { renameStore(s.id, editingStoreName); setEditingStore(null); }}>Salvar</button>
-                    <button className={styles.smallBtnGhost} onClick={() => setEditingStore(null)}>Cancelar</button>
+                    <button type="button" className={styles.smallBtn} onClick={() => { renameStore(s.id, editingStoreName); setEditingStore(null); }}>Salvar</button>
+                    <button type="button" className={styles.smallBtnGhost} onClick={() => setEditingStore(null)}>Cancelar</button>
                   </>
                 ) : (
                   <>
                     <span className={styles.manageName}>{s.name}</span>
-                    <button className={styles.smallBtnGhost} onClick={() => { setEditingStore(s.id); setEditingStoreName(s.name); }}>Renomear</button>
-                    <button
+                    <button type="button" className={styles.smallBtnGhost} onClick={() => { setEditingStore(s.id); setEditingStoreName(s.name); }}>Renomear</button>
+                    <button type="button"
                       className={styles.smallBtnDanger}
                       onClick={() => {
                         if (window.confirm(`Remover a loja "${s.name}"? Os funcionários dela deixam de aparecer.`)) deleteStore(s.id);
@@ -523,7 +523,7 @@ export default function DepartamentoPessoalView() {
                 if (e.key === 'Enter' && newStoreName.trim()) { addStore(newStoreName); setNewStoreName(''); }
               }}
             />
-            <button
+            <button type="button"
               className={styles.smallBtn}
               onClick={() => { if (newStoreName.trim()) { addStore(newStoreName); setNewStoreName(''); } }}
             >
@@ -536,13 +536,13 @@ export default function DepartamentoPessoalView() {
       {/* Barra de mês + ações */}
       <div className={styles.toolbar}>
         <div className={styles.monthNav}>
-          <button className={styles.navBtn} onClick={prevMonth} aria-label="Mês anterior">‹</button>
+          <button type="button" className={styles.navBtn} onClick={prevMonth} aria-label="Mês anterior">‹</button>
           <span className={styles.monthLabel}>{MONTHS[month]} {year}</span>
-          <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
+          <button type="button" className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
         </div>
         <div className={styles.toolbarActions}>
           {canEdit && visibleStores.length > 0 && (
-            <button
+            <button type="button"
               className={styles.manageStoresBtn}
               onClick={() => setShowArchived((v) => !v)}
             >
@@ -550,7 +550,7 @@ export default function DepartamentoPessoalView() {
             </button>
           )}
           {canEdit && (activeStore || isAmbas) && visibleStores.length > 0 && (
-            <button className={styles.newBtn} onClick={openAdd}>
+            <button type="button" className={styles.newBtn} onClick={openAdd}>
               {formMode === 'add' ? 'Cancelar' : '+ Funcionário'}
             </button>
           )}
@@ -576,8 +576,8 @@ export default function DepartamentoPessoalView() {
                       </span>
                     )}
                   </span>
-                  <button className={styles.smallBtn} onClick={() => reactivateEmployee(emp.id)}>Reativar</button>
-                  <button
+                  <button type="button" className={styles.smallBtn} onClick={() => reactivateEmployee(emp.id)}>Reativar</button>
+                  <button type="button"
                     className={styles.smallBtnDanger}
                     onClick={() => {
                       if (window.confirm(`Excluir definitivamente "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
@@ -620,8 +620,7 @@ export default function DepartamentoPessoalView() {
               Folgas da semana
               <div className={styles.folgaDaysRow}>
                 {FOLGA_WEEK.map(([v, n]) => (
-                  <button
-                    type="button"
+                  <button type="button"
                     key={v}
                     className={fWeekdays.includes(v) ? `${styles.folgaDay} ${styles.folgaDayOn}` : styles.folgaDay}
                     onClick={() => toggleFWeekday(v)}
@@ -656,12 +655,12 @@ export default function DepartamentoPessoalView() {
                 onChange={(e) => setFContractEnd(e.target.value)}
               />
             </label>
-            <button className={styles.smallBtn} onClick={submitForm}>
+            <button type="button" className={styles.smallBtn} onClick={submitForm}>
               {formMode === 'add' ? 'Adicionar' : 'Salvar'}
             </button>
-            <button className={styles.smallBtnGhost} onClick={closeForm}>Cancelar</button>
+            <button type="button" className={styles.smallBtnGhost} onClick={closeForm}>Cancelar</button>
             {formMode === 'edit' && formId && (
-              <button className={styles.smallBtnWarn} onClick={archiveCurrent} title="Arquivar funcionário">
+              <button type="button" className={styles.smallBtnWarn} onClick={archiveCurrent} title="Arquivar funcionário">
                 Arquivar
               </button>
             )}
@@ -676,7 +675,7 @@ export default function DepartamentoPessoalView() {
         <div className={styles.empty}>
           <p>Nenhuma loja cadastrada ainda.</p>
           {canEdit && (
-            <button className={styles.newBtn} onClick={() => seedDefaultStores()}>
+            <button type="button" className={styles.newBtn} onClick={() => seedDefaultStores()}>
               Criar minhas duas lojas (Dáme e Lov)
             </button>
           )}
@@ -732,8 +731,8 @@ export default function DepartamentoPessoalView() {
                   </span>
                   {canEdit && (
                     <span className={`${styles.rowActions} ${styles.rowActionsVisible}`}>
-                      <button className={styles.iconBtn} onClick={() => openEdit(emp)} title="Editar funcionário">✎</button>
-                      <button
+                      <button type="button" className={styles.iconBtn} onClick={() => openEdit(emp)} title="Editar funcionário">✎</button>
+                      <button type="button"
                         className={styles.iconBtnDanger}
                         onClick={() => {
                           if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
@@ -757,7 +756,7 @@ export default function DepartamentoPessoalView() {
                   {days.map((d) => {
                     const info = dayInfo(emp, d);
                     return (
-                      <button
+                      <button type="button"
                         key={d}
                         className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${info.holiday ? styles.mDayHoliday : ''}`}
                         onClick={(e) => handleCellClick(e, emp, d)}
@@ -818,8 +817,8 @@ export default function DepartamentoPessoalView() {
                       </span>
                       {canEdit && (
                         <span className={styles.rowActions}>
-                          <button className={styles.iconBtn} onClick={() => openEdit(emp)} title="Editar funcionário">✎</button>
-                          <button
+                          <button type="button" className={styles.iconBtn} onClick={() => openEdit(emp)} title="Editar funcionário">✎</button>
+                          <button type="button"
                             className={styles.iconBtnDanger}
                             onClick={() => {
                               if (window.confirm(`Apagar o funcionário "${emp.name}"? Esta ação remove o funcionário e suas faltas.`)) {
@@ -873,7 +872,7 @@ export default function DepartamentoPessoalView() {
         <div className={styles.summary}>
           <div className={styles.summaryHead}>
             <h3>Resumo — {MONTHS[month]} {year}{isAmbas ? ' (todas as lojas)' : activeStoreObj ? ` — ${activeStoreObj.name}` : ''}</h3>
-            <button className={styles.smallBtn} onClick={copySummary}>
+            <button type="button" className={styles.smallBtn} onClick={copySummary}>
               {copied ? 'Copiado!' : 'Copiar tabela'}
             </button>
           </div>
@@ -939,15 +938,15 @@ export default function DepartamentoPessoalView() {
               <span className={styles.popSheetTitle}>
                 {popover.empName} — {popover.date.split('-').reverse().join('/')}
               </span>
-              <button className={styles.popSheetClose} onClick={() => setPopover(null)} title="Fechar">✕</button>
+              <button type="button" className={styles.popSheetClose} onClick={() => setPopover(null)} title="Fechar">✕</button>
             </div>
             {ABSENCE_TYPES.map((t) => (
-              <button key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
+              <button type="button" key={t.key} className={styles.popItem} onClick={() => applyType(t.key)}>
                 <span className={styles.popDot} style={{ background: t.color }}>{t.short}</span>
                 {t.label}
               </button>
             ))}
-            <button className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
+            <button type="button" className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
           </div>
         )}
       </dialog>

@@ -448,6 +448,22 @@
   text-align: center;
 }
 
+/* Celular: a grade é área de toque, não de texto. Sem isso, o toque numa
+   célula da tabela cai como toque em texto — o Chrome/Android abre a barra
+   de seleção/"toque para pesquisar" (aquela barrinha embaixo) e o cursor de
+   digitação antes de o modal subir. Também mata o delay de duplo-toque. */
+.grid,
+.grid th,
+.grid td,
+.mCalGrid,
+.mDay {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 .nameCol {
   position: sticky;
   left: 0;
