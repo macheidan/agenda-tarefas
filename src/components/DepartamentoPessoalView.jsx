@@ -34,6 +34,8 @@ export default function DepartamentoPessoalView() {
   const canEdit = isAdmin || settings?.dpEditor === true;
   // Salários é dado sensível: só admin ou quem o admin liberou (dpSalariosVisible).
   const canSalarios = isAdmin || settings?.dpSalariosVisible === true;
+  // Transp tem liberação própria (dpTranspVisible), desligada por padrão.
+  const canTransp = isAdmin || settings?.dpTranspVisible === true;
   const [dpSection, setDpSection] = useState('escala'); // escala | funcionarios | salarios
   const {
     stores,
@@ -60,11 +62,11 @@ export default function DepartamentoPessoalView() {
   // Sem acesso a Salários, a seção efetiva é sempre a Escala (fallback em render).
   // 'funcionarios' foi fundido em 'salarios' — normaliza legado.
   const effectiveSection =
-    dpSection === 'escala' || !canSalarios
-      ? 'escala'
-      : dpSection === 'transp'
-        ? 'transp'
-        : 'salarios';
+    dpSection === 'transp'
+      ? (canTransp ? 'transp' : 'escala')
+      : dpSection === 'salarios' && canSalarios
+        ? 'salarios'
+        : 'escala';
 
   // Lojas escondidas para este usuário (configurado pelo admin em Settings).
   const hiddenSet = useMemo(
@@ -431,7 +433,7 @@ export default function DepartamentoPessoalView() {
                 Salários
               </button>
             )}
-            {canSalarios && (
+            {canTransp && (
               <button type="button"
                 className={`${styles.sectionTab} ${effectiveSection === 'transp' ? styles.sectionTabActive : ''}`}
                 onClick={() => setDpSection('transp')}

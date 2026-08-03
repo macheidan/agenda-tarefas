@@ -472,6 +472,13 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
                 onChange={(v) => toggleSection(permTarget, 'dpSalariosVisible', v)}
               />
             </Row>
+            <Row title="Transp" desc="Cálculo de transporte da Rumi e da Patricia. Só o admin edita, mesmo com isto ligado">
+              <Switch
+                label="Depto Pessoal — vê Transp"
+                checked={s.dpTranspVisible === true}
+                onChange={(v) => toggleSection(permTarget, 'dpTranspVisible', v)}
+              />
+            </Row>
             {dpStores.map((store) => (
               <Row key={store.id} title={store.name} desc="Loja visível na escala">
                 <Switch

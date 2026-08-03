@@ -210,10 +210,10 @@ service cloud.firestore {
       allow read: if isAdmin() || hasSettingFlag('dpSalariosVisible');
       allow write: if isAdmin();
     }
-    // Transporte (aba Transp): mesma régua de Salários — anda junto com ela na
-    // navegação e é o mesmo tipo de dado de pagamento.
+    // Transporte (aba Transp): liberação própria (dpTranspVisible), desligada
+    // por padrão. Escrita só admin, como em Salários.
     match /dpTransporte/{transporteId} {
-      allow read: if isAdmin() || hasSettingFlag('dpSalariosVisible');
+      allow read: if isAdmin() || hasSettingFlag('dpTranspVisible');
       allow write: if isAdmin();
     }
 
