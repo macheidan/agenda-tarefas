@@ -14,8 +14,21 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
 
+    // Gate de aprovação: estar logado NÃO basta — qualquer conta Google consegue
+    // autenticar, então os dados do negócio só abrem para quem o admin aprovou
+    // (users/{uid}.approved == true). A tela "aguardando aprovação" do cliente é
+    // só UI; a barreira real é esta. O get() é cacheado dentro da mesma request.
+    function isApproved() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('approved', false) == true)
+      );
+    }
+
     // Flag booleana no doc settings/{uid} do próprio usuário (ex.: dpEditor,
-    // comprasEditor). Só admin escreve settings, então a flag é confiável.
+    // comprasEditor). Só admin escreve settings, então a flag é confiável
+    // (e implica usuário aprovado — admin não liga flag pra conta pendente).
     function hasSettingFlag(flag) {
       return isSignedIn() &&
         exists(/databases/$(database)/documents/settings/$(request.auth.uid)) &&
@@ -57,10 +70,12 @@ service cloud.firestore {
         hasSettingFlag('motoboysRoster');
     }
 
-    // Usuários: qualquer logado lê. Cada um cria o seu (sem se auto-aprovar)
-    // e atualiza só perfil; admin pode tudo (aprovar/rejeitar/deletar).
+    // Usuários: aprovado lê todos (nomes/emails aparecem na UI); conta pendente
+    // lê SÓ o próprio doc (o AuthContext precisa dele pra saber o status).
+    // Cada um cria o seu (sem se auto-aprovar) e atualiza só perfil; admin pode
+    // tudo (aprovar/rejeitar/deletar).
     match /users/{uid} {
-      allow read: if isSignedIn();
+      allow read: if isApproved() || isOwner(uid);
       allow create: if isOwner(uid) && (
         isAdmin() || request.resource.data.get('approved', false) == false
       );
@@ -70,66 +85,68 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Tarefas: dono lê/escreve as suas, admin lê/escreve todas
+    // Tarefas: dono aprovado lê/escreve as suas, admin lê/escreve todas
     match /tasks/{uid}/items/{taskId} {
-      allow read, write: if isOwner(uid) || isAdmin();
+      allow read, write: if (isOwner(uid) && isApproved()) || isAdmin();
     }
 
-    // Chat: dono da sala lê/escreve, admin lê/escreve todas
+    // Chat: dono aprovado da sala lê/escreve, admin lê/escreve todas
     match /chats/{roomId}/messages/{messageId} {
-      allow read, write: if isOwner(roomId) || isAdmin();
+      allow read, write: if (isOwner(roomId) && isApproved()) || isAdmin();
     }
 
-    // Notas: dono lê/escreve as suas, admin lê/escreve todas
+    // Notas: dono lê/escreve as suas, admin lê/escreve todas. O create exige
+    // uid do próprio autor — sem isso dá pra "plantar" nota no painel de outro.
     match /notes/{noteId} {
-      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
-      allow create: if isSignedIn();
-      allow update, delete: if resource.data.uid == request.auth.uid || isAdmin();
+      allow read: if isApproved() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isApproved() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isApproved() && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
-    // Lembretes (post-its do calendário): dono lê/escreve os seus, admin todos
+    // Lembretes (post-its do calendário): dono lê/escreve os seus, admin todos.
+    // Mesmo gate de create das notas.
     match /stickyNotes/{noteId} {
-      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
-      allow create: if isSignedIn();
-      allow update, delete: if resource.data.uid == request.auth.uid || isAdmin();
+      allow read: if isApproved() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isApproved() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isApproved() && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
-    // Ideias: qualquer logado lê e cria, admin pode tudo
+    // Ideias: qualquer aprovado lê e cria, admin pode tudo
     match /ideas/{ideaId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow read: if isApproved();
+      allow create: if isApproved();
       allow update, delete: if isAdmin();
     }
 
-    // Roteiros: qualquer logado lê, cria e edita; admin deleta
+    // Roteiros: qualquer aprovado lê, cria e edita; admin deleta
     match /scripts/{scriptId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved();
       allow delete: if isAdmin();
     }
 
-    // Reels: qualquer logado lê, cria e arquiva; admin aprova/deleta
+    // Reels: qualquer aprovado lê, cria e arquiva; admin aprova/deleta
     match /reels/{reelId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved();
       allow delete: if isAdmin();
     }
 
-    // Content Plan: qualquer logado lê/cria/edita/deleta (admin gerencia status)
+    // Content Plan: qualquer aprovado lê/cria/edita/deleta (admin gerencia status)
     match /contentPlan/{itemId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved();
+      allow delete: if isApproved();
     }
 
-    // Influencers: qualquer logado lê/cria/edita; admin deleta
+    // Influencers: qualquer aprovado lê/cria/edita; admin deleta
     match /influencers/{itemId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved();
       allow delete: if isAdmin();
     }
 
@@ -137,8 +154,8 @@ service cloud.firestore {
     // pesquisas do Delivery Direto (surveys). Sem tela desde 2026-07-15; as
     // regras ficam só para não perder o acesso aos dados históricos.
     match /reviews/{reviewId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow read: if isApproved();
+      allow create: if isApproved();
       allow update, delete: if isAdmin();
     }
 
@@ -147,19 +164,19 @@ service cloud.firestore {
     // que ignora estas regras. No cliente a única escrita é arquivar: o hasOnly
     // garante que nota, comentário e cliente não podem ser adulterados junto.
     match /surveys/{surveyId} {
-      allow read: if isSignedIn();
-      allow update: if isSignedIn()
+      allow read: if isApproved();
+      allow update: if isApproved()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archived']);
       allow create, delete: if false;
     }
 
-    // Mensagens admin: qualquer logado lê; admin cria/deleta;
+    // Mensagens admin: qualquer aprovado lê; admin cria/deleta;
     // usuário comum pode atualizar apenas readBy (marcar como lida) sem remover ninguém.
     match /adminMessages/{msgId} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (
-        isSignedIn() &&
+        isApproved() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']) &&
         request.resource.data.readBy.hasAll(resource.data.readBy) &&
         request.auth.uid in request.resource.data.readBy
@@ -167,40 +184,41 @@ service cloud.firestore {
     }
 
     // Configurações: dono lê as suas, admin lê/escreve todas.
-    // settings/global é lido por qualquer logado (ordem do menu, etc).
+    // settings/global é lido por qualquer aprovado (ordem do menu, etc).
     // Exceção de escrita: os campos COMPARTILHADOS de Preços em settings/global
     // (alertas "vistos" da aba Subiram e fornecedores/produtos ocultos) podem ser
-    // atualizados por qualquer logado — mas SÓ esses campos (hasOnly), mesmo padrão
+    // atualizados por qualquer aprovado — mas SÓ esses campos (hasOnly), mesmo padrão
     // de readBy (adminMessages) e archived (surveys). Sem isso, o não-admin que vê
     // a aba Subiram clica "Visto", a escrita é rejeitada, o cache otimista é
     // revertido e a linha reaparece. O doc já existe em produção, então update basta.
     match /settings/{uid} {
-      allow read: if isOwner(uid) || isAdmin() || uid == 'global';
+      allow read: if isOwner(uid) || isAdmin() || (uid == 'global' && isApproved());
       allow write: if isAdmin();
-      allow update: if uid == 'global' && isSignedIn()
+      allow update: if uid == 'global' && isApproved()
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['precosAlertasVistos', 'precosFornecedoresOcultos', 'precosProdutosOcultos']);
     }
 
-    // Base de conhecimento: qualquer logado lê, admin escreve
+    // Base de conhecimento (inclui a chave Gemini em knowledge/config):
+    // qualquer aprovado lê, admin escreve
     match /knowledge/{docId} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isAdmin();
     }
 
     // Departamento Pessoal (lojas, funcionários e escala de faltas):
-    // qualquer logado lê (visibilidade controlada por toggle/loja no cliente);
+    // qualquer aprovado lê (visibilidade controlada por toggle/loja no cliente);
     // só admin ou editor (settings.dpEditor) escreve.
     match /dpStores/{storeId} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isDpEditor();
     }
     match /dpEmployees/{employeeId} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isDpEditor();
     }
     match /dpAbsences/{absenceId} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isDpEditor();
     }
     // Salários (dado sensível): leitura só para admin ou quem tem a flag
@@ -217,13 +235,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Suprimentos (Compras + Estoque Mensal): qualquer logado lê. O catálogo
+    // Suprimentos (Compras + Estoque Mensal): qualquer aprovado lê. O catálogo
     // (fornecedores e cadastro de itens) é só de admin/editor; mas qualquer
-    // logado pode ajustar a quantidade do pedido (campo qty) — por isso update
+    // aprovado pode ajustar a quantidade do pedido (campo qty) — por isso update
     // de comprasItens libera alteração exclusiva de qty para não-editores.
     // A contagem do estoque não fica aqui: vive em estoqueContagens, por mês.
     match /comprasFornecedores/{fornecedorId} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isComprasEditor();
       // De-para do Conferir Pedidos (qual fornecedor do Supabase assina a nota):
       // quem confere ajusta sozinha, sem virar editora do catálogo.
@@ -233,10 +251,10 @@ service cloud.firestore {
       );
     }
     match /comprasItens/{itemId} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow create, delete: if isComprasEditor();
       allow update: if isComprasEditor() || (
-        isSignedIn() &&
+        isApproved() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
       ) || (
         // Conferir Pedidos: a assistente ensina a conversão de unidade
@@ -249,53 +267,53 @@ service cloud.firestore {
     }
 
     // Pedido congelado no clique de "+ Copiar" ('2026-07-30_dame_{fornecedorId}').
-    // QUALQUER logado grava: quem monta o pedido é o gerente, que não é
+    // QUALQUER aprovado grava: quem monta o pedido é o gerente, que não é
     // necessariamente editor do catálogo. Recopiar no mesmo dia sobrescreve, por
     // isso create e update andam juntos. Apagar é só de admin/editor — o pedido
     // é a prova do que foi pedido, não some por descuido.
     match /comprasPedidos/{id} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn();
+      allow read: if isApproved();
+      allow create, update: if isApproved();
       allow delete: if isComprasEditor();
     }
 
     // Conferência fechada (pedido × nota fiscal), um doc por pedido. Snapshot
     // imutável no padrão de estoqueRelatorios: reabrir = apagar o doc.
     match /comprasConferencias/{id} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isConferenciaEditor();
     }
 
     // Contagem do Estoque Mensal: um doc por mês e loja ('2026-07_dame'), com o
-    // mapa itemId -> quantidade. Qualquer logado lê; escreve só quem pode editar
+    // mapa itemId -> quantidade. Qualquer aprovado lê; escreve só quem pode editar
     // AQUELA loja — a loja está no id do doc, então a regra a lê de lá.
     match /estoqueContagens/{id} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if (id.matches('.*_dame') && isEstoqueEditor('estoqueEditarDame'))
                    || (id.matches('.*_lov') && isEstoqueEditor('estoqueEditarLov'));
     }
 
     // Relatório Estoque congelado: um doc por mês e loja ('YYYY-MM_dame').
-    // Qualquer logado lê (a tela já filtra por permissão); só quem fecha o mês
+    // Qualquer aprovado lê (a tela já filtra por permissão); só quem fecha o mês
     // escreve — salvar sobrescreve e reabrir apaga.
     match /estoqueRelatorios/{id} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isRelatorioEstoqueEditor();
     }
 
-    // CMV (fichas técnicas): beneficiados e sabores. Qualquer logado lê;
+    // CMV (fichas técnicas): beneficiados e sabores. Qualquer aprovado lê;
     // só admin/editor de compras escreve (mesma alçada do catálogo de Preços/Compras).
     match /cmvBeneficiados/{id} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isComprasEditor();
     }
     match /cmvSabores/{id} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isComprasEditor();
     }
     // Config do CMV (ex.: base que entra em todas as pizzas, por categoria).
     match /cmvConfig/{id} {
-      allow read: if isSignedIn();
+      allow read: if isApproved();
       allow write: if isComprasEditor();
     }
 
