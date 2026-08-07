@@ -130,7 +130,7 @@ export default function Dashboard() {
     archiveInfluencer,
     unarchiveInfluencer,
   } = useInfluencers();
-  const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey: kbGeminiKey, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
+  const { messages: kbMessages, loading: kbLoading, sendMessage: sendKbMessage, knowledgeBase, updateKnowledgeBase, persona: kbPersona, ready: kbReady, error: kbError } = useKnowledge();
   const { ideas, unreadCount: ideasUnread, addIdea, addComment, deleteComment, deleteIdea, archiveIdea, markAsRead: markIdeaAsRead } =
     useIdeas(isAdmin ? null : user.uid, user, isAdmin);
   const { reels, addReel, approveReel, archiveReel: archiveReelItem, unarchiveReel, deleteReel, updateDescription: updateReelDescription } = useReels();
@@ -370,7 +370,7 @@ export default function Dashboard() {
             onDeleteMessage={deleteAdminMessage}
           />
         )}
-        {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} geminiKey={kbGeminiKey} updateGeminiKey={updateGeminiKey} tabsOrder={tabsOrder} updateTabsOrder={updateTabsOrder} />}
+        {activeTab === 'settings' && isAdmin && <SettingsView onNavigate={setActiveTab} tabsOrder={tabsOrder} updateTabsOrder={updateTabsOrder} />}
         </Suspense>
       </main>
   );

@@ -1,11 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGemini } from '../utils/gemini';
 
 // Sugestão de Fator (Regra3) por LLM: analisa o nome do produto e a embalagem
 // e devolve o fator que converte o preço normalizado para 1kg/1L/1un.
-// Usa a mesma chave Gemini do chat (knowledge/config.geminiKey).
+// Vai pelo proxy serverless (utils/gemini.js) — a chave não existe no cliente.
 
 // Ordem por disponibilidade real da chave do projeto (3.0-flash dá 404 nela).
 const MODELS = ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
@@ -39,16 +37,7 @@ Responda SOMENTE JSON: {"fator": "/4" ou "2" ou null, "motivo": "curto, no máxi
 export function useFatorSugestao() {
   // produto_id -> { status: 'loading'|'ok'|'erro', fator, motivo }
   const [sugestoes, setSugestoes] = useState({});
-  const keyPromiseRef = useRef(null);
   const pedidasRef = useRef(new Set()); // evita chamadas duplicadas por produto
-
-  const getKey = useCallback(() => {
-    if (!keyPromiseRef.current) {
-      keyPromiseRef.current = getDoc(doc(db, 'knowledge', 'config'))
-        .then((snap) => (snap.exists() ? snap.data().geminiKey || '' : ''));
-    }
-    return keyPromiseRef.current;
-  }, []);
 
   // Pede a sugestão pro produto da linha (uma vez por produto_id por sessão).
   const sugerir = useCallback(async (p) => {
@@ -62,23 +51,13 @@ export function useFatorSugestao() {
       setSugestoes((prev) => ({ ...prev, [id]: { status: 'erro', motivo } }));
     };
 
-    let apiKey;
-    try {
-      apiKey = await getKey();
-    } catch {
-      return fail('erro ao buscar a chave Gemini');
-    }
-    if (!apiKey) return fail('chave Gemini não configurada (Configurações)');
-
-    const genAI = new GoogleGenerativeAI(apiKey);
     for (const m of MODELS) {
       try {
-        const model = genAI.getGenerativeModel({
+        const txt = await callGemini({
           model: m,
+          contents: [{ role: 'user', parts: [{ text: buildPrompt(p) }] }],
           generationConfig: { responseMimeType: 'application/json', temperature: 0 },
         });
-        const res = await model.generateContent(buildPrompt(p));
-        const txt = res.response.text();
         const json = JSON.parse(txt.match(/\{[\s\S]*\}/)?.[0] || txt);
         const fator = json.fator == null || json.fator === '' ? null : String(json.fator).trim();
         setSugestoes((prev) => ({
@@ -91,7 +70,7 @@ export function useFatorSugestao() {
       }
     }
     fail('LLM indisponível, tente de novo');
-  }, [getKey]);
+  }, []);
 
   return { sugestoes, sugerir };
 }

@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGemini } from '../utils/gemini';
 
 const MODELS = [
   'gemini-3.0-flash',
@@ -29,36 +29,15 @@ ${content}
 
 export function useKnowledge() {
   const [knowledgeBase, setKnowledgeBase] = useState('');
-  const [geminiKey, setGeminiKey] = useState('');
   const [persona, setPersona] = useState({ name: '', personality: '' });
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [chat, setChat] = useState(null);
   const [error, setError] = useState('');
-  const genAIRef = useRef(null);
+  // Histórico no formato do Gemini ({ role, parts }); o proxy é stateless, então
+  // a conversa inteira vai em cada chamada (mesmo que o SDK fazia por baixo).
+  const historyRef = useRef([]);
   const kbRef = useRef('');
   const personaRef = useRef({ name: '', personality: '' });
-
-  const initChat = useCallback((content, apiKey, p) => {
-    if (!content || !apiKey) return;
-    const pData = p || personaRef.current;
-    try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      genAIRef.current = genAI;
-      kbRef.current = content;
-      personaRef.current = pData;
-      const model = genAI.getGenerativeModel({
-        model: MODELS[0],
-        systemInstruction: buildSystemPrompt(content, pData.name, pData.personality),
-      });
-      const chatSession = model.startChat({ history: [] });
-      setChat(chatSession);
-      setError('');
-    } catch (err) {
-      console.error('[Knowledge] Erro ao inicializar Gemini:', err);
-      setError('Erro ao inicializar Gemini: ' + err.message);
-    }
-  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -69,52 +48,34 @@ export function useKnowledge() {
         ]);
         const content = baseSnap.exists() ? baseSnap.data().content || '' : '';
         const config = configSnap.exists() ? configSnap.data() : {};
-        const apiKey = config.geminiKey || '';
         const p = { name: config.assistantName || '', personality: config.assistantPersonality || '' };
         setKnowledgeBase(content);
-        setGeminiKey(apiKey);
+        kbRef.current = content;
         setPersona(p);
         personaRef.current = p;
-        if (content && apiKey) {
-          initChat(content, apiKey, p);
-        } else if (!apiKey) {
-          setError('Chave API do Gemini não configurada. Configure nas Configurações.');
-        }
       } catch (err) {
         console.error('[Knowledge] Erro ao carregar:', err);
         setError('Erro ao carregar base de conhecimento: ' + err.message);
       }
     };
     load();
-  }, [initChat]);
-
-  const tryFallbackModels = async (text, startIndex) => {
-    const genAI = genAIRef.current;
-    if (!genAI) return null;
-    const p = personaRef.current;
-    for (let i = startIndex; i < MODELS.length; i++) {
-      try {
-        console.log(`[Knowledge] Tentando modelo: ${MODELS[i]}`);
-        const model = genAI.getGenerativeModel({
-          model: MODELS[i],
-          systemInstruction: buildSystemPrompt(kbRef.current, p.name, p.personality),
-        });
-        const result = await model.generateContent(text);
-        return result.response.text();
-      } catch (err) {
-        console.warn(`[Knowledge] ${MODELS[i]} falhou:`, err.message);
-      }
-    }
-    return null;
-  };
+  }, []);
 
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  const trySendWithRetry = async (chatSession, text, retries) => {
+  const askModel = (model, contents) => {
+    const p = personaRef.current;
+    return callGemini({
+      model,
+      contents,
+      systemInstruction: buildSystemPrompt(kbRef.current, p.name, p.personality),
+    });
+  };
+
+  const trySendWithRetry = async (contents, retries) => {
     for (let i = 0; i <= retries; i++) {
       try {
-        const result = await chatSession.sendMessage(text);
-        return result.response.text();
+        return await askModel(MODELS[0], contents);
       } catch (err) {
         const is503 = err?.message?.includes('503') || err?.message?.includes('high demand');
         const is429 = err?.message?.includes('429') || err?.message?.includes('quota');
@@ -128,22 +89,37 @@ export function useKnowledge() {
     }
   };
 
+  const tryFallbackModels = async (contents, startIndex) => {
+    for (let i = startIndex; i < MODELS.length; i++) {
+      try {
+        console.log(`[Knowledge] Tentando modelo: ${MODELS[i]}`);
+        return await askModel(MODELS[i], contents);
+      } catch (err) {
+        console.warn(`[Knowledge] ${MODELS[i]} falhou:`, err.message);
+      }
+    }
+    return null;
+  };
+
   const sendMessage = async (text) => {
-    if (!chat || !text.trim()) return;
+    if (!kbRef.current || !text.trim()) return;
 
     const userMsg = { role: 'user', text: text.trim(), timestamp: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
+    const contents = [...historyRef.current, { role: 'user', parts: [{ text: text.trim() }] }];
     try {
-      const response = await trySendWithRetry(chat, text.trim(), 3);
-      const aiMsg = { role: 'ai', text: response, timestamp: Date.now() };
-      setMessages((prev) => [...prev, aiMsg]);
-    } catch (err) {
-      console.warn(`[Knowledge] Retries esgotados, tentando fallback...`);
-      const fallbackResponse = await tryFallbackModels(text.trim(), 1);
-      if (fallbackResponse) {
-        const aiMsg = { role: 'ai', text: fallbackResponse, timestamp: Date.now() };
+      let response;
+      try {
+        response = await trySendWithRetry(contents, 3);
+      } catch {
+        console.warn('[Knowledge] Retries esgotados, tentando fallback...');
+        response = await tryFallbackModels(contents, 1);
+      }
+      if (response) {
+        historyRef.current = [...contents, { role: 'model', parts: [{ text: response }] }];
+        const aiMsg = { role: 'ai', text: response, timestamp: Date.now() };
         setMessages((prev) => [...prev, aiMsg]);
       } else {
         const errorMsg = { role: 'ai', text: 'Todos os modelos estão sobrecarregados. Tente novamente em alguns minutos.', timestamp: Date.now() };
@@ -168,8 +144,9 @@ export function useKnowledge() {
         personaRef.current = newPersona;
       }
       setKnowledgeBase(content);
+      kbRef.current = content;
       setMessages([]);
-      initChat(content, geminiKey, newPersona || persona);
+      historyRef.current = [];
       return true;
     } catch (err) {
       console.error('[Knowledge] Erro ao salvar base:', err);
@@ -178,22 +155,5 @@ export function useKnowledge() {
     }
   };
 
-  const updateGeminiKey = async (key) => {
-    try {
-      const ref = doc(db, 'knowledge', 'config');
-      await setDoc(ref, { geminiKey: key, updatedAt: new Date() }, { merge: true });
-      setGeminiKey(key);
-      setMessages([]);
-      if (knowledgeBase && key) {
-        initChat(knowledgeBase, key);
-      }
-      return true;
-    } catch (err) {
-      console.error('[Knowledge] Erro ao salvar chave:', err);
-      setError('Erro ao salvar chave: ' + err.message);
-      return false;
-    }
-  };
-
-  return { messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, updateGeminiKey, geminiKey, persona, ready: !!chat, error };
+  return { messages, loading, sendMessage, knowledgeBase, updateKnowledgeBase, persona, ready: !!knowledgeBase, error };
 }

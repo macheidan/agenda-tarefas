@@ -168,13 +168,11 @@ function SectionRow({ sec, checked, onToggle, expandable, open, onToggleOpen, ch
   );
 }
 
-export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, tabsOrder = [], updateTabsOrder }) {
+export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrder }) {
   const { user, isAdmin } = useAuth();
   const users = useUsers();
   const [userSettings, setUserSettings] = useState({});
   const [removedUsers, setRemovedUsers] = useState(new Set());
-  const [apiKeyValue, setApiKeyValue] = useState('');
-  const [apiKeyStatus, setApiKeyStatus] = useState('');
   const [dpStores, setDpStores] = useState([]);
   const [permUid, setPermUid] = useState(user.uid);
   const [openTabs, setOpenTabs] = useState(() => new Set());
@@ -336,21 +334,6 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
     }));
     setEditingNameUid(null);
     setNameValue('');
-  };
-
-  // Sincroniza o input com a prop geminiKey quando ela chega/muda (padrão de
-  // ajuste de estado no render, evita setState dentro de useEffect).
-  const [prevGeminiKey, setPrevGeminiKey] = useState(geminiKey);
-  if (geminiKey !== prevGeminiKey) {
-    setPrevGeminiKey(geminiKey);
-    if (geminiKey !== undefined) setApiKeyValue(geminiKey);
-  }
-
-  const handleSaveApiKey = async () => {
-    setApiKeyStatus('Salvando...');
-    const ok = await updateGeminiKey(apiKeyValue.trim());
-    setApiKeyStatus(ok ? 'Salvo!' : 'Erro ao salvar.');
-    setTimeout(() => setApiKeyStatus(''), 2000);
   };
 
   const allVisibleUsers = users.filter((u) => !removedUsers.has(u.uid));
@@ -755,16 +738,8 @@ export default function SettingsView({ onNavigate, geminiKey, updateGeminiKey, t
       <section className={styles.card}>
         <h3 className={styles.cardTitle}>Integrações</h3>
         <div className={styles.rows}>
-          <Row title="Chave API do Gemini" desc="Usada pelo chat da seção Conhecimento">
-            <input
-              className={styles.input}
-              type="password"
-              value={apiKeyValue}
-              onChange={(e) => setApiKeyValue(e.target.value)}
-              placeholder="Cole a chave API..."
-            />
-            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSaveApiKey}>Salvar</button>
-            {apiKeyStatus && <span className={styles.hint}>{apiKeyStatus}</span>}
+          <Row title="Chave API do Gemini" desc="Fica no servidor (proxy gemini-proxy-intranet na Vercel) — o navegador não vê a chave">
+            <span className={styles.hint}>Gerenciada como variável de ambiente no deploy</span>
           </Row>
           <Row title="Arquivados" desc="Tarefas arquivadas e limpeza de conversas">
             <button className={styles.btn} onClick={() => onNavigate && onNavigate('archived')}>
