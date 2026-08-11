@@ -38,6 +38,9 @@ const fichaS = { background: 'var(--bg-secondary, #fafafa)', padding: '10px 12px
 // SIZES/num/calcBeneficiado/calcSabor moram em lib/cmvCalc.js (compartilhados com a Margem).
 // Hover nas linhas de dados das tabelas (inline styles não suportam :hover).
 const rowHoverCss = '.cmvRow{transition:background .12s}.cmvRow:hover{background:var(--card-hover,#f6f7f9)}'
+  // A 1ª coluna do Histórico é sticky (tem fundo próprio, senão o conteúdo passa
+  // por baixo ao rolar) — o hover da linha precisa alcançá-la explicitamente.
+  + '.cmvRow:hover .cmvStick{background:var(--card-hover,#f6f7f9)}'
   + '.cmvArrow{display:inline-block;transition:transform .12s;color:var(--text-muted)}.cmvArrow.open{transform:rotate(90deg)}';
 
 function fmt(n) {
@@ -143,7 +146,7 @@ export default function CmvView({ custoBase = {}, custoPorMes = {}, nomesPadrao 
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px' }}>
         {aba === 'historico'
-          ? <>Custo dos sabores por tamanho <strong>mês a mês</strong>: cada mês usa o <strong>último lançamento de preço até o fim daquele mês</strong>. Produto sem nota no mês mantém o preço da última compra anterior (é o que estava vigente). As fichas são as atuais — mudou a receita, o histórico inteiro reflete a mudança.</>
+          ? <>Custo de cada sabor no tamanho <strong>Grande</strong>, um mês por coluna: cada mês usa o <strong>último lançamento de preço até o fim daquele mês</strong>. Produto sem nota no mês mantém o preço da última compra anterior (é o que estava vigente). A coluna <strong>Δ</strong> é a variação contra o mês anterior — <span style={{ color: 'var(--danger)', fontWeight: 600 }}>vermelho</span> subiu, <span style={{ color: 'var(--success)', fontWeight: 600 }}>verde</span> caiu. As fichas são as atuais — mudou a receita, o histórico inteiro reflete a mudança.</>
           : <>O custo vem do <strong>Resultado</strong> (custo/kg) de cada Produto (planilha) da seção Preços. Beneficiados viram ingredientes reutilizáveis nos sabores. Quantidades em kg (ou un).</>}
       </p>
 
@@ -452,54 +455,78 @@ function BeneficiadosResumo({ beneficiados, custoBase, nomesPadrao, abertos, onT
   );
 }
 
-// ── Histórico: custo dos sabores por tamanho, mês a mês ────────────────────
+// ── Histórico: custo do sabor no tamanho GRANDE, um mês por coluna ─────────
 // Só listagem (não expande ficha). O custo de cada mês vem de custoPorMes
 // ('YYYY-MM' -> mapa de custo dos Produtos (planilha) congelado no fim do mês,
 // montado em PrecosInsumosView). Os beneficiados são recalculados com o custo
-// daquele mês antes de custear os sabores.
+// daquele mês antes de custear os sabores. Ao lado de cada mês, a variação
+// contra o mês anterior (subiu = vermelho, caiu = verde).
+const TAMANHO_HIST = 'qtdG';
+
+// Variação de um mês pro anterior. null quando não há mês anterior (1ª coluna)
+// ou quando não dá pra comparar (mês sem custo).
+function Delta({ atual, anterior }) {
+  if (anterior == null || !(anterior > 0) || !(atual > 0)) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+  const d = atual - anterior;
+  if (Math.abs(d) < 0.005) return <span style={{ color: 'var(--text-muted)' }}>=</span>;
+  const subiu = d > 0;
+  const pct = (d / anterior) * 100;
+  return (
+    <span style={{ color: subiu ? 'var(--danger)' : 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}
+      title={`${subiu ? '+' : '−'}${Math.abs(pct).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% vs. mês anterior`}>
+      {subiu ? '▲' : '▼'} {Math.abs(d).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+    </span>
+  );
+}
+
 function HistoricoResumo({ sabores, beneficiados, bases, custoPorMes }) {
   const meses = useMemo(() => Object.keys(custoPorMes || {}).sort(), [custoPorMes]);
-  const [mes, setMes] = useState(null);
-  const mesAtivo = mes && meses.includes(mes) ? mes : meses[meses.length - 1];
 
+  // Uma linha por sabor com o custo do Grande em cada mês (na ordem de `meses`).
   const linhas = useMemo(() => {
-    const cb = (custoPorMes && custoPorMes[mesAtivo]) || {};
-    const bc = {};
-    for (const b of beneficiados) bc[b.nome] = calcBeneficiado(b, cb).custoPorKg;
+    const porMes = meses.map((m) => {
+      const cb = custoPorMes[m] || {};
+      const bc = {};
+      for (const b of beneficiados) bc[b.nome] = calcBeneficiado(b, cb).custoPorKg;
+      return { cb, bc };
+    });
     return sabores
-      .map(s => ({ s, t: calcSabor(s, cb, bc, bases) }))
+      .map(s => ({ s, valores: porMes.map(({ cb, bc }) => calcSabor(s, cb, bc, bases)[TAMANHO_HIST]) }))
       .sort((a, b) => a.s.nome.localeCompare(b.s.nome));
-  }, [sabores, beneficiados, bases, custoPorMes, mesAtivo]);
+  }, [sabores, beneficiados, bases, custoPorMes, meses]);
 
   if (!meses.length) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Sem histórico de preços carregado.</p>;
   if (!sabores.length) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum sabor cadastrado.</p>;
 
   return (
-    <>
-      <div style={{ ...tabTrackS, marginBottom: 12, flexWrap: 'wrap', ...(IS_V2 ? {} : { display: 'flex', gap: 6 }) }}>
-        {meses.map(m => (
-          <button key={m} onClick={() => setMes(m)}
-            style={IS_V2 ? segBtnS(m === mesAtivo) : { ...btnS, ...(m === mesAtivo ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }}
-            title={`Custo vigente no fim de ${labelMes(m)}`}>{labelMes(m)}</button>
-        ))}
-      </div>
-      <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
-            <th style={thS}>Sabor</th>
-            {SIZES.map(([k, label]) => <th key={k} style={{ ...thS, textAlign: 'right' }}>{label}</th>)}
-          </tr></thead>
-          <tbody>
-            {linhas.map(({ s, t }) => (
-              <tr key={s.id} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
-                <td style={{ ...tdS, fontWeight: 500 }}>{s.nome}</td>
-                {SIZES.map(([k]) => <td key={k} style={{ ...tdS, textAlign: 'right', fontWeight: 600 }}>{fmt(t[k])}</td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+    <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+          <th style={{ ...thS, position: 'sticky', left: 0, zIndex: 2, background: 'var(--bg, #f5f5f5)' }}>Sabor</th>
+          {meses.map((m, i) => (
+            <Fragment key={m}>
+              <th style={{ ...thS, textAlign: 'right' }} title={`Custo vigente no fim de ${labelMes(m)}`}>{labelMes(m)}</th>
+              <th style={{ ...thS, textAlign: 'right', paddingLeft: 0 }} title={i === 0 ? 'Sem mês anterior carregado' : `Variação contra ${labelMes(meses[i - 1])}`}>Δ</th>
+            </Fragment>
+          ))}
+        </tr></thead>
+        <tbody>
+          {linhas.map(({ s, valores }) => (
+            <tr key={s.id} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+              <td className="cmvStick" style={{ ...tdS, fontWeight: 500, position: 'sticky', left: 0, zIndex: 1, background: 'var(--card-bg, #fff)' }}>{s.nome}</td>
+              {valores.map((v, i) => (
+                <Fragment key={meses[i]}>
+                  <td style={{ ...tdS, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt(v)}</td>
+                  <td style={{ ...tdS, textAlign: 'right', paddingLeft: 0, fontSize: 11 }}>
+                    <Delta atual={v} anterior={i === 0 ? null : valores[i - 1]} />
+                  </td>
+                </Fragment>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
