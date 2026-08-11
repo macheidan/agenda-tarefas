@@ -419,6 +419,40 @@ export default function PrecosInsumosView() {
     return map;
   }, [precos]);
 
+  // Mesmo custo do mapa acima, mas congelado no FIM de cada mês do ano corrente
+  // — é o que alimenta o Histórico do CMV. Regra: vale o ÚLTIMO lançamento até o
+  // fim do mês; produto sem nota naquele mês segue com o preço da última compra
+  // anterior (é o preço que estava vigente no mês). Mapa 'YYYY-MM' -> { nome: { custo, medida } }.
+  // Só enxerga o que está carregado (12 meses), então mês antigo pode ter produto sem preço.
+  const custoPorPlanilhaMes = useMemo(() => {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const ordenados = precos
+      .filter(p => p.produto_padrao && p.data)
+      .sort((a, b) => (a.data !== b.data ? (a.data < b.data ? -1 : 1) : (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)));
+    const out = {};
+    const vigente = {}; // nome_padrao -> última linha vista até aqui (acumula mês a mês)
+    let i = 0;
+    for (let m = 1; m <= hoje.getMonth() + 1; m++) {
+      const key = `${ano}-${String(m).padStart(2, '0')}`;
+      // Datas são 'YYYY-MM-DD': comparar com '<mes>-31' cobre o mês inteiro sem
+      // precisar do último dia real (e sem passar por Date/fuso).
+      const fim = `${key}-31`;
+      while (i < ordenados.length && ordenados[i].data <= fim) {
+        vigente[ordenados[i].produto_padrao] = ordenados[i];
+        i++;
+      }
+      const map = {};
+      for (const nome in vigente) {
+        const p = vigente[nome];
+        const r = calcResultado(p.preco_normalizado, p.fator_regra3);
+        map[nome] = { custo: r == null ? (p.preco_normalizado || 0) : r, medida: p.unidade_normalizada };
+      }
+      out[key] = map;
+    }
+    return out;
+  }, [precos]);
+
   // Define o "Produto (planilha)" (nome_padrao) manualmente para um produto sem
   // ele. Como o nome_padrao mora em produtos (por produto_id), a escolha vale
   // pra TODAS as linhas do mesmo produto na listagem. Persiste no banco e
@@ -558,7 +592,7 @@ export default function PrecosInsumosView() {
     return (
       <div>
         {header}
-        <CmvView custoBase={custoPorPlanilha} nomesPadrao={nomesPadrao} />
+        <CmvView custoBase={custoPorPlanilha} custoPorMes={custoPorPlanilhaMes} nomesPadrao={nomesPadrao} />
       </div>
     );
   }

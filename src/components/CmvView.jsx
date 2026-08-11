@@ -44,7 +44,14 @@ function fmt(n) {
   return 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
+// Rótulo curto de 'YYYY-MM' -> 'Jan/26'.
+const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+function labelMes(key) {
+  const [a, m] = String(key).split('-');
+  return `${MESES_ABREV[Number(m) - 1] || m}/${a.slice(2)}`;
+}
+
+export default function CmvView({ custoBase = {}, custoPorMes = {}, nomesPadrao = [] }) {
   const {
     beneficiados, sabores, bases, loading,
     addBeneficiado, updateBeneficiado, deleteBeneficiado,
@@ -119,10 +126,13 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
         <div style={tabTrackS}>
           <button style={IS_V2 ? segBtnS(aba === 'beneficiados') : { ...btnS, ...(aba === 'beneficiados' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('beneficiados')}>Beneficiados ({benefAtivos.length})</button>
           <button style={IS_V2 ? segBtnS(aba === 'sabores') : { ...btnS, ...(aba === 'sabores' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('sabores')}>Sabores ({saboresAtivos.length})</button>
+          <button style={IS_V2 ? segBtnS(aba === 'historico') : { ...btnS, ...(aba === 'historico' ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }} onClick={() => setAba('historico')}>Histórico</button>
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text, #222)' }} title="Abre ou fecha as fichas de todos os itens da aba. Cada linha também abre pela seta.">
-          <input type="checkbox" checked={todosAbertos} onChange={e => setAbertos(e.target.checked ? new Set(idsAba) : new Set())} /> Expandir tudo
-        </label>
+        {aba !== 'historico' && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text, #222)' }} title="Abre ou fecha as fichas de todos os itens da aba. Cada linha também abre pela seta.">
+            <input type="checkbox" checked={todosAbertos} onChange={e => setAbertos(e.target.checked ? new Set(idsAba) : new Set())} /> Expandir tudo
+          </label>
+        )}
         <span style={{ flex: 1 }} />
         {vazio && (
           <button style={{ ...btnS, borderColor: 'var(--accent)', color: 'var(--accent)' }} onClick={importar} disabled={importando}>
@@ -132,10 +142,14 @@ export default function CmvView({ custoBase = {}, nomesPadrao = [] }) {
       </div>
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px' }}>
-        O custo vem do <strong>Resultado</strong> (custo/kg) de cada Produto (planilha) da seção Preços. Beneficiados viram ingredientes reutilizáveis nos sabores. Quantidades em kg (ou un).
+        {aba === 'historico'
+          ? <>Custo dos sabores por tamanho <strong>mês a mês</strong>: cada mês usa o <strong>último lançamento de preço até o fim daquele mês</strong>. Produto sem nota no mês mantém o preço da última compra anterior (é o que estava vigente). As fichas são as atuais — mudou a receita, o histórico inteiro reflete a mudança.</>
+          : <>O custo vem do <strong>Resultado</strong> (custo/kg) de cada Produto (planilha) da seção Preços. Beneficiados viram ingredientes reutilizáveis nos sabores. Quantidades em kg (ou un).</>}
       </p>
 
-      {aba === 'beneficiados' ? (
+      {aba === 'historico' ? (
+        <HistoricoResumo sabores={saboresAtivos} beneficiados={beneficiados} bases={bases} custoPorMes={custoPorMes} />
+      ) : aba === 'beneficiados' ? (
         <>
           <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
             <input placeholder="Novo beneficiado (ex.: Massa)" value={novoBenef} onChange={e => setNovoBenef(e.target.value)}
@@ -435,6 +449,57 @@ function BeneficiadosResumo({ beneficiados, custoBase, nomesPadrao, abertos, onT
         </p>
       )}
     </div>
+  );
+}
+
+// ── Histórico: custo dos sabores por tamanho, mês a mês ────────────────────
+// Só listagem (não expande ficha). O custo de cada mês vem de custoPorMes
+// ('YYYY-MM' -> mapa de custo dos Produtos (planilha) congelado no fim do mês,
+// montado em PrecosInsumosView). Os beneficiados são recalculados com o custo
+// daquele mês antes de custear os sabores.
+function HistoricoResumo({ sabores, beneficiados, bases, custoPorMes }) {
+  const meses = useMemo(() => Object.keys(custoPorMes || {}).sort(), [custoPorMes]);
+  const [mes, setMes] = useState(null);
+  const mesAtivo = mes && meses.includes(mes) ? mes : meses[meses.length - 1];
+
+  const linhas = useMemo(() => {
+    const cb = (custoPorMes && custoPorMes[mesAtivo]) || {};
+    const bc = {};
+    for (const b of beneficiados) bc[b.nome] = calcBeneficiado(b, cb).custoPorKg;
+    return sabores
+      .map(s => ({ s, t: calcSabor(s, cb, bc, bases) }))
+      .sort((a, b) => a.s.nome.localeCompare(b.s.nome));
+  }, [sabores, beneficiados, bases, custoPorMes, mesAtivo]);
+
+  if (!meses.length) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Sem histórico de preços carregado.</p>;
+  if (!sabores.length) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum sabor cadastrado.</p>;
+
+  return (
+    <>
+      <div style={{ ...tabTrackS, marginBottom: 12, flexWrap: 'wrap', ...(IS_V2 ? {} : { display: 'flex', gap: 6 }) }}>
+        {meses.map(m => (
+          <button key={m} onClick={() => setMes(m)}
+            style={IS_V2 ? segBtnS(m === mesAtivo) : { ...btnS, ...(m === mesAtivo ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : {}) }}
+            title={`Custo vigente no fim de ${labelMes(m)}`}>{labelMes(m)}</button>
+        ))}
+      </div>
+      <div style={{ ...cardS, padding: 0, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr style={{ background: 'var(--bg, #f5f5f5)' }}>
+            <th style={thS}>Sabor</th>
+            {SIZES.map(([k, label]) => <th key={k} style={{ ...thS, textAlign: 'right' }}>{label}</th>)}
+          </tr></thead>
+          <tbody>
+            {linhas.map(({ s, t }) => (
+              <tr key={s.id} className="cmvRow" style={{ borderTop: '1px solid var(--border, #e5e5e5)' }}>
+                <td style={{ ...tdS, fontWeight: 500 }}>{s.nome}</td>
+                {SIZES.map(([k]) => <td key={k} style={{ ...tdS, textAlign: 'right', fontWeight: 600 }}>{fmt(t[k])}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
