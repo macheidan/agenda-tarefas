@@ -805,6 +805,50 @@ function formatBRL(n, decimals = 0) {
   return 'R$ ' + (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+// Quantidade comprada numa linha da nota, na unidade normalizada (kg/lt/un).
+// `qtd_embalagem` ja vem como o total da linha (é preco_bruto / preco_normalizado
+// — ex: R$331,76 a R$6,79/lt = 48,86 lt); se estiver vazia, deriva do preço.
+function qtdLinha(p) {
+  const unidade = (p.unidade_normalizada || p.unidade_embalagem || '').trim().toLowerCase();
+  let q = p.qtd_embalagem;
+  if (!q && p.preco_normalizado) q = p.preco_bruto / p.preco_normalizado;
+  return q ? { unidade, q } : null;
+}
+
+// Soma a quantidade da linha num acumulador unidade -> total. Fica por unidade
+// porque um fornecedor mistura kg, lt e un — somar tudo daria um numero sem
+// significado nenhum.
+function somaQtd(acc, p) {
+  const x = qtdLinha(p);
+  if (!x) return;
+  acc[x.unidade] = (acc[x.unidade] || 0) + x.q;
+}
+
+// "48,9 lt" (uma unidade) ou "120 kg · 45 un" (varias). Vazio se nao houver qtd.
+function formatQtd(acc) {
+  const es = Object.entries(acc || {}).filter(([, q]) => q > 0).sort((a, b) => b[1] - a[1]);
+  if (!es.length) return '';
+  return es
+    .map(([u, q]) => q.toLocaleString('pt-BR', { maximumFractionDigits: q < 10 ? 1 : 0 }) + (u ? ' ' + u : ''))
+    .join(' · ');
+}
+
+// Coluna de quantidade da matriz de Fornecedores: mais estreita e discreta que a
+// de valor, pra que o R$ continue sendo a leitura principal da tabela.
+const qtdColS = { color: 'var(--text-muted)', fontWeight: 400 };
+
+function CelulaQtd({ acc, bold = false }) {
+  const txt = formatQtd(acc);
+  return (
+    <td
+      style={{ ...tdS, textAlign: 'right', fontSize: 11, whiteSpace: 'nowrap', color: txt ? 'var(--text-muted)' : '#ccc', fontWeight: bold && txt ? 600 : 400 }}
+      title={txt || ''}
+    >
+      {txt || '—'}
+    </td>
+  );
+}
+
 // Sub-pagina "Fornecedores": usa as notas (precos) puxadas da Receita Federal
 // pra mostrar quanto se compra por fornecedor por mes. Clicar num fornecedor
 // abre o detalhe por produto/mes (quanto de cada produto com aquele fornecedor).
@@ -819,14 +863,10 @@ function EyeOffIcon({ size = 15 }) {
 }
 
 function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
-  // Anos disponiveis a partir das datas das notas (asc).
-  const anos = useMemo(() => {
-    const s = new Set();
-    for (const p of precos) { if (p.data) s.add(p.data.slice(0, 4)); }
-    return [...s].sort();
-  }, [precos]);
-
-  const [ano, setAno] = useState(() => anos[anos.length - 1] || String(new Date().getFullYear()));
+  // Janela movel de meses: 3 por padrao (o que se olha no dia a dia), 12 com o
+  // checkbox. Substituiu a navegacao por ano — a base so carrega os ultimos 12
+  // meses mesmo, entao "ano" nunca mostrava nada alem desta janela.
+  const [mostrar12, setMostrar12] = useState(false);
   // Fornecedores com a lista de produtos expandida (accordion inline).
   const [expandidos, setExpandidos] = useState(() => new Set());
   const [busca, setBusca] = useState('');
@@ -837,40 +877,57 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
     return next;
   });
 
-  // Se os anos mudarem (dados chegaram/trocaram) e o ano atual sumir, cai no mais recente.
-  useEffect(() => {
-    if (anos.length && !anos.includes(ano)) setAno(anos[anos.length - 1]);
-  }, [anos, ano]);
+  // Chaves 'YYYY-MM' dos ultimos N meses (mais antigo -> mes corrente).
+  const nMeses = mostrar12 ? 12 : 3;
+  const janela = useMemo(() => {
+    const hoje = new Date();
+    const out = [];
+    for (let i = nMeses - 1; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return out;
+  }, [nMeses]);
+  const janelaSet = useMemo(() => new Set(janela), [janela]);
 
   // Fornecedores ocultos somem de tudo aqui (agregacao, stats, matriz).
-  const doAno = useMemo(
-    () => precos.filter(p => p.data && p.data.slice(0, 4) === ano && !ocultos.has(p.fornecedor || '(sem)')),
-    [precos, ano, ocultos]
+  const doPeriodo = useMemo(
+    () => precos.filter(p => p.data && janelaSet.has(p.data.slice(0, 7)) && !ocultos.has(p.fornecedor || '(sem)')),
+    [precos, janelaSet, ocultos]
   );
 
-  // Mostra so os meses que tem alguma compra no ano (matriz mais enxuta).
+  // Mostra so os meses da janela que tem alguma compra (matriz mais enxuta).
   const mesesAtivos = useMemo(() => {
     const s = new Set();
-    for (const p of doAno) s.add(Number(p.data.slice(5, 7)) - 1);
-    return [...s].sort((a, b) => a - b);
-  }, [doAno]);
+    for (const p of doPeriodo) s.add(p.data.slice(0, 7));
+    return janela.filter(mk => s.has(mk));
+  }, [doPeriodo, janela]);
+  // Com a janela cruzando o ano (12 meses, ou 3 meses em jan/fev), o rotulo do
+  // mes precisa do ano pra nao ficar ambiguo ("Ago" de qual ano?).
+  const comAno = useMemo(
+    () => new Set(mesesAtivos.map(mk => mk.slice(0, 4))).size > 1,
+    [mesesAtivos]
+  );
+  const labelMes = (mk) => MESES[Number(mk.slice(5, 7)) - 1] + (comAno ? '/' + mk.slice(2, 4) : '');
 
-  // Agrega valor (preco_bruto = "$ Compra" da nota) por chave -> mes.
+  // Agrega valor (preco_bruto = "$ Compra" da nota) e quantidade por chave -> mes.
   function agrega(rows, keyFn, keyLabel) {
     const map = {};
     for (const p of rows) {
       const key = keyFn(p) || '(sem)';
-      const m = Number(p.data.slice(5, 7)) - 1;
-      const r = (map[key] ||= { [keyLabel]: key, meses: {}, total: 0 });
-      r.meses[m] = (r.meses[m] || 0) + p.preco_bruto;
+      const mk = p.data.slice(0, 7);
+      const r = (map[key] ||= { [keyLabel]: key, meses: {}, qtds: {}, qtdTotal: {}, total: 0 });
+      r.meses[mk] = (r.meses[mk] || 0) + p.preco_bruto;
+      somaQtd(r.qtds[mk] ||= {}, p);
+      somaQtd(r.qtdTotal, p);
       r.total += p.preco_bruto;
     }
     return Object.values(map).sort((a, b) => b.total - a.total);
   }
 
   const porFornecedor = useMemo(
-    () => agrega(doAno, p => p.fornecedor, 'fornecedor'),
-    [doAno]
+    () => agrega(doPeriodo, p => p.fornecedor, 'fornecedor'),
+    [doPeriodo]
   );
 
   // Busca por nome do fornecedor (filtra so a lista exibida; os stats seguem o ano inteiro).
@@ -880,55 +937,64 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
     return porFornecedor.filter(r => r.fornecedor.toLowerCase().includes(q));
   }, [porFornecedor, busca]);
 
-  // Produtos por fornecedor (pra expandir inline): fornecedor -> [{produto, meses, total}].
+  // Produtos por fornecedor (pra expandir inline): fornecedor -> [{produto, meses, qtds, total}].
   const produtosPorFornecedor = useMemo(() => {
     const tmp = {};
-    for (const p of doAno) {
+    for (const p of doPeriodo) {
       const f = p.fornecedor || '(sem)';
       const prod = p.produto || '(sem)';
-      const m = Number(p.data.slice(5, 7)) - 1;
+      const mk = p.data.slice(0, 7);
       const byF = (tmp[f] ||= {});
-      const r = (byF[prod] ||= { produto: prod, meses: {}, total: 0 });
-      r.meses[m] = (r.meses[m] || 0) + p.preco_bruto;
+      const r = (byF[prod] ||= { produto: prod, meses: {}, qtds: {}, qtdTotal: {}, total: 0 });
+      r.meses[mk] = (r.meses[mk] || 0) + p.preco_bruto;
+      somaQtd(r.qtds[mk] ||= {}, p);
+      somaQtd(r.qtdTotal, p);
       r.total += p.preco_bruto;
     }
     const out = {};
     for (const f in tmp) out[f] = Object.values(tmp[f]).sort((a, b) => b.total - a.total);
     return out;
-  }, [doAno]);
+  }, [doPeriodo]);
 
-  // Totais por mes (rodape) das linhas exibidas.
+  // Totais por mes (rodape) das linhas exibidas — valor e quantidade por unidade.
   function totaisPorMes(rows) {
     const t = {};
+    const q = {};
+    const qGeral = {};
     let geral = 0;
     for (const r of rows) {
-      for (const m of mesesAtivos) t[m] = (t[m] || 0) + (r.meses[m] || 0);
+      for (const mk of mesesAtivos) {
+        t[mk] = (t[mk] || 0) + (r.meses[mk] || 0);
+        const acc = (q[mk] ||= {});
+        for (const [u, v] of Object.entries(r.qtds[mk] || {})) acc[u] = (acc[u] || 0) + v;
+      }
+      for (const [u, v] of Object.entries(r.qtdTotal || {})) qGeral[u] = (qGeral[u] || 0) + v;
       geral += r.total;
     }
-    return { t, geral };
+    return { t, q, qGeral, geral };
   }
 
-  const anoIdx = anos.indexOf(ano);
-  const prevAno = () => { if (anoIdx > 0) setAno(anos[anoIdx - 1]); };
-  const nextAno = () => { if (anoIdx >= 0 && anoIdx < anos.length - 1) setAno(anos[anoIdx + 1]); };
-
   const nFornecedores = porFornecedor.length;
-  const nProdutos = new Set(doAno.map(p => p.produto).filter(Boolean)).size;
+  const nProdutos = new Set(doPeriodo.map(p => p.produto).filter(Boolean)).size;
 
   // Matriz fornecedor x mes. Cada linha expande (accordion) os produtos daquele
   // fornecedor (produto x mes) inline, logo abaixo. Botao de olho-cortado oculta.
   function Matriz({ rows }) {
-    const { t, geral } = totaisPorMes(rows);
+    const { t, q, qGeral, geral } = totaisPorMes(rows);
     return (
       <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
         <table className="fornMatriz" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--bg, #f5f5f5)' }}>
               <th style={{ ...thS, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>Fornecedor</th>
-              {mesesAtivos.map(m => (
-                <th key={m} style={{ ...thS, textAlign: 'right' }}>{MESES[m]}</th>
+              {mesesAtivos.map(mk => (
+                <Fragment key={mk}>
+                  <th style={{ ...thS, textAlign: 'right' }}>{labelMes(mk)}</th>
+                  <th style={{ ...thS, textAlign: 'right', ...qtdColS }} title={`Quantidade comprada em ${labelMes(mk)} (kg/lt/un)`}>Qtd</th>
+                </Fragment>
               ))}
               <th style={{ ...thS, textAlign: 'right' }}>Total</th>
+              <th style={{ ...thS, textAlign: 'right', ...qtdColS }} title="Quantidade comprada no período (kg/lt/un)">Qtd</th>
             </tr>
           </thead>
           <tbody>
@@ -952,24 +1018,32 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
                       <span style={{ color: 'var(--accent)', marginRight: 6, display: 'inline-block', width: 10 }}>{aberto ? '▾' : '▸'}</span>
                       {r.fornecedor}
                     </td>
-                    {mesesAtivos.map(m => (
-                      <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, color: r.meses[m] ? 'inherit' : '#ccc' }} title={r.meses[m] ? formatBRL(r.meses[m], 2) : ''}>
-                        {r.meses[m] ? formatBRL(r.meses[m]) : '—'}
-                      </td>
+                    {mesesAtivos.map(mk => (
+                      <Fragment key={mk}>
+                        <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: r.meses[mk] ? 'inherit' : '#ccc' }} title={r.meses[mk] ? formatBRL(r.meses[mk], 2) : ''}>
+                          {r.meses[mk] ? formatBRL(r.meses[mk]) : '—'}
+                        </td>
+                        <CelulaQtd acc={r.qtds[mk]} />
+                      </Fragment>
                     ))}
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 700 }} title={formatBRL(r.total, 2)}>{formatBRL(r.total)}</td>
+                    <CelulaQtd acc={r.qtdTotal} bold />
                   </tr>
                   {aberto && produtos.map(prod => (
                     <tr key={`${r.fornecedor}|${prod.produto}`} style={{ background: 'var(--bg, #f9fafb)' }}>
                       <td style={{ ...tdS, paddingLeft: 40, fontSize: 12, color: 'var(--text-secondary, #555)', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--bg, #f9fafb)' }}>
                         {prod.produto}
                       </td>
-                      {mesesAtivos.map(m => (
-                        <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, color: prod.meses[m] ? 'var(--text-secondary, #555)' : '#ccc' }} title={prod.meses[m] ? formatBRL(prod.meses[m], 2) : ''}>
-                          {prod.meses[m] ? formatBRL(prod.meses[m]) : '—'}
-                        </td>
+                      {mesesAtivos.map(mk => (
+                        <Fragment key={mk}>
+                          <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: prod.meses[mk] ? 'var(--text-secondary, #555)' : '#ccc' }} title={prod.meses[mk] ? formatBRL(prod.meses[mk], 2) : ''}>
+                            {prod.meses[mk] ? formatBRL(prod.meses[mk]) : '—'}
+                          </td>
+                          <CelulaQtd acc={prod.qtds[mk]} />
+                        </Fragment>
                       ))}
                       <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary, #555)' }} title={formatBRL(prod.total, 2)}>{formatBRL(prod.total)}</td>
+                      <CelulaQtd acc={prod.qtdTotal} />
                     </tr>
                   ))}
                 </Fragment>
@@ -977,10 +1051,14 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
             })}
             <tr style={{ borderTop: '2px solid var(--border, #e5e5e5)', background: 'var(--bg, #f5f5f5)' }}>
               <td style={{ ...tdS, fontWeight: 700, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>Total</td>
-              {mesesAtivos.map(m => (
-                <td key={m} style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600 }} title={formatBRL(t[m] || 0, 2)}>{formatBRL(t[m] || 0)}</td>
+              {mesesAtivos.map(mk => (
+                <Fragment key={mk}>
+                  <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600 }} title={formatBRL(t[mk] || 0, 2)}>{formatBRL(t[mk] || 0)}</td>
+                  <CelulaQtd acc={q[mk]} bold />
+                </Fragment>
               ))}
               <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 800 }} title={formatBRL(geral, 2)}>{formatBRL(geral)}</td>
+              <CelulaQtd acc={qGeral} bold />
             </tr>
           </tbody>
         </table>
@@ -995,41 +1073,43 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
         .fornMatriz tbody tr { transition: background 0.1s ease; }
         .fornMatriz tbody tr:hover td { background: var(--accent-light, #ecf3ff) !important; }
       `}</style>
-      {/* Navegacao de ano + stats */}
+      {/* Periodo + stats */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button onClick={prevAno} disabled={anoIdx <= 0} style={btnS} aria-label="Ano anterior">‹</button>
-          <strong style={{ fontSize: 16, minWidth: 56, textAlign: 'center' }}>{ano}</strong>
-          <button onClick={nextAno} disabled={anoIdx < 0 || anoIdx >= anos.length - 1} style={btnS} aria-label="Próximo ano">›</button>
-        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(110px, 1fr))', gap: 8, flex: 1 }}>
           <StatCard label="Fornecedores" value={nFornecedores} />
           <StatCard label="Produtos" value={nProdutos} />
         </div>
       </div>
 
-      {doAno.length === 0 ? (
-        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma compra registrada em {ano}.</p>
+      {/* Busca + janela de meses. Fica fora do empty state pra que, num período
+          sem compras, ainda dê pra abrir os 12 meses. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 8px', flexWrap: 'wrap' }}>
+        <input
+          type="search"
+          placeholder="Buscar fornecedor..."
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+          style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
+        />
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text)', cursor: 'pointer', userSelect: 'none' }}>
+          <input
+            type="checkbox"
+            checked={mostrar12}
+            onChange={e => setMostrar12(e.target.checked)}
+            style={{ accentColor: 'var(--accent)', width: 15, height: 15, cursor: 'pointer' }}
+          />
+          Mostrar últimos 12 meses
+        </label>
+      </div>
+
+      {doPeriodo.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
+          Nenhuma compra registrada nos últimos {nMeses} meses.
+        </p>
+      ) : fornecedoresFiltrados.length === 0 ? (
+        <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum fornecedor encontrado para "{busca}".</p>
       ) : (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 8px', flexWrap: 'wrap' }}>
-            <input
-              type="search"
-              placeholder="Buscar fornecedor..."
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
-              style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
-            />
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, flex: '1 1 240px' }}>
-              Total de compras por fornecedor em cada mês (valor das notas). Clique num fornecedor para expandir os produtos, ou no ícone de olho cortado para ocultá-lo das listas.
-            </p>
-          </div>
-          {fornecedoresFiltrados.length === 0 ? (
-            <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum fornecedor encontrado para "{busca}".</p>
-          ) : (
-            <Matriz rows={fornecedoresFiltrados} />
-          )}
-        </>
+        <Matriz rows={fornecedoresFiltrados} />
       )}
 
       {/* Fornecedores ocultos — restaurar com 1 clique. */}
