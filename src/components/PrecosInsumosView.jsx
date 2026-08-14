@@ -872,6 +872,9 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   // Fornecedores com a lista de produtos expandida (accordion inline).
   const [expandidos, setExpandidos] = useState(() => new Set());
   const [busca, setBusca] = useState('');
+  // Busca por produto: corta as NOTAS, nao so a exibicao — com ela preenchida os
+  // valores da matriz passam a ser "quanto cada fornecedor me vendeu deste item".
+  const [buscaProduto, setBuscaProduto] = useState('');
 
   const lojas = useMemo(
     () => [...new Set(precos.map(p => p.loja))].filter(Boolean).sort(),
@@ -898,14 +901,20 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   const janelaSet = useMemo(() => new Set(janela), [janela]);
 
   // Fornecedores ocultos somem de tudo aqui (agregacao, stats, matriz).
+  // A busca de produto casa tanto o nome da nota quanto o "Produto (planilha)",
+  // que e como o item aparece no CMV — quem procura "mussarela" acha os dois.
+  const qProduto = buscaProduto.trim().toLowerCase();
   const doPeriodo = useMemo(
     () => precos.filter(p =>
       p.data
       && janelaSet.has(p.data.slice(0, 7))
       && !ocultos.has(p.fornecedor || '(sem)')
       && (!loja || p.loja === loja)
+      && (!qProduto
+        || (p.produto || '').toLowerCase().includes(qProduto)
+        || (p.produto_padrao || '').toLowerCase().includes(qProduto))
     ),
-    [precos, janelaSet, ocultos, loja]
+    [precos, janelaSet, ocultos, loja, qProduto]
   );
 
   // Mostra so os meses da janela que tem alguma compra (matriz mais enxuta).
@@ -980,8 +989,10 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   }
 
   // As colunas de quantidade so existem quando algum fornecedor esta aberto —
-  // com tudo fechado a matriz e uma tabela de R$ por mes, e mais nada.
-  const mostrarQtd = expandidos.size > 0;
+  // com tudo fechado a matriz e uma tabela de R$ por mes, e mais nada. Buscar um
+  // produto ja abre todas as linhas (sobrou pouca coisa em cada fornecedor), e a
+  // quantidade vem junto.
+  const mostrarQtd = expandidos.size > 0 || !!qProduto;
 
   const nFornecedores = porFornecedor.length;
   const nProdutos = new Set(doPeriodo.map(p => p.produto).filter(Boolean)).size;
@@ -1008,7 +1019,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
           </thead>
           <tbody>
             {rows.map(r => {
-              const aberto = expandidos.has(r.fornecedor);
+              const aberto = expandidos.has(r.fornecedor) || !!qProduto;
               const produtos = produtosPorFornecedor[r.fornecedor] || [];
               return (
                 <Fragment key={r.fornecedor}>
@@ -1103,7 +1114,15 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
           placeholder="Buscar fornecedor..."
           value={busca}
           onChange={e => setBusca(e.target.value)}
-          style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
+          style={{ ...inputS, flex: '1 1 180px', maxWidth: 260 }}
+        />
+        <input
+          type="search"
+          placeholder="Buscar produto..."
+          value={buscaProduto}
+          onChange={e => setBuscaProduto(e.target.value)}
+          title="Deixa na matriz só as compras deste produto, em cada fornecedor"
+          style={{ ...inputS, flex: '1 1 180px', maxWidth: 260 }}
         />
         {lojas.length > 0 && (
           <select value={loja} onChange={e => setLoja(e.target.value)} style={{ ...inputS, flex: '0 1 140px' }}>
@@ -1124,7 +1143,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
 
       {doPeriodo.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
-          Nenhuma compra registrada nos últimos {nMeses} meses{loja ? ` na ${loja}` : ''}.
+          Nenhuma compra{buscaProduto.trim() ? ` de "${buscaProduto.trim()}"` : ''} registrada nos últimos {nMeses} meses{loja ? ` na ${loja}` : ''}.
         </p>
       ) : fornecedoresFiltrados.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum fornecedor encontrado para "{busca}".</p>
