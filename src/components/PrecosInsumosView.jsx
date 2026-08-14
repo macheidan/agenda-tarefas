@@ -867,9 +867,16 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   // checkbox. Substituiu a navegacao por ano — a base so carrega os ultimos 12
   // meses mesmo, entao "ano" nunca mostrava nada alem desta janela.
   const [mostrar12, setMostrar12] = useState(false);
+  // Loja (pizzaria) da nota. Vazio = todas — a leitura padrao e a soma das duas.
+  const [loja, setLoja] = useState('');
   // Fornecedores com a lista de produtos expandida (accordion inline).
   const [expandidos, setExpandidos] = useState(() => new Set());
   const [busca, setBusca] = useState('');
+
+  const lojas = useMemo(
+    () => [...new Set(precos.map(p => p.loja))].filter(Boolean).sort(),
+    [precos]
+  );
 
   const toggleExpand = (nome) => setExpandidos(prev => {
     const next = new Set(prev);
@@ -892,8 +899,13 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
 
   // Fornecedores ocultos somem de tudo aqui (agregacao, stats, matriz).
   const doPeriodo = useMemo(
-    () => precos.filter(p => p.data && janelaSet.has(p.data.slice(0, 7)) && !ocultos.has(p.fornecedor || '(sem)')),
-    [precos, janelaSet, ocultos]
+    () => precos.filter(p =>
+      p.data
+      && janelaSet.has(p.data.slice(0, 7))
+      && !ocultos.has(p.fornecedor || '(sem)')
+      && (!loja || p.loja === loja)
+    ),
+    [precos, janelaSet, ocultos, loja]
   );
 
   // Mostra so os meses da janela que tem alguma compra (matriz mais enxuta).
@@ -1093,6 +1105,12 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
           onChange={e => setBusca(e.target.value)}
           style={{ ...inputS, flex: '1 1 220px', maxWidth: 320 }}
         />
+        {lojas.length > 0 && (
+          <select value={loja} onChange={e => setLoja(e.target.value)} style={{ ...inputS, flex: '0 1 140px' }}>
+            <option value="">Todas as lojas</option>
+            {lojas.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        )}
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text)', cursor: 'pointer', userSelect: 'none' }}>
           <input
             type="checkbox"
@@ -1106,7 +1124,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
 
       {doPeriodo.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
-          Nenhuma compra registrada nos últimos {nMeses} meses.
+          Nenhuma compra registrada nos últimos {nMeses} meses{loja ? ` na ${loja}` : ''}.
         </p>
       ) : fornecedoresFiltrados.length === 0 ? (
         <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum fornecedor encontrado para "{busca}".</p>
