@@ -956,22 +956,16 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
     return out;
   }, [doPeriodo]);
 
-  // Totais por mes (rodape) das linhas exibidas — valor e quantidade por unidade.
+  // Totais por mes (rodape) das linhas exibidas. So valor — a coluna de
+  // quantidade nao tem rodape (ver comentario na linha de Total da matriz).
   function totaisPorMes(rows) {
     const t = {};
-    const q = {};
-    const qGeral = {};
     let geral = 0;
     for (const r of rows) {
-      for (const mk of mesesAtivos) {
-        t[mk] = (t[mk] || 0) + (r.meses[mk] || 0);
-        const acc = (q[mk] ||= {});
-        for (const [u, v] of Object.entries(r.qtds[mk] || {})) acc[u] = (acc[u] || 0) + v;
-      }
-      for (const [u, v] of Object.entries(r.qtdTotal || {})) qGeral[u] = (qGeral[u] || 0) + v;
+      for (const mk of mesesAtivos) t[mk] = (t[mk] || 0) + (r.meses[mk] || 0);
       geral += r.total;
     }
-    return { t, q, qGeral, geral };
+    return { t, geral };
   }
 
   const nFornecedores = porFornecedor.length;
@@ -980,7 +974,7 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   // Matriz fornecedor x mes. Cada linha expande (accordion) os produtos daquele
   // fornecedor (produto x mes) inline, logo abaixo. Botao de olho-cortado oculta.
   function Matriz({ rows }) {
-    const { t, q, qGeral, geral } = totaisPorMes(rows);
+    const { t, geral } = totaisPorMes(rows);
     return (
       <div style={{ background: 'var(--card-bg, #fff)', borderRadius: 8, border: '1px solid var(--border, #e5e5e5)', overflowX: 'auto' }}>
         <table className="fornMatriz" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -1051,14 +1045,17 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
             })}
             <tr style={{ borderTop: '2px solid var(--border, #e5e5e5)', background: 'var(--bg, #f5f5f5)' }}>
               <td style={{ ...tdS, fontWeight: 700, position: 'sticky', left: 0, background: 'var(--bg, #f5f5f5)' }}>Total</td>
+              {/* A linha de Total soma so o R$. Quantidade nao entra: somar kg de
+                  farinha com un de embalagem de todos os fornecedores daria um
+                  numero sem significado. */}
               {mesesAtivos.map(mk => (
                 <Fragment key={mk}>
                   <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600 }} title={formatBRL(t[mk] || 0, 2)}>{formatBRL(t[mk] || 0)}</td>
-                  <CelulaQtd acc={q[mk]} bold />
+                  <td style={tdS} />
                 </Fragment>
               ))}
               <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 800 }} title={formatBRL(geral, 2)}>{formatBRL(geral)}</td>
-              <CelulaQtd acc={qGeral} bold />
+              <td style={tdS} />
             </tr>
           </tbody>
         </table>
