@@ -967,6 +967,10 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
     return { t, geral };
   }
 
+  // As colunas de quantidade so existem quando algum fornecedor esta aberto —
+  // com tudo fechado a matriz e uma tabela de R$ por mes, e mais nada.
+  const mostrarQtd = expandidos.size > 0;
+
   const nFornecedores = porFornecedor.length;
   const nProdutos = new Set(doPeriodo.map(p => p.produto).filter(Boolean)).size;
 
@@ -983,11 +987,11 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
               {mesesAtivos.map(mk => (
                 <Fragment key={mk}>
                   <th style={{ ...thS, textAlign: 'right' }}>{labelMes(mk)}</th>
-                  <th style={{ ...thS, textAlign: 'right', ...qtdColS }} title={`Quantidade comprada em ${labelMes(mk)} (kg/lt/un)`}>Qtd</th>
+                  {mostrarQtd && <th style={{ ...thS, textAlign: 'right', ...qtdColS }} title={`Quantidade comprada em ${labelMes(mk)} (kg/lt/un)`}>Qtd</th>}
                 </Fragment>
               ))}
               <th style={{ ...thS, textAlign: 'right' }}>Total</th>
-              <th style={{ ...thS, textAlign: 'right', ...qtdColS }} title="Quantidade comprada no período (kg/lt/un)">Qtd</th>
+              {mostrarQtd && <th style={{ ...thS, textAlign: 'right', ...qtdColS }} title="Quantidade comprada no período (kg/lt/un)">Qtd</th>}
             </tr>
           </thead>
           <tbody>
@@ -1018,11 +1022,11 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
                         <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: r.meses[mk] ? 'inherit' : '#ccc' }} title={r.meses[mk] ? formatBRL(r.meses[mk], 2) : ''}>
                           {r.meses[mk] ? formatBRL(r.meses[mk]) : '—'}
                         </td>
-                        <td style={tdS} />
+                        {mostrarQtd && <td style={tdS} />}
                       </Fragment>
                     ))}
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 700 }} title={formatBRL(r.total, 2)}>{formatBRL(r.total)}</td>
-                    <td style={tdS} />
+                    {mostrarQtd && <td style={tdS} />}
                   </tr>
                   {aberto && produtos.map(prod => (
                     <tr key={`${r.fornecedor}|${prod.produto}`} style={{ background: 'var(--bg, #f9fafb)' }}>
@@ -1034,11 +1038,11 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
                           <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: prod.meses[mk] ? 'var(--text-secondary, #555)' : '#ccc' }} title={prod.meses[mk] ? formatBRL(prod.meses[mk], 2) : ''}>
                             {prod.meses[mk] ? formatBRL(prod.meses[mk]) : '—'}
                           </td>
-                          <CelulaQtd acc={prod.qtds[mk]} />
+                          {mostrarQtd && <CelulaQtd acc={prod.qtds[mk]} />}
                         </Fragment>
                       ))}
                       <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary, #555)' }} title={formatBRL(prod.total, 2)}>{formatBRL(prod.total)}</td>
-                      <CelulaQtd acc={prod.qtdTotal} />
+                      {mostrarQtd && <CelulaQtd acc={prod.qtdTotal} />}
                     </tr>
                   ))}
                 </Fragment>
@@ -1052,11 +1056,11 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
               {mesesAtivos.map(mk => (
                 <Fragment key={mk}>
                   <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 600 }} title={formatBRL(t[mk] || 0, 2)}>{formatBRL(t[mk] || 0)}</td>
-                  <td style={tdS} />
+                  {mostrarQtd && <td style={tdS} />}
                 </Fragment>
               ))}
               <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 800 }} title={formatBRL(geral, 2)}>{formatBRL(geral)}</td>
-              <td style={tdS} />
+              {mostrarQtd && <td style={tdS} />}
             </tr>
           </tbody>
         </table>
