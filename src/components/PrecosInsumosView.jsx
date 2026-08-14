@@ -837,11 +837,11 @@ function formatQtd(acc) {
 // de valor, pra que o R$ continue sendo a leitura principal da tabela.
 const qtdColS = { color: 'var(--text-muted)', fontWeight: 400 };
 
-function CelulaQtd({ acc, bold = false }) {
+function CelulaQtd({ acc }) {
   const txt = formatQtd(acc);
   return (
     <td
-      style={{ ...tdS, textAlign: 'right', fontSize: 11, whiteSpace: 'nowrap', color: txt ? 'var(--text-muted)' : '#ccc', fontWeight: bold && txt ? 600 : 400 }}
+      style={{ ...tdS, textAlign: 'right', fontSize: 11, whiteSpace: 'nowrap', color: txt ? 'var(--text-muted)' : '#ccc' }}
       title={txt || ''}
     >
       {txt || '—'}
@@ -910,16 +910,15 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
   );
   const labelMes = (mk) => MESES[Number(mk.slice(5, 7)) - 1] + (comAno ? '/' + mk.slice(2, 4) : '');
 
-  // Agrega valor (preco_bruto = "$ Compra" da nota) e quantidade por chave -> mes.
+  // Agrega valor (preco_bruto = "$ Compra" da nota) por chave -> mes. Sem
+  // quantidade: a linha do fornecedor mostra so R$.
   function agrega(rows, keyFn, keyLabel) {
     const map = {};
     for (const p of rows) {
       const key = keyFn(p) || '(sem)';
       const mk = p.data.slice(0, 7);
-      const r = (map[key] ||= { [keyLabel]: key, meses: {}, qtds: {}, qtdTotal: {}, total: 0 });
+      const r = (map[key] ||= { [keyLabel]: key, meses: {}, total: 0 });
       r.meses[mk] = (r.meses[mk] || 0) + p.preco_bruto;
-      somaQtd(r.qtds[mk] ||= {}, p);
-      somaQtd(r.qtdTotal, p);
       r.total += p.preco_bruto;
     }
     return Object.values(map).sort((a, b) => b.total - a.total);
@@ -1012,16 +1011,18 @@ function FornecedoresView({ precos, ocultos, ocultosList = [], toggleOculto }) {
                       <span style={{ color: 'var(--accent)', marginRight: 6, display: 'inline-block', width: 10 }}>{aberto ? '▾' : '▸'}</span>
                       {r.fornecedor}
                     </td>
+                    {/* Quantidade so aparece nos produtos (linha expandida): no
+                        fornecedor ela juntaria kg, un e cx de itens diferentes. */}
                     {mesesAtivos.map(mk => (
                       <Fragment key={mk}>
                         <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: r.meses[mk] ? 'inherit' : '#ccc' }} title={r.meses[mk] ? formatBRL(r.meses[mk], 2) : ''}>
                           {r.meses[mk] ? formatBRL(r.meses[mk]) : '—'}
                         </td>
-                        <CelulaQtd acc={r.qtds[mk]} />
+                        <td style={tdS} />
                       </Fragment>
                     ))}
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, fontWeight: 700 }} title={formatBRL(r.total, 2)}>{formatBRL(r.total)}</td>
-                    <CelulaQtd acc={r.qtdTotal} bold />
+                    <td style={tdS} />
                   </tr>
                   {aberto && produtos.map(prod => (
                     <tr key={`${r.fornecedor}|${prod.produto}`} style={{ background: 'var(--bg, #f9fafb)' }}>
