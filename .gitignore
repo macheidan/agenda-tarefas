@@ -38,3 +38,7 @@ scripts/motoboys/data/
 
 # Coleta de clientes (nome + telefone de cliente) — dado pessoal, NUNCA commitar
 scripts/clientes/data/
+
+# Cache do Python (o coletor de clientes roda daqui)
+__pycache__/
+*.pyc
