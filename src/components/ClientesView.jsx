@@ -160,12 +160,15 @@ export default function ClientesView({ settings, isAdmin }) {
   const seta = (campo) =>
     ordem.campo === campo ? <span className={styles.sortSeta}>{ordem.dir === 'asc' ? '▲' : '▼'}</span> : null;
 
-  // Nome, telefone — um por linha. A vírgula do nome (o Saipos tem "Silva,
-  // João") vira espaço, senão o próprio nome quebraria a coluna de quem colar
-  // isso como CSV.
+  // Primeiro nome, telefone — um por linha. Só o primeiro nome porque é assim
+  // que a mensagem chama a pessoa ("Oi, Mauro"). A vírgula é tirada antes do
+  // corte: o Saipos tem nome cadastrado como "Silva, João", e sem isso o
+  // primeiro pedaço sairia com vírgula e quebraria a coluna de quem colar.
+  const primeiroNome = (nome) => nome.replace(/,/g, ' ').trim().split(/\s+/)[0] || '';
+
   const copiarLista = async () => {
     const texto = filtrados
-      .map((c) => `${c.nome.replace(/,/g, ' ').trim()},${paraWhatsapp(c.telefone)}`)
+      .map((c) => `${primeiroNome(c.nome)},${paraWhatsapp(c.telefone)}`)
       .join('\n');
     try {
       await navigator.clipboard.writeText(texto);
@@ -246,7 +249,7 @@ export default function ClientesView({ settings, isAdmin }) {
           className={styles.ghostBtn}
           onClick={copiarLista}
           disabled={filtrados.length === 0}
-          title="Copia nome e telefone, um por linha, separados por vírgula"
+          title="Copia primeiro nome e telefone, um por linha, separados por vírgula"
         >
           {copiado ? 'Copiado!' : `Copiar nomes + telefones (${filtrados.length})`}
         </button>
