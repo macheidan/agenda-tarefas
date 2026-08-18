@@ -20,6 +20,7 @@ const TAB_LABELS = {
   precosInsumos: 'Preços',
   departamentoPessoal: 'Depto Pessoal',
   motoboys: 'Motoboys',
+  clientes: 'Clientes',
 };
 
 // Seções do menu. `defaultOff` = nasce desmarcada; as demais são visíveis a
@@ -39,6 +40,7 @@ const SECTIONS = [
   { key: 'precosInsumosEnabled', tab: 'precosInsumos', label: 'Preços', desc: 'Preços de insumos, fornecedores e fichas técnicas' },
   { key: 'departamentoPessoalEnabled', tab: 'departamentoPessoal', label: 'Depto Pessoal', desc: 'Escala, faltas e folha de pagamento', defaultOff: true },
   { key: 'motoboysEnabled', tab: 'motoboys', label: 'Motoboys', desc: 'Conferência semanal de entregas', defaultOff: true },
+  { key: 'clientesEnabled', tab: 'clientes', label: 'Clientes', desc: 'Base de clientes por tempo sem pedir, para campanhas de WhatsApp', defaultOff: true },
 ];
 
 // Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em
@@ -72,6 +74,10 @@ const MOTOBOYS_LOJAS = [
 const REVIEWS_LOJAS = [
   { flag: 'reviewsVerDame', label: 'Dáme' },
   { flag: 'reviewsVerLov', label: 'Lov' },
+];
+const CLIENTES_LOJAS = [
+  { flag: 'clientesVerDame', label: 'Dáme' },
+  { flag: 'clientesVerLov', label: 'Lov' },
 ];
 
 /** Switch do TailAdmin: track 36×20, knob 16 que anda 16px. O input fica
@@ -129,7 +135,7 @@ function Group({ title, desc, children }) {
 // Categorias que têm sub-permissões próprias (sub-seções, lojas ou edição).
 // Quando ligadas, a linha expande e mostra esses ajustes aninhados logo abaixo,
 // em vez de largá-los num bloco separado longe da categoria.
-const HAS_SUB = new Set(['precosInsumos', 'motoboys', 'reviews', 'departamentoPessoal', 'shopping']);
+const HAS_SUB = new Set(['precosInsumos', 'motoboys', 'reviews', 'departamentoPessoal', 'shopping', 'clientes']);
 
 /** Linha de categoria em "Seções visíveis". Quando `expandable`, a parte
  *  esquerda (chevron + ícone + texto) vira botão que abre/fecha o painel
@@ -433,6 +439,16 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
           <Row key={l.flag} title={l.label} desc="Loja visível nas avaliações">
             <Switch
               label={`Avaliações — ${l.label}`}
+              checked={s[l.flag] !== false}
+              onChange={(v) => toggleSection(permTarget, l.flag, v)}
+            />
+          </Row>
+        ));
+      case 'clientes':
+        return CLIENTES_LOJAS.map((l) => (
+          <Row key={l.flag} title={l.label} desc="Loja visível na base de clientes">
+            <Switch
+              label={`Clientes — ${l.label}`}
               checked={s[l.flag] !== false}
               onChange={(v) => toggleSection(permTarget, l.flag, v)}
             />

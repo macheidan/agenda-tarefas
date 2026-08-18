@@ -20,7 +20,7 @@ import styles from '../../styles/AppShellV2.module.css';
 const NAV_GROUPS = [
   { label: 'Operação', keys: ['calendar', 'shopping', 'precosInsumos'] },
   { label: 'Equipe', keys: ['departamentoPessoal', 'motoboys'] },
-  { label: 'Marketing', keys: ['reels', 'contentPlan', 'influencers', 'reviews', 'postiz'] },
+  { label: 'Marketing', keys: ['reels', 'contentPlan', 'influencers', 'reviews', 'clientes', 'postiz'] },
   { label: 'Ferramentas', keys: ['notes', 'ideas', 'knowledge'] },
 ];
 
@@ -43,6 +43,7 @@ export default function AppShellV2({
   precosInsumosEnabled,
   departamentoPessoalEnabled,
   motoboysEnabled,
+  clientesEnabled,
   ideasUnread,
   onOpenMessage,
   completedCount,
@@ -63,6 +64,7 @@ export default function AppShellV2({
     precosInsumos: { enabled: precosInsumosEnabled, key: 'precosInsumos', label: 'Preços' },
     departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
     motoboys: { enabled: motoboysEnabled, key: 'motoboys', label: 'Motoboys' },
+    clientes: { enabled: clientesEnabled, key: 'clientes', label: 'Clientes' },
     // Link externo — abre o Postiz (agendador de redes) numa aba nova. Não tem
     // "view" interna no Dashboard; o item só navega para href.
     postiz: { enabled: true, key: 'postiz', label: 'Postiz', href: 'https://prolonged-cloning-skimpily.ngrok-free.dev' },

@@ -1,0 +1,396 @@
+/* Clientes — base viva de clientes das lojas para campanhas de WhatsApp.
+   Segue .specify/memory/constitution.md (v1.1.0). */
+
+.container {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Princípio 2 — header com linha divisória */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Princípio 3 — faixas de dias sem pedir na linha do título */
+.sectionTab {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sectionTab:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.sectionTabActive,
+.sectionTabActive:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ---- Abas de loja ---- */
+.storeBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* v2: segmented control (docs/tailadmin-medido.md), o mesmo de Preços e
+   Suprimentos — o padrão da casa para sub-navegação. */
+:global(:root[data-v2]) .storeBar {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .storeBar .sectionTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .storeBar .sectionTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .storeBar .sectionTabActive,
+:global(:root[data-v2]) .storeBar .sectionTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ---- Busca + resumo ---- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* Princípio 5 — campo retangular que acende no foco */
+.search {
+  flex: 1 1 260px;
+  max-width: 380px;
+  padding: 8px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.search::placeholder {
+  color: var(--text-muted);
+}
+
+.resumo {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.resumo strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Princípio 4 — ghost com borda de campo */
+.ghostBtn {
+  background: none;
+  border: 1px solid var(--input-border);
+  color: var(--text);
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ghostBtn:hover {
+  background: var(--card-hover);
+  border-color: var(--accent);
+}
+
+/* ---- Tabela (Princípio 8 — densa no desktop) ---- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+}
+
+.table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.thSort {
+  cursor: pointer;
+  user-select: none;
+}
+
+.thSort:hover {
+  color: var(--text);
+}
+
+.sortSeta {
+  margin-left: 3px;
+  font-size: 9px;
+}
+
+.table td {
+  font-size: 13px;
+  color: var(--text);
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background 0.15s;
+}
+
+.table tbody tr:hover {
+  background: var(--card-hover);
+}
+
+.nome {
+  font-weight: 500;
+}
+
+.semNome {
+  color: var(--text-muted);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.colDias,
+.colPedidos {
+  width: 96px;
+  text-align: right;
+}
+
+.colData {
+  width: 104px;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.colTel {
+  width: 150px;
+}
+
+/* Link do WhatsApp: o telefone é o próprio atalho para abrir a conversa. */
+.telLink {
+  color: var(--accent);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.telLink:hover {
+  text-decoration: underline;
+}
+
+/* Princípio 7 — chip de marca em accent-light */
+.brandChip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+
+/* Faixa de dias sem pedir: destaque suave, em rgba (Princípio 7). */
+.dias_31 { background: rgba(247, 144, 9, 0.07); }
+.dias_61 { background: rgba(247, 144, 9, 0.13); }
+.dias_91 { background: rgba(210, 63, 74, 0.08); }
+
+.maisRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+/* Princípio 9 — empty state com borda tracejada */
+.empty {
+  margin-top: 16px;
+  padding: 32px 16px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+.empty p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.empty span {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.empty code {
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .sectionTab {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  .search {
+    max-width: none;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: auto;
+  }
+
+  .table tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+
+  .table td {
+    border-bottom: none;
+    padding: 3px 0;
+    display: flex;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    flex: 0 0 92px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+  }
+
+  .colDias,
+  .colPedidos,
+  .colData,
+  .colTel {
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+
+  .header h2 {
+    font-size: 16px;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .headerActions .sectionTab {
+    flex: 1 1 auto;
+    min-height: 38px;
+  }
+
+  /* iOS não dá zoom no foco a partir de 16px */
+  .search {
+    font-size: 16px;
+  }
+}

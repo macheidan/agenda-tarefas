@@ -21,6 +21,7 @@ export default function Header({
   precosInsumosEnabled,
   departamentoPessoalEnabled,
   motoboysEnabled,
+  clientesEnabled,
   ideasUnread,
   onOpenMessage,
   completedCount,
@@ -46,6 +47,7 @@ export default function Header({
     precosInsumos: { enabled: precosInsumosEnabled, key: 'precosInsumos', label: 'Preços' },
     departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
     motoboys: { enabled: motoboysEnabled, key: 'motoboys', label: 'Motoboys' },
+    clientes: { enabled: clientesEnabled, key: 'clientes', label: 'Clientes' },
   };
   const orderedTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(TABS_DEF))
     .map((k) => TABS_DEF[k])

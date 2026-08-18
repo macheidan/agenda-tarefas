@@ -359,5 +359,14 @@ service cloud.firestore {
       allow read: if isAdmin() || hasSettingFlag('motoboysEnabled');
       allow write: if isMotoboysEditor();
     }
+
+    // Clientes (aba "Clientes"): base de nome/telefone/última compra coletada
+    // do Saipos de madrugada por scripts/clientes/ pelo Admin SDK, que ignora
+    // estas regras. No cliente é só leitura — é dado pessoal de cliente, então
+    // fica atrás da flag da seção em vez de aberto a qualquer aprovado.
+    match /clientes/{docId} {
+      allow read: if isAdmin() || hasSettingFlag('clientesEnabled');
+      allow write: if false;
+    }
   }
 }

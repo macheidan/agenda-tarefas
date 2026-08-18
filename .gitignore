@@ -35,3 +35,6 @@ serviceAccount*.json
 *.sw?
 .vercel
 scripts/motoboys/data/
+
+# Coleta de clientes (nome + telefone de cliente) — dado pessoal, NUNCA commitar
+scripts/clientes/data/

@@ -32,6 +32,7 @@ Hooks em `src/hooks/` são a fonte da verdade sobre shape dos documentos. Coleç
 - `tasks/{uid}/items/{taskId}` — **subcoleção por usuário** (único caso); tarefas com status, recorrência, comentários inline
 - `notes/{noteId}`, `ideas/{ideaId}`, `reviews/{reviewId}`, `reels/{reelId}`, `scripts/{scriptId}` — coleções flat com `authorUid`/`targetUid`
 - `surveys/{dd_<brand>_<hash>}` — aba **Avaliações**: pesquisas de satisfação (NPS) do Delivery Direto. Só leitura no cliente; escrita só via `scripts/importSurveys.mjs` (Admin SDK + Playwright). `reviews` é a seção *antiga* (avaliações internas admin→funcionário): sem tela desde 2026-07-15, dados preservados
+- `clientes/{loja}_{n}` — aba **Clientes**: base viva de nome/telefone/última compra/qtd de pedidos, para campanha de WhatsApp. **Não é 1 doc por cliente**: cada doc é um bloco de até 800 clientes em `itens: [{t,n,p,u}]` (+ `clientes/{loja}_meta`), senão a tela custaria milhares de leituras. Só leitura no cliente; escrita só por `scripts/clientes/` (Admin SDK + Playwright), todo dia às 04:10 (tarefa `ClientesColeta`)
 - `chats/{roomId}/messages/{msgId}` — 1 room por usuário não-admin; admin ouve todos
 - `adminMessages/{msgId}` — broadcast com `targetUids[]`, `readBy[]`
 - `settings/{uid}` — toggles de features por usuário (admin escreve)

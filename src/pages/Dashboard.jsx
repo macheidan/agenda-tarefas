@@ -50,6 +50,7 @@ const PrecosInsumosView = lazy(() => import('../components/PrecosInsumosView'));
 const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPessoalView'));
 const SuprimentosView = lazy(() => import('../components/SuprimentosView'));
 const MotoboysView = lazy(() => import('../components/MotoboysView'));
+const ClientesView = lazy(() => import('../components/ClientesView'));
 
 // Rótulos curtos das abas — usados na barra de navegação mobile e no título da
 // janela do navegador (assim a aba do Chrome mostra em que página a pessoa está).
@@ -57,7 +58,7 @@ const NAV_LABELS = {
   calendar: 'Agenda', reels: 'Instagram', contentPlan: 'Conteúdo', influencers: 'Influencers',
   notes: 'Notas', shopping: 'Suprimentos', ideas: 'Ideias', reviews: 'Avaliações',
   knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
-  motoboys: 'Motoboys',
+  motoboys: 'Motoboys', clientes: 'Clientes',
 };
 
 // Abas que só existem pro admin (não entram no menu/nav comum).
@@ -122,6 +123,8 @@ export default function Dashboard() {
   const departamentoPessoalEnabled = !settingsLoading && settings.departamentoPessoalEnabled === true;
   // Motoboys (conferência semanal): default OFF, admin habilita por usuário.
   const motoboysEnabled = !settingsLoading && settings.motoboysEnabled === true;
+  // Clientes (base para campanhas de WhatsApp): default OFF, admin habilita por usuário.
+  const clientesEnabled = !settingsLoading && settings.clientesEnabled === true;
   const {
     influencers,
     addInfluencer,
@@ -161,7 +164,7 @@ export default function Dashboard() {
     influencers: influencersEnabled, notes: notesEnabled, shopping: shoppingListEnabled,
     ideas: ideasEnabled, reviews: reviewsEnabled, knowledge: knowledgeEnabled,
     precosInsumos: precosInsumosEnabled, departamentoPessoal: departamentoPessoalEnabled,
-    motoboys: motoboysEnabled,
+    motoboys: motoboysEnabled, clientes: clientesEnabled,
   };
   const navDot = <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block' }} />;
   const bottomTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(NAV_LABELS))
@@ -220,6 +223,7 @@ export default function Dashboard() {
     precosInsumosEnabled,
     departamentoPessoalEnabled,
     motoboysEnabled,
+    clientesEnabled,
     ideasUnread,
     onOpenMessage: () => setMessageModalOpen(true),
     completedCount: completedTasks.length,
@@ -354,6 +358,9 @@ export default function Dashboard() {
         {activeTab === 'precosInsumos' && precosInsumosEnabled && <PrecosInsumosView />}
         {activeTab === 'departamentoPessoal' && departamentoPessoalEnabled && <DepartamentoPessoalView />}
         {activeTab === 'motoboys' && motoboysEnabled && <MotoboysView />}
+        {activeTab === 'clientes' && clientesEnabled && (
+          <ClientesView settings={settings} isAdmin={isAdmin} />
+        )}
         {activeTab === 'completed' && isAdmin && (
           <CompletedView
             completedTasks={completedTasks}
