@@ -13,6 +13,7 @@ servidor aceita (500 volta vazio).
 Janela de 90 dias por decisão de produto: a base de "91+ dias sem pedir" da
 intranet se forma pelo envelhecimento da nossa própria lista, não pelo
 histórico inteiro do Saipos (33 mil cadastros por loja, metade sem telefone).
+Entra só quem tem telefone com DDD do RS (51, 53, 54, 55).
 
 Uso:
     python coletar_clientes.py                # últimos 90 dias, headless
@@ -41,6 +42,10 @@ URL_CLIENTES = "https://conta.saipos.com/#/app/store/customers"
 # nunca por posição: o índice de sa.selecionar_loja assume 2 lojas e hoje cairia
 # na loja de testes.
 LOJAS = {"dame": "10677", "lov": "11377"}
+# Só cliente do Rio Grande do Sul entra na lista: as duas lojas entregam em
+# Porto Alegre, então DDD de fora é turista, pedido de viagem ou telefone
+# digitado errado — ninguém para quem mandar campanha.
+DDD_RS = {"51", "53", "54", "55"}
 PAGE_SIZE = 100
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
@@ -65,6 +70,19 @@ def limpar_telefone(tel) -> str:
     if not tel:
         return ""
     return re.sub(r"\D", "", str(tel).split("<br>")[0])
+
+
+def ddd(tel: str) -> str:
+    """DDD do número, tirando o 55 do país quando ele vem junto.
+
+    "5551999998888" (13) e "555199999888" (12) trazem o DDI; "51999998888"
+    (11) e "5133334444" (10) não. O DDD 55 (Santa Maria) é justamente o caso
+    ambíguo — por isso a decisão é pelo comprimento, não pelo prefixo.
+    """
+    t = str(tel or "")
+    if len(t) >= 12 and t.startswith("55"):
+        t = t[2:]
+    return t[:2]
 
 
 def selecionar_loja(page, id_store: str) -> None:
@@ -189,14 +207,19 @@ def agregar(registros: list[dict]) -> list[dict]:
 
     O Saipos tem cadastros duplicados do mesmo telefone (cada um com o seu
     `qtt_sales`): somamos os pedidos e ficamos com a compra mais recente. Quem
-    não tem telefone fica de fora — a lista existe para mandar WhatsApp.
+    não tem telefone, ou tem DDD de fora do RS, fica de fora — a lista existe
+    para mandar WhatsApp para quem as lojas conseguem entregar.
     """
     por_tel: dict[str, dict] = {}
     sem_tel = 0
+    fora_rs = 0
     for r in registros:
         tel = limpar_telefone(r.get("phone"))
         if len(tel) < 10:
             sem_tel += 1
+            continue
+        if ddd(tel) not in DDD_RS:
+            fora_rs += 1
             continue
         ult = (r.get("last_sale_date") or "")[:10]
         atual = por_tel.get(tel)
@@ -220,8 +243,8 @@ def agregar(registros: list[dict]) -> list[dict]:
     # cadastro solto do Saipos, que não serve para campanha.
     com_data = [c for c in por_tel.values() if c["ultimaCompra"]]
     print(
-        f"  {len(com_data)} telefones unicos ({sem_tel} registros sem telefone e "
-        f"{len(por_tel) - len(com_data)} sem data descartados)"
+        f"  {len(com_data)} telefones unicos ({sem_tel} sem telefone, "
+        f"{fora_rs} com DDD fora do RS e {len(por_tel) - len(com_data)} sem data descartados)"
     )
     return sorted(com_data, key=lambda c: c["ultimaCompra"], reverse=True)
 

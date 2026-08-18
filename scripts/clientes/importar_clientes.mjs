@@ -12,9 +12,11 @@
 //   t = telefone (só dígitos)   n = nome   p = qtd de pedidos
 //   u = última compra (YYYY-MM-DD)
 //
-// A importação é um MERGE que nunca remove ninguém: a coleta só enxerga quem
-// comprou nos últimos 90 dias, e é justamente o envelhecimento de quem já está
-// na base que forma as faixas de 91+ dias sem pedir.
+// A importação é um MERGE que nunca remove ninguém por tempo: a coleta só
+// enxerga quem comprou nos últimos 90 dias, e é justamente o envelhecimento de
+// quem já está na base que forma as faixas de 91+ dias sem pedir. A única
+// exclusão é de quem não serve para campanha (sem telefone, sem data, ou DDD
+// fora do RS).
 //
 // Uso: node scripts/clientes/importar_clientes.mjs data/clientes-2026-08-18.json [--dry]
 
@@ -24,6 +26,20 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const CHUNK_SIZE = 800;
 const LOJAS = ['dame', 'lov'];
+
+// Só cliente do Rio Grande do Sul entra na lista (as lojas entregam em Porto
+// Alegre). O filtro vale também para quem JÁ está gravado: rodar o import é o
+// que limpa a base de quem entrou antes desta regra.
+const DDD_RS = new Set(['51', '53', '54', '55']);
+
+/** DDD do número, tirando o 55 do país quando ele vem junto. O DDD 55 (Santa
+ *  Maria) é o caso ambíguo — por isso a decisão é pelo comprimento. */
+function ddd(tel) {
+  const t = String(tel || '');
+  return (t.length >= 12 && t.startsWith('55') ? t.slice(2) : t).slice(0, 2);
+}
+
+const doRS = (tel) => DDD_RS.has(ddd(tel));
 
 function initFirestore() {
   const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || './serviceAccount.json';
@@ -42,7 +58,7 @@ async function carregarExistentes(db, loja) {
     if (data.meta === true) return;
     chunks += 1;
     for (const item of data.itens || []) {
-      if (item?.t) porTel.set(item.t, item);
+      if (item?.t && doRS(item.t)) porTel.set(item.t, item);
     }
   });
   return { porTel, chunks };
@@ -62,9 +78,10 @@ function fundir(existentes, novos) {
   let atualizados = 0;
   for (const c of novos) {
     const tel = String(c.telefone || '');
-    // Sem telefone ou sem data de última compra o registro não serve para nada
-    // na tela (o "dias sem pedir" é a espinha da seção).
-    if (!tel || !c.ultimaCompra) continue;
+    // Sem telefone, sem data de última compra ou com DDD de fora do RS o
+    // registro não entra ("dias sem pedir" é a espinha da seção, e telefone de
+    // outro estado não é público das lojas).
+    if (!tel || !c.ultimaCompra || !doRS(tel)) continue;
     const antigo = mapa.get(tel);
     if (!antigo) {
       mapa.set(tel, { t: tel, n: c.nome || '', p: c.pedidos || 0, u: c.ultimaCompra || '' });
