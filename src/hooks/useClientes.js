@@ -15,6 +15,32 @@ import { db } from '../firebase';
  *
  * O hook devolve a lista já achatada e desmontada em campos com nome inteiro.
  */
+// Conectivos que ficam minúsculos no meio do nome ("Maria da Silva").
+const CONECTIVOS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'di', 'du', 'del', 'la']);
+
+/**
+ * Arruma a caixa do nome vindo do Saipos — lá o cadastro é digitado no balcão e
+ * vem "ADEMAR" ou "joão da silva". Só mexe em quem está TODO em maiúsculo ou
+ * TODO em minúsculo: nome já digitado com caixa mista fica como está, senão a
+ * regra estragaria coisas como "Ana McDonald".
+ *
+ * É correção de exibição, não de dado: o Firestore continua guardando o nome
+ * como o Saipos mandou.
+ */
+export function arrumarCaixa(nome) {
+  const n = String(nome || '').trim();
+  if (!n || !/\p{L}/u.test(n)) return n;
+  const soMaiuscula = n === n.toUpperCase();
+  const soMinuscula = n === n.toLowerCase();
+  if (!soMaiuscula && !soMinuscula) return n;
+  return n
+    .toLowerCase()
+    .replace(/(^|[\s\-'’])(\p{L})/gu, (_, antes, letra) => antes + letra.toUpperCase())
+    .replace(/\s(\p{L}+)/gu, (todo, palavra) =>
+      CONECTIVOS.has(palavra.toLowerCase()) ? ` ${palavra.toLowerCase()}` : todo
+    );
+}
+
 export function useClientes() {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +81,7 @@ export function useClientes() {
         lista.push({
           loja: d.loja,
           telefone: item.t,
-          nome: item.n || '',
+          nome: arrumarCaixa(item.n),
           pedidos: item.p || 0,
           ultimaCompra: item.u || '',
         });
