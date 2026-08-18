@@ -160,9 +160,12 @@ export default function ClientesView({ settings, isAdmin }) {
   const seta = (campo) =>
     ordem.campo === campo ? <span className={styles.sortSeta}>{ordem.dir === 'asc' ? '▲' : '▼'}</span> : null;
 
-  const copiarTelefones = async () => {
+  // Nome + telefone separados por TAB: colado no Sheets/Excel cai em duas
+  // colunas, que é o formato que a lista precisa ter para virar disparo.
+  const copiarLista = async () => {
+    const texto = filtrados.map((c) => `${c.nome}\t${paraWhatsapp(c.telefone)}`).join('\n');
     try {
-      await navigator.clipboard.writeText(filtrados.map((c) => paraWhatsapp(c.telefone)).join('\n'));
+      await navigator.clipboard.writeText(texto);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
@@ -238,10 +241,11 @@ export default function ClientesView({ settings, isAdmin }) {
         </span>
         <button
           className={styles.ghostBtn}
-          onClick={copiarTelefones}
+          onClick={copiarLista}
           disabled={filtrados.length === 0}
+          title="Copia nome e telefone, um por linha, separados por TAB"
         >
-          {copiado ? 'Copiado!' : `Copiar telefones (${filtrados.length})`}
+          {copiado ? 'Copiado!' : `Copiar nomes + telefones (${filtrados.length})`}
         </button>
       </div>
 
