@@ -160,10 +160,13 @@ export default function ClientesView({ settings, isAdmin }) {
   const seta = (campo) =>
     ordem.campo === campo ? <span className={styles.sortSeta}>{ordem.dir === 'asc' ? '▲' : '▼'}</span> : null;
 
-  // Nome + telefone separados por TAB: colado no Sheets/Excel cai em duas
-  // colunas, que é o formato que a lista precisa ter para virar disparo.
+  // Nome, telefone — um por linha. A vírgula do nome (o Saipos tem "Silva,
+  // João") vira espaço, senão o próprio nome quebraria a coluna de quem colar
+  // isso como CSV.
   const copiarLista = async () => {
-    const texto = filtrados.map((c) => `${c.nome}\t${paraWhatsapp(c.telefone)}`).join('\n');
+    const texto = filtrados
+      .map((c) => `${c.nome.replace(/,/g, ' ').trim()},${paraWhatsapp(c.telefone)}`)
+      .join('\n');
     try {
       await navigator.clipboard.writeText(texto);
       setCopiado(true);
@@ -243,7 +246,7 @@ export default function ClientesView({ settings, isAdmin }) {
           className={styles.ghostBtn}
           onClick={copiarLista}
           disabled={filtrados.length === 0}
-          title="Copia nome e telefone, um por linha, separados por TAB"
+          title="Copia nome e telefone, um por linha, separados por vírgula"
         >
           {copiado ? 'Copiado!' : `Copiar nomes + telefones (${filtrados.length})`}
         </button>
