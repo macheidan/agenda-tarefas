@@ -11,10 +11,10 @@ const LOJAS = [
 ];
 const LOJA_LABELS = Object.fromEntries(LOJAS.map((l) => [l.key, l.label]));
 
-// Faixas de dias sem pedir. Quem comprou nos últimos 6 dias não entra em
-// nenhuma delas (não é alvo de recuperação) — aparece só em "Todos".
+// Faixas de dias sem pedir. Cobrem a base inteira: a primeira começa em 0, então
+// quem comprou hoje já entra nela — "Todos" e a soma das faixas batem.
 const FAIXAS = [
-  { key: '7', label: '7 a 30 dias', min: 7, max: 30, classe: null },
+  { key: '0', label: '0 a 30 dias', min: 0, max: 30, classe: null },
   { key: '31', label: '31 a 60 dias', min: 31, max: 60, classe: 'dias_31' },
   { key: '61', label: '61 a 90 dias', min: 61, max: 90, classe: 'dias_61' },
   { key: '91', label: '91+ dias', min: 91, max: Infinity, classe: 'dias_91' },
