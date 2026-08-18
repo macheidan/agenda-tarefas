@@ -243,6 +243,19 @@
   width: 150px;
 }
 
+.colBairro {
+  width: 130px;
+  color: var(--text-muted);
+}
+
+/* Valores em coluna estreita e alinhados à direita: a leitura é de cima para
+   baixo, comparando quem gastou mais. */
+.colValor {
+  width: 92px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Link do WhatsApp: o telefone é o próprio atalho para abrir a conversa. */
 .telLink {
   color: var(--accent);
@@ -421,8 +434,11 @@
   .colDias,
   .colPedidos,
   .colData,
-  .colTel {
+  .colTel,
+  .colBairro,
+  .colValor {
     width: auto;
+    text-align: left;
   }
 }
 

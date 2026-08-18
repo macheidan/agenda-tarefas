@@ -23,13 +23,28 @@ const FAIXAS = [
   { key: '91', label: '91+ dias', min: 91, max: Infinity, classe: 'dias_91' },
 ];
 
+// Quem dá para incluir numa campanha e quem só existe como número. Metade da
+// base chega pelo marketplace, que entrega nome, endereço e CPF mas mascara o
+// telefone — sem esse recorte a tela misturaria as duas coisas.
+const CONTATOS = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'com', label: 'Com WhatsApp', teste: (c) => c.podeReceber },
+  { key: 'sem', label: 'Sem contato', teste: (c) => !c.podeReceber },
+];
+
 const COLUNAS = {
   nome: (c) => (c.nome || '').toLowerCase(),
   telefone: (c) => c.telefone,
+  bairro: (c) => (c.bairro || '').toLowerCase(),
   ultimaCompra: (c) => c.ultimaCompra || '',
   dias: (c) => c.dias,
   pedidos: (c) => c.pedidos,
+  valorTotal: (c) => c.valorTotal,
+  ticket: (c) => c.ticket,
 };
+
+const reais = (v) =>
+  (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
 const PAGINA = 200;
 
@@ -76,6 +91,7 @@ export default function ClientesView({ settings, isAdmin }) {
   const { clientes, meta, loading, error } = useClientes();
   const [faixa, setFaixa] = useState('todos');
   const [lojaFiltro, setLojaFiltro] = useState('all');
+  const [contato, setContato] = useState('todos');
   const [busca, setBusca] = useState('');
   const [ordem, setOrdem] = useState({ campo: 'dias', dir: 'desc' });
   const [limite, setLimite] = useState(PAGINA);
@@ -110,10 +126,11 @@ export default function ClientesView({ settings, isAdmin }) {
     [daLoja, hoje]
   );
 
-  const daMarca = useMemo(
-    () => (lojaFiltro === 'all' ? comDias : comDias.filter((c) => c.loja === lojaFiltro)),
-    [comDias, lojaFiltro]
-  );
+  const daMarca = useMemo(() => {
+    const base = lojaFiltro === 'all' ? comDias : comDias.filter((c) => c.loja === lojaFiltro);
+    const teste = CONTATOS.find((c) => c.key === contato)?.teste;
+    return teste ? base.filter(teste) : base;
+  }, [comDias, lojaFiltro, contato]);
 
   // Busca por nome ou telefone: dígitos na busca viram busca de telefone, o
   // resto casa com o nome sem acento.
@@ -153,10 +170,30 @@ export default function ClientesView({ settings, isAdmin }) {
   const visiveis = filtrados.slice(0, limite);
   const marcasComDados = useMemo(() => new Set(daLoja.map((c) => c.loja)), [daLoja]);
 
+  // Contagem de cada recorte de contato dentro da loja escolhida — sem passar
+  // pelo próprio filtro, senão o botão não selecionado mostraria zero.
+  const contagemContato = useMemo(() => {
+    const base = lojaFiltro === 'all' ? comDias : comDias.filter((c) => c.loja === lojaFiltro);
+    const out = { todos: base.length };
+    for (const c of CONTATOS) {
+      if (c.teste) out[c.key] = base.filter(c.teste).length;
+    }
+    return out;
+  }, [comDias, lojaFiltro]);
+
+  // Soma do recorte na tela: é o que transforma a lista numa leitura de
+  // faturamento ("os 91+ dias levaram R$ X embora").
+  const totais = useMemo(() => {
+    const valor = filtrados.reduce((s, c) => s + (c.valorTotal || 0), 0);
+    const pedidos = filtrados.reduce((s, c) => s + (c.pedidos || 0), 0);
+    return { valor, pedidos, ticket: pedidos ? valor / pedidos : 0 };
+  }, [filtrados]);
+
   // Todo filtro volta pro topo da lista — senão a pessoa continua vendo o
   // "mostrar mais" de um recorte que não existe mais.
   const trocarFaixa = (v) => { setFaixa(v); setLimite(PAGINA); };
   const trocarLoja = (v) => { setLojaFiltro(v); setLimite(PAGINA); };
+  const trocarContato = (v) => { setContato(v); setLimite(PAGINA); };
   const trocarBusca = (v) => { setBusca(v); setLimite(PAGINA); };
 
   const ordenarPor = (campo) => {
@@ -171,8 +208,12 @@ export default function ClientesView({ settings, isAdmin }) {
   const seta = (campo) =>
     ordem.campo === campo ? <span className={styles.sortSeta}>{ordem.dir === 'asc' ? '▲' : '▼'}</span> : null;
 
+  // Quem não tem telefone com DDD do RS não entra em lista de contato nenhuma —
+  // nem na cópia, nem no disparo. Continua contando no resto da tela.
+  const comWhatsapp = useMemo(() => filtrados.filter((c) => c.podeReceber), [filtrados]);
+
   const copiarLista = async () => {
-    const texto = filtrados
+    const texto = comWhatsapp
       .map((c) => `${primeiroNome(c.nome)},${paraWhatsapp(c.telefone)}`)
       .join('\n');
     try {
@@ -193,10 +234,10 @@ export default function ClientesView({ settings, isAdmin }) {
   // da lista seria pior: ninguém entenderia por que o total não bate.
   const destinatarios = useMemo(
     () =>
-      filtrados
+      comWhatsapp
         .filter((c) => !optOutSet.has(c.telefone))
         .map((c) => ({ telefone: c.telefone, nome: primeiroNome(c.nome) })),
-    [filtrados, optOutSet]
+    [comWhatsapp, optOutSet]
   );
 
   const faixaAtual = FAIXAS.find((f) => f.key === faixa);
@@ -269,6 +310,23 @@ export default function ClientesView({ settings, isAdmin }) {
         </div>
       )}
 
+      <div className={styles.storeBar}>
+        {CONTATOS.map((c) => (
+          <button
+            key={c.key}
+            className={`${styles.sectionTab} ${contato === c.key ? styles.sectionTabActive : ''}`}
+            onClick={() => trocarContato(c.key)}
+            title={
+              c.key === 'sem'
+                ? 'Cliente que chegou pelo marketplace: tem nome, bairro e histórico, mas o telefone vem mascarado'
+                : undefined
+            }
+          >
+            {c.label} ({contagemContato[c.key] ?? 0})
+          </button>
+        ))}
+      </div>
+
       <div className={styles.toolbar}>
         <input
           className={styles.search}
@@ -279,16 +337,18 @@ export default function ClientesView({ settings, isAdmin }) {
           aria-label="Buscar por nome ou telefone"
         />
         <span className={styles.resumo}>
-          <strong>{filtrados.length}</strong> cliente{filtrados.length === 1 ? '' : 's'}
+          <strong>{filtrados.length}</strong> cliente{filtrados.length === 1 ? '' : 's'} · histórico
+          de <strong>{reais(totais.valor)}</strong> em {totais.pedidos} pedido
+          {totais.pedidos === 1 ? '' : 's'} · ticket {reais(totais.ticket)}
           {atualizadoEm && ` · atualizado em ${atualizadoEm.toLocaleDateString('pt-BR')}`}
         </span>
         <button
           className={styles.ghostBtn}
           onClick={copiarLista}
-          disabled={filtrados.length === 0}
+          disabled={comWhatsapp.length === 0}
           title="Copia primeiro nome e telefone, um por linha, separados por vírgula"
         >
-          {copiado ? 'Copiado!' : `Copiar nomes + telefones (${filtrados.length})`}
+          {copiado ? 'Copiado!' : `Copiar nomes + telefones (${comWhatsapp.length})`}
         </button>
         {podeEnviar && (
           <button
@@ -360,6 +420,9 @@ export default function ClientesView({ settings, isAdmin }) {
                 <th className={`${styles.colTel} ${styles.thSort}`} onClick={() => ordenarPor('telefone')}>
                   Telefone {seta('telefone')}
                 </th>
+                <th className={`${styles.colBairro} ${styles.thSort}`} onClick={() => ordenarPor('bairro')}>
+                  Bairro {seta('bairro')}
+                </th>
                 <th className={`${styles.colData} ${styles.thSort}`} onClick={() => ordenarPor('ultimaCompra')}>
                   Última compra {seta('ultimaCompra')}
                 </th>
@@ -369,13 +432,23 @@ export default function ClientesView({ settings, isAdmin }) {
                 <th className={`${styles.colPedidos} ${styles.thSort}`} onClick={() => ordenarPor('pedidos')}>
                   Pedidos {seta('pedidos')}
                 </th>
+                <th
+                  className={`${styles.colValor} ${styles.thSort}`}
+                  onClick={() => ordenarPor('valorTotal')}
+                  title="Tudo o que o cliente já gastou na loja, não só na janela de 90 dias"
+                >
+                  Total {seta('valorTotal')}
+                </th>
+                <th className={`${styles.colValor} ${styles.thSort}`} onClick={() => ordenarPor('ticket')}>
+                  Ticket {seta('ticket')}
+                </th>
               </tr>
             </thead>
             <tbody>
               {visiveis.map((c) => {
                 const f = FAIXAS.find((x) => c.dias >= x.min && c.dias <= x.max);
                 return (
-                  <tr key={`${c.loja}_${c.telefone}`} className={f?.classe ? styles[f.classe] : ''}>
+                  <tr key={`${c.loja}_${c.chave}`} className={f?.classe ? styles[f.classe] : ''}>
                     <td data-label="Nome" className={styles.nome}>
                       {c.nome || <span className={styles.semNome}>Sem nome</span>}
                       {lojaFiltro === 'all' && marcasComDados.size > 1 && (
@@ -388,15 +461,31 @@ export default function ClientesView({ settings, isAdmin }) {
                       )}
                     </td>
                     <td data-label="Telefone" className={styles.colTel}>
-                      <a
-                        className={styles.telLink}
-                        href={`https://wa.me/${paraWhatsapp(c.telefone)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        title="Abrir conversa no WhatsApp"
-                      >
-                        {formatarTelefone(c.telefone)}
-                      </a>
+                      {c.telefone ? (
+                        <a
+                          className={styles.telLink}
+                          href={`https://wa.me/${paraWhatsapp(c.telefone)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={
+                            c.telefoneOrigem
+                              ? `Telefone de outro cadastro do mesmo cliente (casado por ${
+                                  c.telefoneOrigem === 'cpf' ? 'CPF' : 'nome e endereço'
+                                })`
+                              : 'Abrir conversa no WhatsApp'
+                          }
+                        >
+                          {formatarTelefone(c.telefone)}
+                          {c.telefoneOrigem ? ' *' : ''}
+                        </a>
+                      ) : (
+                        <span className={styles.semNome} title="Pedido de marketplace: telefone mascarado">
+                          sem contato
+                        </span>
+                      )}
+                    </td>
+                    <td data-label="Bairro" className={styles.colBairro}>
+                      {c.bairro || '—'}
                     </td>
                     <td data-label="Última compra" className={styles.colData}>
                       {formatarData(c.ultimaCompra)}
@@ -406,6 +495,12 @@ export default function ClientesView({ settings, isAdmin }) {
                     </td>
                     <td data-label="Pedidos" className={`${styles.colPedidos} ${styles.num}`}>
                       {c.pedidos}
+                    </td>
+                    <td data-label="Total" className={`${styles.colValor} ${styles.num}`}>
+                      {reais(c.valorTotal)}
+                    </td>
+                    <td data-label="Ticket" className={`${styles.colValor} ${styles.num}`}>
+                      {reais(c.ticket)}
                     </td>
                   </tr>
                 );

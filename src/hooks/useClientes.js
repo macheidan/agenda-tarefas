@@ -9,12 +9,30 @@ import { db } from '../firebase';
  *
  * A coleção NÃO é um doc por cliente: são milhares e a tela precisa de todos
  * de uma vez. Cada doc `clientes/{loja}_{n}` carrega um bloco de até 800
- * clientes em `itens: [{t,n,p,u}]` (telefone, nome, pedidos, última compra) e
+ * clientes com campos de uma letra (`k` chave, `t` telefone, `n` nome, `p`
+ * pedidos, `u` última compra, `v` valor total, `b` bairro, `c` cidade, `x`
+ * cancelados, `o` origem do telefone, `a` aniversário, `e` e-mail) e
  * `clientes/{loja}_meta` guarda o resumo da última coleta. Assim a tela custa
  * ~10 leituras em vez de ~10 mil.
  *
  * O hook devolve a lista já achatada e desmontada em campos com nome inteiro.
+ *
+ * Nem todo cliente tem telefone: mais da metade da base vem de marketplace, que
+ * entrega nome, endereço e CPF mas mascara o telefone. Esses contam em
+ * faturamento, recência e bairro, e `podeReceber` é o que separa quem dá para
+ * incluir numa campanha de WhatsApp.
  */
+// Campanha só para telefone do Rio Grande do Sul: as duas lojas entregam em
+// Porto Alegre, então DDD de fora é turista, pedido de viagem ou erro de
+// digitação. Espelha DDD_RS de scripts/clientes/coletar_clientes.py.
+const DDD_RS = new Set(['51', '53', '54', '55']);
+
+/** DDD do número, tirando o 55 do país quando ele vem junto. O DDD 55 (Santa
+ *  Maria) é o caso ambíguo — por isso a decisão é pelo comprimento. */
+function ddd(tel) {
+  const t = String(tel || '');
+  return (t.length >= 12 && t.startsWith('55') ? t.slice(2) : t).slice(0, 2);
+}
 // Conectivos que ficam minúsculos no meio do nome ("Maria da Silva").
 const CONECTIVOS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'di', 'du', 'del', 'la']);
 
@@ -84,13 +102,27 @@ export function useClientes() {
     for (const d of docs) {
       if (d.meta === true || !Array.isArray(d.itens)) continue;
       for (const item of d.itens) {
-        if (!item?.t) continue;
+        if (!item) continue;
+        const telefone = item.t || '';
+        const pedidos = item.p || 0;
+        const valorTotal = item.v || 0;
         lista.push({
           loja: d.loja,
-          telefone: item.t,
+          chave: item.k || `t:${telefone}`,
+          telefone,
           nome: arrumarCaixa(item.n),
-          pedidos: item.p || 0,
+          pedidos,
           ultimaCompra: item.u || '',
+          valorTotal,
+          // Ticket é derivado, não gravado: v/p muda sozinho a cada coleta.
+          ticket: pedidos ? valorTotal / pedidos : 0,
+          bairro: item.b || '',
+          cidade: item.c || '',
+          cancelados: item.x || 0,
+          aniversario: item.a || '',
+          email: item.e || '',
+          telefoneOrigem: item.o || '',
+          podeReceber: !!telefone && DDD_RS.has(ddd(telefone)),
         });
       }
     }

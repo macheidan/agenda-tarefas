@@ -12,8 +12,15 @@ servidor aceita (500 volta vazio).
 
 Janela de 90 dias por decisão de produto: a base de "91+ dias sem pedir" da
 intranet se forma pelo envelhecimento da nossa própria lista, não pelo
-histórico inteiro do Saipos (33 mil cadastros por loja, metade sem telefone).
-Entra só quem tem telefone com DDD do RS (51, 53, 54, 55).
+histórico inteiro do Saipos (33 mil cadastros por loja).
+
+Entra TODO mundo que comprou na janela, com telefone ou sem. Mais da metade dos
+cadastros não tem telefone: são os pedidos de marketplace, que chegam com nome,
+CPF e endereço e com o telefone mascarado pelo iFood. Esses não servem para
+campanha de WhatsApp, mas contam em faturamento, recência, ticket e bairro — e
+parte deles reaparece com telefone quando o CPF (ou o par nome+endereço) casa
+com um cadastro de balcão/site da mesma pessoa (ver `religar`). Quem pode
+receber campanha é marcado com `rs` (telefone com DDD 51, 53, 54 ou 55).
 
 Uso:
     python coletar_clientes.py                # últimos 90 dias, headless
@@ -24,10 +31,12 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
 import time
+import unicodedata
 import urllib.parse
 from datetime import date, timedelta
 from pathlib import Path
@@ -202,51 +211,198 @@ def coletar_loja(page, loja: str, id_store: str, inicio: date, fim: date) -> lis
         page.remove_listener("response", on_resp)
 
 
-def agregar(registros: list[dict]) -> list[dict]:
-    """Um cliente por telefone.
+def limpar_cpf(v) -> str:
+    """Só os 11 dígitos do CPF. CNPJ e lixo viram string vazia."""
+    d = re.sub(r"\D", "", str(v or ""))
+    return d if len(d) == 11 else ""
 
-    O Saipos tem cadastros duplicados do mesmo telefone (cada um com o seu
-    `qtt_sales`): somamos os pedidos e ficamos com a compra mais recente. Quem
-    não tem telefone, ou tem DDD de fora do RS, fica de fora — a lista existe
-    para mandar WhatsApp para quem as lojas conseguem entregar.
+
+def limpar_email(v) -> str:
+    e = str(v or "").split("<br>")[0].strip().lower()
+    return e if re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", e) else ""
+
+
+def normalizar(s) -> str:
+    """Texto sem acento, sem pontuação e em minúsculo — para casar chaves."""
+    t = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
+
+
+def enderecos(r) -> list:
+    """Endereços do cadastro. O Saipos junta todos num campo só, separados por
+    `<br>`, no formato "Cidade, Bairro - Rua, Numero, Complemento" — o
+    complemento já vem no fim da linha, então a linha inteira serve de chave."""
+    return [a.strip() for a in str(r.get("address") or "").split("<br>") if a.strip()]
+
+
+def partes_endereco(end: str):
+    cidade, _, resto = str(end or "").partition(",")
+    bairro, _, rua = resto.partition(" - ")
+    return cidade.strip(), bairro.strip(), rua.strip()
+
+
+def data_iso(v) -> str:
+    return str(v or "")[:10]
+
+
+def preparar(r: dict) -> dict:
+    """Um registro do Saipos vira o dicionário que a intranet entende."""
+    ends = enderecos(r)
+    # O campo não tem ordem cronológica; o endereço na cidade da loja é o que
+    # interessa para relatório por bairro, então Porto Alegre ganha de fora.
+    poa = [e for e in ends if normalizar(partes_endereco(e)[0]) == "porto alegre"]
+    principal = (poa or ends or [""])[0]
+    cidade, bairro, _rua = partes_endereco(principal)
+    tel = limpar_telefone(r.get("phone"))
+    return {
+        "id": r.get("id_customer"),
+        "nome": limpar_nome(r.get("full_name")),
+        "telefone": tel if len(tel) >= 10 else "",
+        "telefoneOrigem": "cadastro" if len(tel) >= 10 else "",
+        "cpf": limpar_cpf(r.get("cpf_cnpj")),
+        "email": limpar_email(r.get("email")),
+        "aniversario": data_iso(r.get("birth_date"))[5:],
+        "cidade": cidade,
+        "bairro": bairro,
+        "endereco": principal,
+        "enderecos": [normalizar(e) for e in ends],
+        "pedidos": int(r.get("qtt_sales") or 0),
+        "valorTotal": round(float(r.get("value_total_sales") or 0), 2),
+        "cancelados": int(float(r.get("count_canceled") or 0)),
+        "ultimaCompra": data_iso(r.get("last_sale_date")),
+    }
+
+
+def indices_de_telefone(itens: list):
+    """CPF -> telefone e nome+endereço -> telefone, a partir de quem TEM telefone.
+
+    É o que permite religar o cadastro de marketplace (nome, CPF e endereço,
+    telefone nenhum) ao cadastro de balcão/site da mesma pessoa. Guarda o
+    conjunto de telefones de cada chave: chave que aponta para dois telefones
+    diferentes é ambígua e não religa ninguém.
     """
-    por_tel: dict[str, dict] = {}
-    sem_tel = 0
-    fora_rs = 0
-    for r in registros:
-        tel = limpar_telefone(r.get("phone"))
-        if len(tel) < 10:
-            sem_tel += 1
+    por_cpf: dict = {}
+    por_nome_end: dict = {}
+    for it in itens:
+        if not it["telefone"]:
             continue
-        if ddd(tel) not in DDD_RS:
-            fora_rs += 1
+        if it["cpf"]:
+            por_cpf.setdefault(it["cpf"], set()).add(it["telefone"])
+        nome = normalizar(it["nome"])
+        if nome:
+            for e in it["enderecos"]:
+                por_nome_end.setdefault((nome, e), set()).add(it["telefone"])
+    return por_cpf, por_nome_end
+
+
+def religar(itens: list) -> dict:
+    """Empresta telefone para quem não tem, quando a identidade é inequívoca.
+
+    Só religa em 1 para 1: se o CPF (ou o par nome+endereço) aparece com dois
+    telefones diferentes, não dá para saber qual é o da pessoa e o cadastro
+    fica sem telefone mesmo.
+    """
+    por_cpf, por_nome_end = indices_de_telefone(itens)
+    contas = {"cpf": 0, "nome_endereco": 0}
+    for it in itens:
+        if it["telefone"]:
             continue
-        ult = (r.get("last_sale_date") or "")[:10]
-        atual = por_tel.get(tel)
-        if not atual:
-            por_tel[tel] = {
-                "id": r.get("id_customer"),
-                "nome": limpar_nome(r.get("full_name")),
-                "telefone": tel,
-                "pedidos": int(r.get("qtt_sales") or 0),
-                "ultimaCompra": ult,
-            }
-            continue
-        atual["pedidos"] += int(r.get("qtt_sales") or 0)
-        if ult > (atual["ultimaCompra"] or ""):
-            atual["ultimaCompra"] = ult
-            atual["id"] = r.get("id_customer")
-        if not atual["nome"]:
-            atual["nome"] = limpar_nome(r.get("full_name"))
-    # Sem data de última compra não dá para calcular "dias sem pedir" — e a
-    # janela de 90 dias garante que quem entrou aqui comprou. Se vier vazio é
-    # cadastro solto do Saipos, que não serve para campanha.
-    com_data = [c for c in por_tel.values() if c["ultimaCompra"]]
+        achados = por_cpf.get(it["cpf"]) if it["cpf"] else None
+        origem = "cpf"
+        if not achados or len(achados) != 1:
+            nome = normalizar(it["nome"])
+            achados = set()
+            if nome:
+                for e in it["enderecos"]:
+                    achados |= por_nome_end.get((nome, e), set())
+            origem = "nome_endereco"
+        if achados and len(achados) == 1:
+            it["telefone"] = next(iter(achados))
+            it["telefoneOrigem"] = origem
+            contas[origem] += 1
+    return contas
+
+
+def digerir(valor: str) -> str:
+    """Hash curto de um identificador. O CPF é a melhor chave que temos para
+    reconhecer o mesmo cliente entre cadastros, mas não tem por que existir em
+    claro na intranet: só o hash sobe para o Firestore."""
+    return hashlib.sha1(valor.encode("utf-8")).hexdigest()[:16]
+
+
+def chave(it: dict) -> str:
+    """Identidade do cliente, na ordem de confiança: telefone > CPF > nome+endereço.
+
+    Sem nenhuma das três o cadastro fica sozinho (chave pelo id do Saipos) — é
+    o caso do cadastro anônimo de balcão, que não dá para fundir com nada.
+    """
+    if it["telefone"]:
+        return "t:" + it["telefone"]
+    if it["cpf"]:
+        return "c:" + digerir(it["cpf"])
+    nome = normalizar(it["nome"])
+    if nome and it["enderecos"]:
+        # sorted() porque a chave precisa ser a mesma amanha: a ordem em que o
+        # Saipos devolve os enderecos do cadastro nao e garantida.
+        return "e:" + digerir(nome + "|" + sorted(it["enderecos"])[0])
+    return "i:" + str(it["id"])
+
+
+def fundir(a: dict, b: dict) -> dict:
+    """Funde dois cadastros do mesmo cliente (o Saipos duplica bastante).
+
+    Pedidos e valor SOMAM: cada cadastro tem o seu próprio histórico. Contato e
+    endereço vêm do cadastro com a compra mais recente.
+    """
+    novo, velho = (a, b) if (a["ultimaCompra"] or "") >= (b["ultimaCompra"] or "") else (b, a)
+    saida = dict(novo)
+    saida["pedidos"] = a["pedidos"] + b["pedidos"]
+    saida["valorTotal"] = round(a["valorTotal"] + b["valorTotal"], 2)
+    saida["cancelados"] = a["cancelados"] + b["cancelados"]
+    saida["enderecos"] = list(dict.fromkeys(a["enderecos"] + b["enderecos"]))
+    for campo in ("nome", "cpf", "email", "aniversario", "telefone", "bairro", "cidade", "endereco"):
+        if not saida.get(campo):
+            saida[campo] = velho.get(campo) or ""
+    if not novo["telefone"] and velho["telefone"]:
+        saida["telefoneOrigem"] = velho["telefoneOrigem"]
+    return saida
+
+
+def agregar(registros: list) -> list:
+    """Um cliente por identidade, com TODO mundo que comprou na janela.
+
+    Esta função descartava quem não tinha telefone — mais da metade da base:
+    são os pedidos de marketplace, que chegam com nome, CPF e endereço, mas com
+    o telefone mascarado pelo iFood. Agora todo mundo entra e o telefone virou
+    atributo: quem tem, é público de campanha; quem não tem, ainda conta em
+    faturamento, recência, bairro e ticket.
+    """
+    itens = [preparar(r) for r in registros]
+    contas = religar(itens)
+
+    agregados: dict = {}
+    for it in itens:
+        k = chave(it)
+        agregados[k] = fundir(agregados[k], it) if k in agregados else it
+
+    saida = []
+    for k, it in agregados.items():
+        it = dict(it)
+        it["chave"] = k
+        it["ticket"] = round(it["valorTotal"] / it["pedidos"], 2) if it["pedidos"] else 0.0
+        it["rs"] = bool(it["telefone"]) and ddd(it["telefone"]) in DDD_RS
+        it["cpfHash"] = digerir(it["cpf"]) if it["cpf"] else ""
+        it.pop("enderecos", None)
+        saida.append(it)
+
+    com_tel = sum(1 for c in saida if c["telefone"])
+    com_rs = sum(1 for c in saida if c["rs"])
     print(
-        f"  {len(com_data)} telefones unicos ({sem_tel} sem telefone, "
-        f"{fora_rs} com DDD fora do RS e {len(por_tel) - len(com_data)} sem data descartados)"
+        "  %d clientes (%d cadastros) - %d com telefone (%d com DDD do RS) - "
+        "religados: %d por CPF, %d por nome+endereco"
+        % (len(saida), len(registros), com_tel, com_rs, contas["cpf"], contas["nome_endereco"])
     )
-    return sorted(com_data, key=lambda c: c["ultimaCompra"], reverse=True)
+    return sorted(saida, key=lambda c: c["ultimaCompra"] or "", reverse=True)
 
 
 def coletar(lojas: dict[str, str], dias: int, headless: bool) -> dict:
