@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react';
-import { useClientes } from '../hooks/useClientes';
+import { useClientes, primeiroNome } from '../hooks/useClientes';
+import { useCampanhas } from '../hooks/useCampanhas';
+import CampanhaModal from './CampanhaModal';
+import CampanhasPanel from './CampanhasPanel';
 import styles from '../styles/ClientesView.module.css';
 
 // As duas lojas são fixas, não derivadas dos dados: a loja precisa aparecer na
@@ -77,6 +80,14 @@ export default function ClientesView({ settings, isAdmin }) {
   const [ordem, setOrdem] = useState({ campo: 'dias', dir: 'desc' });
   const [limite, setLimite] = useState(PAGINA);
   const [copiado, setCopiado] = useState(false);
+  const [mostrarCampanhas, setMostrarCampanhas] = useState(false);
+  const [modalCampanha, setModalCampanha] = useState(false);
+
+  // Disparar campanha é permissão à parte de ver a lista: quem consulta cliente
+  // não necessariamente pode mandar mensagem cobrada em nome da loja.
+  const podeEnviar = isAdmin || settings?.clientesEnviar === true;
+  const { campanhas, respostas, optOuts } = useCampanhas(podeEnviar);
+  const optOutSet = useMemo(() => new Set(optOuts.map((o) => o.id)), [optOuts]);
 
   // Lojas liberadas pro usuário (default: as duas). Admin vê tudo.
   const lojas = useMemo(
@@ -160,12 +171,6 @@ export default function ClientesView({ settings, isAdmin }) {
   const seta = (campo) =>
     ordem.campo === campo ? <span className={styles.sortSeta}>{ordem.dir === 'asc' ? '▲' : '▼'}</span> : null;
 
-  // Primeiro nome, telefone — um por linha. Só o primeiro nome porque é assim
-  // que a mensagem chama a pessoa ("Oi, Mauro"). A vírgula é tirada antes do
-  // corte: o Saipos tem nome cadastrado como "Silva, João", e sem isso o
-  // primeiro pedaço sairia com vírgula e quebraria a coluna de quem colar.
-  const primeiroNome = (nome) => nome.replace(/,/g, ' ').trim().split(/\s+/)[0] || '';
-
   const copiarLista = async () => {
     const texto = filtrados
       .map((c) => `${primeiroNome(c.nome)},${paraWhatsapp(c.telefone)}`)
@@ -178,6 +183,30 @@ export default function ClientesView({ settings, isAdmin }) {
       window.alert('Não consegui copiar — o navegador bloqueou a área de transferência.');
     }
   };
+
+  // Campanha é por loja: cada marca dispara do seu próprio número na Meta, então
+  // "Todas as lojas" não tem de onde sair. Quem só enxerga uma loja não precisa
+  // escolher nada.
+  const lojaAlvo = lojaFiltro !== 'all' ? lojaFiltro : lojas.length === 1 ? lojas[0].key : null;
+
+  // Descadastrado nunca entra no disparo. Ele continua na tabela, marcado — some
+  // da lista seria pior: ninguém entenderia por que o total não bate.
+  const destinatarios = useMemo(
+    () =>
+      filtrados
+        .filter((c) => !optOutSet.has(c.telefone))
+        .map((c) => ({ telefone: c.telefone, nome: primeiroNome(c.nome) })),
+    [filtrados, optOutSet]
+  );
+
+  const faixaAtual = FAIXAS.find((f) => f.key === faixa);
+  const filtroDesc = [
+    faixaAtual ? faixaAtual.label : 'todos os dias',
+    lojaAlvo ? LOJA_LABELS[lojaAlvo] : 'todas as lojas',
+    busca.trim() ? `busca "${busca.trim()}"` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   // "Atualizado em" vem do meta da coleta, não do relógio do navegador: é o que
   // diz se a lista de hoje já subiu.
@@ -209,6 +238,14 @@ export default function ClientesView({ settings, isAdmin }) {
               {f.label} ({contagens[f.key]})
             </button>
           ))}
+          {podeEnviar && (
+            <button
+              className={`${styles.sectionTab} ${mostrarCampanhas ? styles.sectionTabActive : ''}`}
+              onClick={() => setMostrarCampanhas((v) => !v)}
+            >
+              {mostrarCampanhas ? 'Voltar' : `Campanhas (${campanhas.length})`}
+            </button>
+          )}
         </div>
       </div>
 
@@ -253,8 +290,26 @@ export default function ClientesView({ settings, isAdmin }) {
         >
           {copiado ? 'Copiado!' : `Copiar nomes + telefones (${filtrados.length})`}
         </button>
+        {podeEnviar && (
+          <button
+            className={styles.primaryBtn}
+            onClick={() => setModalCampanha(true)}
+            disabled={!lojaAlvo || destinatarios.length === 0}
+            title={
+              lojaAlvo
+                ? 'Dispara o template aprovado na Meta para este recorte'
+                : 'Escolha uma loja — cada marca dispara do seu próprio número'
+            }
+          >
+            Enviar campanha ({destinatarios.length})
+          </button>
+        )}
       </div>
 
+      {mostrarCampanhas ? (
+        <CampanhasPanel campanhas={campanhas} respostas={respostas} optOuts={optOuts} />
+      ) : (
+        <>
       {loading && (
         <div className={styles.empty}>
           <p>Carregando clientes…</p>
@@ -326,6 +381,11 @@ export default function ClientesView({ settings, isAdmin }) {
                       {lojaFiltro === 'all' && marcasComDados.size > 1 && (
                         <span className={styles.brandChip}>{LOJA_LABELS[c.loja] || c.loja}</span>
                       )}
+                      {optOutSet.has(c.telefone) && (
+                        <span className={styles.optOutChip} title="Pediu para não receber mensagens">
+                          descadastrado
+                        </span>
+                      )}
                     </td>
                     <td data-label="Telefone" className={styles.colTel}>
                       <a
@@ -362,6 +422,17 @@ export default function ClientesView({ settings, isAdmin }) {
           )}
         </>
       )}
+        </>
+      )}
+
+      <CampanhaModal
+        open={modalCampanha}
+        onClose={() => setModalCampanha(false)}
+        loja={lojaAlvo}
+        lojaLabel={LOJA_LABELS[lojaAlvo] || ''}
+        destinatarios={destinatarios}
+        filtroDesc={filtroDesc}
+      />
     </div>
   );
 }

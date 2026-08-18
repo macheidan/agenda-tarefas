@@ -368,5 +368,29 @@ service cloud.firestore {
       allow read: if isAdmin() || hasSettingFlag('clientesEnabled');
       allow write: if false;
     }
+
+    // Campanhas de WhatsApp. TUDO aqui é escrito só pelo servidor: o disparo
+    // pelo proxy da Vercel (api/wa-send) e o status/resposta pelo webhook da
+    // Meta (api/wa-webhook), ambos com Admin SDK, que ignora estas regras.
+    // No cliente é leitura, e só para quem pode disparar — inclui telefone e
+    // texto de conversa de cliente.
+    match /campanhas/{id} {
+      allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
+      allow write: if false;
+    }
+    match /campanhaEnvios/{id} {
+      allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
+      allow write: if false;
+    }
+    match /campanhaRespostas/{id} {
+      allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
+      allow write: if false;
+    }
+    // Descadastro: quem respondeu SAIR. Nunca é apagado pelo cliente — sair da
+    // lista tem que ser mais fácil de entrar do que de reverter.
+    match /clientesOptOut/{telefone} {
+      allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
+      allow write: if false;
+    }
   }
 }

@@ -445,15 +445,29 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
           </Row>
         ));
       case 'clientes':
-        return CLIENTES_LOJAS.map((l) => (
-          <Row key={l.flag} title={l.label} desc="Loja visível na base de clientes">
-            <Switch
-              label={`Clientes — ${l.label}`}
-              checked={s[l.flag] !== false}
-              onChange={(v) => toggleSection(permTarget, l.flag, v)}
-            />
-          </Row>
-        ));
+        return (
+          <>
+            {CLIENTES_LOJAS.map((l) => (
+              <Row key={l.flag} title={l.label} desc="Loja visível na base de clientes">
+                <Switch
+                  label={`Clientes — ${l.label}`}
+                  checked={s[l.flag] !== false}
+                  onChange={(v) => toggleSection(permTarget, l.flag, v)}
+                />
+              </Row>
+            ))}
+            <Row
+              title="Enviar campanha"
+              desc="Dispara mensagem de WhatsApp para a lista e vê o histórico. Nasce desligado — cada envio é cobrado pela Meta"
+            >
+              <Switch
+                label="Clientes — enviar campanha"
+                checked={s.clientesEnviar === true}
+                onChange={(v) => toggleSection(permTarget, 'clientesEnviar', v)}
+              />
+            </Row>
+          </>
+        );
       case 'departamentoPessoal':
         return (
           <>

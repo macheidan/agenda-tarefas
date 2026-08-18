@@ -8,7 +8,11 @@
 npm run deploy:ftp  # PRODUÇÃO: build + publica em damepizza.com.br/intranet
 npm run deploy:v2   # publica a v2 (tema TailAdmin) em /intranet/v2
 npm run deploy      # legado: gh-pages (não usar — morto)
+npx vercel --prod   # publica o PROXY (gemini-proxy/): Gemini + envio de WhatsApp
 ```
+
+⚠️ O Action do FTP **não** publica o proxy — mexeu em `gemini-proxy/`, rode `npx vercel --prod`
+na raiz (a raiz é linkada ao projeto `gemini-proxy-intranet`, cujo Root Directory é `gemini-proxy/`).
 
 **Produção:** https://damepizza.com.br/intranet/ — **deploy automático a cada push na `main`** pelo GitHub Action `.github/workflows/deploy-ftp.yml` (roda o mesmo `npm run deploy:ftp`, com as credenciais vindo de secrets). Conferir em `gh run list`. O `npm run deploy:ftp` local é só pra publicar fora de um push; precisa de `.env.ftp` na raiz (fora do git).
 
@@ -33,6 +37,7 @@ Hooks em `src/hooks/` são a fonte da verdade sobre shape dos documentos. Coleç
 - `notes/{noteId}`, `ideas/{ideaId}`, `reviews/{reviewId}`, `reels/{reelId}`, `scripts/{scriptId}` — coleções flat com `authorUid`/`targetUid`
 - `surveys/{dd_<brand>_<hash>}` — aba **Avaliações**: pesquisas de satisfação (NPS) do Delivery Direto. Só leitura no cliente; escrita só via `scripts/importSurveys.mjs` (Admin SDK + Playwright). `reviews` é a seção *antiga* (avaliações internas admin→funcionário): sem tela desde 2026-07-15, dados preservados
 - `clientes/{loja}_{n}` — aba **Clientes**: base viva de nome/telefone/última compra/qtd de pedidos, para campanha de WhatsApp (só quem comprou nos últimos 90 dias, tem telefone e DDD do RS — 51/53/54/55). **Não é 1 doc por cliente**: cada doc é um bloco de até 800 clientes em `itens: [{t,n,p,u}]` (+ `clientes/{loja}_meta`), senão a tela custaria milhares de leituras. Só leitura no cliente; escrita só por `scripts/clientes/` (Admin SDK + Playwright), todo dia às 04:10 (tarefa `ClientesColeta`)
+- `campanhas/{id}`, `campanhaEnvios/{campanhaId}__{telefone}`, `campanhaRespostas/{msgId}`, `clientesOptOut/{telefone}` — disparo de WhatsApp da aba **Clientes** pela Cloud API da Meta (sem BSP). Escrita só do servidor: `gemini-proxy/api/wa-send.js` (disparo em lotes de 20) e `wa-webhook.js` (status, resposta e descadastro). Passo a passo do cadastro na Meta: `docs/whatsapp-cloud-api.md`
 - `chats/{roomId}/messages/{msgId}` — 1 room por usuário não-admin; admin ouve todos
 - `adminMessages/{msgId}` — broadcast com `targetUids[]`, `readBy[]`
 - `settings/{uid}` — toggles de features por usuário (admin escreve)

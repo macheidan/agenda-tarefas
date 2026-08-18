@@ -1,0 +1,274 @@
+/* Modal de disparo de campanha de WhatsApp (seção Clientes).
+   Segue .specify/memory/constitution.md (v1.1.0) — modal só para ação pontual. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--modal-bg);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 8px 32px var(--shadow-hover);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  line-height: 1;
+}
+
+.closeBtn:hover:not(:disabled) {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.closeBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.titulo {
+  margin: 0 32px 2px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitulo {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.resumo {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.resumo strong {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sobra {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.linha {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.campo,
+.campoPequeno {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.campo {
+  flex: 1 1 220px;
+}
+
+.campoPequeno {
+  flex: 0 0 108px;
+}
+
+.campo label,
+.campoPequeno label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.campo input,
+.campo textarea,
+.campoPequeno input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg, var(--card));
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.campo textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.campo input:focus,
+.campo textarea:focus,
+.campoPequeno input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.campo input:disabled,
+.campo textarea:disabled,
+.campoPequeno input:disabled {
+  opacity: 0.6;
+}
+
+.dica {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Prévia: destaque suave em rgba, não cor nova (Princípio 7) */
+.preview {
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: rgba(18, 183, 106, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.previewLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.preview p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.progresso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.barra {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.barraFill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+.campanhaId {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.erro {
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  background: rgba(210, 63, 74, 0.1);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.primario,
+.ghost {
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primario {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+}
+
+.primario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ghost {
+  background: none;
+  border: 1px solid var(--input-border);
+  color: var(--text);
+}
+
+.ghost:hover {
+  background: var(--card-hover);
+}
+
+@media (max-width: 480px) {
+  .modal {
+    padding: 20px 16px;
+  }
+
+  .campoPequeno {
+    flex: 1 1 100px;
+  }
+
+  /* iOS não dá zoom no foco a partir de 16px */
+  .campo input,
+  .campo textarea,
+  .campoPequeno input {
+    font-size: 16px;
+  }
+}

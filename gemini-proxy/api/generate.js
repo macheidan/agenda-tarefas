@@ -4,16 +4,7 @@
 // (users/{uid}.approved == true) ou o admin passa — espelho das firestore.rules.
 //
 // Envs (Vercel): GEMINI_API_KEY, FIREBASE_SERVICE_ACCOUNT (JSON), ADMIN_EMAIL.
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-
-const ALLOWED_ORIGINS = [
-  'https://damepizza.com.br',
-  'https://www.damepizza.com.br',
-  'http://localhost:5173',
-  'http://localhost:4173',
-];
+import { cors, autenticar } from '../lib/auth.js';
 
 // Mesmos modelos oferecidos no cliente; nada fora da lista passa.
 const ALLOWED_MODELS = [
@@ -23,51 +14,11 @@ const ALLOWED_MODELS = [
   'gemini-2.5-flash-lite',
 ];
 
-// Aprovação custa 1 read por chamada; um cache curto por instância segura a
-// quota do free tier sem deixar um usuário desativado durar mais que 5 min.
-const approvedCache = new Map(); // uid -> { ok, exp }
-const CACHE_MS = 5 * 60 * 1000;
-
-function app() {
-  if (!getApps().length) {
-    initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
-  }
-}
-
-async function isApproved(decoded) {
-  if (decoded.email === (process.env.ADMIN_EMAIL || 'machadofabio@gmail.com')) return true;
-  const hit = approvedCache.get(decoded.uid);
-  if (hit && hit.exp > Date.now()) return hit.ok;
-  const snap = await getFirestore().doc(`users/${decoded.uid}`).get();
-  const ok = snap.exists && snap.data().approved === true;
-  approvedCache.set(decoded.uid, { ok, exp: Date.now() + CACHE_MS });
-  return ok;
-}
-
 export default async function handler(req, res) {
-  const origin = req.headers.origin || '';
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  }
-  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (cors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'método não permitido' });
 
-  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!token) return res.status(401).json({ error: 'sem token' });
-
-  let decoded;
-  try {
-    app();
-    decoded = await getAuth().verifyIdToken(token);
-  } catch {
-    return res.status(401).json({ error: 'token inválido' });
-  }
-  if (!(await isApproved(decoded))) {
-    return res.status(403).json({ error: 'usuário não aprovado' });
-  }
+  if (!(await autenticar(req, res))) return;
 
   const { model, contents, systemInstruction, generationConfig } = req.body || {};
   if (!ALLOWED_MODELS.includes(model)) return res.status(400).json({ error: 'modelo inválido' });

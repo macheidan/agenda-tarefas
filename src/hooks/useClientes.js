@@ -41,6 +41,13 @@ export function arrumarCaixa(nome) {
     );
 }
 
+/** Só o primeiro nome — é assim que a mensagem chama a pessoa ("Oi, Mauro").
+ *  A vírgula sai antes do corte: o Saipos tem nome cadastrado como "Silva,
+ *  João", e sem isso o primeiro pedaço iria com vírgula colada. */
+export function primeiroNome(nome) {
+  return String(nome || '').replace(/,/g, ' ').trim().split(/\s+/)[0] || '';
+}
+
 export function useClientes() {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
