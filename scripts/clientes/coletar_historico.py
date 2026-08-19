@@ -167,6 +167,12 @@ def main() -> int:
             for c in lista:
                 anterior[f"{loja}|{c['chave']}"] = c
 
+    def salvar():
+        """Grava o que já foi lido. Chamado depois de cada loja: são ~10 min de
+        leitura por marca, e uma falha na segunda não pode apagar a primeira."""
+        dados["historicoEm"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+        caminho.write_text(json.dumps(dados, ensure_ascii=False, indent=1), encoding="utf-8")
+
     sa.BROWSER_PROFILE.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
         ctx = p.chromium.launch_persistent_context(
@@ -203,11 +209,11 @@ def main() -> int:
                 lidos, erros = coletar_loja(page, id_store, pendentes, janela)
                 com_hist = sum(1 for c in lista if c.get("meses"))
                 print(f"  {lidos} cadastros lidos, {erros} erros · {com_hist} clientes com histórico")
+                salvar()
         finally:
             ctx.close()
 
-    dados["historicoEm"] = time.strftime("%Y-%m-%dT%H:%M:%S")
-    caminho.write_text(json.dumps(dados, ensure_ascii=False, indent=1), encoding="utf-8")
+    salvar()
     print(f"OK: {caminho}")
     return 0
 

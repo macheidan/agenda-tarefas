@@ -94,8 +94,26 @@ def ddd(tel: str) -> str:
     return t[:2]
 
 
+def fechar_modais(page) -> None:
+    """Fecha qualquer modal aberto antes de mexer no header.
+
+    O Saipos abre modal sozinho (aviso, cadastro de cliente, sessão) e o
+    backdrop cobre a tela inteira: o clique no seletor de loja vai para o
+    backdrop e o Playwright fica minutos tentando, até estourar o timeout.
+    """
+    for _ in range(3):
+        if not page.locator(".modal.in, [uib-modal-window]").count():
+            return
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(800)
+    # Modal teimoso (sem botão de fechar, ou preso): recarregar desmonta tudo.
+    page.reload(wait_until="domcontentloaded", timeout=60000)
+    page.wait_for_timeout(4000)
+
+
 def selecionar_loja(page, id_store: str) -> None:
     """Troca de loja pelo seletor do header, casando pelo ID da loja."""
+    fechar_modais(page)
     atual = page.evaluate("() => (document.querySelector('a.button-header')?.innerText || '').trim()")
     page.locator("a.button-header").first.click(timeout=15000)
     page.wait_for_timeout(2500)
