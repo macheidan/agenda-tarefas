@@ -27,6 +27,10 @@ import { db } from '../firebase';
 // digitação. Espelha DDD_RS de scripts/clientes/coletar_clientes.py.
 const DDD_RS = new Set(['51', '53', '54', '55']);
 
+// Janela da frequência: 6 meses. Menos que isso, quem pede uma vez por mês vira
+// ruído; mais, e a conta demora a reagir a quem mudou de hábito.
+const MESES_FREQUENCIA = 6;
+
 /** DDD do número, tirando o 55 do país quando ele vem junto. O DDD 55 (Santa
  *  Maria) é o caso ambíguo — por isso a decisão é pelo comprimento. */
 function ddd(tel) {
@@ -66,6 +70,50 @@ export function primeiroNome(nome) {
   return String(nome || '').replace(/,/g, ' ').trim().split(/\s+/)[0] || '';
 }
 
+/** Rótulos "YYYY-MM" do mês de hoje e dos 5 anteriores. */
+function ultimosSeisMeses(hoje) {
+  const saida = [];
+  for (let i = 0; i < MESES_FREQUENCIA; i += 1) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    saida.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return saida;
+}
+
+/**
+ * Frequência de compra: pedidos por mês nos últimos 6 meses.
+ *
+ * O denominador não é 6 fixo. O mês corrente está pela metade (conta como
+ * fração) e cliente novo não pode ser punido por não ter passado: quem comprou
+ * pela primeira vez há 20 dias é medido contra o tempo que ele tem de casa. O
+ * piso de 1 mês existe para o cliente de ontem não aparecer com "30 pedidos por
+ * mês" por ter comprado uma vez.
+ *
+ * Sem `hm` (histórico ainda não coletado) devolve null — a tela mostra "—" em
+ * vez de inventar número.
+ */
+function frequencia(hm, primeiraCompra, hoje) {
+  if (!hm) return { pedidos6m: null, frequencia: null, intervaloDias: null };
+  const meses = ultimosSeisMeses(hoje);
+  const pedidos6m = meses.reduce((s, m) => s + (hm[m] || 0), 0);
+
+  const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+  let mesesObservados = MESES_FREQUENCIA - 1 + hoje.getDate() / diasNoMes;
+  if (primeiraCompra) {
+    const [a, m, d] = primeiraCompra.split('-').map(Number);
+    const desde = (hoje - new Date(a, (m || 1) - 1, d || 1)) / 86400000 / 30.44;
+    mesesObservados = Math.min(mesesObservados, desde);
+  }
+  mesesObservados = Math.max(1, mesesObservados);
+
+  const freq = pedidos6m / mesesObservados;
+  return {
+    pedidos6m,
+    frequencia: freq,
+    intervaloDias: freq > 0 ? 30.44 / freq : null,
+  };
+}
+
 export function useClientes() {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,6 +145,9 @@ export function useClientes() {
     return out;
   }, [docs]);
 
+  // Uma referência de tempo por render, não uma por cliente.
+  const hoje = useMemo(() => new Date(), []);
+
   const clientes = useMemo(() => {
     const lista = [];
     for (const d of docs) {
@@ -123,11 +174,13 @@ export function useClientes() {
           email: item.e || '',
           telefoneOrigem: item.o || '',
           podeReceber: !!telefone && DDD_RS.has(ddd(telefone)),
+          primeiraCompra: item.pc || '',
+          ...frequencia(item.hm, item.pc, hoje),
         });
       }
     }
     return lista;
-  }, [docs]);
+  }, [docs, hoje]);
 
   return { clientes, meta, loading, error };
 }

@@ -70,6 +70,33 @@ aplicativo para a API e não terminou. Nesse estado ele não envia.
 Nada aí é segredo — o que é segredo (token e app secret) não passa por aqui nem
 pelo repositório: vai direto do painel da Meta para as env vars da Vercel.
 
+### O que trava hoje (2026-08-19)
+
+**A linha de crédito da ManyChat continua no portfólio da Dáme.** Remover a
+ManyChat como *parceira* da WABA não removeu a *linha de crédito* que ela
+alocou — ela segue lá, conectada à WABA `206538077125724`, com "Recebedor da
+fatura" e "Parte compradora" = **ManyChat Inc**.
+
+É ela que trava o pagamento. O tooltip do botão desabilitado diz: *"Você não
+pode adicionar uma forma de pagamento porque está usando uma linha de crédito
+compartilhada para pagar pelos anúncios."* E na tela de detalhes da linha
+**não existe botão de remover** — quem aloca é quem desaloca. Saídas:
+
+1. pedir à ManyChat para desalocar a linha de crédito (caminho oficial);
+2. suporte da Meta desvincular;
+3. criar uma WABA nova e migrar o número para ela (a nova nasce limpa, mas
+   migrar número entre WABAs tem risco próprio).
+
+Enquanto isso, o **registro do número e o template podem seguir** — só o
+disparo de marketing é que depende de pagamento válido.
+
+**O número está "Offline"** e não há tela que refaça a ligação com um app. Use
+`scripts/clientes/registrar_numero_wa.mjs` (roda no seu terminal, pergunta o
+token na hora, não grava nada).
+
+⚠️ **O app precisa ser publicado** para receber webhook de produção — enquanto
+estiver "Não publicado", a Meta só manda webhook de teste do painel.
+
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
 ### 1. Conta e verificação

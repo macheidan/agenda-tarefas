@@ -367,6 +367,13 @@
 
 /* Valores em coluna estreita e alinhados à direita: a leitura é de cima para
    baixo, comparando quem gastou mais. */
+.colFreq {
+  width: 96px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .colValor {
   width: 92px;
   text-align: right;
@@ -553,7 +560,8 @@
   .colData,
   .colTel,
   .colBairro,
-  .colValor {
+  .colValor,
+  .colFreq {
     width: auto;
     text-align: left;
   }

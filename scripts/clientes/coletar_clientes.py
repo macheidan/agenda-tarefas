@@ -256,6 +256,9 @@ def preparar(r: dict) -> dict:
     tel = limpar_telefone(r.get("phone"))
     return {
         "id": r.get("id_customer"),
+        # Um cliente costuma ter mais de um cadastro no Saipos; o histórico de
+        # pedidos é pedido por cadastro, então a lista tem de sobreviver à fusão.
+        "ids": [r.get("id_customer")],
         "nome": limpar_nome(r.get("full_name")),
         "telefone": tel if len(tel) >= 10 else "",
         "telefoneOrigem": "cadastro" if len(tel) >= 10 else "",
@@ -360,6 +363,7 @@ def fundir(a: dict, b: dict) -> dict:
     saida["valorTotal"] = round(a["valorTotal"] + b["valorTotal"], 2)
     saida["cancelados"] = a["cancelados"] + b["cancelados"]
     saida["enderecos"] = list(dict.fromkeys(a["enderecos"] + b["enderecos"]))
+    saida["ids"] = list(dict.fromkeys(a["ids"] + b["ids"]))
     for campo in ("nome", "cpf", "email", "aniversario", "telefone", "bairro", "cidade", "endereco"):
         if not saida.get(campo):
             saida[campo] = velho.get(campo) or ""

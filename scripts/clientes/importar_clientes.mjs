@@ -17,6 +17,7 @@
 //   u = última compra (YYYY-MM-DD)   b = bairro   c = cidade
 //   x = pedidos cancelados    o = origem do telefone quando emprestado
 //   a = aniversário (MM-DD)   e = e-mail
+//   hm = pedidos por mês, últimos 12 ({"2026-08": 3})   pc = primeira compra
 //
 // O ticket médio não é gravado: é v/p, calculado na tela.
 //
@@ -107,8 +108,19 @@ function fundirItem(antigo, novo) {
     o: novo.t ? novo.o || '' : antigo.o || '',
     a: novo.a || antigo.a || '',
     e: novo.e || antigo.e || '',
+    // O histórico vem recalculado inteiro pelo coletar_historico.py; quando a
+    // rodada não o trouxe (script pulado, cliente sem mudança), fica o que havia.
+    hm: novo.hm || antigo.hm || null,
+    pc: menorData(novo.pc, antigo.pc),
   };
   return limpar(out);
+}
+
+/** A mais antiga das duas datas — data vazia não conta como "mais antiga". */
+function menorData(a, b) {
+  if (!a) return b || '';
+  if (!b) return a;
+  return a < b ? a : b;
 }
 
 /** Tira os campos vazios: multiplicados por milhares de linhas, eles pesam no
@@ -137,6 +149,8 @@ function daColeta(c) {
     o: c.telefoneOrigem && c.telefoneOrigem !== 'cadastro' ? c.telefoneOrigem : '',
     a: c.aniversario || '',
     e: c.email || '',
+    hm: c.meses && Object.keys(c.meses).length ? c.meses : null,
+    pc: c.primeiraCompra || '',
   });
 }
 
@@ -229,6 +243,7 @@ async function gravar(db, loja, itens, meta, chunksAntigos) {
     meta: true,
     total: itens.length,
     comTelefone: itens.filter((i) => i.t).length,
+    comHistorico: itens.filter((i) => i.hm).length,
     chunks: blocos.length,
     janelaDias: meta.janelaDias || null,
     coletadoEm: meta.geradoEm || null,

@@ -41,7 +41,14 @@ const COLUNAS = {
   pedidos: (c) => c.pedidos,
   valorTotal: (c) => c.valorTotal,
   ticket: (c) => c.ticket,
+  // Sem histórico coletado a frequência é null: vai para o fim da ordenação em
+  // vez de empatar com quem de fato não compra.
+  frequencia: (c) => (c.frequencia === null ? -1 : c.frequencia),
 };
+
+/** "1,5" pedido por mês. Uma casa decimal — duas fingem uma precisão que a
+ *  medida não tem. */
+const porMes = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 const reais = (v) =>
   (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
@@ -513,6 +520,13 @@ export default function ClientesView({ settings, isAdmin }) {
                 <th className={`${styles.colValor} ${styles.thSort}`} onClick={() => ordenarPor('ticket')}>
                   Ticket {seta('ticket')}
                 </th>
+                <th
+                  className={`${styles.colFreq} ${styles.thSort}`}
+                  onClick={() => ordenarPor('frequencia')}
+                  title="Pedidos por mês nos últimos 6 meses"
+                >
+                  Frequência {seta('frequencia')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -572,6 +586,19 @@ export default function ClientesView({ settings, isAdmin }) {
                     </td>
                     <td data-label="Ticket" className={`${styles.colValor} ${styles.num}`}>
                       {reais(c.ticket)}
+                    </td>
+                    <td
+                      data-label="Frequência"
+                      className={`${styles.colFreq} ${styles.num}`}
+                      title={
+                        c.frequencia === null
+                          ? 'Histórico de pedidos ainda não coletado'
+                          : `${c.pedidos6m} pedido${c.pedidos6m === 1 ? '' : 's'} em 6 meses` +
+                            (c.intervaloDias ? ` · 1 a cada ${Math.round(c.intervaloDias)} dias` : '') +
+                            (c.primeiraCompra ? ` · cliente desde ${formatarData(c.primeiraCompra)}` : '')
+                      }
+                    >
+                      {c.frequencia === null ? '—' : `${porMes(c.frequencia)}/mês`}
                     </td>
                   </tr>
                 );
