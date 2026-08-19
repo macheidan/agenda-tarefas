@@ -42,9 +42,10 @@ import { pathToFileURL } from 'node:url';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-// 600 e não 800: com `vm` cada item ficou ~25% maior e o doc tem teto de 1 MB.
-// Dois blocos a mais por loja custam duas leituras — barato perto do risco.
-const CHUNK_SIZE = 600;
+// Medido em 2026-08-19, já com `hm` e `vm`: 283 bytes por cliente, ou ~220 KB
+// por bloco de 800 — bem longe do teto de 1 MB do doc. Subir o bloco economiza
+// leitura a cada abertura da tela, e a quota do Firestore é o gargalo aqui.
+const CHUNK_SIZE = 800;
 const LOJAS = ['dame', 'lov'];
 
 function initFirestore() {

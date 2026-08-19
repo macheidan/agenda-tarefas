@@ -248,11 +248,15 @@ function Retencao({ dados, coberturaDesde }) {
       )}
 
       <p className={styles.rodape}>
-        <strong>*</strong> turma anterior a{' '}
-        {coberturaDesde ? formatarData(coberturaDesde) : 'o início da base'}: a coleta só enxerga 90
-        dias para trás, então dessas turmas só estão na base os que voltaram. A retenção delas está
-        inflada e não serve de comparação. As turmas sem asterisco são completas. "…" marca mês
-        ainda correndo.
+        {verIncompletas && (
+          <>
+            <strong>*</strong> turma anterior a{' '}
+            {coberturaDesde ? formatarData(coberturaDesde) : 'o início da base'}: a coleta só enxerga
+            90 dias para trás, então dessas turmas só estão na base os que voltaram — a retenção sai
+            perto de 100% por construção, não por mérito. Não compare com as turmas de agora.{' '}
+          </>
+        )}
+        "…" marca mês ainda correndo, que ainda vai subir.
       </p>
     </>
   );
@@ -535,6 +539,7 @@ function Meses({ linhas: todas, coberturaDesde }) {
         </div>
       )}
 
+      {(temParcial || temReceitaParcial) && (
       <p className={styles.rodape}>
         {temParcial && (
           <>
@@ -552,6 +557,7 @@ function Meses({ linhas: todas, coberturaDesde }) {
           </>
         )}
       </p>
+      )}
     </>
   );
 }
