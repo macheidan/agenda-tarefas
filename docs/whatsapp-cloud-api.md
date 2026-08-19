@@ -101,7 +101,17 @@ disparo de marketing é que depende de pagamento válido.
 token na hora, não grava nada).
 
 ⚠️ **O app precisa ser publicado** para receber webhook de produção — enquanto
-estiver "Não publicado", a Meta só manda webhook de teste do painel.
+estiver "Não publicado", a Meta só manda webhook de teste do painel. Tentado em
+19/08: **falha** com "nem todos os requisitos foram concluídos". O que falta é a
+**URL da Política de Privacidade**, obrigatória para publicar, e o site
+damepizza.com.br **não tem** essa página (o rodapé só tem contato e Instagram).
+
+⚠️ **O número 3332-2440 é o WhatsApp público da loja** — é o link do botão
+"WHATSAPP" no site. Ele está na Cloud API e hoje **sem nenhum app conectado**,
+ou seja, sem ninguém atendendo. Isso muda o desenho do template: um botão
+`wa.me` apontando para ele não faz sentido (a campanha já sai desse número). O
+certo é **Quick Reply**, cuja resposta cai no webhook e aparece no painel
+Campanhas da intranet.
 
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
