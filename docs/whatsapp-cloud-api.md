@@ -184,6 +184,27 @@ Depois: `cd gemini-proxy && npx vercel --prod` (o deploy do FTP **não** publica
 proxy — são coisas separadas).
 
 ### 7. Webhook
+
+✅ **Configurado em 19/08** e com o campo `messages` assinado.
+
+Duas armadilhas que custaram caro aqui:
+
+1. **O verify token não é o access token.** O campo "Verificar token" recebeu por
+   engano o token `EAA…` do usuário de sistema. São coisas diferentes: o verify
+   token é uma frase qualquer, só para a Meta e o servidor se reconhecerem no
+   handshake — hoje é `dame-webhook-2026`, o mesmo valor na env `WA_VERIFY_TOKEN`.
+2. **`req.query` vem vazio** quando o arquivo declara `bodyParser: false` (que o
+   `wa-webhook.js` precisa para conferir o HMAC sobre os bytes crus). O handshake
+   lia dali e comparava `undefined`, devolvendo 403 para a Meta em toda tentativa.
+   Agora lê de `req.url`.
+
+Para testar sem depender do painel:
+
+```bash
+curl "https://gemini-proxy-intranet.vercel.app/api/wa-webhook?hub.mode=subscribe&hub.verify_token=dame-webhook-2026&hub.challenge=12345"
+# 12345  → handshake ok
+```
+
 No app da Meta → WhatsApp → Configuração → Webhooks:
 
 - **URL de callback:** `https://gemini-proxy-intranet.vercel.app/api/wa-webhook`
