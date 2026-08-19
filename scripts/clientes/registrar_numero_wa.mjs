@@ -111,10 +111,15 @@ async function main() {
     console.log('   ok');
 
     console.log('\n3) Registrando o número.');
-    console.log('   O PIN é a verificação em duas etapas do número (6 dígitos).');
-    console.log('   Se a ManyChat definiu um e você não sabe qual é, redefina antes no');
-    console.log('   Gerenciador do WhatsApp → Números de telefone → o número → Verificação em duas etapas.');
-    const pin = (await rl.question('   PIN de 6 dígitos: ')).trim();
+    let pin = doStore(`WA_PIN_${loja.toUpperCase()}`);
+    if (pin) {
+      console.log(`   PIN lido de ${STORE}`);
+    } else {
+      console.log('   O PIN é a verificação em duas etapas do número (6 dígitos).');
+      console.log('   Se a ManyChat definiu um e você não sabe qual é, redefina antes no');
+      console.log('   Gerenciador do WhatsApp → Números de telefone → o número → Verificação em duas etapas.');
+      pin = (await rl.question('   PIN de 6 dígitos: ')).trim();
+    }
     if (!/^\d{6}$/.test(pin)) throw new Error('o PIN precisa ter exatamente 6 dígitos');
 
     await chamar(`/${phoneId}/register`, token, { messaging_product: 'whatsapp', pin });
