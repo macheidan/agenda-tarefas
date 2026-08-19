@@ -38,5 +38,9 @@ if errorlevel 1 (
   echo OK >> %LOG%
 )
 
+rem Cada coleta guarda um JSON de ~4 MB e so a vespera ainda tem uso (--novos-de).
+rem Sem esta limpeza a pasta cresce ~1,4 GB por ano.
+forfiles /p "C:\claude_project\Pizzarias\intranet-pizzarias\scripts\clientes\data" /m clientes-*.json /d -7 /c "cmd /c del @path" >nul 2>&1
+
 :fim
 endlocal
