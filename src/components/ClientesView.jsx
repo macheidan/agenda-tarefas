@@ -46,6 +46,16 @@ const SUBS = [
 
 const SEG_LABELS = Object.fromEntries(SEGMENTOS.map((s) => [s.key, s.label]));
 
+// Como o coletor descobriu que este cadastro sem telefone é a mesma pessoa de um
+// cadastro que tem (`religar` em scripts/clientes/coletar_clientes.py). O
+// asterisco na tabela é o aviso de que o número veio de outro cadastro.
+const ORIGEM_TELEFONE = {
+  cpf: 'CPF',
+  nome_endereco: 'nome e endereço',
+  nome_bairro: 'nome completo e bairro',
+  logradouro: 'mesmo endereço e nome compatível',
+};
+
 const COLUNAS = {
   nome: (c) => (c.nome || '').toLowerCase(),
   telefone: (c) => c.telefone,
@@ -601,15 +611,14 @@ export default function ClientesView({ settings, isAdmin }) {
                           target="_blank"
                           rel="noreferrer"
                           title={
-                            c.telefoneOrigem
-                              ? `Telefone de outro cadastro do mesmo cliente (casado por ${
-                                  c.telefoneOrigem === 'cpf' ? 'CPF' : 'nome e endereço'
-                                })`
+                            ORIGEM_TELEFONE[c.telefoneOrigem]
+                              ? `Telefone de outro cadastro do mesmo cliente ` +
+                                `(casado por ${ORIGEM_TELEFONE[c.telefoneOrigem]})`
                               : 'Abrir conversa no WhatsApp'
                           }
                         >
                           {formatarTelefone(c.telefone)}
-                          {c.telefoneOrigem ? ' *' : ''}
+                          {ORIGEM_TELEFONE[c.telefoneOrigem] ? ' *' : ''}
                         </a>
                       ) : (
                         <span className={styles.semNome} title="Pedido de marketplace: telefone mascarado">

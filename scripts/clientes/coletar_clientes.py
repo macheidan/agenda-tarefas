@@ -287,6 +287,47 @@ def partes_endereco(end: str):
     return cidade.strip(), bairro.strip(), rua.strip()
 
 
+# O tipo do logradouro é justamente o que varia entre os canais: o iFood manda
+# "R. Barão de Ubá", o balcão manda "Rua Barão de Ubá". Comparar o texto inteiro
+# nunca casa — por isso o tipo sai fora da chave.
+TIPOS_LOGRADOURO = {
+    "r", "rua", "av", "avenida", "trav", "travessa", "tv", "al", "alameda",
+    "pc", "praca", "estr", "estrada", "rod", "rodovia", "beco", "largo",
+    "vl", "vila", "acesso", "esplanada", "parque", "pq",
+}
+
+
+def logradouro(end: str) -> str:
+    """"barao de uba#382" — nome da rua sem o tipo, mais o número.
+
+    NÃO é identidade sozinho: num prédio, 500 pessoas dividem a mesma chave.
+    Medido na Dáme: 551 cadastros sem telefone casam o logradouro com alguém que
+    tem telefone, e só 42 desses são a mesma pessoa. Só serve acompanhado do nome.
+    """
+    _, _, rua = partes_endereco(end)
+    pedacos = [p.strip() for p in rua.split(",")]
+    if len(pedacos) < 2:
+        return ""
+    nome = [w for w in normalizar(pedacos[0]).split() if w not in TIPOS_LOGRADOURO]
+    numero = re.sub(r"\D", "", pedacos[1])
+    if not nome or not numero:
+        return ""
+    return " ".join(nome) + "#" + numero
+
+
+def nomes_compativeis(a: str, b: str) -> bool:
+    """Os dois nomes podem ser da mesma pessoa?
+
+    Exige o primeiro nome igual. Depois disso, ou um dos lados só tem o primeiro
+    nome (o iFood manda "Amanda" onde o balcão tem "Amanda Gewehr"), ou o último
+    sobrenome também bate. "Amanda Gewehr" e "Amanda Silva" não passam.
+    """
+    x, y = normalizar(a).split(), normalizar(b).split()
+    if not x or not y or x[0] != y[0]:
+        return False
+    return len(x) == 1 or len(y) == 1 or x[-1] == y[-1]
+
+
 def data_iso(v) -> str:
     return str(v or "")[:10]
 
@@ -315,6 +356,9 @@ def preparar(r: dict) -> dict:
         "bairro": bairro,
         "endereco": principal,
         "enderecos": [normalizar(e) for e in ends],
+        # O texto cru sobrevive porque `logradouro()` precisa da pontuação para
+        # separar rua, número e complemento — normalizar antes apaga as vírgulas.
+        "enderecos_originais": ends,
         "pedidos": int(r.get("qtt_sales") or 0),
         "valorTotal": round(float(r.get("value_total_sales") or 0), 2),
         "cancelados": int(float(r.get("count_canceled") or 0)),
@@ -329,9 +373,19 @@ def indices_de_telefone(itens: list):
     telefone nenhum) ao cadastro de balcão/site da mesma pessoa. Guarda o
     conjunto de telefones de cada chave: chave que aponta para dois telefones
     diferentes é ambígua e não religa ninguém.
+
+    São quatro índices, do mais para o menos confiável:
+      cpf              — identidade de verdade, mas só 9% de quem tem telefone
+                         informa CPF, então quase nunca há os dois lados
+      nome + endereço  — o texto inteiro do endereço, igual dos dois lados
+      nome + bairro    — nome completo (2+ palavras) no mesmo bairro
+      logradouro       — rua+número; guarda o NOME do dono junto, porque essa
+                         chave sozinha é o prédio, não a pessoa
     """
     por_cpf: dict = {}
     por_nome_end: dict = {}
+    por_nome_bairro: dict = {}
+    por_logradouro: dict = {}
     for it in itens:
         if not it["telefone"]:
             continue
@@ -341,32 +395,74 @@ def indices_de_telefone(itens: list):
         if nome:
             for e in it["enderecos"]:
                 por_nome_end.setdefault((nome, e), set()).add(it["telefone"])
-    return por_cpf, por_nome_end
+            # Nome de uma palavra só ("Amanda") não identifica ninguém num
+            # bairro de mil clientes.
+            if len(nome.split()) >= 2:
+                por_nome_bairro.setdefault((nome, normalizar(it["bairro"])), set()).add(it["telefone"])
+        for e in it["enderecos_originais"]:
+            k = logradouro(e)
+            if k:
+                por_logradouro.setdefault(k, set()).add((it["telefone"], it["nome"]))
+    return por_cpf, por_nome_end, por_nome_bairro, por_logradouro
 
 
 def religar(itens: list) -> dict:
     """Empresta telefone para quem não tem, quando a identidade é inequívoca.
 
-    Só religa em 1 para 1: se o CPF (ou o par nome+endereço) aparece com dois
-    telefones diferentes, não dá para saber qual é o da pessoa e o cadastro
-    fica sem telefone mesmo.
+    Só religa em 1 para 1: se a chave aparece com dois telefones diferentes,
+    não dá para saber qual é o da pessoa e o cadastro fica sem telefone mesmo.
+    É o que impede o pior erro possível aqui — dar a uma pessoa o telefone de
+    outra, que depois receberia campanha em nome dela.
+
+    As regras são tentadas em ordem de confiança e a primeira que fechar 1 para
+    1 ganha. As duas últimas existem porque as duas primeiras quase nunca casam:
+    CPF é assimétrico (90% de quem NÃO tem telefone informa, contra 9% de quem
+    tem) e o texto do endereço vem escrito diferente em cada canal.
     """
-    por_cpf, por_nome_end = indices_de_telefone(itens)
-    contas = {"cpf": 0, "nome_endereco": 0}
+    por_cpf, por_nome_end, por_nome_bairro, por_logradouro = indices_de_telefone(itens)
+    contas = {"cpf": 0, "nome_endereco": 0, "nome_bairro": 0, "logradouro": 0}
+
+    def por_regra(it: dict):
+        """Devolve (telefone, origem) da primeira regra que fechar 1 para 1."""
+        if it["cpf"]:
+            achados = por_cpf.get(it["cpf"]) or set()
+            if len(achados) == 1:
+                return next(iter(achados)), "cpf"
+
+        nome = normalizar(it["nome"])
+        if not nome:
+            return None, ""
+
+        achados = set()
+        for e in it["enderecos"]:
+            achados |= por_nome_end.get((nome, e), set())
+        if len(achados) == 1:
+            return next(iter(achados)), "nome_endereco"
+
+        if len(nome.split()) >= 2:
+            achados = por_nome_bairro.get((nome, normalizar(it["bairro"]))) or set()
+            if len(achados) == 1:
+                return next(iter(achados)), "nome_bairro"
+
+        # Mesma porta e nome compatível. O conjunto é filtrado pelo nome ANTES
+        # da contagem: o prédio inteiro casa o logradouro, e o que decide é
+        # sobrar exatamente um morador com aquele nome.
+        donos = set()
+        for e in it["enderecos_originais"]:
+            k = logradouro(e)
+            if k:
+                donos |= {tel for tel, dono in por_logradouro.get(k, ()) if nomes_compativeis(it["nome"], dono)}
+        if len(donos) == 1:
+            return next(iter(donos)), "logradouro"
+
+        return None, ""
+
     for it in itens:
         if it["telefone"]:
             continue
-        achados = por_cpf.get(it["cpf"]) if it["cpf"] else None
-        origem = "cpf"
-        if not achados or len(achados) != 1:
-            nome = normalizar(it["nome"])
-            achados = set()
-            if nome:
-                for e in it["enderecos"]:
-                    achados |= por_nome_end.get((nome, e), set())
-            origem = "nome_endereco"
-        if achados and len(achados) == 1:
-            it["telefone"] = next(iter(achados))
+        tel, origem = por_regra(it)
+        if tel:
+            it["telefone"] = tel
             it["telefoneOrigem"] = origem
             contas[origem] += 1
     return contas
@@ -409,6 +505,7 @@ def fundir(a: dict, b: dict) -> dict:
     saida["valorTotal"] = round(a["valorTotal"] + b["valorTotal"], 2)
     saida["cancelados"] = a["cancelados"] + b["cancelados"]
     saida["enderecos"] = list(dict.fromkeys(a["enderecos"] + b["enderecos"]))
+    saida["enderecos_originais"] = list(dict.fromkeys(a["enderecos_originais"] + b["enderecos_originais"]))
     saida["ids"] = list(dict.fromkeys(a["ids"] + b["ids"]))
     for campo in ("nome", "cpf", "email", "aniversario", "telefone", "bairro", "cidade", "endereco"):
         if not saida.get(campo):
@@ -428,11 +525,21 @@ def agregar(registros: list) -> list:
     faturamento, recência, bairro e ticket.
     """
     itens = [preparar(r) for r in registros]
+    # A chave que cada cadastro teria SEM telefone emprestado. Quem for religado
+    # muda de identidade hoje ("e:hash-do-nome" vira "t:51999..."), e o registro
+    # antigo continuaria no Firestore como um cliente órfão, com os dados
+    # congelados. Levar a chave anterior junto é o que deixa o importador achar
+    # esse registro e absorvê-lo em vez de duplicar a pessoa na tela.
+    antes_de_religar = {id(it): chave(it) for it in itens}
     contas = religar(itens)
 
     agregados: dict = {}
+    chaves_antigas: dict = {}
     for it in itens:
         k = chave(it)
+        anterior = antes_de_religar[id(it)]
+        if anterior != k:
+            chaves_antigas.setdefault(k, set()).add(anterior)
         agregados[k] = fundir(agregados[k], it) if k in agregados else it
 
     saida = []
@@ -442,15 +549,21 @@ def agregar(registros: list) -> list:
         it["ticket"] = round(it["valorTotal"] / it["pedidos"], 2) if it["pedidos"] else 0.0
         it["rs"] = bool(it["telefone"]) and ddd(it["telefone"]) in DDD_RS
         it["cpfHash"] = digerir(it["cpf"]) if it["cpf"] else ""
+        if k in chaves_antigas:
+            it["chavesAntigas"] = sorted(chaves_antigas[k])
         it.pop("enderecos", None)
+        it.pop("enderecos_originais", None)
         saida.append(it)
 
     com_tel = sum(1 for c in saida if c["telefone"])
     com_rs = sum(1 for c in saida if c["rs"])
     print(
         "  %d clientes (%d cadastros) - %d com telefone (%d com DDD do RS) - "
-        "religados: %d por CPF, %d por nome+endereco"
-        % (len(saida), len(registros), com_tel, com_rs, contas["cpf"], contas["nome_endereco"])
+        "religados: %d por CPF, %d por nome+endereco, %d por nome+bairro, %d por logradouro"
+        % (
+            len(saida), len(registros), com_tel, com_rs,
+            contas["cpf"], contas["nome_endereco"], contas["nome_bairro"], contas["logradouro"],
+        )
     )
     return sorted(saida, key=lambda c: c["ultimaCompra"] or "", reverse=True)
 

@@ -130,6 +130,11 @@ def resumir(pedidos: list[dict], janela: set[str]) -> dict:
     }
 
 
+def cadastros(c: dict) -> tuple:
+    """Os ids de cadastro do cliente, como conjunto ordenado."""
+    return tuple(sorted(c.get("ids") or ([c["id"]] if c.get("id") else [])))
+
+
 def aproveitavel(velho: dict, novo: dict) -> bool:
     """O histórico da rodada anterior serve para este cliente?
 
@@ -138,6 +143,11 @@ def aproveitavel(velho: dict, novo: dict) -> bool:
     zero, é chamada recusada gravada como se fosse cliente sem compra.
     """
     if velho.get("meses") is None:
+        return False
+    # O cliente ganhou (ou perdeu) um cadastro desde ontem — é o que acontece
+    # quando o coletor religa o cadastro de marketplace ao de balcão. O histórico
+    # antigo cobria só um dos dois e sairia pela metade.
+    if cadastros(velho) != cadastros(novo):
         return False
     # Histórico da época em que só guardávamos datas: serve para a frequência,
     # mas não para a receita do mês. Relê uma vez e nunca mais.

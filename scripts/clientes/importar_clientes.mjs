@@ -194,6 +194,11 @@ function fundir(existentes, novos) {
       novo.t ? idx.porTel.get(novo.t) : null,
       novo.h ? idx.porHash.get(novo.h) : null,
       idx.porChave.get(novo.k),
+      // Identidade que o cadastro tinha ANTES de o coletor lhe emprestar um
+      // telefone. Sem isto o registro velho (chaveado pelo nome+endereço)
+      // sobreviveria ao lado do novo, e a mesma pessoa apareceria duas vezes na
+      // tela — uma delas congelada no dia em que foi religada.
+      ...(c.chavesAntigas || []).map((k) => idx.porChave.get(k)),
     ]) {
       if (cand && vivos.has(cand) && !achados.includes(cand)) achados.push(cand);
     }

@@ -99,3 +99,41 @@ test('cadastro sem data de última compra não entra', () => {
   assert.equal(inseridos, 0);
   assert.equal(itens.length, 0);
 });
+
+test('religado por nome+bairro absorve o registro antigo em vez de duplicar', () => {
+  // A base tem os dois lados da mesma pessoa: um cadastro de balcão com
+  // telefone e um do iFood sem, chaveado pelo nome+endereço.
+  const existentes = [
+    { k: 't:51999990000', t: '51999990000', n: 'Marisiana Battistella', p: 64, v: 8000, u: '2026-08-10', b: 'Petrópolis' },
+    { k: 'e:abc123', n: 'Marisiana Battistella', p: 25, v: 3000, u: '2026-08-12', b: 'Petrópolis' },
+  ];
+  // Hoje o coletor religou: o cadastro do iFood ganhou o telefone e os dois
+  // viraram um só, que chega com a chave anterior a tiracolo.
+  const coleta = [
+    {
+      chave: 't:51999990000', telefone: '51999990000', nome: 'Marisiana Battistella',
+      pedidos: 89, valorTotal: 11000, ultimaCompra: '2026-08-12', bairro: 'Petrópolis',
+      telefoneOrigem: 'nome_bairro', chavesAntigas: ['e:abc123'],
+    },
+  ];
+  const { itens, unificados } = fundir(existentes, coleta);
+  assert.equal(itens.length, 1, 'a pessoa não pode aparecer duas vezes na tela');
+  assert.equal(unificados, 1);
+  assert.equal(itens[0].k, 't:51999990000');
+  assert.equal(itens[0].p, 89, 'os pedidos dos dois cadastros somam');
+});
+
+test('sem a chave antiga o registro orfao sobreviveria — o teste guarda a regressao', () => {
+  const existentes = [
+    { k: 't:51999990000', t: '51999990000', n: 'Marisiana Battistella', p: 64, v: 8000, u: '2026-08-10' },
+    { k: 'e:abc123', n: 'Marisiana Battistella', p: 25, v: 3000, u: '2026-08-12' },
+  ];
+  const semPista = [
+    {
+      chave: 't:51999990000', telefone: '51999990000', nome: 'Marisiana Battistella',
+      pedidos: 89, valorTotal: 11000, ultimaCompra: '2026-08-12',
+    },
+  ];
+  const { itens } = fundir(existentes, semPista);
+  assert.equal(itens.length, 2, 'é exatamente o que chavesAntigas evita');
+});
