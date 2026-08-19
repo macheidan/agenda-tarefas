@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, useCallback, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
 import { formatBRL } from '../utils/money';
@@ -25,6 +25,21 @@ const FIELDS = [
   ['liquidoFolha', 'Líq. folha'],
 ];
 
+// Colunas da aba Anual, na mesma ordem das planilhas de salário. Dinheiro e
+// Total são calculados (prefixo __), o resto é editável célula a célula.
+const ANUAL_COLS = [
+  ['salario', 'Salário'],
+  ['transporte', 'Transporte'],
+  ['feriado', 'Feriado'],
+  ['entrada', 'Entrada'],
+  ['adianta', 'Adianta'],
+  ['empres', 'Empres'],
+  ['__dinheiro', 'Dinheiro'],
+  ['banco', 'Banco'],
+  ['flash', 'Flash'],
+  ['__total', 'Total'],
+];
+
 // Cores espelhando o bg/fonte das planilhas: canal de pagamento (fundo) e
 // natureza entra/sai (fonte). Banco=pêssego, Flash=rosa, Dinheiro=verde.
 const ROW_BG = { banco: 'chBanco', flash: 'chFlash' };
@@ -40,6 +55,8 @@ const CopyIcon = () => (
 );
 
 const num = (l, f) => Number(l?.[f]) || 0;
+// ISO (2026-06-30) → dd/mm/aaaa.
+const br = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 // Σ(B:G) = valor devido ao funcionário na linha.
 const somaBG = (l) =>
   num(l, 'salario') + num(l, 'transporte') + num(l, 'feriado') +
@@ -68,17 +85,44 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     [isAmbas, visibleStores, activeStore]
   );
 
+  // Contrato encerrado *no mês exibido* (mesma régua da Escala: compara YYYY-MM).
+  // Não é "tem data de fim", é "a data já passou" — em maio o funcionário que saiu
+  // em junho ainda é da equipe, e a folha dele daquele mês continua editável.
+  const curMonthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const isArchived = useCallback(
+    (e) => {
+      const end = e.contractEnd ? e.contractEnd.slice(0, 7) : null;
+      return !!end && curMonthKey > end;
+    },
+    [curMonthKey]
+  );
+
+  const byName = (a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+
   const list = useMemo(
     () =>
       employees
-        .filter((e) => relevantSet.has(e.store) && e.active !== false)
-        .sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase())),
-    [employees, relevantSet]
+        .filter((e) => relevantSet.has(e.store) && e.active !== false && !isArchived(e))
+        .sort(byName),
+    [employees, relevantSet, isArchived]
+  );
+
+  // Arquivados: contrato encerrado antes do mês exibido. Saem da equipe (e do
+  // Resumo mensal), mas seguem selecionáveis para consultar/ajustar o histórico.
+  const archived = useMemo(
+    () => employees.filter((e) => relevantSet.has(e.store) && isArchived(e)).sort(byName),
+    [employees, relevantSet, isArchived]
   );
 
   // Funcionário em foco (default: primeiro da loja). Se o selecionado sai da
-  // lista (troca de loja), cai no primeiro.
-  const emp = list.find((e) => e.id === selectedEmpId) || list[0] || null;
+  // lista (troca de loja), cai no primeiro. Arquivado só entra se foi escolhido.
+  const emp =
+    list.find((e) => e.id === selectedEmpId) ||
+    archived.find((e) => e.id === selectedEmpId) ||
+    list[0] ||
+    archived[0] ||
+    null;
+  const empArchived = !!emp && isArchived(emp);
 
   // Docs de salário do funcionário no ano exibido, indexados por mês.
   const docsByMonth = useMemo(() => {
@@ -113,6 +157,24 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   );
   const anoTotais = anual.reduce((t, a) => ({ pago: t.pago + a.pago, fora: t.fora + a.fora }), { pago: 0, fora: 0 });
 
+  // Totais por coluna do ano (rodapé da aba Anual).
+  const anualTotais = useMemo(() => {
+    const t = {};
+    for (const [f] of ANUAL_COLS) t[f] = 0;
+    for (let m = 0; m < 12; m++) {
+      for (const [line] of LINES) {
+        const l = docsByMonth[m]?.[line];
+        if (!l) continue;
+        for (const [f] of ANUAL_COLS) {
+          if (f === '__dinheiro') t[f] += dinheiroDe(l);
+          else if (f === '__total') t[f] += totalDe(l);
+          else t[f] += num(l, f);
+        }
+      }
+    }
+    return t;
+  }, [docsByMonth]);
+
   // ---- Resumo mensal por equipe ----
   // Foco: quanto depositar no BANCO de cada funcionário no dia 5 e no dia 20.
   // Agrupa por loja (equipe), com subtotais e total geral. Lê `banco` e `flash`
@@ -128,7 +190,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     const groups = [];
     for (const sid of storeIds) {
       const emps = employees
-        .filter((e) => e.store === sid && e.active !== false)
+        .filter((e) => e.store === sid && e.active !== false && !isArchived(e))
         .sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
       if (!emps.length) continue;
       const rows = emps.map((e) => {
@@ -157,7 +219,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
       groups.push({ storeId: sid, storeName: storeMeta[sid]?.name || '', rows, subtotal });
     }
     return groups;
-  }, [salarios, employees, year, month, isAmbas, visibleStores, activeStore, storeMeta]);
+  }, [salarios, employees, year, month, isAmbas, visibleStores, activeStore, storeMeta, isArchived]);
 
   const hasExtra = resumo.some((g) => g.subtotal.extra !== 0);
   const grandTotal = resumo.reduce(
@@ -203,11 +265,13 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     }
   };
 
-  const commit = (line, field, value) => {
+  // Commit em um mês qualquer do ano (a aba Anual edita os 12 de uma vez).
+  const commitAt = (m, line, field, value) => {
     if (!isAdmin || !emp) return;
-    const existing = doc?.[line] || {};
-    setSalario(emp.id, emp.store, year, month, line, { ...existing, [field]: value }, user);
+    const existing = docsByMonth[m]?.[line] || {};
+    setSalario(emp.id, emp.store, year, m, line, { ...existing, [field]: value }, user);
   };
+  const commit = (line, field, value) => commitAt(month, line, field, value);
   // Observações do mês (campo livre no doc dpSalarios, fora das linhas dia5/dia20/extra).
   const commitObs = (value) => {
     if (!isAdmin || !emp) return;
@@ -228,6 +292,29 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     else setMonth((m) => m + 1);
   };
   const pickStore = (id) => { setSelectedStore(id); setSelectedEmpId(null); };
+
+  // Cabeçalho do funcionário — compartilhado por "Por funcionário" e "Anual".
+  const empHeader = emp && (
+    <div className={styles.empHeader}>
+      <span className={styles.empName}>
+        {isAmbas && (
+          <span className={styles.storeTag} style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}>
+            {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
+          </span>
+        )}
+        {emp.name}
+        {empArchived && (
+          <span className={styles.archivedTag} title={`Contrato encerrado em ${br(emp.contractEnd)}`}>
+            arquivado · {br(emp.contractEnd)}
+          </span>
+        )}
+      </span>
+      <span className={styles.yearTotals}>
+        Ano {year}: pago <strong>{formatBRL(anoTotais.pago) || 'R$ 0,00'}</strong>
+        {anoTotais.fora !== 0 && <> · por fora <strong className={styles.risk}>{formatBRL(anoTotais.fora)}</strong></>}
+      </span>
+    </div>
+  );
 
   return (
     <div className={styles.container}>
@@ -260,24 +347,39 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
             Por funcionário
           </button>
           <button
+            className={`${styles.viewBtn} ${view === 'anual' ? styles.viewBtnActive : ''}`}
+            onClick={() => setView('anual')}
+          >
+            Anual
+          </button>
+          <button
             className={`${styles.viewBtn} ${view === 'resumo' ? styles.viewBtnActive : ''}`}
             onClick={() => setView('resumo')}
           >
             Resumo mensal
           </button>
         </div>
-        {view === 'func' && (
+        {view !== 'resumo' && (
           <select
             className={styles.empSelect}
             value={emp?.id || ''}
             onChange={(e) => setSelectedEmpId(e.target.value)}
           >
-            {list.length === 0 && <option value="">Nenhum funcionário</option>}
+            {list.length === 0 && archived.length === 0 && <option value="">Nenhum funcionário</option>}
             {list.map((e) => (
               <option key={e.id} value={e.id}>
                 {isAmbas && storeMeta[e.store] ? `${storeMeta[e.store].name} — ${e.name}` : e.name}
               </option>
             ))}
+            {archived.length > 0 && (
+              <optgroup label="Arquivados">
+                {archived.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {isAmbas && storeMeta[e.store] ? `${storeMeta[e.store].name} — ${e.name}` : e.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         )}
       </div>
@@ -424,23 +526,89 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
         </div>
       ) : !emp ? (
         <p className={styles.empty}>Nenhum funcionário. Cadastre na aba <strong>Escala</strong>.</p>
+      ) : view === 'anual' ? (
+        <>
+          {empHeader}
+
+          {/* Ano inteiro na forma da planilha: um bloco por mês (Dia 5 / Dia 20 /
+              Extra) com as mesmas colunas. Dinheiro e Total são calculados. */}
+          <div className={styles.anual}>
+            <div className={styles.anualBar}>
+              <div className={styles.monthNav}>
+                <button className={styles.navBtn} onClick={() => setYear((y) => y - 1)} aria-label="Ano anterior">‹</button>
+                <span className={styles.monthLabel}>{year}</span>
+                <button className={styles.navBtn} onClick={() => setYear((y) => y + 1)} aria-label="Próximo ano">›</button>
+              </div>
+              <span className={styles.transpInfo}>Clique no mês para abrir a ficha dele.</span>
+            </div>
+            <div className={styles.anualWrap}>
+              <table className={styles.anualTable}>
+                <tbody>
+                  {MONTHS.map((mn, m) => (
+                    <Fragment key={m}>
+                      <tr className={styles.anualMonthRow}>
+                        <th className={styles.anualMonthCell}>
+                          <button
+                            type="button"
+                            className={styles.anualMonthBtn}
+                            onClick={() => { setMonth(m); setView('func'); }}
+                            title={`Abrir ${mn} na ficha do mês`}
+                          >
+                            {mn}
+                          </button>
+                        </th>
+                        {ANUAL_COLS.map(([f, label]) => <th key={f}>{label}</th>)}
+                      </tr>
+                      {LINES.map(([line, label]) => {
+                        const l = docsByMonth[m]?.[line] || {};
+                        return (
+                          <tr key={line} className={m === month ? styles.anualActive : ''}>
+                            <td className={styles.rowHead}>{label}</td>
+                            {ANUAL_COLS.map(([f]) => {
+                              if (f === '__dinheiro') {
+                                const d = dinheiroDe(l);
+                                return <td key={f} className={`${styles.chDinheiro} ${d < 0 ? styles.neg : ''}`} title="Pago por fora">{formatBRL(d) || '—'}</td>;
+                              }
+                              if (f === '__total') {
+                                const t = totalDe(l);
+                                return <td key={f} className={`${styles.chTotal} ${t < 0 ? styles.neg : ''}`}>{formatBRL(t) || '—'}</td>;
+                              }
+                              const v = num(l, f);
+                              const warn = f === 'banco' && l.liquidoFolha != null && l.liquidoFolha !== '' && v !== Number(l.liquidoFolha);
+                              const bgCls = ROW_BG[f] ? styles[ROW_BG[f]] : '';
+                              const fontCls = ROW_FONT[f] ? styles[ROW_FONT[f]] : '';
+                              return (
+                                <td key={f} className={warn ? styles.warnCell : ''} title={warn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})` : ''}>
+                                  <MoneyInput
+                                    className={`${styles.moneyInput} ${bgCls} ${fontCls} ${v < 0 ? styles.neg : ''}`}
+                                    value={l[f]}
+                                    disabled={!isAdmin}
+                                    onCommit={(nv) => commitAt(m, line, f, nv)}
+                                  />
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
+                  <tr className={styles.anualYearRow}>
+                    <td className={styles.rowHead}>Ano {year}</td>
+                    {ANUAL_COLS.map(([f]) => (
+                      <td key={f} className={anualTotais[f] < 0 ? styles.neg : ''}>
+                        {formatBRL(anualTotais[f]) || '—'}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
         <>
-          {/* Cabeçalho do funcionário */}
-          <div className={styles.empHeader}>
-            <span className={styles.empName}>
-              {isAmbas && (
-                <span className={styles.storeTag} style={{ background: storeMeta[emp.store]?.color || 'var(--text-secondary)' }}>
-                  {(storeMeta[emp.store]?.name || '?').slice(0, 1)}
-                </span>
-              )}
-              {emp.name}
-            </span>
-            <span className={styles.yearTotals}>
-              Ano {year}: pago <strong>{formatBRL(anoTotais.pago) || 'R$ 0,00'}</strong>
-              {anoTotais.fora !== 0 && <> · por fora <strong className={styles.risk}>{formatBRL(anoTotais.fora)}</strong></>}
-            </span>
-          </div>
+          {empHeader}
 
           {/* Cadastro (fusão da antiga aba Funcionários) */}
           <div className={styles.cadastro}>

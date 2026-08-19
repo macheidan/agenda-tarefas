@@ -629,3 +629,95 @@
   font-size: 13px;
   white-space: pre-wrap;
 }
+
+/* ---- Selo de funcionário arquivado (contrato encerrado) ---- */
+.archivedTag {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ---- Aba Anual (o ano na forma da planilha) ---- */
+.anual {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.anualBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* A tabela é larga: rola dentro da própria caixa, nunca o corpo da página. */
+.anualWrap {
+  overflow-x: auto;
+}
+
+.anualTable {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 900px;
+  font-size: 13px;
+}
+
+.anualTable th,
+.anualTable td {
+  border: 1px solid var(--border-light);
+  padding: 4px 6px;
+  text-align: center;
+  color: var(--text);
+}
+
+/* Cabeçalho que se repete a cada mês (como cada bloco da planilha). */
+.anualMonthRow th {
+  background: var(--toolbar-bg);
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 12px;
+  position: sticky;
+  top: 0;
+}
+
+.anualMonthCell {
+  text-align: left !important;
+}
+
+.anualMonthBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.anualMonthBtn:hover { color: var(--accent); text-decoration: underline; }
+
+.anualTable .moneyInput {
+  width: 100%;
+  min-width: 64px;
+}
+
+/* Mês aberto na ficha, para não perder a referência ao alternar as abas.
+   Só uma barra na primeira coluna — marcar cada célula polui a tabela. */
+.anualActive td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+  color: var(--accent);
+}
+
+.anualYearRow td {
+  font-weight: 700;
+  background: var(--toolbar-bg);
+}
