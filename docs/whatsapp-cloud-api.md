@@ -112,6 +112,41 @@ botão `wa.me` apontando para ele **não faz sentido**, porque a campanha já sa
 desse mesmo número. O certo é **Quick Reply** — a resposta chega no celular de
 quem atende e também no nosso webhook, aparecendo no painel Campanhas.
 
+### O número da Dáme é ON_PREMISE / SMB, não Cloud API (2026-08-19)
+
+O registro pela API falhou com `[100] Register endpoint is not available for SMB
+businesses`. O diagnóstico via Graph explica:
+
+```
+platform_type            ON_PREMISE      ← não é Cloud API
+status                   DISCONNECTED
+quality_rating           GREEN
+code_verification_status NOT_VERIFIED
+WABA                     APPROVED, business_verification verified, ownership SELF
+apps assinados           Intranet Pizzarias ✅
+templates                0
+```
+
+A WABA nasceu pelo **aplicativo WhatsApp Business** (é o rótulo que o Business
+Manager mostra) — uma conta "SMB". Nessas, `POST /{phone_number_id}/register`
+não existe: o caminho para usar a Cloud API sem tirar o número do celular é a
+**coexistência**, que só é ativada pelo fluxo de *Embedded Signup* (popup do SDK
+JS da Meta), não por chamada de API solta.
+
+Três saídas:
+
+1. **Coexistência via Embedded Signup** — preserva o número quente (qualidade
+   GREEN, limite alto) e o atendimento no celular. Exige montar uma página com o
+   SDK e um *config_id* de Embedded Signup no app.
+2. **Chip novo só de campanha** — registro direto na Cloud API, sem atrito, mas
+   começa frio (250/dia) e o cliente recebe de um número desconhecido.
+3. **Migrar o número para Cloud API puro** — ele **sai do aplicativo** e ninguém
+   mais atende pelo celular. Não serve: o número é o WhatsApp público da loja.
+
+O que já está pronto e não se perde em nenhuma das opções: app publicado, WABA
+aprovada, usuário de sistema, webhook verificado e **app assinado nos webhooks
+da conta**.
+
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
 ### 1. Conta e verificação
