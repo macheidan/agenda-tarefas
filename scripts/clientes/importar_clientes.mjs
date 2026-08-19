@@ -77,18 +77,56 @@ async function carregarExistentes(db, loja) {
   return { itens, chunks, metaAntiga };
 }
 
-/** Índice de busca por telefone, hash de CPF e chave — as três formas de
- *  reconhecer que o cliente da coleta já está na base. */
+/** Texto sem acento e sem pontuação, em minúsculo. Espelha `normalizar()` de
+ *  coletar_clientes.py — as duas pontas precisam gerar a MESMA chave. */
+function normalizar(s) {
+  return String(s || '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/** "marisiana battistella|petropolis", ou '' quando o nome não identifica
+ *  ninguém. Nome de uma palavra só ("Amanda") não vale: são mil clientes por
+ *  bairro. */
+function chaveNomeBairro(nome, bairro) {
+  const n = normalizar(nome);
+  if (n.split(' ').filter(Boolean).length < 2) return '';
+  return `${n}|${normalizar(bairro)}`;
+}
+
+/** Índice de busca por telefone, hash de CPF, chave e nome+bairro — as quatro
+ *  formas de reconhecer que o cliente da coleta já está na base.
+ *
+ *  O nome+bairro existe porque o `religar` do coletor só enxerga a janela de 90
+ *  dias: quem comprou no balcão há cinco meses e agora pede pelo iFood não tem
+ *  com quem casar lá. Aqui a comparação é contra a base INTEIRA, que nunca
+ *  esquece ninguém — e é o que faz o reconhecimento continuar valendo à medida
+ *  que a base envelhece. */
 function indexar(itens) {
   const porTel = new Map();
   const porHash = new Map();
   const porChave = new Map();
+  const porNomeBairro = new Map();
+  // Homônimos no mesmo bairro: não dá para saber de quem é o telefone, então a
+  // chave inteira é descartada. Mesma trava do coletor — dar a uma pessoa o
+  // telefone de outra é o único erro grave possível aqui.
+  const ambiguos = new Set();
   for (const it of itens) {
     if (it.t) porTel.set(it.t, it);
     if (it.h) porHash.set(it.h, it);
     porChave.set(it.k, it);
+    if (!it.t) continue;
+    const k = chaveNomeBairro(it.n, it.b);
+    if (!k) continue;
+    const ja = porNomeBairro.get(k);
+    if (ja && ja.t !== it.t) ambiguos.add(k);
+    else porNomeBairro.set(k, it);
   }
-  return { porTel, porHash, porChave };
+  for (const k of ambiguos) porNomeBairro.delete(k);
+  return { porTel, porHash, porChave, porNomeBairro };
 }
 
 /**
@@ -177,6 +215,17 @@ function daColeta(c) {
  * chave — e quando dois registros da base se revelam a mesma pessoa, eles são
  * fundidos num só em vez de conviverem duplicados na tela.
  */
+/** Mantém o índice de nome+bairro em dia conforme a fusão anda. Chave que passa
+ *  a apontar para dois telefones diferentes é apagada, não sobrescrita. */
+function indexarNomeBairro(idx, item) {
+  if (!item.t) return;
+  const k = chaveNomeBairro(item.n, item.b);
+  if (!k) return;
+  const ja = idx.porNomeBairro.get(k);
+  if (ja && ja !== item && ja.t !== item.t) idx.porNomeBairro.delete(k);
+  else idx.porNomeBairro.set(k, item);
+}
+
 function fundir(existentes, novos) {
   const vivos = new Set(existentes);
   const idx = indexar(existentes);
@@ -199,6 +248,10 @@ function fundir(existentes, novos) {
       // sobreviveria ao lado do novo, e a mesma pessoa apareceria duas vezes na
       // tela — uma delas congelada no dia em que foi religada.
       ...(c.chavesAntigas || []).map((k) => idx.porChave.get(k)),
+      // Só para quem chega SEM telefone: é o cadastro de marketplace de alguém
+      // que a base já conhece de outro canal, mas que saiu da janela de 90 dias
+      // e por isso o coletor não teve com o que casar.
+      novo.t ? null : idx.porNomeBairro.get(chaveNomeBairro(novo.n, novo.b)),
     ]) {
       if (cand && vivos.has(cand) && !achados.includes(cand)) achados.push(cand);
     }
@@ -209,6 +262,7 @@ function fundir(existentes, novos) {
       if (item.t) idx.porTel.set(item.t, item);
       if (item.h) idx.porHash.set(item.h, item);
       idx.porChave.set(item.k, item);
+      indexarNomeBairro(idx, item);
       inseridos += 1;
       continue;
     }
@@ -222,11 +276,15 @@ function fundir(existentes, novos) {
       unificados += 1;
     }
     const fundido = fundirItem(base, novo);
+    // Telefone que veio da base, não do cadastro que chegou: a tela marca com
+    // asterisco, como faz com o que o coletor religa.
+    if (!novo.t && fundido.t && !fundido.o) fundido.o = 'base_nome_bairro';
     for (const antigo of achados) vivos.delete(antigo);
     vivos.add(fundido);
     if (fundido.t) idx.porTel.set(fundido.t, fundido);
     if (fundido.h) idx.porHash.set(fundido.h, fundido);
     idx.porChave.set(fundido.k, fundido);
+    indexarNomeBairro(idx, fundido);
     for (const antigo of achados) {
       if (antigo.k !== fundido.k) idx.porChave.set(antigo.k, fundido);
     }

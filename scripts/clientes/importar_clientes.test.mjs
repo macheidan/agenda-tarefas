@@ -137,3 +137,72 @@ test('sem a chave antiga o registro orfao sobreviveria — o teste guarda a regr
   const { itens } = fundir(existentes, semPista);
   assert.equal(itens.length, 2, 'é exatamente o que chavesAntigas evita');
 });
+
+test('cliente antigo da base e reconhecido quando volta por outro canal', () => {
+  // Comprou no balcão em março e sumiu: está na base, mas fora da janela de 90
+  // dias, então o `religar` do coletor não teve com o que casar.
+  const existentes = [
+    { k: 't:51999990000', t: '51999990000', n: 'Marisiana Battistella', b: 'Petrópolis', p: 12, v: 1500, u: '2026-03-02' },
+  ];
+  // Hoje ela pediu pelo iFood: cadastro novo, sem telefone.
+  const coleta = [
+    {
+      chave: 'e:hash-do-nome', telefone: '', nome: 'Marisiana Battistella', bairro: 'Petrópolis',
+      pedidos: 1, valorTotal: 130, ultimaCompra: '2026-08-19',
+    },
+  ];
+  const { itens, atualizados } = fundir(existentes, coleta);
+  assert.equal(itens.length, 1, 'não pode virar dois clientes');
+  assert.equal(atualizados, 1);
+  assert.equal(itens[0].t, '51999990000', 'o telefone da base sobrevive');
+  assert.equal(itens[0].k, 't:51999990000');
+  assert.equal(itens[0].o, 'base_nome_bairro', 'a tela marca que o número veio de outro cadastro');
+  assert.equal(itens[0].u, '2026-08-19', 'a última compra é a de hoje');
+});
+
+test('homonimos no mesmo bairro barram o reconhecimento pela base', () => {
+  const existentes = [
+    { k: 't:51999990000', t: '51999990000', n: 'Ana Silva', b: 'Petrópolis', p: 3, v: 300, u: '2026-03-02' },
+    { k: 't:51888880000', t: '51888880000', n: 'Ana Silva', b: 'Petrópolis', p: 5, v: 500, u: '2026-04-02' },
+  ];
+  const coleta = [
+    { chave: 'e:outra-ana', telefone: '', nome: 'Ana Silva', bairro: 'Petrópolis', pedidos: 1, valorTotal: 90, ultimaCompra: '2026-08-19' },
+  ];
+  const { itens } = fundir(existentes, coleta);
+  assert.equal(itens.length, 3, 'na dúvida, ninguém recebe telefone de ninguém');
+});
+
+test('nome de uma palavra nunca casa com a base', () => {
+  const existentes = [
+    { k: 't:51999990000', t: '51999990000', n: 'Amanda', b: 'Petrópolis', p: 3, v: 300, u: '2026-03-02' },
+  ];
+  const coleta = [
+    { chave: 'e:amanda2', telefone: '', nome: 'Amanda', bairro: 'Petrópolis', pedidos: 1, valorTotal: 90, ultimaCompra: '2026-08-19' },
+  ];
+  const { itens } = fundir(existentes, coleta);
+  assert.equal(itens.length, 2);
+});
+
+test('bairro diferente nao casa com a base', () => {
+  const existentes = [
+    { k: 't:51999990000', t: '51999990000', n: 'Mauricio David', b: 'Petrópolis', p: 3, v: 300, u: '2026-03-02' },
+  ];
+  const coleta = [
+    { chave: 'e:mauricio', telefone: '', nome: 'Mauricio David', bairro: 'Guarujá', pedidos: 1, valorTotal: 90, ultimaCompra: '2026-08-19' },
+  ];
+  const { itens } = fundir(existentes, coleta);
+  assert.equal(itens.length, 2);
+});
+
+test('quem chega COM telefone nao passa pela regra de nome+bairro', () => {
+  // O telefone é a chave forte: se ele existe, manda ele — mesmo que o
+  // nome+bairro apontasse para outro registro.
+  const existentes = [
+    { k: 't:51999990000', t: '51999990000', n: 'Ana Souza', b: 'Petrópolis', p: 3, v: 300, u: '2026-03-02' },
+  ];
+  const coleta = [
+    { chave: 't:51777770000', telefone: '51777770000', nome: 'Ana Souza', bairro: 'Petrópolis', pedidos: 1, valorTotal: 90, ultimaCompra: '2026-08-19' },
+  ];
+  const { itens } = fundir(existentes, coleta);
+  assert.equal(itens.length, 2, 'dois telefones diferentes sao duas pessoas');
+});

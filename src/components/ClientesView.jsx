@@ -54,6 +54,9 @@ const ORIGEM_TELEFONE = {
   nome_endereco: 'nome e endereço',
   nome_bairro: 'nome completo e bairro',
   logradouro: 'mesmo endereço e nome compatível',
+  // Esta não vem do coletor: é o importador reconhecendo, contra a base
+  // inteira, alguém que já comprou por outro canal mas saiu da janela de 90 dias.
+  base_nome_bairro: 'nome completo e bairro, contra a base inteira',
 };
 
 const COLUNAS = {
