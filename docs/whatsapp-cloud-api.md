@@ -82,7 +82,13 @@ pode adicionar uma forma de pagamento porque está usando uma linha de crédito
 compartilhada para pagar pelos anúncios."* E na tela de detalhes da linha
 **não existe botão de remover** — quem aloca é quem desaloca. Saídas:
 
-1. pedir à ManyChat para desalocar a linha de crédito (caminho oficial);
+1. **suporte da ManyChat** pedindo para desalocar a linha de crédito — checado
+   em 19/08 dentro do painel deles: **não dá para resolver por lá sozinho**. As
+   duas contas (`fb3749628` "Dáme Pizza" e `fb2177147` "new WhatsApp account")
+   estão com assinatura **Expired**, plano grátis, 0 contatos, e o canal
+   WhatsApp aparece como **não conectado** ("Conectar"). Ou seja: não há canal
+   para desconectar, e a ManyChat não expõe a alocação de linha de crédito ao
+   cliente. Só o suporte deles desfaz;
 2. suporte da Meta desvincular;
 3. criar uma WABA nova e migrar o número para ela (a nova nasce limpa, mas
    migrar número entre WABAs tem risco próprio).

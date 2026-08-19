@@ -106,17 +106,23 @@ def fechar_modais(page) -> None:
             return
         page.keyboard.press("Escape")
         page.wait_for_timeout(800)
-    # Modal teimoso (sem botão de fechar, ou preso): recarregar desmonta tudo.
-    page.reload(wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_timeout(4000)
 
 
 def selecionar_loja(page, id_store: str) -> None:
     """Troca de loja pelo seletor do header, casando pelo ID da loja."""
     fechar_modais(page)
     atual = page.evaluate("() => (document.querySelector('a.button-header')?.innerText || '').trim()")
-    page.locator("a.button-header").first.click(timeout=15000)
-    page.wait_for_timeout(2500)
+    # Espera o header montar (a SPA ainda pode estar carregando) e clica por JS,
+    # não pelo Playwright: modal aberto cobre a tela com um backdrop, o clique
+    # "de verdade" vai para o backdrop e estoura o timeout. O JS chama o elemento
+    # direto, e aí o backdrop não tem como atrapalhar.
+    try:
+        page.wait_for_selector("a.button-header", timeout=30000)
+    except Exception as e:  # noqa: BLE001
+        raise RuntimeError(f"Header do Saipos nao carregou (URL {page.url})") from e
+    if not page.evaluate("() => { const el = document.querySelector('a.button-header'); if (!el) return false; el.click(); return true; }"):
+        raise RuntimeError(f"Seletor de loja nao encontrado no header (estava em {atual!r})")
+    page.wait_for_timeout(3000)
     # Subir no DOM até o maior ancestral que ainda contém só ESTE botão: é a
     # linha da loja. Subir por número fixo de níveis pegaria o container das
     # três lojas, cujo texto casa com qualquer ID (e cai sempre na primeira).
