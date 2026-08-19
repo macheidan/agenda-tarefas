@@ -26,6 +26,36 @@ execução — 500 envios numa requisição estouraria. Em lote o progresso apar
 tela, dá para parar no meio, e retomar não duplica: o servidor pula quem já
 recebeu aquela campanha (`campanhaEnvios/{campanhaId}__{telefone}`).
 
+## Estado real das contas (conferido em 2026-08-19)
+
+Boa parte do passo a passo abaixo **já está feita** — as duas marcas já existem
+na plataforma há tempo. O que sobrou é bem menos do que parece.
+
+| | Dáme (BM `1952138181466044`) | Lov (BM `621269871566486`) |
+|---|---|---|
+| Verificação do negócio | Em análise (enviada 19/08) | ✅ Verificada em 13/03/2026 |
+| WABA | `206538077125724` | `110959808608511` (+ uma do app) |
+| Número | **+55 51 3332-2440** — Conectado, qualidade Alta | **+55 51 3388-2002** — **Não verificado** |
+| Limite de envio | **2.000 conversas/24h** (nível 2) | — |
+| Templates | nenhum | nenhum |
+| App de desenvolvedor | **nenhum** | **nenhum** |
+
+⚠️ **A Dáme já está na Cloud API, mas pela ManyChat.** A ManyChat é **parceira
+com controle total** da WABA e a conta é paga por uma **linha de crédito
+"Allocated from: Manychat"** (Business ID `711214052401794`). O Fábio não usa
+mais a ManyChat — então isso é ao mesmo tempo um risco (um terceiro pode mandar
+mensagem pelo número da loja) e uma dependência (sem essa linha, não há forma de
+pagamento).
+
+**A ordem importa:** primeiro colocar pagamento próprio, por último remover a
+ManyChat. Removendo antes, a WABA fica sem como pagar e o número para de enviar.
+Para mexer em cobrança, o usuário precisa antes virar **editor financeiro** —
+o próprio Billing Hub avisa e oferece "Modificar permissões".
+
+O número da Lov está registrado em duas WABAs (a do app, "Offline", e a da API,
+"Não verificado"): é o estado clássico de número que começou a migrar do
+aplicativo para a API e não terminou. Nesse estado ele não envia.
+
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
 ### 1. Conta e verificação
