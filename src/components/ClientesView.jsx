@@ -89,7 +89,9 @@ const semAcento = (s) =>
 
 export default function ClientesView({ settings, isAdmin }) {
   const { clientes, meta, loading, error } = useClientes();
-  const [faixa, setFaixa] = useState('todos');
+  // Janela de dias sem pedir. `max: null` é "sem teto" — é o que mantém a faixa
+  // de 91+ dias funcionando quando a base envelhece além do fim da régua.
+  const [janela, setJanela] = useState({ min: 0, max: null });
   const [lojaFiltro, setLojaFiltro] = useState('all');
   const [contato, setContato] = useState('todos');
   const [busca, setBusca] = useState('');
@@ -154,9 +156,20 @@ export default function ClientesView({ settings, isAdmin }) {
     return out;
   }, [buscados]);
 
+  // Fim da régua do slider: o maior "dias sem pedir" da base, arredondado para
+  // cima de 30 em 30. Não é fixo porque a base envelhece — hoje ela vai até uns
+  // 90 dias, daqui a um ano vai muito além.
+  const limiteRegua = useMemo(() => {
+    const maior = comDias.reduce((m, c) => (Number.isFinite(c.dias) && c.dias > m ? c.dias : m), 0);
+    // Nunca menos que 120: a coleta só enxerga 90 dias, e a régua precisa de
+    // espaço à direita para o atalho de 91+ ter onde pousar.
+    return Math.max(120, Math.ceil(maior / 30) * 30);
+  }, [comDias]);
+
   const filtrados = useMemo(() => {
-    const f = FAIXAS.find((x) => x.key === faixa);
-    const base = f ? buscados.filter((c) => c.dias >= f.min && c.dias <= f.max) : buscados;
+    const base = buscados.filter(
+      (c) => c.dias >= janela.min && (janela.max === null || c.dias <= janela.max)
+    );
     const pegar = COLUNAS[ordem.campo] || COLUNAS.dias;
     const sinal = ordem.dir === 'asc' ? 1 : -1;
     return [...base].sort((a, b) => {
@@ -165,7 +178,7 @@ export default function ClientesView({ settings, isAdmin }) {
       if (va === vb) return (a.nome || '').localeCompare(b.nome || '');
       return va > vb ? sinal : -sinal;
     });
-  }, [buscados, faixa, ordem]);
+  }, [buscados, janela, ordem]);
 
   const visiveis = filtrados.slice(0, limite);
   const marcasComDados = useMemo(() => new Set(daLoja.map((c) => c.loja)), [daLoja]);
@@ -191,7 +204,7 @@ export default function ClientesView({ settings, isAdmin }) {
 
   // Todo filtro volta pro topo da lista — senão a pessoa continua vendo o
   // "mostrar mais" de um recorte que não existe mais.
-  const trocarFaixa = (v) => { setFaixa(v); setLimite(PAGINA); };
+  const trocarJanela = (nova) => { setJanela(nova); setLimite(PAGINA); };
   const trocarLoja = (v) => { setLojaFiltro(v); setLimite(PAGINA); };
   const trocarContato = (v) => { setContato(v); setLimite(PAGINA); };
   const trocarBusca = (v) => { setBusca(v); setLimite(PAGINA); };
@@ -240,9 +253,28 @@ export default function ClientesView({ settings, isAdmin }) {
     [comWhatsapp, optOutSet]
   );
 
-  const faixaAtual = FAIXAS.find((f) => f.key === faixa);
+  // Uma faixa fica acesa quando a janela é exatamente a dela — o slider pode
+  // parar em qualquer outro ponto, e aí nenhuma fica.
+  const faixaAtiva = FAIXAS.find(
+    (f) => f.min === janela.min && (f.max === Infinity ? janela.max === null : f.max === janela.max)
+  );
+  const todosAtivo = janela.min === 0 && janela.max === null;
+  const janelaDesc = janela.max === null ? `${janela.min}+ dias` : `${janela.min} a ${janela.max} dias`;
+
+  // Sem teto, o ponto da direita mora no fim da régua.
+  const maxValor = janela.max === null ? limiteRegua : Math.min(janela.max, limiteRegua);
+  const pctMin = limiteRegua ? (Math.min(janela.min, limiteRegua) / limiteRegua) * 100 : 0;
+  const pctMax = limiteRegua ? (maxValor / limiteRegua) * 100 : 100;
+
+  // Um ponto nunca passa do outro: o que sobrar do arrasto vira empate.
+  const mudarMin = (v) => trocarJanela({ ...janela, min: Math.min(Number(v), maxValor) });
+  const mudarMax = (v) => {
+    const n = Math.max(Number(v), janela.min);
+    trocarJanela({ ...janela, max: n >= limiteRegua ? null : n });
+  };
+
   const filtroDesc = [
-    faixaAtual ? faixaAtual.label : 'todos os dias',
+    todosAtivo ? 'todos os dias' : janelaDesc,
     lojaAlvo ? LOJA_LABELS[lojaAlvo] : 'todas as lojas',
     busca.trim() ? `busca "${busca.trim()}"` : null,
   ]
@@ -265,16 +297,16 @@ export default function ClientesView({ settings, isAdmin }) {
         <h2>Clientes</h2>
         <div className={styles.headerActions}>
           <button
-            className={`${styles.sectionTab} ${faixa === 'todos' ? styles.sectionTabActive : ''}`}
-            onClick={() => trocarFaixa('todos')}
+            className={`${styles.sectionTab} ${todosAtivo ? styles.sectionTabActive : ''}`}
+            onClick={() => trocarJanela({ min: 0, max: null })}
           >
             Todos ({contagens.todos})
           </button>
           {FAIXAS.map((f) => (
             <button
               key={f.key}
-              className={`${styles.sectionTab} ${faixa === f.key ? styles.sectionTabActive : ''}`}
-              onClick={() => trocarFaixa(f.key)}
+              className={`${styles.sectionTab} ${faixaAtiva?.key === f.key ? styles.sectionTabActive : ''}`}
+              onClick={() => trocarJanela({ min: f.min, max: f.max === Infinity ? null : f.max })}
             >
               {f.label} ({contagens[f.key]})
             </button>
@@ -325,6 +357,51 @@ export default function ClientesView({ settings, isAdmin }) {
             {c.label} ({contagemContato[c.key] ?? 0})
           </button>
         ))}
+      </div>
+
+      {/* Régua de dois pontos: as faixas dão o corte redondo, isto dá o corte
+          exato ("quem sumiu entre 45 e 70 dias"). Arrastar o ponto direito até
+          o fim solta o teto — senão quem está além do fim da régua sumiria. */}
+      <div className={styles.reguaBox}>
+        <div className={styles.reguaTopo}>
+          <span className={styles.reguaLabel}>Dias sem pedir</span>
+          <strong className={styles.reguaValor}>{todosAtivo ? 'todos' : janelaDesc}</strong>
+        </div>
+        <div className={styles.regua}>
+          <div className={styles.trilho} />
+          <div
+            className={styles.trilhoAtivo}
+            style={{ left: `${pctMin}%`, width: `${Math.max(0, pctMax - pctMin)}%` }}
+          />
+          <input
+            className={styles.pontoRegua}
+            type="range"
+            min="0"
+            max={limiteRegua}
+            value={janela.min}
+            // Os dois pontos podem se encostar; quem fica por cima é sempre o
+            // que ainda tem para onde ir, senão um deles fica impossível de pegar.
+            style={{ zIndex: pctMin >= 100 ? 3 : 5 }}
+            onChange={(e) => mudarMin(e.target.value)}
+            aria-label="Mínimo de dias sem pedir"
+            aria-valuetext={`a partir de ${janela.min} dias`}
+          />
+          <input
+            className={styles.pontoRegua}
+            type="range"
+            min="0"
+            max={limiteRegua}
+            value={maxValor}
+            style={{ zIndex: pctMin >= 100 ? 5 : 4 }}
+            onChange={(e) => mudarMax(e.target.value)}
+            aria-label="Máximo de dias sem pedir"
+            aria-valuetext={janela.max === null ? 'sem limite' : `até ${janela.max} dias`}
+          />
+        </div>
+        <div className={styles.reguaEscala}>
+          <span>0</span>
+          <span>{limiteRegua}+</span>
+        </div>
       </div>
 
       <div className={styles.toolbar}>
@@ -400,7 +477,7 @@ export default function ClientesView({ settings, isAdmin }) {
       {!loading && !error && daLoja.length > 0 && filtrados.length === 0 && (
         <div className={styles.empty}>
           <p>Nenhum cliente nesse filtro.</p>
-          {faixa === '91' && (
+          {janela.min >= 91 && (
             <span>
               A faixa de 91+ dias se forma com o tempo: a coleta só traz quem comprou nos últimos 90
               dias, e quem já está aqui vai envelhecendo.
