@@ -56,6 +56,20 @@ O número da Lov está registrado em duas WABAs (a do app, "Offline", e a da API
 "Não verificado"): é o estado clássico de número que começou a migrar do
 aplicativo para a API e não terminou. Nesse estado ele não envia.
 
+### IDs já criados (Dáme) — 2026-08-19
+
+| O quê | Valor |
+|---|---|
+| Portfólio (BM) | `1952138181466044` |
+| WABA | `206538077125724` |
+| **Phone number ID** (`WA_PHONE_ID_DAME`) | **`2802736619807612`** |
+| Número | +55 51 3332-2440 · nome de exibição "Dáme Pizza" · @damepizza |
+| App de desenvolvedor | `Intranet Pizzarias` — `1610742780487306` |
+| Usuário de sistema | `intranet-whatsapp` — `61593572666697` (admin, WABA com acesso total) |
+
+Nada aí é segredo — o que é segredo (token e app secret) não passa por aqui nem
+pelo repositório: vai direto do painel da Meta para as env vars da Vercel.
+
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
 ### 1. Conta e verificação
