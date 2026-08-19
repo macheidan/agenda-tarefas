@@ -39,6 +39,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import arquivo  # noqa: E402  (backup permanente do dado cru)
 import coletar_clientes as cc  # noqa: E402  (login, troca de loja e abertura da tela)
 
 sys.path.insert(0, r"C:\claude_project\Pizzarias\caixas-conferencia\coletores")
@@ -52,7 +53,7 @@ MESES_GUARDADOS = 12
 # Roda dentro da página: para cada cadastro, acha o vínculo com a loja e lista os
 # pedidos. Devolve data, valor e canal de cada um: a data dá a frequência, o valor
 # dá a receita do mês (que de outro jeito seria estimada por ticket x pedidos) e o
-# canal fica guardado no JSON para o dia em que quisermos medir marketplace x direto.
+# canal e a forma de pagamento vão para o arquivo permanente (arquivo.py).
 JS_LOTE = """async ([ids, idStore, concorrencia]) => {
   const $http = angular.element(document.body).injector().get('$http');
   const out = [];
@@ -73,12 +74,11 @@ JS_LOTE = """async ([ids, idStore, concorrencia]) => {
           `https://api.saipos.com/v1/store_customers/list-customer-sales/${vinculo.id_store_customer}` +
             `?data=${encodeURIComponent(JSON.stringify({ page: 1, rowsLimit: 1000 }))}&id_store=${idStore}`
         );
-        out.push({
-          id,
-          pedidos: (vendas.data || [])
-            .filter((v) => v.data_pedido)
-            .map((v) => ({ d: v.data_pedido, v: Number(v.valor_pedido) || 0, c: v.canal || '' })),
-        });
+        // O pedido volta INTEIRO: id_sale, numero_pedido_saipos, data, valor,
+        // `pedido` (o produto), canal e forma de pagamento. São 222 bytes cada,
+        // e é o que o arquivo permanente guarda — a frequência usa três campos,
+        // o resto some se não for salvo aqui.
+        out.push({ id, pedidos: (vendas.data || []).filter((v) => v.data_pedido) });
       } catch (e) {
         out.push({ id, erro: String((e && e.status) || (e && e.message) || e) });
       }
@@ -113,19 +113,21 @@ def resumir(pedidos: list[dict], janela: set[str]) -> dict:
     valor_mes: dict[str, float] = {}
     canais: Counter = Counter()
     for p in pedidos:
-        d = (p.get("d") or "")[:10]
+        d = str(p.get("data_pedido") or "")[:10]
         if not d:
             continue
         m = d[:7]
         por_mes[m] += 1
-        valor_mes[m] = valor_mes.get(m, 0.0) + (p.get("v") or 0)
-        if p.get("c"):
-            canais[p["c"]] += 1
+        valor_mes[m] = valor_mes.get(m, 0.0) + (float(p.get("valor_pedido") or 0))
+        if p.get("canal"):
+            canais[p["canal"]] += 1
     return {
         "meses": {m: por_mes[m] for m in janela if por_mes.get(m)},
         "valorMeses": {m: round(valor_mes[m], 2) for m in janela if valor_mes.get(m)},
         "canais": dict(canais),
-        "primeiraCompra": min((p.get("d", "")[:10] for p in pedidos if p.get("d")), default=""),
+        "primeiraCompra": min(
+            (str(p.get("data_pedido"))[:10] for p in pedidos if p.get("data_pedido")), default=""
+        ),
         "pedidosTotais": len(pedidos),
     }
 
@@ -156,7 +158,7 @@ def aproveitavel(velho: dict, novo: dict) -> bool:
     return not (velho.get("pedidosTotais", 0) == 0 and (novo.get("pedidos") or 0) > 0)
 
 
-def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) -> tuple[int, int]:
+def coletar_loja(page, loja: str, id_store: str, clientes: list[dict], janela: set[str]) -> tuple[int, int]:
     """Preenche `meses`/`primeiraCompra` em cada cliente da lista. Devolve
     (clientes lidos, erros)."""
     # Um cliente pode ter vários cadastros: todos os ids vão juntos numa fila só,
@@ -170,6 +172,9 @@ def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) ->
             fila.append(cid)
             dono.setdefault(cid, []).append(c)
 
+    # Todo pedido lido, cru, indexado por id_sale — é o que vai para o backup.
+    crus: dict = {}
+    de_quem: dict = {}
     lidos = 0
     falhados: set = set()
     motivos: Counter = Counter()
@@ -188,6 +193,10 @@ def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) ->
                     restantes.append(r["id"])
                     motivos[r["erro"]] += 1
                     continue
+                for p in r.get("pedidos") or []:
+                    if p.get("id_sale") is not None:
+                        crus[p["id_sale"]] = p
+                        de_quem[p["id_sale"]] = r["id"]
                 for c in dono.get(r["id"], ()):
                     c.setdefault("_pedidos", []).extend(r.get("pedidos") or [])
             lidos += len(pedaco)
@@ -223,6 +232,9 @@ def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) ->
         c.update(resumir(pedidos, janela))
     if motivos:
         print("  recusas por motivo:", dict(motivos.most_common(4)))
+    if crus and arquivo.disponivel():
+        r = arquivo.gravar_pedidos(loja, list(crus.values()), de_quem)
+        print(f"  arquivo: {r['novos']} pedidos novos guardados ({r['total']} nos meses tocados)")
     return lidos, len(falhados)
 
 
@@ -288,7 +300,7 @@ def main() -> int:
                     continue
                 cc.selecionar_loja(page, id_store)
                 cc.abrir_tela_clientes(page)
-                lidos, erros = coletar_loja(page, id_store, pendentes, janela)
+                lidos, erros = coletar_loja(page, loja, id_store, pendentes, janela)
                 com_hist = sum(1 for c in lista if c.get("meses"))
                 print(f"  {lidos} cadastros lidos, {erros} erros · {com_hist} clientes com histórico")
                 salvar()

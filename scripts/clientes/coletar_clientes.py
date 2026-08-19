@@ -43,6 +43,9 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import arquivo  # noqa: E402  (backup permanente do dado cru)
+
 sys.path.insert(0, r"C:\claude_project\Pizzarias\caixas-conferencia\coletores")
 import saipos_acesso as sa  # noqa: E402  (login compartilhado com os outros coletores)
 
@@ -252,6 +255,13 @@ def coletar_loja(page, loja: str, id_store: str, inicio: date, fim: date) -> lis
                 f"A tela respondeu pelas lojas {sorted(store_vistos)}, esperado {id_store} — "
                 "troca de loja falhou, abortando para nao gravar dado da loja errada"
             )
+        # O bruto vai para o arquivo ANTES de `agregar`, que reduz o registro e
+        # descarta campo que a intranet não usa (CPF em claro, endereço completo,
+        # notes, saldo). Depois daqui esse dado não existe mais em lugar nenhum
+        # além do Saipos.
+        if arquivo.disponivel():
+            r = arquivo.gravar_cadastros(loja, registros, time.strftime("%Y-%m-%dT%H:%M:%S"))
+            print(f"  arquivo: {r['total']} cadastros guardados ({r['novos']} novos)")
         return agregar(registros)
     finally:
         page.remove_listener("response", on_resp)
