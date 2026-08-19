@@ -100,18 +100,17 @@ disparo de marketing é que depende de pagamento válido.
 `scripts/clientes/registrar_numero_wa.mjs` (roda no seu terminal, pergunta o
 token na hora, não grava nada).
 
-⚠️ **O app precisa ser publicado** para receber webhook de produção — enquanto
-estiver "Não publicado", a Meta só manda webhook de teste do painel. Tentado em
-19/08: **falha** com "nem todos os requisitos foram concluídos". O que falta é a
-**URL da Política de Privacidade**, obrigatória para publicar, e o site
-damepizza.com.br **não tem** essa página (o rodapé só tem contato e Instagram).
+✅ **App publicado em 19/08.** Sem isso a Meta só manda webhook de teste. A
+publicação exige **URL da Política de Privacidade**: usamos a do Delivery
+Direto — `https://pedidos.mepizzas.com.br/portoalegre/mepizzas/termos-e-politicas`
+(o site damepizza.com.br não tem página própria).
 
 ⚠️ **O número 3332-2440 é o WhatsApp público da loja** — é o link do botão
-"WHATSAPP" no site. Ele está na Cloud API e hoje **sem nenhum app conectado**,
-ou seja, sem ninguém atendendo. Isso muda o desenho do template: um botão
-`wa.me` apontando para ele não faz sentido (a campanha já sai desse número). O
-certo é **Quick Reply**, cuja resposta cai no webhook e aparece no painel
-Campanhas da intranet.
+"WHATSAPP" no site, e é atendido no aplicativo WhatsApp Business (coexistência:
+recebe no celular e aceita disparo pela API). Consequência para o template: um
+botão `wa.me` apontando para ele **não faz sentido**, porque a campanha já sai
+desse mesmo número. O certo é **Quick Reply** — a resposta chega no celular de
+quem atende e também no nosso webhook, aparecendo no painel Campanhas.
 
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
