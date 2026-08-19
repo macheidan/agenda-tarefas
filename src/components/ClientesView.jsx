@@ -48,6 +48,10 @@ const reais = (v) =>
 
 const PAGINA = 200;
 
+// Fim da régua de dias sem pedir: um ano. Quem passou disso continua na lista —
+// o ponto direito no fim da régua significa "sem teto", não 365.
+const REGUA_MAX = 365;
+
 /** Meia-noite de hoje em UTC — a base guarda datas soltas (YYYY-MM-DD), então
  *  a conta de dias tem de ser feita fora do fuso, senão vira/perde um dia. */
 function hojeUTC() {
@@ -156,16 +160,6 @@ export default function ClientesView({ settings, isAdmin }) {
     return out;
   }, [buscados]);
 
-  // Fim da régua do slider: o maior "dias sem pedir" da base, arredondado para
-  // cima de 30 em 30. Não é fixo porque a base envelhece — hoje ela vai até uns
-  // 90 dias, daqui a um ano vai muito além.
-  const limiteRegua = useMemo(() => {
-    const maior = comDias.reduce((m, c) => (Number.isFinite(c.dias) && c.dias > m ? c.dias : m), 0);
-    // Nunca menos que 120: a coleta só enxerga 90 dias, e a régua precisa de
-    // espaço à direita para o atalho de 91+ ter onde pousar.
-    return Math.max(120, Math.ceil(maior / 30) * 30);
-  }, [comDias]);
-
   const filtrados = useMemo(() => {
     const base = buscados.filter(
       (c) => c.dias >= janela.min && (janela.max === null || c.dias <= janela.max)
@@ -262,15 +256,15 @@ export default function ClientesView({ settings, isAdmin }) {
   const janelaDesc = janela.max === null ? `${janela.min}+ dias` : `${janela.min} a ${janela.max} dias`;
 
   // Sem teto, o ponto da direita mora no fim da régua.
-  const maxValor = janela.max === null ? limiteRegua : Math.min(janela.max, limiteRegua);
-  const pctMin = limiteRegua ? (Math.min(janela.min, limiteRegua) / limiteRegua) * 100 : 0;
-  const pctMax = limiteRegua ? (maxValor / limiteRegua) * 100 : 100;
+  const maxValor = janela.max === null ? REGUA_MAX : Math.min(janela.max, REGUA_MAX);
+  const pctMin = (Math.min(janela.min, REGUA_MAX) / REGUA_MAX) * 100;
+  const pctMax = (maxValor / REGUA_MAX) * 100;
 
   // Um ponto nunca passa do outro: o que sobrar do arrasto vira empate.
   const mudarMin = (v) => trocarJanela({ ...janela, min: Math.min(Number(v), maxValor) });
   const mudarMax = (v) => {
     const n = Math.max(Number(v), janela.min);
-    trocarJanela({ ...janela, max: n >= limiteRegua ? null : n });
+    trocarJanela({ ...janela, max: n >= REGUA_MAX ? null : n });
   };
 
   const filtroDesc = [
@@ -377,7 +371,7 @@ export default function ClientesView({ settings, isAdmin }) {
             className={styles.pontoRegua}
             type="range"
             min="0"
-            max={limiteRegua}
+            max={REGUA_MAX}
             value={janela.min}
             // Os dois pontos podem se encostar; quem fica por cima é sempre o
             // que ainda tem para onde ir, senão um deles fica impossível de pegar.
@@ -390,7 +384,7 @@ export default function ClientesView({ settings, isAdmin }) {
             className={styles.pontoRegua}
             type="range"
             min="0"
-            max={limiteRegua}
+            max={REGUA_MAX}
             value={maxValor}
             style={{ zIndex: pctMin >= 100 ? 5 : 4 }}
             onChange={(e) => mudarMax(e.target.value)}
@@ -400,7 +394,7 @@ export default function ClientesView({ settings, isAdmin }) {
         </div>
         <div className={styles.reguaEscala}>
           <span>0</span>
-          <span>{limiteRegua}+</span>
+          <span>{REGUA_MAX}+</span>
         </div>
       </div>
 
