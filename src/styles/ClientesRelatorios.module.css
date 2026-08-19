@@ -1,0 +1,371 @@
+/* Relatórios da seção Clientes — princípios 1 a 9 da constituição.
+   Vive dentro do cartão da ClientesView, então aqui não há .container próprio:
+   o cartão, o header e o seletor de loja são de lá. */
+
+.wrap {
+  margin-top: 14px;
+}
+
+/* ---- Submenu dos 4 relatórios: mesmo segmented control de Preços ---- */
+.relTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.relTab {
+  background: none;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.relTab:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.relTabActive,
+.relTabActive:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+:global(:root[data-v2]) .relTabs {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--seg-track);
+}
+
+:global(:root[data-v2]) .relTab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+:global(:root[data-v2]) .relTab:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+:global(:root[data-v2]) .relTabActive,
+:global(:root[data-v2]) .relTabActive:hover {
+  background: var(--seg-active-bg);
+  color: var(--seg-active-text);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ---- KPIs ---- */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.kpiTitulo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kpiValor {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.kpiNota {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ---- Textos de apoio ---- */
+.legenda {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.rodape {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.aviso {
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--warning-text);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-md);
+}
+
+/* ---- Tabela ---- */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table td {
+  font-size: 13px;
+  color: var(--text);
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.table tfoot td {
+  font-weight: 700;
+  border-bottom: none;
+  border-top: 1px solid var(--border);
+}
+
+.num {
+  text-align: right;
+}
+
+.table th.num {
+  text-align: right;
+}
+
+.destaque {
+  font-weight: 700;
+}
+
+.suave {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.vazio {
+  color: var(--text-muted);
+}
+
+/* Linha que não dá para comparar com as outras (coorte/mês antes do início da
+   base, ou a linha "Outros" dos bairros pequenos). */
+.parcial td {
+  color: var(--text-muted);
+}
+
+.marca {
+  margin-left: 3px;
+  color: var(--text-muted);
+  cursor: help;
+}
+
+.chip {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Célula do mapa de calor da coorte: a intensidade é o accent do tema com
+   opacidade variável, para o mapa acompanhar claro/escuro sem cor fixa. */
+.celula {
+  position: relative;
+  display: inline-block;
+  min-width: 46px;
+  padding: 3px 7px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.heat {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.celulaTexto {
+  position: relative;
+}
+
+/* ---- Segmentos: linha inteira clicável ---- */
+.clicavel {
+  cursor: pointer;
+}
+
+.clicavel:hover td {
+  background: var(--card-hover);
+}
+
+.segLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.regra {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.acao {
+  white-space: normal;
+  min-width: 220px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* ---- Vazio ---- */
+.empty {
+  margin-top: 16px;
+  padding: 32px 16px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+.empty p {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---- Mobile: a tabela vira cartões (princípio 8) ---- */
+@media (max-width: 768px) {
+  .kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tfoot,
+  .table tr,
+  .table td {
+    display: block;
+    width: auto;
+  }
+
+  .table tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+
+  .table td {
+    border-bottom: none;
+    padding: 3px 0;
+    display: flex;
+    gap: 8px;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    flex: 0 0 104px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+  }
+
+  .num {
+    text-align: left;
+  }
+
+  .acao {
+    min-width: 0;
+  }
+}
+
+/* ---- Botão de revelar as linhas enviesadas ---- */
+.maisRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.ghostBtn {
+  background: none;
+  border: 1px solid var(--input-border);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.ghostBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}

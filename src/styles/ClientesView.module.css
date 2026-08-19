@@ -600,3 +600,24 @@
     font-size: 16px;
   }
 }
+
+/* Chip do recorte por segmento RFV, ligado a partir do relatório. Clicar
+   desfaz — daí ser botão e não etiqueta. */
+.filtroChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filtroChip:hover {
+  background: var(--accent);
+  color: #fff;
+}

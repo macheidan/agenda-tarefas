@@ -156,6 +156,16 @@ quem atende e também no nosso webhook, aparecendo no painel Campanhas.
 15. Aprovação costuma sair em minutos. Anote o **nome** do template (é ele que
     vai no modal, não o texto).
 
+### 6a. Onde o token fica guardado
+
+O token **não entra no repositório**. Ele vive em dois lugares:
+
+1. **`C:\claude_project\Hub\_credenciais\whatsapp-cloud.env`** — o store
+   central de credenciais (gitignored), com todas as chaves já nomeadas e os
+   IDs preenchidos. É de lá que o `registrar_numero_wa.mjs` lê sozinho.
+2. **Environment Variables do projeto Vercel `gemini-proxy-intranet`** — é o
+   que o proxy usa em produção. As chaves têm os mesmos nomes.
+
 ### 6. Variáveis na Vercel
 No projeto `gemini-proxy-intranet` → Settings → Environment Variables:
 

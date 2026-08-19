@@ -18,6 +18,11 @@
 //   x = pedidos cancelados    o = origem do telefone quando emprestado
 //   a = aniversário (MM-DD)   e = e-mail
 //   hm = pedidos por mês, últimos 12 ({"2026-08": 3})   pc = primeira compra
+//   vm = receita por mês, últimos 12 ({"2026-08": 224.8})
+//
+// `vm` existe porque `v` é o histórico inteiro do cliente: sem ele, a receita de
+// um mês só sairia como ticket × pedidos, que erra sempre que o cliente varia o
+// tamanho do pedido.
 //
 // O ticket médio não é gravado: é v/p, calculado na tela.
 //
@@ -37,7 +42,9 @@ import { pathToFileURL } from 'node:url';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-const CHUNK_SIZE = 800;
+// 600 e não 800: com `vm` cada item ficou ~25% maior e o doc tem teto de 1 MB.
+// Dois blocos a mais por loja custam duas leituras — barato perto do risco.
+const CHUNK_SIZE = 600;
 const LOJAS = ['dame', 'lov'];
 
 function initFirestore() {
@@ -53,16 +60,20 @@ async function carregarExistentes(db, loja) {
   const snap = await db.collection('clientes').where('loja', '==', loja).get();
   const itens = [];
   let chunks = 0;
+  let metaAntiga = null;
   snap.forEach((doc) => {
     const data = doc.data();
-    if (data.meta === true) return;
+    if (data.meta === true) {
+      metaAntiga = data;
+      return;
+    }
     chunks += 1;
     for (const item of data.itens || []) {
       if (!item) continue;
       itens.push({ ...item, k: item.k || (item.t ? `t:${item.t}` : `i:${itens.length}`) });
     }
   });
-  return { itens, chunks };
+  return { itens, chunks, metaAntiga };
 }
 
 /** Índice de busca por telefone, hash de CPF e chave — as três formas de
@@ -111,6 +122,7 @@ function fundirItem(antigo, novo) {
     // O histórico vem recalculado inteiro pelo coletar_historico.py; quando a
     // rodada não o trouxe (script pulado, cliente sem mudança), fica o que havia.
     hm: novo.hm || antigo.hm || null,
+    vm: novo.vm || antigo.vm || null,
     pc: menorData(novo.pc, antigo.pc),
   };
   return limpar(out);
@@ -150,6 +162,7 @@ function daColeta(c) {
     a: c.aniversario || '',
     e: c.email || '',
     hm: c.meses && Object.keys(c.meses).length ? c.meses : null,
+    vm: c.valorMeses && Object.keys(c.valorMeses).length ? c.valorMeses : null,
     pc: c.primeiraCompra || '',
   });
 }
@@ -220,7 +233,12 @@ function fundir(existentes, novos) {
   return { itens, inseridos, atualizados, unificados };
 }
 
-async function gravar(db, loja, itens, meta, chunksAntigos) {
+async function gravar(db, loja, itens, meta, chunksAntigos, metaAntiga) {
+  // A data a partir da qual a base é COMPLETA. A coleta enxerga 90 dias para
+  // trás, então a primeira importação já cobre esse retrovisor; daí em diante a
+  // base só cresce. Nunca anda para a frente — é o que permite ao relatório de
+  // coorte dizer "esta turma está inflada: dela só sobrou quem voltou".
+  const coberturaDesde = menorData(metaAntiga?.coberturaDesde || '', meta.inicio || '');
   const blocos = [];
   for (let i = 0; i < itens.length; i += CHUNK_SIZE) blocos.push(itens.slice(i, i + CHUNK_SIZE));
 
@@ -244,8 +262,10 @@ async function gravar(db, loja, itens, meta, chunksAntigos) {
     total: itens.length,
     comTelefone: itens.filter((i) => i.t).length,
     comHistorico: itens.filter((i) => i.hm).length,
+    comReceitaMensal: itens.filter((i) => i.vm).length,
     chunks: blocos.length,
     janelaDias: meta.janelaDias || null,
+    coberturaDesde: coberturaDesde || null,
     coletadoEm: meta.geradoEm || null,
     atualizadoEm: FieldValue.serverTimestamp(),
   });
@@ -270,7 +290,7 @@ async function main() {
       console.log(`\n== ${loja.toUpperCase()} ==\n  ausente no JSON, pulando`);
       continue;
     }
-    const { itens: existentes, chunks } = await carregarExistentes(db, loja);
+    const { itens: existentes, chunks, metaAntiga } = await carregarExistentes(db, loja);
     const { itens, inseridos, atualizados, unificados } = fundir(existentes, novos);
     const comTel = itens.filter((i) => i.t).length;
     console.log(`\n== ${loja.toUpperCase()} ==`);
@@ -283,7 +303,7 @@ async function main() {
       console.log('  [dry] nada gravado');
       continue;
     }
-    const blocos = await gravar(db, loja, itens, dados, chunks);
+    const blocos = await gravar(db, loja, itens, dados, chunks, metaAntiga);
     console.log(`  gravado em ${blocos} bloco(s)`);
   }
   console.log('\nOK');

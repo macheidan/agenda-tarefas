@@ -17,9 +17,25 @@
 //   node scripts/clientes/registrar_numero_wa.mjs --so-listar
 
 import readline from 'node:readline/promises';
+import { existsSync, readFileSync } from 'node:fs';
 import { stdin, stdout } from 'node:process';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
+
+// Store central de credenciais (gitignored). Se o token já estiver lá, o script
+// não pergunta nada — é o mesmo valor que vai para as env vars da Vercel.
+const STORE = 'C:\\claude_project\\Hub\\_credenciais\\whatsapp-cloud.env';
+
+function doStore(chave) {
+  if (!existsSync(STORE)) return '';
+  for (const linha of readFileSync(STORE, 'utf8').split(/\r?\n/)) {
+    const s = linha.trim();
+    if (!s || s.startsWith('#') || !s.includes('=')) continue;
+    const i = s.indexOf('=');
+    if (s.slice(0, i).trim() === chave) return s.slice(i + 1).trim().replace(/^['"]|['"]$/g, '');
+  }
+  return '';
+}
 
 // IDs conferidos no Business Manager em 2026-08-19 (não são segredo).
 const LOJAS = {
@@ -65,8 +81,15 @@ async function main() {
 
   const rl = readline.createInterface({ input: stdin, output: stdout });
   console.log(`\n== ${cfg.rotulo} ==`);
-  console.log('O token é o do usuário de sistema intranet-whatsapp (nunca expira).');
-  const token = (await rl.question('Token de acesso: ')).trim();
+
+  let token = doStore(`WA_TOKEN_${loja.toUpperCase()}`);
+  if (token) {
+    console.log(`Token lido de ${STORE}`);
+  } else {
+    console.log('O token é o do usuário de sistema intranet-whatsapp (nunca expira).');
+    console.log(`Dica: cole em ${STORE} e ele é lido sozinho da próxima vez.`);
+    token = (await rl.question('Token de acesso: ')).trim();
+  }
   if (!token) {
     console.error('sem token, saindo');
     process.exit(1);

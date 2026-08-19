@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useClientes, primeiroNome } from '../hooks/useClientes';
 import { useCampanhas } from '../hooks/useCampanhas';
+import { segmentoDe, SEGMENTOS } from '../utils/relatoriosClientes';
 import CampanhaModal from './CampanhaModal';
 import CampanhasPanel from './CampanhasPanel';
+import ClientesRelatorios from './ClientesRelatorios';
 import styles from '../styles/ClientesView.module.css';
 
 // As duas lojas são fixas, não derivadas dos dados: a loja precisa aparecer na
@@ -31,6 +33,16 @@ const CONTATOS = [
   { key: 'com', label: 'Com WhatsApp', teste: (c) => c.podeReceber },
   { key: 'sem', label: 'Sem contato', teste: (c) => !c.podeReceber },
 ];
+
+// Sub-seções da aba. A lista é a casa: relatórios e campanhas são leituras
+// dela, não seções paralelas — por isso dividem o mesmo seletor de loja.
+const SUBS = [
+  { key: 'lista', label: 'Lista' },
+  { key: 'relatorios', label: 'Relatórios' },
+  { key: 'campanhas', label: 'Campanhas', restrita: true },
+];
+
+const SEG_LABELS = Object.fromEntries(SEGMENTOS.map((s) => [s.key, s.label]));
 
 const COLUNAS = {
   nome: (c) => (c.nome || '').toLowerCase(),
@@ -99,7 +111,7 @@ const semAcento = (s) =>
     .toLowerCase();
 
 export default function ClientesView({ settings, isAdmin }) {
-  const { clientes, meta, loading, error } = useClientes();
+  const { clientes, meta, coberturaDesde, loading, error } = useClientes();
   // Janela de dias sem pedir. `max: null` é "sem teto" — é o que mantém a faixa
   // de 91+ dias funcionando quando a base envelhece além do fim da régua.
   const [janela, setJanela] = useState({ min: 0, max: null });
@@ -109,14 +121,39 @@ export default function ClientesView({ settings, isAdmin }) {
   const [ordem, setOrdem] = useState({ campo: 'dias', dir: 'desc' });
   const [limite, setLimite] = useState(PAGINA);
   const [copiado, setCopiado] = useState(false);
-  const [mostrarCampanhas, setMostrarCampanhas] = useState(false);
   const [modalCampanha, setModalCampanha] = useState(false);
+  // Recorte por segmento RFV, ligado a partir do relatório. Fica na lista (e não
+  // nos relatórios) porque o destino de clicar num segmento é justamente a lista
+  // pronta para copiar ou disparar.
+  const [segmentoFiltro, setSegmentoFiltro] = useState(null);
+  // Sub-seção vem do ?sub= (mesmo padrão de Preços e Suprimentos), pra que o F5
+  // volte no relatório aberto em vez de cair sempre na lista.
+  const [sub, setSub] = useState(() => {
+    try {
+      const s = new URLSearchParams(window.location.search).get('sub');
+      return SUBS.some((x) => x.key === s) ? s : 'lista';
+    } catch { return 'lista'; }
+  });
 
   // Disparar campanha é permissão à parte de ver a lista: quem consulta cliente
   // não necessariamente pode mandar mensagem cobrada em nome da loja.
   const podeEnviar = isAdmin || settings?.clientesEnviar === true;
   const { campanhas, respostas, optOuts } = useCampanhas(podeEnviar);
   const optOutSet = useMemo(() => new Set(optOuts.map((o) => o.id)), [optOuts]);
+
+  // Quem não pode disparar não tem aba de campanhas — nem por URL montada.
+  const subsVisiveis = useMemo(() => SUBS.filter((x) => !x.restrita || podeEnviar), [podeEnviar]);
+  const subAtiva = subsVisiveis.some((x) => x.key === sub) ? sub : 'lista';
+
+  // Espelha a sub-seção EXIBIDA na URL, como o Dashboard faz com ?tab=.
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('sub') === subAtiva) return;
+      url.searchParams.set('sub', subAtiva);
+      window.history.replaceState(null, '', url);
+    } catch { /* URL malformada: a navegação por estado segue funcionando */ }
+  }, [subAtiva]);
 
   // Lojas liberadas pro usuário (default: as duas). Admin vê tudo.
   const lojas = useMemo(
@@ -127,23 +164,37 @@ export default function ClientesView({ settings, isAdmin }) {
   // Quem só pode ver uma loja nunca escapa dela: o filtro é travado na
   // permissão, não no que a pessoa clicou.
   const permitidas = useMemo(() => new Set(lojas.map((l) => l.key)), [lojas]);
+  // Array estável: os relatórios varrem milhares de clientes num useMemo, e um
+  // `.map()` solto no JSX invalidaria a memo a cada render.
+  const lojaKeys = useMemo(() => lojas.map((l) => l.key), [lojas]);
   const daLoja = useMemo(
     () => (lojas.length === LOJAS.length ? clientes : clientes.filter((c) => permitidas.has(c.loja))),
     [clientes, permitidas, lojas]
   );
 
   const hoje = useMemo(() => hojeUTC(), []);
+  // O timestamp acima é meia-noite UTC (conta de dias); os relatórios contam
+  // MESES e precisam do calendário local — daí as duas referências.
+  const hojeData = useMemo(() => new Date(), []);
   const comDias = useMemo(
     () =>
       daLoja.map((c) => ({ ...c, dias: diasSemPedir(c.ultimaCompra, hoje) ?? Infinity })),
     [daLoja, hoje]
   );
 
+  // A lista de uma loja só, sem os outros filtros: é o que os relatórios leem —
+  // bairro e coorte não podem depender de onde a régua de dias parou.
+  const daLojaEscolhida = useMemo(
+    () => (lojaFiltro === 'all' ? comDias : comDias.filter((c) => c.loja === lojaFiltro)),
+    [comDias, lojaFiltro]
+  );
+
   const daMarca = useMemo(() => {
-    const base = lojaFiltro === 'all' ? comDias : comDias.filter((c) => c.loja === lojaFiltro);
     const teste = CONTATOS.find((c) => c.key === contato)?.teste;
-    return teste ? base.filter(teste) : base;
-  }, [comDias, lojaFiltro, contato]);
+    let base = teste ? daLojaEscolhida.filter(teste) : daLojaEscolhida;
+    if (segmentoFiltro) base = base.filter((c) => segmentoDe(c, hojeData) === segmentoFiltro);
+    return base;
+  }, [daLojaEscolhida, contato, segmentoFiltro, hojeData]);
 
   // Busca por nome ou telefone: dígitos na busca viram busca de telefone, o
   // resto casa com o nome sem acento.
@@ -187,13 +238,13 @@ export default function ClientesView({ settings, isAdmin }) {
   // Contagem de cada recorte de contato dentro da loja escolhida — sem passar
   // pelo próprio filtro, senão o botão não selecionado mostraria zero.
   const contagemContato = useMemo(() => {
-    const base = lojaFiltro === 'all' ? comDias : comDias.filter((c) => c.loja === lojaFiltro);
+    const base = daLojaEscolhida;
     const out = { todos: base.length };
     for (const c of CONTATOS) {
       if (c.teste) out[c.key] = base.filter(c.teste).length;
     }
     return out;
-  }, [comDias, lojaFiltro]);
+  }, [daLojaEscolhida]);
 
   // Soma do recorte na tela: é o que transforma a lista numa leitura de
   // faturamento ("os 91+ dias levaram R$ X embora").
@@ -209,6 +260,16 @@ export default function ClientesView({ settings, isAdmin }) {
   const trocarLoja = (v) => { setLojaFiltro(v); setLimite(PAGINA); };
   const trocarContato = (v) => { setContato(v); setLimite(PAGINA); };
   const trocarBusca = (v) => { setBusca(v); setLimite(PAGINA); };
+
+  // Clicar num segmento no relatório leva pra lista já filtrada. A janela de
+  // dias volta pra "todos" de propósito: o segmento já carrega a recência dele,
+  // e manter os dois cortes daria uma lista vazia sem explicação.
+  const verSegmento = (key) => {
+    setSegmentoFiltro(key);
+    setJanela({ min: 0, max: null });
+    setLimite(PAGINA);
+    setSub('lista');
+  };
 
   const ordenarPor = (campo) => {
     setLimite(PAGINA);
@@ -277,6 +338,7 @@ export default function ClientesView({ settings, isAdmin }) {
   const filtroDesc = [
     todosAtivo ? 'todos os dias' : janelaDesc,
     lojaAlvo ? LOJA_LABELS[lojaAlvo] : 'todas as lojas',
+    segmentoFiltro ? `segmento ${SEG_LABELS[segmentoFiltro]}` : null,
     busca.trim() ? `busca "${busca.trim()}"` : null,
   ]
     .filter(Boolean)
@@ -297,29 +359,16 @@ export default function ClientesView({ settings, isAdmin }) {
       <div className={styles.header}>
         <h2>Clientes</h2>
         <div className={styles.headerActions}>
-          <button
-            className={`${styles.sectionTab} ${todosAtivo ? styles.sectionTabActive : ''}`}
-            onClick={() => trocarJanela({ min: 0, max: null })}
-          >
-            Todos ({contagens.todos})
-          </button>
-          {FAIXAS.map((f) => (
+          {subsVisiveis.map((x) => (
             <button
-              key={f.key}
-              className={`${styles.sectionTab} ${faixaAtiva?.key === f.key ? styles.sectionTabActive : ''}`}
-              onClick={() => trocarJanela({ min: f.min, max: f.max === Infinity ? null : f.max })}
+              key={x.key}
+              className={`${styles.sectionTab} ${subAtiva === x.key ? styles.sectionTabActive : ''}`}
+              onClick={() => setSub(x.key)}
             >
-              {f.label} ({contagens[f.key]})
+              {x.label}
+              {x.key === 'campanhas' ? ` (${campanhas.length})` : ''}
             </button>
           ))}
-          {podeEnviar && (
-            <button
-              className={`${styles.sectionTab} ${mostrarCampanhas ? styles.sectionTabActive : ''}`}
-              onClick={() => setMostrarCampanhas((v) => !v)}
-            >
-              {mostrarCampanhas ? 'Voltar' : `Campanhas (${campanhas.length})`}
-            </button>
-          )}
         </div>
       </div>
 
@@ -343,6 +392,27 @@ export default function ClientesView({ settings, isAdmin }) {
         </div>
       )}
 
+      {subAtiva === 'lista' && (
+        <div className={styles.storeBar}>
+          <button
+            className={`${styles.sectionTab} ${todosAtivo ? styles.sectionTabActive : ''}`}
+            onClick={() => trocarJanela({ min: 0, max: null })}
+          >
+            Todos ({contagens.todos})
+          </button>
+          {FAIXAS.map((f) => (
+            <button
+              key={f.key}
+              className={`${styles.sectionTab} ${faixaAtiva?.key === f.key ? styles.sectionTabActive : ''}`}
+              onClick={() => trocarJanela({ min: f.min, max: f.max === Infinity ? null : f.max })}
+            >
+              {f.label} ({contagens[f.key]})
+            </button>
+          ))}
+        </div>
+      )}
+
+      {subAtiva === 'lista' && (
       <div className={styles.storeBar}>
         {CONTATOS.map((c) => (
           <button
@@ -359,7 +429,27 @@ export default function ClientesView({ settings, isAdmin }) {
           </button>
         ))}
       </div>
+      )}
 
+      {loading && (
+        <div className={styles.empty}>
+          <p>Carregando clientes…</p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className={styles.empty}>
+          <p>Não foi possível carregar os clientes.</p>
+          <span>
+            {error.code === 'permission-denied'
+              ? 'Sem permissão para ler a coleção clientes — publique as firestore.rules.'
+              : error.message}
+          </span>
+        </div>
+      )}
+
+      {subAtiva === 'lista' && (
+        <>
       {/* Régua de dois pontos: as faixas dão o corte redondo, isto dá o corte
           exato ("quem sumiu entre 45 e 70 dias"). Arrastar o ponto direito até
           o fim solta o teto — senão quem está além do fim da régua sumiria. */}
@@ -414,6 +504,15 @@ export default function ClientesView({ settings, isAdmin }) {
           placeholder="Buscar por nome ou telefone"
           aria-label="Buscar por nome ou telefone"
         />
+        {segmentoFiltro && (
+          <button
+            className={styles.filtroChip}
+            onClick={() => { setSegmentoFiltro(null); setLimite(PAGINA); }}
+            title="Voltar para a base inteira"
+          >
+            Segmento: {SEG_LABELS[segmentoFiltro]} <span aria-hidden="true">✕</span>
+          </button>
+        )}
         <span className={styles.resumo}>
           <strong>{filtrados.length}</strong> cliente{filtrados.length === 1 ? '' : 's'} · histórico
           de <strong>{reais(totais.valor)}</strong> em {totais.pedidos} pedido
@@ -443,27 +542,6 @@ export default function ClientesView({ settings, isAdmin }) {
           </button>
         )}
       </div>
-
-      {mostrarCampanhas ? (
-        <CampanhasPanel campanhas={campanhas} respostas={respostas} optOuts={optOuts} />
-      ) : (
-        <>
-      {loading && (
-        <div className={styles.empty}>
-          <p>Carregando clientes…</p>
-        </div>
-      )}
-
-      {!loading && error && (
-        <div className={styles.empty}>
-          <p>Não foi possível carregar os clientes.</p>
-          <span>
-            {error.code === 'permission-denied'
-              ? 'Sem permissão para ler a coleção clientes — publique as firestore.rules.'
-              : error.message}
-          </span>
-        </div>
-      )}
 
       {!loading && !error && daLoja.length === 0 && (
         <div className={styles.empty}>
@@ -616,6 +694,22 @@ export default function ClientesView({ settings, isAdmin }) {
         </>
       )}
         </>
+      )}
+
+      {subAtiva === 'relatorios' && !loading && !error && (
+        <ClientesRelatorios
+          clientes={daLojaEscolhida}
+          hoje={hojeData}
+          coberturaDesde={coberturaDesde}
+          lojas={lojaKeys}
+          lojaLabels={LOJA_LABELS}
+          lojaFiltro={lojaFiltro}
+          onVerSegmento={verSegmento}
+        />
+      )}
+
+      {subAtiva === 'campanhas' && (
+        <CampanhasPanel campanhas={campanhas} respostas={respostas} optOuts={optOuts} />
       )}
 
       <CampanhaModal

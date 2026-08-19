@@ -50,7 +50,9 @@ CONCORRENCIA = 8
 MESES_GUARDADOS = 12
 
 # Roda dentro da página: para cada cadastro, acha o vínculo com a loja e lista os
-# pedidos. Devolve só as datas — é tudo o que a frequência precisa.
+# pedidos. Devolve data, valor e canal de cada um: a data dá a frequência, o valor
+# dá a receita do mês (que de outro jeito seria estimada por ticket x pedidos) e o
+# canal fica guardado no JSON para o dia em que quisermos medir marketplace x direto.
 JS_LOTE = """async ([ids, idStore, concorrencia]) => {
   const $http = angular.element(document.body).injector().get('$http');
   const out = [];
@@ -71,7 +73,12 @@ JS_LOTE = """async ([ids, idStore, concorrencia]) => {
           `https://api.saipos.com/v1/store_customers/list-customer-sales/${vinculo.id_store_customer}` +
             `?data=${encodeURIComponent(JSON.stringify({ page: 1, rowsLimit: 1000 }))}&id_store=${idStore}`
         );
-        out.push({ id, datas: (vendas.data || []).map((v) => v.data_pedido).filter(Boolean) });
+        out.push({
+          id,
+          pedidos: (vendas.data || [])
+            .filter((v) => v.data_pedido)
+            .map((v) => ({ d: v.data_pedido, v: Number(v.valor_pedido) || 0, c: v.canal || '' })),
+        });
       } catch (e) {
         out.push({ id, erro: String((e && e.status) || (e && e.message) || e) });
       }
@@ -94,14 +101,32 @@ def meses_recentes(hoje: date) -> list[str]:
     return saida
 
 
-def resumir(datas: list[str], janela: set[str]) -> dict:
-    """Datas de pedido viram contagem por mês (só os meses guardados) + a data do
-    primeiro pedido de todos, que é o que diz há quanto tempo o cliente é cliente."""
-    por_mes = Counter(d[:7] for d in datas if d)
+def resumir(pedidos: list[dict], janela: set[str]) -> dict:
+    """Pedidos viram contagem e valor por mês (só os meses guardados) + a data do
+    primeiro pedido de todos, que é o que diz há quanto tempo o cliente é cliente.
+
+    O valor por mês existe porque `valorTotal` do cadastro é o histórico inteiro:
+    sem ele, "receita de julho" só sairia como ticket x pedidos, que erra sempre
+    que o cliente pede coisas de tamanhos diferentes.
+    """
+    por_mes: Counter = Counter()
+    valor_mes: dict[str, float] = {}
+    canais: Counter = Counter()
+    for p in pedidos:
+        d = (p.get("d") or "")[:10]
+        if not d:
+            continue
+        m = d[:7]
+        por_mes[m] += 1
+        valor_mes[m] = valor_mes.get(m, 0.0) + (p.get("v") or 0)
+        if p.get("c"):
+            canais[p["c"]] += 1
     return {
         "meses": {m: por_mes[m] for m in janela if por_mes.get(m)},
-        "primeiraCompra": min((d[:10] for d in datas if d), default=""),
-        "pedidosTotais": len(datas),
+        "valorMeses": {m: round(valor_mes[m], 2) for m in janela if valor_mes.get(m)},
+        "canais": dict(canais),
+        "primeiraCompra": min((p.get("d", "")[:10] for p in pedidos if p.get("d")), default=""),
+        "pedidosTotais": len(pedidos),
     }
 
 
@@ -113,6 +138,10 @@ def aproveitavel(velho: dict, novo: dict) -> bool:
     zero, é chamada recusada gravada como se fosse cliente sem compra.
     """
     if velho.get("meses") is None:
+        return False
+    # Histórico da época em que só guardávamos datas: serve para a frequência,
+    # mas não para a receita do mês. Relê uma vez e nunca mais.
+    if velho.get("meses") and velho.get("valorMeses") is None:
         return False
     return not (velho.get("pedidosTotais", 0) == 0 and (novo.get("pedidos") or 0) > 0)
 
@@ -150,7 +179,7 @@ def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) ->
                     motivos[r["erro"]] += 1
                     continue
                 for c in dono.get(r["id"], ()):
-                    c.setdefault("_datas", []).extend(r.get("datas") or [])
+                    c.setdefault("_pedidos", []).extend(r.get("pedidos") or [])
             lidos += len(pedaco)
             feito = min(i + LOTE, len(ids))
             ritmo = (time.time() - t0) / max(1, lidos)
@@ -175,13 +204,13 @@ def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) ->
     falhados = set(restantes)
 
     for c in clientes:
-        datas = c.pop("_datas", [])
+        pedidos = c.pop("_pedidos", [])
         ids_do_cliente = c.get("ids") or ([c["id"]] if c.get("id") else [])
         if any(cid in falhados for cid in ids_do_cliente):
             # Fica sem histórico de propósito: a próxima rodada tenta de novo.
             c.pop("meses", None)
             continue
-        c.update(resumir(datas, janela))
+        c.update(resumir(pedidos, janela))
     if motivos:
         print("  recusas por motivo:", dict(motivos.most_common(4)))
     return lidos, len(falhados)
@@ -236,6 +265,8 @@ def main() -> int:
                     velho = anterior.get(f"{loja}|{c['chave']}")
                     if velho and aproveitavel(velho, c) and velho.get("ultimaCompra") == c.get("ultimaCompra"):
                         c["meses"] = {m: n for m, n in (velho.get("meses") or {}).items() if m in janela}
+                        c["valorMeses"] = {m: v for m, v in (velho.get("valorMeses") or {}).items() if m in janela}
+                        c["canais"] = velho.get("canais") or {}
                         c["primeiraCompra"] = velho.get("primeiraCompra", "")
                         c["pedidosTotais"] = velho.get("pedidosTotais", 0)
                         continue

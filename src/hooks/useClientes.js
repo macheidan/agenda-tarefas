@@ -175,6 +175,10 @@ export function useClientes() {
           telefoneOrigem: item.o || '',
           podeReceber: !!telefone && DDD_RS.has(ddd(telefone)),
           primeiraCompra: item.pc || '',
+          // Os mapas crus vão junto: os relatórios (coorte, painel mensal)
+          // precisam de mês a mês, não só do resumo de frequência.
+          historicoMeses: item.hm || null,
+          receitaMeses: item.vm || null,
           ...frequencia(item.hm, item.pc, hoje),
         });
       }
@@ -182,5 +186,16 @@ export function useClientes() {
     return lista;
   }, [docs, hoje]);
 
-  return { clientes, meta, loading, error };
+  // A data a partir da qual a base é completa (ver `coberturaDesde` no
+  // importador). Antes dela, qualquer olhar para trás só enxerga quem
+  // sobreviveu até a primeira coleta — os relatórios marcam isso.
+  const coberturaDesde = useMemo(() => {
+    const datas = Object.values(meta)
+      .map((m) => m.coberturaDesde)
+      .filter(Boolean)
+      .sort();
+    return datas[0] || '';
+  }, [meta]);
+
+  return { clientes, meta, coberturaDesde, loading, error };
 }
