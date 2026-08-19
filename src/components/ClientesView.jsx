@@ -16,13 +16,15 @@ const LOJAS = [
 ];
 const LOJA_LABELS = Object.fromEntries(LOJAS.map((l) => [l.key, l.label]));
 
-// Faixas de dias sem pedir. Cobrem a base inteira: a primeira começa em 0, então
-// quem comprou hoje já entra nela — "Todos" e a soma das faixas batem.
+// Cor de fundo da linha por quanto tempo o cliente está sumido. Já foram botões
+// de filtro; a régua de dois pontos faz o corte melhor (e em qualquer valor),
+// então sobrou o que os botões nunca deram: enxergar a temperatura da lista
+// enquanto se rola por ela.
 const FAIXAS = [
-  { key: '0', label: '0 a 30 dias', min: 0, max: 30, classe: null },
-  { key: '31', label: '31 a 60 dias', min: 31, max: 60, classe: 'dias_31' },
-  { key: '61', label: '61 a 90 dias', min: 61, max: 90, classe: 'dias_61' },
-  { key: '91', label: '91+ dias', min: 91, max: Infinity, classe: 'dias_91' },
+  { min: 0, max: 30, classe: null },
+  { min: 31, max: 60, classe: 'dias_31' },
+  { min: 61, max: 90, classe: 'dias_61' },
+  { min: 91, max: Infinity, classe: 'dias_91' },
 ];
 
 // Quem dá para incluir numa campanha e quem só existe como número. Metade da
@@ -210,14 +212,6 @@ export default function ClientesView({ settings, isAdmin }) {
     );
   }, [daMarca, busca]);
 
-  const contagens = useMemo(() => {
-    const out = { todos: buscados.length };
-    for (const f of FAIXAS) {
-      out[f.key] = buscados.filter((c) => c.dias >= f.min && c.dias <= f.max).length;
-    }
-    return out;
-  }, [buscados]);
-
   const filtrados = useMemo(() => {
     const base = buscados.filter(
       (c) => c.dias >= janela.min && (janela.max === null || c.dias <= janela.max)
@@ -315,11 +309,6 @@ export default function ClientesView({ settings, isAdmin }) {
     [comWhatsapp, optOutSet]
   );
 
-  // Uma faixa fica acesa quando a janela é exatamente a dela — o slider pode
-  // parar em qualquer outro ponto, e aí nenhuma fica.
-  const faixaAtiva = FAIXAS.find(
-    (f) => f.min === janela.min && (f.max === Infinity ? janela.max === null : f.max === janela.max)
-  );
   const todosAtivo = janela.min === 0 && janela.max === null;
   const janelaDesc = janela.max === null ? `${janela.min}+ dias` : `${janela.min} a ${janela.max} dias`;
 
@@ -393,26 +382,6 @@ export default function ClientesView({ settings, isAdmin }) {
       )}
 
       {subAtiva === 'lista' && (
-        <div className={styles.storeBar}>
-          <button
-            className={`${styles.sectionTab} ${todosAtivo ? styles.sectionTabActive : ''}`}
-            onClick={() => trocarJanela({ min: 0, max: null })}
-          >
-            Todos ({contagens.todos})
-          </button>
-          {FAIXAS.map((f) => (
-            <button
-              key={f.key}
-              className={`${styles.sectionTab} ${faixaAtiva?.key === f.key ? styles.sectionTabActive : ''}`}
-              onClick={() => trocarJanela({ min: f.min, max: f.max === Infinity ? null : f.max })}
-            >
-              {f.label} ({contagens[f.key]})
-            </button>
-          ))}
-        </div>
-      )}
-
-      {subAtiva === 'lista' && (
       <div className={styles.storeBar}>
         {CONTATOS.map((c) => (
           <button
@@ -450,9 +419,10 @@ export default function ClientesView({ settings, isAdmin }) {
 
       {subAtiva === 'lista' && (
         <>
-      {/* Régua de dois pontos: as faixas dão o corte redondo, isto dá o corte
-          exato ("quem sumiu entre 45 e 70 dias"). Arrastar o ponto direito até
-          o fim solta o teto — senão quem está além do fim da régua sumiria. */}
+      {/* Régua de dois pontos: o único corte por tempo da tela. Substituiu os
+          botões de faixa (0 a 30, 31 a 60…) porque faz o mesmo e mais — "quem
+          sumiu entre 45 e 70 dias" não tinha botão. Arrastar o ponto direito
+          até o fim solta o teto; senão quem está além da régua sumiria. */}
       <div className={styles.reguaBox}>
         <div className={styles.reguaTopo}>
           <span className={styles.reguaLabel}>Dias sem pedir</span>
