@@ -11,6 +11,7 @@ Uso:
     python coletar_saipos.py                      # semana passada (seg-dom)
     python coletar_saipos.py --semana 2026-07-06  # segunda-feira específica
     python coletar_saipos.py --visivel            # browser visível (debug)
+    python coletar_saipos.py --loja LOV           # só uma loja (funde no JSON existente)
 
 Reaproveita o perfil de browser logado do dre-ai
 (%LOCALAPPDATA%/dre_ai/browser_profile_saipos) e as credenciais do
@@ -28,10 +29,16 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, r"C:\claude_project\Pizzarias\caixas-conferencia\coletores")
-import saipos_acesso as sa  # noqa: E402  (login + seleção de loja compartilhados)
+import saipos_acesso as sa  # noqa: E402  (login compartilhado)
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "clientes"))
+import coletar_clientes as cc  # noqa: E402  (troca de loja pelo ID)
 
 URL_ENTREGADORES = "https://conta.saipos.com/#/app/store/delivery-man-paid"
-LOJAS = ["DAME", "LOV"]
+# A conta tem 3 lojas (94387 é a "DAME - HML", de testes). Trocar de loja pelo
+# ID, nunca por posição: o sa.selecionar_loja clica no índice supondo 2 lojas e
+# em 19/08/2026 a rodada de LOV caiu na Dáme — as duas semanas saíram iguais.
+LOJAS = {"DAME": "10677", "LOV": "11377"}
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
@@ -187,9 +194,9 @@ def fechar_modal(page) -> None:
     page.wait_for_timeout(600)
 
 
-def coletar_loja(page, loja: str, dias: list[date]) -> dict:
+def coletar_loja(page, loja: str, id_store: str, dias: list[date]) -> dict:
     """Uma loja → {dias: {i: {nome: qtd}}, taxas: {nome: {i: {'10.00': qtd}}}}."""
-    sa.selecionar_loja(page, loja)
+    cc.selecionar_loja(page, id_store)
     navegar_relatorio(page)
     preencher_periodo(page, dias[0], dias[-1])
     filtrar_nao_pago(page)
@@ -232,7 +239,7 @@ def coletar_loja(page, loja: str, dias: list[date]) -> dict:
     return {"dias": dias_loja, "taxas": taxas_loja}
 
 
-def coletar(segunda: date, headless: bool) -> dict:
+def coletar(segunda: date, headless: bool, lojas: dict[str, str]) -> dict:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     dias = [segunda + timedelta(days=i) for i in range(7)]
@@ -252,9 +259,9 @@ def coletar(segunda: date, headless: bool) -> dict:
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
         try:
             login_robusto(page)
-            for loja in LOJAS:
-                print(f"== {loja} ==")
-                saida["lojas"][loja.lower()] = coletar_loja(page, loja, dias)
+            for loja, id_store in lojas.items():
+                print(f"== {loja} (loja {id_store}) ==")
+                saida["lojas"][loja.lower()] = coletar_loja(page, loja, id_store, dias)
         finally:
             ctx.close()
     return saida
@@ -264,6 +271,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--semana", help="segunda-feira da semana alvo (YYYY-MM-DD); default: semana passada")
     ap.add_argument("--visivel", action="store_true", help="browser visível (debug)")
+    ap.add_argument("--loja", help="coletar só uma loja (DAME ou LOV); funde no JSON já existente")
     ap.add_argument("--out", help="arquivo de saída (default: data/pa-<semana>.json)")
     args = ap.parse_args()
 
@@ -272,11 +280,19 @@ def main() -> int:
         print(f"[ERRO] {segunda} nao e segunda-feira")
         return 2
 
+    lojas = LOJAS
+    if args.loja:
+        alvo = args.loja.upper()
+        if alvo not in LOJAS:
+            print(f"[ERRO] loja invalida: {args.loja} (use {' ou '.join(LOJAS)})")
+            return 2
+        lojas = {alvo: LOJAS[alvo]}
+
     # Até 3 tentativas — o browser às vezes não sobe de madrugada (lock do perfil).
     ultimo_erro = None
     for tentativa in range(3):
         try:
-            dados = coletar(segunda, headless=not args.visivel and tentativa < 2)
+            dados = coletar(segunda, headless=not args.visivel and tentativa < 2, lojas=lojas)
             break
         except Exception as e:  # noqa: BLE001
             ultimo_erro = e
@@ -288,6 +304,12 @@ def main() -> int:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     out = Path(args.out) if args.out else DATA_DIR / f"pa-{segunda.isoformat()}.json"
+    # Coleta de uma loja só preserva o que já estava no arquivo para a outra.
+    if args.loja and out.exists():
+        anterior = json.loads(out.read_text(encoding="utf-8"))
+        anterior.get("lojas", {}).update(dados["lojas"])
+        anterior["geradoEm"] = dados["geradoEm"]
+        dados = anterior
     out.write_text(json.dumps(dados, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"OK: {out}")
     return 0
