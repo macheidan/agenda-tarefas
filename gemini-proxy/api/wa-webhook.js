@@ -33,6 +33,22 @@ function lerCorpo(req) {
   });
 }
 
+/**
+ * Query string lida da URL, não de `req.query`.
+ *
+ * Com `bodyParser: false` o runtime da Vercel não monta os helpers da
+ * requisição, e `req.query` chega vazio — o handshake do webhook comparava
+ * `undefined` com o verify token e devolvia 403 para a Meta em qualquer
+ * tentativa. Ler de `req.url` funciona nos dois casos.
+ */
+function query(req) {
+  try {
+    return new URL(req.url, 'http://localhost').searchParams;
+  } catch {
+    return new URLSearchParams();
+  }
+}
+
 function assinaturaConfere(bruto, cabecalho) {
   const segredo = process.env.WA_APP_SECRET;
   if (!segredo) return false;
@@ -115,15 +131,23 @@ async function tratarMensagem(db, msg, valor) {
 export default async function handler(req, res) {
   // Handshake de configuração do webhook no painel da Meta.
   if (req.method === 'GET') {
-    const q = req.query || {};
-    if (q['hub.mode'] === 'subscribe' && q['hub.verify_token'] === process.env.WA_VERIFY_TOKEN) {
-      return res.status(200).send(q['hub.challenge']);
+    const q = query(req);
+    // As três falhas são separadas de propósito: "403 genérico" no handshake da
+    // Meta não diz se o problema é a query não ter chegado, a env não existir ou
+    // o valor divergir — e sem isso a depuração vira tentativa e erro.
+    if (!q.get('hub.mode')) return res.status(400).send('sem parametros de verificacao');
+    if (!process.env.WA_VERIFY_TOKEN) return res.status(500).send('WA_VERIFY_TOKEN nao configurado');
+    if (q.get('hub.verify_token') !== process.env.WA_VERIFY_TOKEN) {
+      return res.status(403).send('verify token nao confere');
     }
-    return res.status(403).send('verify token inválido');
+    return res.status(200).send(q.get('hub.challenge'));
   }
   if (req.method !== 'POST') return res.status(405).end();
 
-  const bruto = await lerCorpo(req);
+  // Se o runtime já tiver consumido o stream, `req.rawBody` guarda os bytes.
+  // A assinatura é sobre os bytes originais — reserializar o JSON mudaria o HMAC.
+  let bruto = await lerCorpo(req);
+  if (!bruto.length && req.rawBody) bruto = Buffer.from(req.rawBody);
   if (!assinaturaConfere(bruto, req.headers['x-hub-signature-256'])) {
     return res.status(401).send('assinatura inválida');
   }
