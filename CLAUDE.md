@@ -12,7 +12,16 @@ npx vercel --prod   # publica o PROXY (gemini-proxy/): Gemini + envio de WhatsAp
 ```
 
 ⚠️ O Action do FTP **não** publica o proxy — mexeu em `gemini-proxy/`, rode `npx vercel --prod`
-na raiz (a raiz é linkada ao projeto `gemini-proxy-intranet`, cujo Root Directory é `gemini-proxy/`).
+**na raiz do repo** (a raiz é linkada ao projeto `gemini-proxy-intranet`, cujo Root Directory é
+`gemini-proxy/`).
+
+⚠️ **Nunca use `--cwd gemini-proxy`.** Em 2026-08-19 isso limpou o *Root Directory* do projeto e
+desfez o link da raiz: a Vercel passou a buildar a raiz do repo, aplicou o `vercel.json` de
+redirect e **todos os endpoints viraram 307** por ~20 min — derrubando junto o chat do Gemini.
+Conserto: `Root Directory = gemini-proxy` nas Settings do projeto + recriar `.vercel/project.json`
+na raiz com os ids do `gemini-proxy-intranet`. Confira depois com
+`curl -o /dev/null -w "%{http_code}" https://gemini-proxy-intranet.vercel.app/api/generate` → **405**
+(307 = quebrado).
 
 **Produção:** https://damepizza.com.br/intranet/ — **deploy automático a cada push na `main`** pelo GitHub Action `.github/workflows/deploy-ftp.yml` (roda o mesmo `npm run deploy:ftp`, com as credenciais vindo de secrets). Conferir em `gh run list`. O `npm run deploy:ftp` local é só pra publicar fora de um push; precisa de `.env.ftp` na raiz (fora do git).
 
