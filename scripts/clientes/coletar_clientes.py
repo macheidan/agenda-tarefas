@@ -108,7 +108,29 @@ def fechar_modais(page) -> None:
         page.wait_for_timeout(800)
 
 
-def selecionar_loja(page, id_store: str) -> None:
+def selecionar_loja(page, id_store: str, tentativas: int = 3) -> None:
+    """Troca de loja, insistindo quando a tela não colabora.
+
+    Este é o ponto mais frágil do fluxo: o header pode ainda não ter montado, a
+    SPA pode estar no meio de uma navegação, e um modal aberto cobre tudo. Como
+    todas essas falhas somem com uma volta à tela de clientes, a insistência
+    vale mais do que tratar cada caso.
+    """
+    ultimo = None
+    for n in range(tentativas):
+        try:
+            _trocar_de_loja(page, id_store)
+            return
+        except Exception as e:  # noqa: BLE001
+            ultimo = e
+            print(f"  [{n + 1}/{tentativas}] troca de loja falhou: {e}")
+            if n + 1 < tentativas:
+                page.goto(URL_CLIENTES, wait_until="domcontentloaded", timeout=60000)
+                page.wait_for_timeout(6000)
+    raise ultimo
+
+
+def _trocar_de_loja(page, id_store: str) -> None:
     """Troca de loja pelo seletor do header, casando pelo ID da loja."""
     fechar_modais(page)
     atual = page.evaluate("() => (document.querySelector('a.button-header')?.innerText || '').trim()")

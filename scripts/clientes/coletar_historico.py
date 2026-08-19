@@ -73,7 +73,7 @@ JS_LOTE = """async ([ids, idStore, concorrencia]) => {
         );
         out.push({ id, datas: (vendas.data || []).map((v) => v.data_pedido).filter(Boolean) });
       } catch (e) {
-        out.push({ id, erro: String(e.status || e.message || e) });
+        out.push({ id, erro: String((e && e.status) || (e && e.message) || e) });
       }
     }
   }
@@ -105,6 +105,18 @@ def resumir(datas: list[str], janela: set[str]) -> dict:
     }
 
 
+def aproveitavel(velho: dict, novo: dict) -> bool:
+    """O histórico da rodada anterior serve para este cliente?
+
+    Não serve quando está faltando (`meses` ausente) nem quando é obviamente
+    falso: cadastro que o Saipos diz ter pedido, mas cujo histórico veio com
+    zero, é chamada recusada gravada como se fosse cliente sem compra.
+    """
+    if velho.get("meses") is None:
+        return False
+    return not (velho.get("pedidosTotais", 0) == 0 and (novo.get("pedidos") or 0) > 0)
+
+
 def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) -> tuple[int, int]:
     """Preenche `meses`/`primeiraCompra` em cada cliente da lista. Devolve
     (clientes lidos, erros)."""
@@ -120,30 +132,59 @@ def coletar_loja(page, id_store: str, clientes: list[dict], janela: set[str]) ->
             dono.setdefault(cid, []).append(c)
 
     lidos = 0
-    erros = 0
+    falhados: set = set()
+    motivos: Counter = Counter()
     t0 = time.time()
     LOTE = 200
-    for i in range(0, len(fila), LOTE):
-        pedaco = fila[i : i + LOTE]
-        resposta = page.evaluate(JS_LOTE, [pedaco, int(id_store), CONCORRENCIA])
-        for r in resposta:
-            if r.get("erro"):
-                erros += 1
-                continue
-            for c in dono.get(r["id"], ()):
-                c.setdefault("_datas", []).extend(r.get("datas") or [])
-        lidos += len(pedaco)
-        feito = min(i + LOTE, len(fila))
-        ritmo = (time.time() - t0) / max(1, feito)
-        print(
-            f"  {feito}/{len(fila)} cadastros · {ritmo * 1000:.0f} ms cada · "
-            f"faltam ~{(len(fila) - feito) * ritmo / 60:.0f} min",
-            flush=True,
-        )
+
+    def rodar(ids: list, concorrencia: int) -> list:
+        """Uma passada na lista. Devolve os ids que deram erro."""
+        nonlocal lidos
+        restantes = []
+        for i in range(0, len(ids), LOTE):
+            pedaco = ids[i : i + LOTE]
+            resposta = page.evaluate(JS_LOTE, [pedaco, int(id_store), concorrencia])
+            for r in resposta:
+                if r.get("erro"):
+                    restantes.append(r["id"])
+                    motivos[r["erro"]] += 1
+                    continue
+                for c in dono.get(r["id"], ()):
+                    c.setdefault("_datas", []).extend(r.get("datas") or [])
+            lidos += len(pedaco)
+            feito = min(i + LOTE, len(ids))
+            ritmo = (time.time() - t0) / max(1, lidos)
+            print(
+                f"  {feito}/{len(ids)} cadastros · {ritmo * 1000:.0f} ms cada · "
+                f"faltam ~{(len(ids) - feito) * ritmo / 60:.0f} min",
+                flush=True,
+            )
+        return restantes
+
+    restantes = rodar(fila, CONCORRENCIA)
+    # A API do Saipos começa a recusar quando a rodada é longa (a Lov, logo
+    # depois da Dáme, chegou a recusar 1.7 mil chamadas). Insistir devagar
+    # resolve — o que não dá é gravar "sem pedidos" para quem só levou não.
+    for tentativa in range(2):
+        if not restantes:
+            break
+        pausa = 30 * (tentativa + 1)
+        print(f"  {len(restantes)} recusados · esperando {pausa}s e tentando de novo mais devagar", flush=True)
+        time.sleep(pausa)
+        restantes = rodar(restantes, 2)
+    falhados = set(restantes)
 
     for c in clientes:
-        c.update(resumir(c.pop("_datas", []), janela))
-    return lidos, erros
+        datas = c.pop("_datas", [])
+        ids_do_cliente = c.get("ids") or ([c["id"]] if c.get("id") else [])
+        if any(cid in falhados for cid in ids_do_cliente):
+            # Fica sem histórico de propósito: a próxima rodada tenta de novo.
+            c.pop("meses", None)
+            continue
+        c.update(resumir(datas, janela))
+    if motivos:
+        print("  recusas por motivo:", dict(motivos.most_common(4)))
+    return lidos, len(falhados)
 
 
 def main() -> int:
@@ -193,7 +234,7 @@ def main() -> int:
                 pendentes = []
                 for c in lista:
                     velho = anterior.get(f"{loja}|{c['chave']}")
-                    if velho and velho.get("meses") is not None and velho.get("ultimaCompra") == c.get("ultimaCompra"):
+                    if velho and aproveitavel(velho, c) and velho.get("ultimaCompra") == c.get("ultimaCompra"):
                         c["meses"] = {m: n for m, n in (velho.get("meses") or {}).items() if m in janela}
                         c["primeiraCompra"] = velho.get("primeiraCompra", "")
                         c["pedidosTotais"] = velho.get("pedidosTotais", 0)
