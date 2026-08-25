@@ -38,20 +38,22 @@ rules). As versões **dual-write** em `scripts/gestao/*.gs` (fora do git — tê
 token de sync) gravam nos DOIS projetos: `dash-pizzarias` (dashboard antigo) e
 `agenda-tarefas-76ef8` (intranet).
 
-**Passo manual pendente (Fábio):**
+**Instalado em 2026-08-25** (via Claude in Chrome): os dois scripts foram
+colados por cima dos originais, os Web Apps foram **reimplantados em nova
+versão** (DRE → Versão 5; VENDAS → Versão 3 — a URL `/exec` não muda) e o
+`syncTudo()` rodou nos dois com dual-write confirmado no Firestore da
+intranet (`dre_synced_at`/`dados_synced_at`/`synced_at` de 2026-08-25).
 
-1. Planilha **DRE** → Extensões → Apps Script → colar
-   `scripts/gestao/SyncDashboard.gs` por cima do script existente → salvar.
-2. Planilha **VENDAS LOJAS** → Extensões → Apps Script → colar
-   `scripts/gestao/SyncVendas.gs` por cima → salvar.
-3. Rodar `syncTudo()` uma vez no editor de cada um (vai pedir re-autorização
-   por causa do segundo projeto) e conferir no toast/log que gravou.
-
-Gatilhos onChange e Web Apps (`/exec`) existentes continuam valendo — nada a
-reimplantar. **Enquanto o passo não for feito, as coleções da intranet ficam
-congeladas na cópia de 2026-08-25** (o dashboard antigo segue atualizando).
-Quando o dashboard antigo for aposentado, tirar `'dash-pizzarias'` de
-`PROJECT_IDS` nos dois scripts.
+Detalhes de manutenção:
+- O gatilho onChange sempre roda a versão HEAD do script — sincroniza os dois
+  projetos a cada edição da planilha, sem depender da implantação.
+- O Web App (`/exec`, botão "Atualizar da planilha" da intranet) roda a
+  **versão implantada**: mexeu no `.gs`, precisa criar "Nova versão" em
+  Implantar → Gerenciar implantações, senão o botão fica no código velho.
+- `doGet` sem parâmetro (rodado pelo editor) chama `syncTudo()` direto — o
+  token continua obrigatório em requisições web reais.
+- Quando o dashboard antigo for aposentado, tirar `'dash-pizzarias'` de
+  `PROJECT_IDS` nos dois scripts (e criar nova versão das implantações).
 
 ## Variáveis de ambiente novas (`.env` + secret `DOTENV` do Action)
 
