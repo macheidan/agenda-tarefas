@@ -107,9 +107,16 @@ export function useDepartamentoPessoal() {
   // Lançamentos de salário (1 doc por funcionário/mês; contém dia5/dia20/extra).
   useEffect(() => {
     const ref = collection(db, 'dpSalarios');
-    const unsub = onSnapshot(ref, (snap) => {
-      setSalarios(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        setSalarios(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      },
+      // Salários é exclusivo do admin nas rules: pra qualquer outro usuário o
+      // snapshot estoura permission-denied — não é erro de app, é só o dado
+      // não existindo pra ele (a aba nem renderiza).
+      () => setSalarios([])
+    );
     return unsub;
   }, []);
 
