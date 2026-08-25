@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import MoneyInput from './MoneyInput';
+import MotoboyAddModal from './MotoboyAddModal';
 import { formatBRL } from '../utils/money';
 import {
   useMotoboys,
@@ -101,7 +102,7 @@ export default function MotoboysView() {
 
   const {
     semana, semanaLoading, config, configLoja, extras, error,
-    criarSemana, setCelula, setDiaSemGarantia, setConferido, setDesconto, addMotoboy, removeMotoboy,
+    criarSemana, setCelula, setDiaSemGarantia, setConferido, setDesconto, addMotoboy, addMotoboysDoRoster, removeMotoboy,
     addRosterMotoboy, renameMotoboy, setRosterAtivo,
     setConfig, addExtra, deleteExtra, atribuirNaoCasado,
   } = useMotoboys(loja, segunda, user);
@@ -158,6 +159,15 @@ export default function MotoboysView() {
     .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.nome.localeCompare(b.nome));
   const rosterAtivos = rosterEntries.filter((r) => r.ativo !== false);
   const rosterArquivados = rosterEntries.filter((r) => r.ativo === false);
+
+  // Modal "Adicionar motoboys" (Semana): roster ativo marcando quem já está
+  // na semana aberta (por mid ou por nome, pra cobrir semanas antigas).
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const nomesNaSemana = new Set(listaMotoboys.map((m) => normalizarNome(m.nome)));
+  const rosterParaModal = rosterAtivos.map((r) => ({
+    ...r,
+    naSemana: !!motoboys[r.mid] || nomesNaSemana.has(normalizarNome(r.nome)),
+  }));
 
   // Cadastra o nome no roster da loja e, quando a semana aberta existe, já o
   // coloca nela (é por aqui que os nomes entram na grade da Semana).
@@ -256,10 +266,23 @@ export default function MotoboysView() {
             </button>
           ))}
         </div>
+        {secaoEfetiva === 'semana' && semana && (
+          <button className={styles.primaryBtn} onClick={() => setAddModalOpen(true)}>
+            + Adicionar motoboys
+          </button>
+        )}
         {secaoEfetiva === 'cadastro' && (
           <span className={styles.avisoNomeSaipos}>⚠️ NOME DEVE SER EXATAMENTE IGUAL À SAIPOS</span>
         )}
       </div>
+
+      {addModalOpen && (
+        <MotoboyAddModal
+          roster={rosterParaModal}
+          onAdd={addMotoboysDoRoster}
+          onClose={() => setAddModalOpen(false)}
+        />
+      )}
 
       {secaoEfetiva === 'semana' && (<>
       {/* ---- Filtros: navegação de semana + status da importação ---- */}
@@ -314,7 +337,7 @@ export default function MotoboysView() {
         <section className={styles.divisao}>
           {listaMotoboys.length === 0 && (
             <p className={styles.muted}>
-              Nenhum motoboy nesta semana. Adicione pela aba <strong>Cadastro</strong>.
+              Nenhum motoboy nesta semana. Use o botão <strong>+ Adicionar motoboys</strong> ou a aba <strong>Cadastro</strong>.
             </p>
           )}
           {/* ---- Blocos por motoboy: lançamento + conferência + resultado ---- */}

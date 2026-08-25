@@ -312,6 +312,31 @@ export function useMotoboys(loja, segunda, author) {
     [docId, loja, semana, configLoja]
   );
 
+  // Adiciona vários nomes do roster à semana de uma vez (modal "Adicionar
+  // motoboys" da Semana). Mesma regra do addMotoboy: só grava quem ainda não
+  // está na semana, porque as rules liberam apenas ADIÇÃO de chave no mapa.
+  const addMotoboysDoRoster = useCallback(
+    async (mids) => {
+      const roster = configLoja?.roster || {};
+      const atuais = semana?.motoboys || {};
+      const nomesAtuais = new Set(Object.values(atuais).map((mb) => normalizarNome(mb?.nome)));
+      let ordem = Object.keys(atuais).length;
+      const updates = {};
+      (mids || []).forEach((mid) => {
+        const r = roster[mid];
+        if (!r || atuais[mid] || nomesAtuais.has(normalizarNome(r.nome))) return;
+        nomesAtuais.add(normalizarNome(r.nome));
+        updates[`motoboys.${mid}`] = { nome: r.nome, ordem: ordem++, dias: {} };
+      });
+      if (Object.keys(updates).length === 0) return;
+      await updateDoc(doc(db, 'motoboySemanas', docId), {
+        ...updates,
+        atualizadoEm: Timestamp.now(),
+      });
+    },
+    [docId, semana, configLoja]
+  );
+
   // Remove o motoboy da semana (mantém no roster da loja).
   const removeMotoboy = useCallback(
     async (mid) => {
@@ -479,6 +504,7 @@ export function useMotoboys(loja, segunda, author) {
     setConferido,
     setDesconto,
     addMotoboy,
+    addMotoboysDoRoster,
     removeMotoboy,
     setObs,
     addRosterMotoboy,
