@@ -164,10 +164,12 @@ export default function MotoboysView() {
   // na semana aberta (por mid ou por nome, pra cobrir semanas antigas).
   const [addModalOpen, setAddModalOpen] = useState(false);
   const nomesNaSemana = new Set(listaMotoboys.map((m) => normalizarNome(m.nome)));
-  const rosterParaModal = rosterAtivos.map((r) => ({
-    ...r,
-    naSemana: !!motoboys[r.mid] || nomesNaSemana.has(normalizarNome(r.nome)),
-  }));
+  const rosterParaModal = rosterAtivos
+    .map((r) => ({
+      ...r,
+      naSemana: !!motoboys[r.mid] || nomesNaSemana.has(normalizarNome(r.nome)),
+    }))
+    .sort((a, b) => a.nome.localeCompare(b.nome));
 
   // Cadastra o nome no roster da loja e, quando a semana aberta existe, já o
   // coloca nela (é por aqui que os nomes entram na grade da Semana).
