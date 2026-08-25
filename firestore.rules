@@ -221,11 +221,11 @@ service cloud.firestore {
       allow read: if isApproved();
       allow write: if isDpEditor();
     }
-    // Salários (dado sensível): leitura só para admin ou quem tem a flag
-    // dpSalariosVisible; escrita só admin (inclui o script de importação, que
-    // usa o Firebase Admin SDK e ignora estas regras).
+    // Salários (dado sensível): EXCLUSIVO do admin — a flag dpSalariosVisible
+    // foi aposentada em 2026-08-25. Escrita só admin (inclui o script de
+    // importação, que usa o Firebase Admin SDK e ignora estas regras).
     match /dpSalarios/{salarioId} {
-      allow read: if isAdmin() || hasSettingFlag('dpSalariosVisible');
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
     // Transporte (aba Transp): liberação própria (dpTranspVisible), desligada
@@ -394,31 +394,25 @@ service cloud.firestore {
     }
 
     // ── Gestão (migrada do dashboard_pizzarias) ─────────────────────────────
-    // Fechamentos mensais (faturamento, pizzas, ticket, breakdown do DRE):
-    // dado financeiro, atrás das flags das seções que o leem (Mesa do Dono e
-    // DRE). Escrita só dos Apps Scripts das planilhas DRE/VENDAS LOJAS via
-    // REST com OAuth de dono do projeto, que ignora estas regras.
+    // Dado financeiro do dono: EXCLUSIVO do admin em todas as coleções (as
+    // flags xEnabled só servem pro próprio admin esconder seções no menu).
+    // Escrita só dos Apps Scripts das planilhas DRE/VENDAS LOJAS via REST com
+    // OAuth de dono do projeto, que ignora estas regras.
     match /fechamentos_mensais/{id} {
-      allow read: if isAdmin() || hasSettingFlag('mesaDonoEnabled') || hasSettingFlag('dreEnabled');
+      allow read: if isAdmin();
       allow write: if false;
     }
-    // Detalhe do DRE por favorecido (extratos): mesmo dado sensível do DRE.
     match /dre_detalhes/{id} {
-      allow read: if isAdmin() || hasSettingFlag('dreEnabled');
+      allow read: if isAdmin();
       allow write: if false;
     }
-    // Ranking de itens vendidos (sabores/bordas/combos/tamanhos por mês).
     match /vendas_itens/{id} {
-      allow read: if isAdmin() || hasSettingFlag('vendasEnabled');
+      allow read: if isAdmin();
       allow write: if false;
     }
-    // Anotações de negócio (checkpoints): lidas também pelos gráficos da Mesa
-    // do Dono e de Vendas, por isso qualquer flag da Gestão libera a leitura.
-    // CRUD só de admin — é o diário do dono.
+    // Anotações de negócio (checkpoints): CRUD do admin pela aba Anotações.
     match /checkpoints/{id} {
-      allow read: if isAdmin() || hasSettingFlag('gestaoNotasEnabled')
-        || hasSettingFlag('mesaDonoEnabled') || hasSettingFlag('vendasEnabled');
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
   }
 }

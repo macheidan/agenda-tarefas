@@ -32,8 +32,9 @@ export default function DepartamentoPessoalView() {
   // Editores (e o admin) gerenciam lojas/funcionários. Qualquer usuário com a
   // seção visível pode trabalhar no calendário (marcar todos os tipos).
   const canEdit = isAdmin || settings?.dpEditor === true;
-  // Salários é dado sensível: só admin ou quem o admin liberou (dpSalariosVisible).
-  const canSalarios = isAdmin || settings?.dpSalariosVisible === true;
+  // Salários é dado sensível: EXCLUSIVO do admin (as rules de dpSalarios também
+  // só liberam leitura pro admin — a antiga flag dpSalariosVisible foi aposentada).
+  const canSalarios = isAdmin;
   // Transp tem liberação própria (dpTranspVisible), desligada por padrão.
   const canTransp = isAdmin || settings?.dpTranspVisible === true;
   const [dpSection, setDpSection] = useState('escala'); // escala | funcionarios | salarios

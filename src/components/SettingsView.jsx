@@ -46,11 +46,15 @@ const SECTIONS = [
   { key: 'departamentoPessoalEnabled', tab: 'departamentoPessoal', label: 'Depto Pessoal', desc: 'Escala, faltas e folha de pagamento', defaultOff: true },
   { key: 'motoboysEnabled', tab: 'motoboys', label: 'Motoboys', desc: 'Conferência semanal de entregas', defaultOff: true },
   { key: 'clientesEnabled', tab: 'clientes', label: 'Clientes', desc: 'Base de clientes por tempo sem pedir, para campanhas de WhatsApp', defaultOff: true },
-  { key: 'mesaDonoEnabled', tab: 'mesaDono', label: 'Mesa do Dono', desc: 'Visão executiva do mês: KPIs, canais e gráficos históricos', defaultOff: true },
-  { key: 'dashEnabled', tab: 'dash', label: 'Dash', desc: 'Board pessoal: foco, agenda, notícias e radar de IA', defaultOff: true },
-  { key: 'vendasEnabled', tab: 'vendas', label: 'Vendas', desc: 'Ranking e evolução de sabores, bordas, combos e tamanhos', defaultOff: true },
-  { key: 'dreEnabled', tab: 'dre', label: 'DRE', desc: 'DRE anual por marca com detalhe dos extratos', defaultOff: true },
-  { key: 'gestaoNotasEnabled', tab: 'gestaoNotas', label: 'Anotações (Gestão)', desc: 'Marcos de negócio por mês, viram 📌 nos gráficos', defaultOff: true },
+  // Categoria Gestão: EXCLUSIVA do admin (soAdmin) — as linhas abaixo só
+  // aparecem quando o usuário selecionado em Permissões é o próprio admin, e
+  // servem só pra ele esconder seções de si mesmo. Cliente e rules travam o
+  // acesso de qualquer outro usuário mesmo com a flag ligada.
+  { key: 'mesaDonoEnabled', tab: 'mesaDono', label: 'Mesa do Dono', desc: 'Visão executiva do mês: KPIs, canais e gráficos históricos (só admin)', defaultOff: true, soAdmin: true },
+  { key: 'dashEnabled', tab: 'dash', label: 'Dash', desc: 'Board pessoal: foco, agenda, notícias e radar de IA (só admin)', defaultOff: true, soAdmin: true },
+  { key: 'vendasEnabled', tab: 'vendas', label: 'Vendas', desc: 'Ranking e evolução de sabores, bordas, combos e tamanhos (só admin)', defaultOff: true, soAdmin: true },
+  { key: 'dreEnabled', tab: 'dre', label: 'DRE', desc: 'DRE anual por marca com detalhe dos extratos (só admin)', defaultOff: true, soAdmin: true },
+  { key: 'gestaoNotasEnabled', tab: 'gestaoNotas', label: 'Anotações (Gestão)', desc: 'Marcos de negócio por mês, viram 📌 nos gráficos (só admin)', defaultOff: true, soAdmin: true },
 ];
 
 // Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em
@@ -488,13 +492,8 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
                 onChange={(v) => toggleSection(permTarget, 'dpEditor', v)}
               />
             </Row>
-            <Row title="Salários e Funcionários" desc="Dado sensível: só o admin edita, mesmo com isto ligado">
-              <Switch
-                label="Depto Pessoal — vê Salários"
-                checked={s.dpSalariosVisible === true}
-                onChange={(v) => toggleSection(permTarget, 'dpSalariosVisible', v)}
-              />
-            </Row>
+            {/* Salários é exclusivo do admin (sem flag de liberação — rules e
+                cliente travam no isAdmin), por isso não há switch aqui. */}
             <Row title="Transp" desc="Cálculo de transporte da Rumi e da Patricia. Só o admin edita, mesmo com isto ligado">
               <Switch
                 label="Depto Pessoal — vê Transp"
@@ -640,7 +639,7 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
         </div>
 
         <Group title="Seções visíveis" desc="O que aparece no menu lateral deste usuário. Categorias com ajustes extras mostram um ›: clique para expandir e configurar sub-seções, lojas e permissões de edição ali mesmo.">
-          {SECTIONS.map((sec) => {
+          {SECTIONS.filter((sec) => !sec.soAdmin || permTarget === user.uid).map((sec) => {
             const checked = sec.defaultOff ? s[sec.key] === true : s[sec.key] !== false;
             const expandable = checked && HAS_SUB.has(sec.tab);
             return (

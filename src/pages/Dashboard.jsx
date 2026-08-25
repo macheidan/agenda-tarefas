@@ -131,13 +131,14 @@ export default function Dashboard() {
   const motoboysEnabled = !settingsLoading && settings.motoboysEnabled === true;
   // Clientes (base para campanhas de WhatsApp): default OFF, admin habilita por usuário.
   const clientesEnabled = !settingsLoading && settings.clientesEnabled === true;
-  // Categoria Gestão (migrada do dashboard_pizzarias): dado financeiro/executivo,
-  // todas as seções nascem OFF e o admin habilita por usuário.
-  const mesaDonoEnabled = !settingsLoading && settings.mesaDonoEnabled === true;
-  const dashEnabled = !settingsLoading && settings.dashEnabled === true;
-  const vendasEnabled = !settingsLoading && settings.vendasEnabled === true;
-  const dreEnabled = !settingsLoading && settings.dreEnabled === true;
-  const gestaoNotasEnabled = !settingsLoading && settings.gestaoNotasEnabled === true;
+  // Categoria Gestão (migrada do dashboard_pizzarias): dado financeiro do dono —
+  // EXCLUSIVA do admin (as firestore.rules também só liberam leitura pro admin).
+  // A flag por usuário continua valendo pro próprio admin esconder seções.
+  const mesaDonoEnabled = isAdmin && !settingsLoading && settings.mesaDonoEnabled === true;
+  const dashEnabled = isAdmin && !settingsLoading && settings.dashEnabled === true;
+  const vendasEnabled = isAdmin && !settingsLoading && settings.vendasEnabled === true;
+  const dreEnabled = isAdmin && !settingsLoading && settings.dreEnabled === true;
+  const gestaoNotasEnabled = isAdmin && !settingsLoading && settings.gestaoNotasEnabled === true;
   const {
     influencers,
     addInfluencer,

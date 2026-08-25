@@ -6,9 +6,14 @@ projeto `dashboard_pizzarias` (fabiomachado.com.br/pizzas, Firebase
 foram reescritas no padrão da casa (JS + CSS modules + constituição); os
 gráficos usam **recharts** (chunk próprio no build).
 
-Todas as 5 seções nascem **OFF** (`mesaDonoEnabled`, `dashEnabled`,
-`vendasEnabled`, `dreEnabled`, `gestaoNotasEnabled` — `=== true`); o admin
-habilita por usuário nas Configurações.
+**A categoria inteira é EXCLUSIVA do admin** (machadofabio@gmail.com, o
+`isAdmin()` das rules) desde 2026-08-25 — assim como a sub-aba **Salários**
+do Depto Pessoal (a flag `dpSalariosVisible` foi aposentada). O trava é em
+duas camadas: no cliente as flags são lidas com `isAdmin && x === true`, e
+nas firestore.rules a leitura das coleções é `isAdmin()` puro. As flags
+`xEnabled` (default OFF) seguem existindo só pro próprio admin esconder
+seções do seu menu — em Configurações, as linhas da Gestão só aparecem
+quando o usuário selecionado é o admin.
 
 ## De onde vem cada dado
 
