@@ -41,7 +41,7 @@ export default function MotoboyAddModal({ roster, onAdd, onClose }) {
         {roster.length > 0 && (
           <div className={styles.lista}>
             {disponiveis.length > 1 && (
-              <label className={styles.check}>
+              <label className={`${styles.check} ${styles.checkTodos}`}>
                 <input
                   type="checkbox"
                   checked={sel.length === disponiveis.length}
