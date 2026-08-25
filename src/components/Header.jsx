@@ -22,6 +22,11 @@ export default function Header({
   departamentoPessoalEnabled,
   motoboysEnabled,
   clientesEnabled,
+  mesaDonoEnabled,
+  dashEnabled,
+  vendasEnabled,
+  dreEnabled,
+  gestaoNotasEnabled,
   ideasUnread,
   onOpenMessage,
   completedCount,
@@ -48,6 +53,11 @@ export default function Header({
     departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
     motoboys: { enabled: motoboysEnabled, key: 'motoboys', label: 'Motoboys' },
     clientes: { enabled: clientesEnabled, key: 'clientes', label: 'Clientes' },
+    mesaDono: { enabled: mesaDonoEnabled, key: 'mesaDono', label: 'Mesa do Dono' },
+    dash: { enabled: dashEnabled, key: 'dash', label: 'Dash' },
+    vendas: { enabled: vendasEnabled, key: 'vendas', label: 'Vendas' },
+    dre: { enabled: dreEnabled, key: 'dre', label: 'DRE' },
+    gestaoNotas: { enabled: gestaoNotasEnabled, key: 'gestaoNotas', label: 'Anotações' },
   };
   const orderedTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(TABS_DEF))
     .map((k) => TABS_DEF[k])

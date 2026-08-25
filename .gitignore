@@ -42,3 +42,6 @@ scripts/clientes/data/
 # Cache do Python (o coletor de clientes roda daqui)
 __pycache__/
 *.pyc
+
+# Apps Scripts da Gestao (contem tokens de sync; colar na planilha, nao commitar)
+scripts/gestao/*.gs

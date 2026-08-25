@@ -392,5 +392,33 @@ service cloud.firestore {
       allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
       allow write: if false;
     }
+
+    // ── Gestão (migrada do dashboard_pizzarias) ─────────────────────────────
+    // Fechamentos mensais (faturamento, pizzas, ticket, breakdown do DRE):
+    // dado financeiro, atrás das flags das seções que o leem (Mesa do Dono e
+    // DRE). Escrita só dos Apps Scripts das planilhas DRE/VENDAS LOJAS via
+    // REST com OAuth de dono do projeto, que ignora estas regras.
+    match /fechamentos_mensais/{id} {
+      allow read: if isAdmin() || hasSettingFlag('mesaDonoEnabled') || hasSettingFlag('dreEnabled');
+      allow write: if false;
+    }
+    // Detalhe do DRE por favorecido (extratos): mesmo dado sensível do DRE.
+    match /dre_detalhes/{id} {
+      allow read: if isAdmin() || hasSettingFlag('dreEnabled');
+      allow write: if false;
+    }
+    // Ranking de itens vendidos (sabores/bordas/combos/tamanhos por mês).
+    match /vendas_itens/{id} {
+      allow read: if isAdmin() || hasSettingFlag('vendasEnabled');
+      allow write: if false;
+    }
+    // Anotações de negócio (checkpoints): lidas também pelos gráficos da Mesa
+    // do Dono e de Vendas, por isso qualquer flag da Gestão libera a leitura.
+    // CRUD só de admin — é o diário do dono.
+    match /checkpoints/{id} {
+      allow read: if isAdmin() || hasSettingFlag('gestaoNotasEnabled')
+        || hasSettingFlag('mesaDonoEnabled') || hasSettingFlag('vendasEnabled');
+      allow write: if isAdmin();
+    }
   }
 }

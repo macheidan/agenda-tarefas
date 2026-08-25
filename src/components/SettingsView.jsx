@@ -21,6 +21,11 @@ const TAB_LABELS = {
   departamentoPessoal: 'Depto Pessoal',
   motoboys: 'Motoboys',
   clientes: 'Clientes',
+  mesaDono: 'Mesa do Dono',
+  dash: 'Dash',
+  vendas: 'Vendas',
+  dre: 'DRE',
+  gestaoNotas: 'Anotações (Gestão)',
 };
 
 // Seções do menu. `defaultOff` = nasce desmarcada; as demais são visíveis a
@@ -41,6 +46,11 @@ const SECTIONS = [
   { key: 'departamentoPessoalEnabled', tab: 'departamentoPessoal', label: 'Depto Pessoal', desc: 'Escala, faltas e folha de pagamento', defaultOff: true },
   { key: 'motoboysEnabled', tab: 'motoboys', label: 'Motoboys', desc: 'Conferência semanal de entregas', defaultOff: true },
   { key: 'clientesEnabled', tab: 'clientes', label: 'Clientes', desc: 'Base de clientes por tempo sem pedir, para campanhas de WhatsApp', defaultOff: true },
+  { key: 'mesaDonoEnabled', tab: 'mesaDono', label: 'Mesa do Dono', desc: 'Visão executiva do mês: KPIs, canais e gráficos históricos', defaultOff: true },
+  { key: 'dashEnabled', tab: 'dash', label: 'Dash', desc: 'Board pessoal: foco, agenda, notícias e radar de IA', defaultOff: true },
+  { key: 'vendasEnabled', tab: 'vendas', label: 'Vendas', desc: 'Ranking e evolução de sabores, bordas, combos e tamanhos', defaultOff: true },
+  { key: 'dreEnabled', tab: 'dre', label: 'DRE', desc: 'DRE anual por marca com detalhe dos extratos', defaultOff: true },
+  { key: 'gestaoNotasEnabled', tab: 'gestaoNotas', label: 'Anotações (Gestão)', desc: 'Marcos de negócio por mês, viram 📌 nos gráficos', defaultOff: true },
 ];
 
 // Sub-seções de Preços Insumos: visibilidade por usuário (chaves precosSub* em

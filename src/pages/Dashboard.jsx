@@ -51,6 +51,11 @@ const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPes
 const SuprimentosView = lazy(() => import('../components/SuprimentosView'));
 const MotoboysView = lazy(() => import('../components/MotoboysView'));
 const ClientesView = lazy(() => import('../components/ClientesView'));
+const MesaDonoView = lazy(() => import('../components/MesaDonoView'));
+const DashView = lazy(() => import('../components/DashView'));
+const VendasView = lazy(() => import('../components/VendasView'));
+const DreView = lazy(() => import('../components/DreView'));
+const GestaoNotasView = lazy(() => import('../components/GestaoNotasView'));
 
 // Rótulos curtos das abas — usados na barra de navegação mobile e no título da
 // janela do navegador (assim a aba do Chrome mostra em que página a pessoa está).
@@ -59,6 +64,7 @@ const NAV_LABELS = {
   notes: 'Notas', shopping: 'Suprimentos', ideas: 'Ideias', reviews: 'Avaliações',
   knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
   motoboys: 'Motoboys', clientes: 'Clientes',
+  mesaDono: 'Mesa do Dono', dash: 'Dash', vendas: 'Vendas', dre: 'DRE', gestaoNotas: 'Anotações',
 };
 
 // Abas que só existem pro admin (não entram no menu/nav comum).
@@ -125,6 +131,13 @@ export default function Dashboard() {
   const motoboysEnabled = !settingsLoading && settings.motoboysEnabled === true;
   // Clientes (base para campanhas de WhatsApp): default OFF, admin habilita por usuário.
   const clientesEnabled = !settingsLoading && settings.clientesEnabled === true;
+  // Categoria Gestão (migrada do dashboard_pizzarias): dado financeiro/executivo,
+  // todas as seções nascem OFF e o admin habilita por usuário.
+  const mesaDonoEnabled = !settingsLoading && settings.mesaDonoEnabled === true;
+  const dashEnabled = !settingsLoading && settings.dashEnabled === true;
+  const vendasEnabled = !settingsLoading && settings.vendasEnabled === true;
+  const dreEnabled = !settingsLoading && settings.dreEnabled === true;
+  const gestaoNotasEnabled = !settingsLoading && settings.gestaoNotasEnabled === true;
   const {
     influencers,
     addInfluencer,
@@ -165,6 +178,8 @@ export default function Dashboard() {
     ideas: ideasEnabled, reviews: reviewsEnabled, knowledge: knowledgeEnabled,
     precosInsumos: precosInsumosEnabled, departamentoPessoal: departamentoPessoalEnabled,
     motoboys: motoboysEnabled, clientes: clientesEnabled,
+    mesaDono: mesaDonoEnabled, dash: dashEnabled, vendas: vendasEnabled,
+    dre: dreEnabled, gestaoNotas: gestaoNotasEnabled,
   };
   const navDot = <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block' }} />;
   const bottomTabs = (tabsOrder && tabsOrder.length ? tabsOrder : Object.keys(NAV_LABELS))
@@ -224,6 +239,11 @@ export default function Dashboard() {
     departamentoPessoalEnabled,
     motoboysEnabled,
     clientesEnabled,
+    mesaDonoEnabled,
+    dashEnabled,
+    vendasEnabled,
+    dreEnabled,
+    gestaoNotasEnabled,
     ideasUnread,
     onOpenMessage: () => setMessageModalOpen(true),
     completedCount: completedTasks.length,
@@ -361,6 +381,11 @@ export default function Dashboard() {
         {activeTab === 'clientes' && clientesEnabled && (
           <ClientesView settings={settings} isAdmin={isAdmin} />
         )}
+        {activeTab === 'mesaDono' && mesaDonoEnabled && <MesaDonoView />}
+        {activeTab === 'dash' && dashEnabled && <DashView />}
+        {activeTab === 'vendas' && vendasEnabled && <VendasView />}
+        {activeTab === 'dre' && dreEnabled && <DreView />}
+        {activeTab === 'gestaoNotas' && gestaoNotasEnabled && <GestaoNotasView />}
         {activeTab === 'completed' && isAdmin && (
           <CompletedView
             completedTasks={completedTasks}

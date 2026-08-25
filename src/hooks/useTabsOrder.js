@@ -16,6 +16,11 @@ export const DEFAULT_TABS_ORDER = [
   'departamentoPessoal',
   'motoboys',
   'clientes',
+  'mesaDono',
+  'dash',
+  'vendas',
+  'dre',
+  'gestaoNotas',
 ];
 
 export function useTabsOrder() {

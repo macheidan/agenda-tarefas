@@ -51,6 +51,7 @@ Hooks em `src/hooks/` são a fonte da verdade sobre shape dos documentos. Coleç
 - `adminMessages/{msgId}` — broadcast com `targetUids[]`, `readBy[]`
 - `settings/{uid}` — toggles de features por usuário (admin escreve)
 - `knowledge/{docId}` — base de conhecimento + persona para o chat Gemini
+- `fechamentos_mensais/{anoMes_marca}`, `dre_detalhes/{anoMes_marca}`, `vendas_itens/{anoMes_marca_cat_slug}`, `checkpoints/{id}` — categoria **Gestão** (Mesa do Dono / Dash / Vendas / DRE / Anotações), migrada do dashboard_pizzarias em 2026-08-25. Escrita só dos Apps Scripts das planilhas DRE e VENDAS LOJAS (dual-write nos 2 projetos Firebase) — exceto `checkpoints`, CRUD do admin pela aba Anotações. O Dash e o mês corrente da Mesa do Dono leem o JSON do coletor em fabiomachado.com.br/pizzas/data/ (CORS via .htaccess; token em `VITE_DASH_TOKEN`). **Ler `docs/gestao-migracao.md` antes de mexer.**
 
 ## Padrões não-óbvios (ler antes de mexer)
 

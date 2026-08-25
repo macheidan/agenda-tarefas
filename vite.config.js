@@ -14,6 +14,7 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('@fullcalendar')) return 'fullcalendar';
             if (id.includes('/firebase/') || id.includes('@firebase')) return 'firebase';
+            if (id.includes('/recharts/') || id.includes('/d3-') || id.includes('victory-vendor')) return 'recharts';
           }
         },
       },

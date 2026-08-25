@@ -14,6 +14,11 @@ const I = {
   departamentoPessoal: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><rect x="16" y="3" width="6" height="8" rx="1" /></>,
   motoboys: <><circle cx="5.5" cy="17" r="2.5" /><circle cx="18.5" cy="17" r="2.5" /><path d="M8 17h7" /><path d="M18.5 17l-2.5-7.5h-3.5" /></>,
   clientes: <><path d="M21 11.5a8.5 8.5 0 0 1-12.2 7.7L3 21l1.8-5.8A8.5 8.5 0 1 1 21 11.5z" /><path d="M8.5 12h.01M12 12h.01M15.5 12h.01" /></>,
+  mesaDono: <><path d="M3 3v18h18" /><path d="M7 15l4-5 3 3 5-7" /><circle cx="19" cy="6" r="1.2" fill="currentColor" stroke="none" /></>,
+  dash: <><rect x="3" y="3" width="8" height="10" rx="1.5" /><rect x="13" y="3" width="8" height="6" rx="1.5" /><rect x="13" y="11" width="8" height="10" rx="1.5" /><rect x="3" y="15" width="8" height="6" rx="1.5" /></>,
+  vendas: <><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 9 9h-9V3z" fill="currentColor" stroke="none" opacity="0.35" /><path d="M12 3v9h9" /></>,
+  dre: <><path d="M4 2h16v20l-2-1.5L16 22l-2-1.5L12 22l-2-1.5L8 22l-2-1.5L4 22V2z" /><path d="M8 7h8M8 11h8M8 15h5" /></>,
+  gestaoNotas: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M16 2v4M8 2v4M3 9h18" /><circle cx="9" cy="14" r="1.3" fill="currentColor" stroke="none" /><circle cx="15" cy="17" r="1.3" fill="currentColor" stroke="none" /></>,
   completed: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" /></>,
 };
 

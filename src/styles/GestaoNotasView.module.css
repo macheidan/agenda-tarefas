@@ -1,0 +1,552 @@
+/* Anotações (Gestão): calendário anual (12 mini-meses) + lista do ano + modal
+   de criação/edição. Dia com bolinha colorida = anotação com data exata (cor
+   do escopo: Dáme #A50000, Lov #EC4899, Ambas #465FFF). */
+
+.container {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+.novaBtn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.novaBtn:hover {
+  background: var(--accent-hover);
+}
+
+/* ── Calendário anual ───────────────────────────────────────────────────── */
+.calendario {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.anoNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.anoLabel {
+  min-width: 64px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.meses {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+}
+
+.mes {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 8px;
+}
+
+.mesBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mesBtn:hover {
+  background: var(--card-hover);
+}
+
+.mesBtnActive {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.mesCount {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.diasGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  text-align: center;
+}
+
+.dow {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.diaWrap {
+  position: relative;
+}
+
+.dia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0 auto;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  cursor: default;
+  transition: transform 0.1s;
+}
+
+.diaNota {
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.diaNota:hover {
+  transform: scale(1.25);
+}
+
+.diaHoje {
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.popover {
+  pointer-events: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin-bottom: 6px;
+  width: 210px;
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  text-align: left;
+  display: none;
+}
+
+.diaWrap:hover .popover {
+  display: block;
+  pointer-events: auto;
+}
+
+.popItem {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 4px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.popItem:hover {
+  background: var(--card-hover);
+}
+
+.popTitulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.popMeta {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.popDesc {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.legendaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendaDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── Lista ──────────────────────────────────────────────────────────────── */
+.listaHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.limparBtn {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.nota:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.notaMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.notaMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.badge {
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.badgeTipo {
+  background: var(--badge-bg);
+  color: var(--text-muted);
+}
+
+.notaTitulo {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.notaDesc {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: pre-line;
+}
+
+.notaAcoes {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.acaoBtn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.acaoBtn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.acaoBtnDanger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.acaoBtn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.loading {
+  padding: 48px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--modal-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.modalHint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.formRow3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.field input,
+.field select,
+.field textarea {
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--input-focus);
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.erro {
+  color: var(--danger);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cancelBtn {
+  border: 1px solid var(--input-border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.saveBtn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 1100px) {
+  .meses {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .meses {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .formRow3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .meses {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    font-size: 16px;
+  }
+}

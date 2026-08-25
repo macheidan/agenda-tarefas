@@ -19,6 +19,7 @@ import styles from '../../styles/AppShellV2.module.css';
 // nenhum grupo entra em "Outros" — assim aba nova nunca some do menu.
 const NAV_GROUPS = [
   { label: 'Operação', keys: ['calendar', 'shopping', 'precosInsumos'] },
+  { label: 'Gestão', keys: ['mesaDono', 'dash', 'vendas', 'dre', 'gestaoNotas'] },
   { label: 'Equipe', keys: ['departamentoPessoal', 'motoboys'] },
   { label: 'Marketing', keys: ['reels', 'contentPlan', 'influencers', 'reviews', 'clientes'] },
   { label: 'Ferramentas', keys: ['notes', 'ideas', 'knowledge'] },
@@ -44,6 +45,11 @@ export default function AppShellV2({
   departamentoPessoalEnabled,
   motoboysEnabled,
   clientesEnabled,
+  mesaDonoEnabled,
+  dashEnabled,
+  vendasEnabled,
+  dreEnabled,
+  gestaoNotasEnabled,
   ideasUnread,
   onOpenMessage,
   completedCount,
@@ -65,6 +71,11 @@ export default function AppShellV2({
     departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
     motoboys: { enabled: motoboysEnabled, key: 'motoboys', label: 'Motoboys' },
     clientes: { enabled: clientesEnabled, key: 'clientes', label: 'Clientes' },
+    mesaDono: { enabled: mesaDonoEnabled, key: 'mesaDono', label: 'Mesa do Dono' },
+    dash: { enabled: dashEnabled, key: 'dash', label: 'Dash' },
+    vendas: { enabled: vendasEnabled, key: 'vendas', label: 'Vendas' },
+    dre: { enabled: dreEnabled, key: 'dre', label: 'DRE' },
+    gestaoNotas: { enabled: gestaoNotasEnabled, key: 'gestaoNotas', label: 'Anotações' },
   };
 
   // Ordem custom do usuário, aplicada dentro de cada grupo.

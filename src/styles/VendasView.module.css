@@ -1,0 +1,188 @@
+/* Vendas (Gestão): sub-abas por categoria (Sabores/Bordas/Combos/Tamanhos),
+   ranking completo em 3 colunas, mix do mês e evolução mensal por item. */
+
+.container {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  text-transform: capitalize;
+}
+
+.subtitleMarca {
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* Segmented control das categorias (padrão Preços/Suprimentos). */
+.sectionTabs {
+  display: inline-flex;
+  background: var(--badge-bg);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.sectionTab {
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sectionTabActive {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow-xs);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 12px;
+}
+
+.gridFull {
+  grid-column: 1 / -1;
+}
+
+.rankingCols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 32px;
+  align-items: start;
+}
+
+.rankTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.rankTable th {
+  padding: 6px 8px 6px 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.rankTable th.num,
+.rankTable td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rankTable td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text);
+}
+
+.rankRow {
+  cursor: pointer;
+}
+
+.rankRow:hover td {
+  background: var(--card-hover);
+}
+
+.rankRowSelected td {
+  background: var(--accent-light);
+}
+
+.rankPos {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rankItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.rankDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid var(--text-muted);
+}
+
+.rankPct {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.loading {
+  padding: 48px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rankingCols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .sectionTabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .rankingCols {
+    grid-template-columns: 1fr;
+  }
+}
