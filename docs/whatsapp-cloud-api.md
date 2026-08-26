@@ -147,6 +147,83 @@ O que já está pronto e não se perde em nenhuma das opções: app publicado, W
 aprovada, usuário de sistema, webhook verificado e **app assinado nos webhooks
 da conta**.
 
+## O chip de teste (2026-08-26) — ponte, não substituto
+
+O 3332-2440 não registra e a coexistência ainda não está montada, então o teste
+fim a fim passa por um **chip TIM novo**, só de campanha. Ele existe para provar
+o pipeline (envio → status → resposta → descadastro) com dinheiro e risco
+próximos de zero. **O destino final continua sendo a coexistência do
+3332-2440** — o cliente precisa receber do número que ele já tem salvo.
+
+### As três armadilhas do chip
+
+1. **Nunca abrir o WhatsApp comum (nem o Business) com esse número.** Ao abrir,
+   o número gruda numa conta do aplicativo e o registro na Cloud API passa a dar
+   conflito — é exatamente o buraco em que o 3332-2440 caiu. Ative o chip num
+   aparelho onde você não vá tocar no app, ou num aparelho sem WhatsApp
+   instalado. O que precisa chegar nele é **SMS e ligação**, nada além disso.
+2. **Prepago sem recarga vira número cancelado** e volta para o pool da
+   operadora — junto com a WABA, o template e o histórico de qualidade. Deixe
+   **recarga automática no cartão** (~R$ 15/mês) no mesmo dia da ativação.
+3. **Número novo começa frio:** 250 destinatários novos/24h enquanto o negócio
+   dono da WABA não estiver verificado, e o cliente recebe de um número
+   desconhecido. Serve para testar, não para a campanha de verdade.
+
+### Onde a WABA nova mora: BM da Lov
+
+**Não pendurar na WABA da Dáme** (`206538077125724`) e nem criar outra WABA
+dentro do BM da Dáme: o bloqueio de pagamento é da **linha de crédito ainda
+alocada pela ManyChat no portfólio**, não da WABA — número novo ali herdaria o
+mesmo "Você não pode adicionar uma forma de pagamento". O BM da Lov
+(`621269871566486`) está com **"Adicionar forma de pagamento" liberado** e o
+negócio **já verificado desde 13/03/2026**, que é o que tira o teto de 250/dia.
+
+Consequência prática: **cada BM só reivindica um app**, e o app
+`Intranet Pizzarias` (`1610742780487306`) já é do BM da Dáme. A WABA da Lov
+roda sob **app próprio**, com **usuário de sistema próprio** e **outro app
+secret** — por isso o `wa-webhook.js` confere o HMAC contra
+`WA_APP_SECRET` **e** `WA_APP_SECRET_LOV`. O webhook do app novo aponta para a
+mesma URL e usa o mesmo `WA_VERIFY_TOKEN`; só o segredo muda.
+
+### O chip ocupa o slot LOV
+
+O proxy lê `WA_TOKEN_<LOJA>`/`WA_PHONE_ID_<LOJA>` e só aceita `dame` e
+`lov` — então o chip entra como **lov** e o teste é disparado escolhendo Lov no
+modal. Nenhuma linha do `wa-send.js` muda. Quando o 3388-2002 da própria Lov
+finalmente for verificado, ele entra **na mesma WABA** e só troca o
+`WA_PHONE_ID_LOV`; o slot da Dáme fica intacto esperando a coexistência.
+
+### Ordem de execução
+
+| # | Passo | Onde |
+|---|---|---|
+| 1 | Ativar o chip no CPF, com recarga automática | portal/app da TIM |
+| 2 | Criar app + usuário de sistema no **BM da Lov** | developers.facebook.com |
+| 3 | Criar a WABA e adicionar o número (SMS/ligação) | business.facebook.com |
+| 4 | Webhook do app novo: mesma URL, mesmo verify token, campo `messages` | painel do app |
+| 5 | Preencher `WA_WABA_LOV`, `WA_TOKEN_LOV`, `WA_PIN_LOV`, `WA_APP_SECRET_LOV` no store | `whatsapp-cloud.env` |
+| 6 | `node scripts/clientes/registrar_numero_wa.mjs --loja lov` | terminal |
+| 7 | `node scripts/clientes/criar_template_wa.mjs --loja lov` | terminal |
+| 8 | Mesmas envs na Vercel + `npx vercel --prod` **na raiz do repo** | terminal |
+| 9 | Disparo de teste para o próprio número, e responder **SAIR** | intranet → Clientes |
+
+O passo 6 agora **imprime o `platform_type` e recusa antes de tentar** se o
+número vier `ON_PREMISE` — é o erro que custou o dia 19/08 e que só aparecia
+depois, como `[100] Register endpoint is not available for SMB businesses`.
+
+### Template: vale por WABA, não por número
+
+O que for aprovado na WABA de teste **não acompanha** o 3332-2440 quando a
+coexistência entrar: lá o template é submetido de novo, na WABA da Dáme. O que
+se aproveita é o texto já ter passado pela revisão uma vez. Por isso o primeiro
+template é de **reativação sem oferta** — a promoção de verdade é submetida
+quando o número definitivo estiver de pé, e não gasta aprovação à toa.
+
+O `scripts/clientes/criar_template_wa.mjs` submete e acompanha
+(`--listar`). Ele existe porque o campo que mais derruba aprovação é o
+**exemplo da variável**, escondido atrás de um "Adicionar exemplo" fácil de
+pular no painel — sem ele a Meta rejeita por conteúdo incompleto.
+
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
 ### 1. Conta e verificação

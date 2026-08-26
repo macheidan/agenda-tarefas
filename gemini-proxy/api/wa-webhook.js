@@ -3,6 +3,7 @@
 // lido, ou falhou), registra resposta de cliente e processa descadastro.
 //
 // Envs (Vercel): FIREBASE_SERVICE_ACCOUNT, WA_VERIFY_TOKEN, WA_APP_SECRET
+//   (+ WA_APP_SECRET_LOV quando a segunda WABA roda sob outro app)
 //
 // Configurar na Meta (Webhooks do produto WhatsApp):
 //   URL: https://<projeto>.vercel.app/api/wa-webhook
@@ -49,13 +50,25 @@ function query(req) {
   }
 }
 
+/**
+ * Confere o HMAC contra TODOS os app secrets configurados.
+ *
+ * A assinatura é do APP que entregou o webhook, não da loja. Como cada BM só
+ * pode reivindicar um app, a WABA do BM da Lov roda sob um app próprio, com
+ * outro segredo — e as duas mandam para a mesma URL. Conferir só o
+ * `WA_APP_SECRET` faria todo webhook do segundo app voltar 401, e o status de
+ * entrega pararia em "enviado" sem nenhum erro visível.
+ */
 function assinaturaConfere(bruto, cabecalho) {
-  const segredo = process.env.WA_APP_SECRET;
-  if (!segredo) return false;
-  const esperado = 'sha256=' + crypto.createHmac('sha256', segredo).update(bruto).digest('hex');
-  const a = Buffer.from(esperado);
+  const segredos = [process.env.WA_APP_SECRET, process.env.WA_APP_SECRET_LOV].filter(Boolean);
+  if (!segredos.length) return false;
   const b = Buffer.from(String(cabecalho || ''));
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  // Sem short-circuit: todos os segredos são conferidos, para o tempo de
+  // resposta não dizer qual app assinou.
+  return segredos.reduce((ok, segredo) => {
+    const a = Buffer.from('sha256=' + crypto.createHmac('sha256', segredo).update(bruto).digest('hex'));
+    return (a.length === b.length && crypto.timingSafeEqual(a, b)) || ok;
+  }, false);
 }
 
 /**
