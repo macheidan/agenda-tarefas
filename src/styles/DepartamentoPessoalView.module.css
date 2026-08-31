@@ -637,6 +637,14 @@
   font-weight: 700;
 }
 
+/* Folga desenhada pelo sistema (config do funcionário), não marcada à mão:
+   mais apagada e com borda tracejada pra diferenciar de uma marca real. */
+.markAuto {
+  opacity: 0.55;
+  outline: 1px dashed var(--card);
+  outline-offset: -3px;
+}
+
 /* ---- Legenda ---- */
 .legend {
   display: flex;
@@ -930,6 +938,24 @@
 
 .popClear:hover {
   background: var(--danger-bg);
+}
+
+/* Devolve a folga automática que tinha sido apagada — ação neutra, não destrutiva. */
+.popRestore {
+  margin-top: 4px;
+  padding: 10px 8px;
+  border: none;
+  border-top: 1px solid var(--border-light);
+  border-radius: 0 0 6px 6px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.popRestore:hover {
+  background: var(--accent-light);
 }
 
 .popSheetHeader {

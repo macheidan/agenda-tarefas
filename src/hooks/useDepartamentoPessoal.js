@@ -20,6 +20,13 @@ export const ABSENCE_TYPES = [
   { key: 'ferias', label: 'Férias', short: 'FE', color: '#7c3aed' },
 ];
 
+// Marca especial que NÃO aparece na legenda nem no menu de tipos: existe só pra
+// anular, num dia específico, a folga que a Escala desenha sozinha a partir da
+// config do funcionário (folgaWeekdays / folgaMonthN). Sem ela não havia como
+// apagar um FG automático — "Limpar" não tinha doc nenhum pra remover.
+// Apagar o doc devolve a folga automática.
+export const SEM_FOLGA = 'sem_folga';
+
 // Lojas padrão criadas na primeira vez (IDs fixos = seed idempotente).
 const DEFAULT_STORES = [
   { id: 'dame', name: 'Dáme', order: 0 },

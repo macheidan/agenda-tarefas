@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { getNamedHolidays } from '../utils/holidays';
-import { useDepartamentoPessoal, ABSENCE_TYPES } from '../hooks/useDepartamentoPessoal';
+import { useDepartamentoPessoal, ABSENCE_TYPES, SEM_FOLGA } from '../hooks/useDepartamentoPessoal';
 import { transporteDetalhe, empFolgaWeekdays } from '../utils/transporte';
 import SalariosView from './SalariosView';
 import TransporteView from './TransporteView';
@@ -209,7 +209,7 @@ export default function DepartamentoPessoalView() {
   const handleCellClick = (e, emp, day) => {
     if (!canEdit) return; // só editores/admin marcam faltas
     const date = `${year}-${pad(month + 1)}-${pad(day)}`;
-    setPopover({ employeeId: emp.id, store: emp.store, date, empName: emp.name });
+    setPopover({ employeeId: emp.id, store: emp.store, date, empName: emp.name, emp, day });
   };
 
   const applyType = (typeKey) => {
@@ -306,10 +306,12 @@ export default function DepartamentoPessoalView() {
   const dayInfo = (emp, d) => {
     const date = `${year}-${pad(month + 1)}-${pad(d)}`;
     const mark = absenceMap[`${emp.id}__${date}`];
-    let t = mark ? typeByKey(mark.type) : null;
-    if (!t && isFolgaDay(emp, d)) t = folgaType;
+    // Qualquer marca real manda na célula — inclusive SEM_FOLGA, que não tem
+    // tipo visível e serve justamente pra apagar a folga automática do dia.
+    const autoFolga = !mark && isFolgaDay(emp, d);
+    const t = autoFolga ? folgaType : (mark ? typeByKey(mark.type) || null : null);
     const wd = new Date(year, month, d).getDay();
-    return { date, mark, t, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
+    return { date, mark, t, autoFolga, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
   };
 
   // Resumo do mês (só para editores). Transporte a Pagar mistura DOIS ciclos:
@@ -789,10 +791,17 @@ export default function DepartamentoPessoalView() {
                         key={d}
                         className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${info.holiday ? styles.mDayHoliday : ''}`}
                         onClick={(e) => handleCellClick(e, emp, d)}
-                        title={info.t ? info.t.label : info.holiday || ''}
+                        title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.t ? info.t.label : info.holiday || ''}
                       >
                         <span className={styles.mDayNum}>{d}</span>
-                        {info.t && <span className={styles.mDayMark} style={{ background: info.t.color }}>{info.t.short}</span>}
+                        {info.t && (
+                          <span
+                            className={`${styles.mDayMark} ${info.autoFolga ? styles.markAuto : ''}`}
+                            style={{ background: info.t.color }}
+                          >
+                            {info.t.short}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -869,9 +878,16 @@ export default function DepartamentoPessoalView() {
                         key={d}
                         className={`${styles.cell} ${info.weekend ? styles.weekend : ''} ${info.holiday ? styles.holidayCell : ''}`}
                         onClick={(e) => handleCellClick(e, emp, d)}
-                        title={info.t ? info.t.label : info.holiday || ''}
+                        title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.t ? info.t.label : info.holiday || ''}
                       >
-                        {info.t && <span className={styles.mark} style={{ background: info.t.color }}>{info.t.short}</span>}
+                        {info.t && (
+                          <span
+                            className={`${styles.mark} ${info.autoFolga ? styles.markAuto : ''}`}
+                            style={{ background: info.t.color }}
+                          >
+                            {info.t.short}
+                          </span>
+                        )}
                       </td>
                     );
                   })}
@@ -961,7 +977,9 @@ export default function DepartamentoPessoalView() {
         onClose={() => setPopover(null)}
         onClick={(e) => { if (e.target === popoverRef.current) setPopover(null); }}
       >
-        {popover && (
+        {popover && (() => {
+          const pInfo = dayInfo(popover.emp, popover.day);
+          return (
           <div className={styles.popoverContent}>
             <div className={styles.popSheetHeader}>
               <span className={styles.popSheetTitle}>
@@ -975,9 +993,22 @@ export default function DepartamentoPessoalView() {
                 {t.label}
               </button>
             ))}
-            <button type="button" className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
+            {pInfo.autoFolga ? (
+              // FG desenhado pelo sistema: não há doc pra apagar — grava a marca
+              // SEM_FOLGA, que anula a folga só neste dia.
+              <button type="button" className={styles.popClear} onClick={() => applyType(SEM_FOLGA)}>
+                Limpar folga automática
+              </button>
+            ) : pInfo.mark?.type === SEM_FOLGA ? (
+              <button type="button" className={styles.popRestore} onClick={() => applyType(null)}>
+                Restaurar folga automática
+              </button>
+            ) : (
+              <button type="button" className={styles.popClear} onClick={() => applyType(null)}>Limpar</button>
+            )}
           </div>
-        )}
+          );
+        })()}
       </dialog>
       </>)}
     </div>
