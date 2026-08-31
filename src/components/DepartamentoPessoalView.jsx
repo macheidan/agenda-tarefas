@@ -794,14 +794,7 @@ export default function DepartamentoPessoalView() {
                         title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.t ? info.t.label : info.holiday || ''}
                       >
                         <span className={styles.mDayNum}>{d}</span>
-                        {info.t && (
-                          <span
-                            className={`${styles.mDayMark} ${info.autoFolga ? styles.markAuto : ''}`}
-                            style={{ background: info.t.color }}
-                          >
-                            {info.t.short}
-                          </span>
-                        )}
+                        {info.t && <span className={styles.mDayMark} style={{ background: info.t.color }}>{info.t.short}</span>}
                       </button>
                     );
                   })}
@@ -880,14 +873,7 @@ export default function DepartamentoPessoalView() {
                         onClick={(e) => handleCellClick(e, emp, d)}
                         title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.t ? info.t.label : info.holiday || ''}
                       >
-                        {info.t && (
-                          <span
-                            className={`${styles.mark} ${info.autoFolga ? styles.markAuto : ''}`}
-                            style={{ background: info.t.color }}
-                          >
-                            {info.t.short}
-                          </span>
-                        )}
+                        {info.t && <span className={styles.mark} style={{ background: info.t.color }}>{info.t.short}</span>}
                       </td>
                     );
                   })}

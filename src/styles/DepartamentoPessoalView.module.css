@@ -637,14 +637,6 @@
   font-weight: 700;
 }
 
-/* Folga desenhada pelo sistema (config do funcionário), não marcada à mão:
-   mais apagada e com borda tracejada pra diferenciar de uma marca real. */
-.markAuto {
-  opacity: 0.55;
-  outline: 1px dashed var(--card);
-  outline-offset: -3px;
-}
-
 /* ---- Legenda ---- */
 .legend {
   display: flex;
