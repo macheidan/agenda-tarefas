@@ -19,6 +19,15 @@
 //   a = aniversário (MM-DD)   e = e-mail
 //   hm = pedidos por mês, últimos 12 ({"2026-08": 3})   pc = primeira compra
 //   vm = receita por mês, últimos 12 ({"2026-08": 224.8})
+//   d  = endereços de entrega, do mais provável ao menos:
+//        [{logradouro, numero, complemento, bairro, cidade}, ...]
+//
+// `d` é uma LISTA porque quem tem dois endereços tem dois de verdade — e não dá
+// para escolher por ele: 52% dos cadastros com mais de um endereço têm BAIRRO
+// diferente entre eles, e 24% têm até cidade diferente. Por isso bairro e
+// cidade se repetem dentro de cada endereço em vez de virem só de `b`/`c`: o
+// topo diz onde o cliente mais compra, a lista diz para onde a pizza pode ir.
+// Quem confirma qual é o endereço, na conversa, é o bot do WhatsApp.
 //
 // `vm` existe porque `v` é o histórico inteiro do cliente: sem ele, a receita de
 // um mês só sairia como ticket × pedidos, que erra sempre que o cliente varia o
@@ -41,10 +50,15 @@ import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { montarEnderecos } from './enderecos.mjs';
 
 // Medido em 2026-08-19, já com `hm` e `vm`: 283 bytes por cliente, ou ~220 KB
 // por bloco de 800 — bem longe do teto de 1 MB do doc. Subir o bloco economiza
 // leitura a cada abertura da tela, e a quota do Firestore é o gargalo aqui.
+// Remedido em 2026-09-01, já com `d` (endereços): 532 bytes por cliente na
+// dame e 547 na lov, com o maior bloco em 440-451 KB. Ainda menos da metade do
+// teto — o CHUNK_SIZE só precisa cair se um bloco passar de ~600 KB, e o
+// backfill imprime esse número toda vez que roda.
 const CHUNK_SIZE = 800;
 const LOJAS = ['dame', 'lov'];
 
@@ -163,6 +177,14 @@ function fundirItem(antigo, novo) {
     hm: novo.hm || antigo.hm || null,
     vm: novo.vm || antigo.vm || null,
     pc: menorData(novo.pc, antigo.pc),
+    // Endereço nunca é sobrescrito, só somado: a coleta de hoje só enxerga os
+    // cadastros da janela de 90 dias, e um cliente que passou o mês pedindo do
+    // trabalho não pode perder o endereço de casa por isso. A união é por lugar
+    // (ver enderecos.mjs), então repetir a mesma coleta não alonga a lista.
+    d: montarEnderecos(
+      recente === novo ? [novo.d, antigo.d] : [antigo.d, novo.d],
+      { bairro: recente.b || antigo.b || novo.b, cidade: recente.c || antigo.c || novo.c }
+    ),
   };
   return limpar(out);
 }
@@ -203,6 +225,10 @@ function daColeta(c) {
     hm: c.meses && Object.keys(c.meses).length ? c.meses : null,
     vm: c.valorMeses && Object.keys(c.valorMeses).length ? c.valorMeses : null,
     pc: c.primeiraCompra || '',
+    // O coletor manda a linha crua do Saipos; o parse é aqui (enderecos.mjs).
+    // Coleta antiga, de antes de 2026-09-01, não tem `enderecosCrus` — nesse
+    // caso `d` sai null e o merge preserva o que já estava gravado.
+    d: montarEnderecos([c.enderecosCrus], { bairro: c.bairro, cidade: c.cidade }),
   });
 }
 

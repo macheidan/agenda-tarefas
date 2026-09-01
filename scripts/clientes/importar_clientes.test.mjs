@@ -206,3 +206,114 @@ test('quem chega COM telefone nao passa pela regra de nome+bairro', () => {
   const { itens } = fundir(existentes, coleta);
   assert.equal(itens.length, 2, 'dois telefones diferentes sao duas pessoas');
 });
+
+// --- endereços (campo `d`) -------------------------------------------------
+
+test('a coleta traz a linha crua e o item sai com o endereço quebrado', () => {
+  const { itens } = fundir(
+    [],
+    [
+      coletado({
+        enderecosCrus: ['Porto Alegre, Petrópolis - R. Barão de Ubá, 382, 301'],
+      }),
+    ]
+  );
+  assert.deepEqual(itens[0].d, [
+    {
+      logradouro: 'R. Barão de Ubá',
+      numero: '382',
+      complemento: '301',
+      bairro: 'Petrópolis',
+      cidade: 'Porto Alegre',
+    },
+  ]);
+});
+
+test('coleta sem endereço não apaga o endereço já gravado', () => {
+  // É o caso que acontece todo dia: o cliente comprou pelo iFood, o cadastro
+  // do marketplace veio sem endereço, e o de casa não pode sumir por isso.
+  const existentes = [
+    {
+      k: 't:51999990000',
+      t: '51999990000',
+      n: 'Fulano',
+      b: 'Petrópolis',
+      p: 3,
+      v: 300,
+      u: '2026-03-02',
+      d: [{ logradouro: 'Rua Barão de Ubá', numero: '382', bairro: 'Petrópolis', cidade: 'Porto Alegre' }],
+    },
+  ];
+  const { itens } = fundir(existentes, [coletado({ ultimaCompra: '2026-08-19', enderecosCrus: [] })]);
+  assert.equal(itens.length, 1);
+  assert.equal(itens[0].d.length, 1);
+  assert.equal(itens[0].d[0].numero, '382');
+});
+
+test('endereço novo soma ao antigo em vez de substituí-lo', () => {
+  const existentes = [
+    {
+      k: 't:51999990000',
+      t: '51999990000',
+      n: 'Fulano',
+      b: 'Petrópolis',
+      p: 3,
+      v: 300,
+      u: '2026-03-02',
+      d: [{ logradouro: 'Rua Barão de Ubá', numero: '382', bairro: 'Petrópolis', cidade: 'Porto Alegre' }],
+    },
+  ];
+  const { itens } = fundir(existentes, [
+    coletado({
+      ultimaCompra: '2026-08-19',
+      enderecosCrus: ['Porto Alegre, Floresta - Avenida Chicago, 272, 503'],
+    }),
+  ]);
+  assert.equal(itens[0].d.length, 2);
+  // O bairro do cliente continua sendo Petrópolis, então ele lidera a lista.
+  assert.equal(itens[0].d[0].bairro, 'Petrópolis');
+});
+
+test('importar a mesma coleta duas vezes não alonga a lista de endereços', () => {
+  const coleta = [
+    coletado({
+      enderecosCrus: [
+        'Porto Alegre, Petrópolis - R. Barão de Ubá, 382, 301',
+        'Porto Alegre, Floresta - Avenida Chicago, 272, 503',
+      ],
+    }),
+  ];
+  const uma = fundir([], coleta).itens;
+  const duas = fundir(uma, coleta).itens;
+  const tres = fundir(duas, coleta).itens;
+  assert.equal(duas[0].d.length, 2);
+  assert.deepEqual(tres[0].d, duas[0].d);
+});
+
+test('mesma rua escrita de dois jeitos não vira dois endereços', () => {
+  const existentes = [
+    {
+      k: 't:51999990000',
+      t: '51999990000',
+      n: 'Fulano',
+      b: 'Petrópolis',
+      p: 3,
+      v: 300,
+      u: '2026-03-02',
+      d: [{ logradouro: 'R. Barão de Ubá', numero: '382', bairro: 'Petrópolis', cidade: 'Porto Alegre' }],
+    },
+  ];
+  const { itens } = fundir(existentes, [
+    coletado({
+      ultimaCompra: '2026-08-19',
+      enderecosCrus: ['Porto Alegre, Petrópolis - Rua Barão de Ubá, 382, 301'],
+    }),
+  ]);
+  assert.equal(itens[0].d.length, 1);
+  assert.equal(itens[0].d[0].complemento, '301', 'o complemento que faltava foi acrescentado');
+});
+
+test('cliente sem endereço nenhum não ganha o campo `d`', () => {
+  const { itens } = fundir([], [coletado()]);
+  assert.equal('d' in itens[0], false);
+});

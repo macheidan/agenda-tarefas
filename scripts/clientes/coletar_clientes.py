@@ -562,7 +562,13 @@ def agregar(registros: list) -> list:
         if k in chaves_antigas:
             it["chavesAntigas"] = sorted(chaves_antigas[k])
         it.pop("enderecos", None)
-        it.pop("enderecos_originais", None)
+        # A linha CRUA do Saipos vai junto. Quem quebra ela em
+        # {logradouro, numero, complemento, bairro, cidade} e deduplica e o
+        # importador (scripts/clientes/enderecos.mjs), nao este arquivo: o
+        # backfill do backup tambem e Node e precisa do MESMO resultado, e
+        # manter dois parsers em duas linguagens e garantir que um dia eles
+        # divergem.
+        it["enderecosCrus"] = it.pop("enderecos_originais", [])
         saida.append(it)
 
     com_tel = sum(1 for c in saida if c["telefone"])
