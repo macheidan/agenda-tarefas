@@ -3,7 +3,10 @@
 //   node --test scripts/clientes/backfill_enderecos.test.mjs
 //
 // O que está sendo protegido aqui é sobretudo o erro grave: dar a uma pessoa o
-// endereço de outra. As travas de homônimo têm teste dos dois lados.
+// endereço de outra. Por isso o casamento tem só duas regras — telefone e hash
+// de CPF — e os testes abaixo cobram que nome, bairro e endereço NÃO sirvam de
+// chave, por mais tentador que seja (ver o cabeçalho de backfill_enderecos.mjs:
+// a regra de nome+bairro casava 419 cadastros e nenhum deles tinha telefone).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -42,57 +45,39 @@ test('casa por hash de CPF quando o telefone não bate', () => {
   assert.equal(via.cpf, 1);
 });
 
-test('casa por nome+bairro quando não há telefone nem CPF', () => {
+test('nome + bairro NAO casa: sem telefone e sem CPF o cadastro fica de fora', () => {
+  // Era a terceira regra da primeira versão. Saiu porque só alcançava clientes
+  // sem telefone — os que o bot nunca atende — e era a única capaz de entregar
+  // no endereço de um homônimo.
   const it = { k: 'i:9', t: '', n: 'Ana Paula Souza', b: 'Petrópolis' };
-  const { via } = casar(
+  const { achados, semCliente } = casar(
     [it],
     [cadastro({ nome: 'Ana Paula Souza', linhas: [RUA_A] })]
   );
-  assert.equal(via.nome_bairro, 1);
-});
-
-test('nome de uma palavra nunca casa', () => {
-  const it = { k: 'i:9', t: '', n: 'Amanda', b: 'Petrópolis' };
-  const { via, semCliente } = casar([it], [cadastro({ nome: 'Amanda', linhas: [RUA_A] })]);
-  assert.equal(via.nome_bairro, 0);
+  assert.equal(achados.size, 0);
   assert.equal(semCliente, 1);
 });
 
-test('dois clientes com o mesmo nome+bairro queimam a chave (lado Firestore)', () => {
-  const a = { k: 'i:1', t: '', n: 'Joao da Silva', b: 'Centro' };
-  const b = { k: 'i:2', t: '', n: 'João da Silva', b: 'Centro' };
-  const { via, semCliente } = casar(
-    [a, b],
-    [cadastro({ nome: 'Joao da Silva', linhas: [RUA_A] })]
-  );
-  assert.equal(via.nome_bairro, 0);
-  assert.equal(semCliente, 1, 'melhor ninguem receber endereco do que receber o do homonimo');
+test('nem mesmo o endereço idêntico casa por si só', () => {
+  // Rua e número não são identidade: num prédio, 500 pessoas dividem a chave.
+  const it = {
+    k: 'i:9',
+    t: '',
+    n: 'Ana Paula Souza',
+    b: 'Petrópolis',
+    d: [{ logradouro: 'R. Barão de Ubá', numero: '382', bairro: 'Petrópolis', cidade: 'Porto Alegre' }],
+  };
+  const { achados } = casar([it], [cadastro({ nome: 'Outra Pessoa', linhas: [RUA_A] })]);
+  assert.equal(achados.size, 0);
 });
 
-test('dois cadastros do backup com CPFs diferentes queimam a chave (lado backup)', () => {
-  const it = { k: 'i:1', t: '', n: 'Joao da Silva', b: 'Centro' };
-  const linhas = ['Porto Alegre, Centro - Rua Um, 10'];
-  const { via } = casar(
-    [it],
-    [
-      cadastro({ id: 1, cpf: '11111111111', nome: 'Joao da Silva', linhas }),
-      cadastro({ id: 2, cpf: '22222222222', nome: 'Joao da Silva', linhas }),
-    ]
+test('o vizinho de prédio não recebe o endereço do outro', () => {
+  const vizinho = { k: 'i:1', t: '', n: 'Joao da Silva', b: 'Centro' };
+  const { achados } = casar(
+    [vizinho],
+    [cadastro({ nome: 'Joao da Silva', linhas: ['Porto Alegre, Centro - Rua Um, 10, 501'] })]
   );
-  assert.equal(via.nome_bairro, 0);
-});
-
-test('dois cadastros do backup com telefones diferentes queimam a chave', () => {
-  const it = { k: 'i:1', t: '', n: 'Joao da Silva', b: 'Centro' };
-  const linhas = ['Porto Alegre, Centro - Rua Um, 10'];
-  const { via } = casar(
-    [it],
-    [
-      cadastro({ id: 1, tel: '51999990000', nome: 'Joao da Silva', linhas }),
-      cadastro({ id: 2, tel: '51888880000', nome: 'Joao da Silva', linhas }),
-    ]
-  );
-  assert.equal(via.nome_bairro, 0);
+  assert.equal(achados.size, 0, 'homonimo no mesmo bairro nunca casa');
 });
 
 test('a mesma pessoa em dois cadastros do backup soma os endereços', () => {

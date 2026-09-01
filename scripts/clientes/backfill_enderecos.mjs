@@ -12,16 +12,36 @@
 // COMO O CADASTRO DO BACKUP ACHA O CLIENTE DO FIRESTORE
 // -----------------------------------------------------
 // O Firestore não guarda `id_customer` — a identidade lá é a chave `k`, e ela
-// muda quando o coletor religa alguém. Então o casamento é refeito aqui, na
-// mesma ordem de confiança do resto do pipeline:
+// muda quando o coletor religa alguém. Então o casamento é refeito aqui, e são
+// só duas regras, as duas fortes:
 //
-//   1. telefone      2. hash do CPF      3. nome completo + bairro
+//   1. telefone      2. hash do CPF
 //
-// A terceira só entra quando é 1 para 1 dos DOIS lados. Do lado do Firestore, a
-// chave não pode apontar para dois clientes; do lado do backup, os cadastros
-// que compartilham a chave não podem ter CPFs ou telefones diferentes — isso
-// seriam homônimos no mesmo bairro, e dar a uma pessoa o endereço de outra é o
-// único erro grave que este script pode cometer.
+// NÃO existe regra por nome+bairro aqui, e isso é uma decisão medida. Ela
+// existiu na primeira versão e casava 419 cadastros (223 dame + 196 lov). Ao
+// medir quem dependia só dela, o número foi este:
+//
+//   408 clientes ganhavam endereço apenas por nome+bairro — e ZERO deles têm
+//   telefone.
+//
+// Ou seja: a única regra capaz de dar a uma pessoa o endereço de um homônimo
+// não alcançava nenhum cliente que o bot do WhatsApp possa atender (o bot só
+// fala com quem tem telefone). Custo de removê-la para o caso de uso: nenhum.
+// Ganho: a classe de erro grave deixa de existir.
+//
+// E QUEM PEDE PELO IFOOD, COMO É ACHADO?
+// --------------------------------------
+// Pelo CPF, e é por isso que ele responde por 3.946 dos 4.114 casamentos. O
+// iFood mascara o telefone mas repassa o CPF: medido cruzando o canal de cada
+// pedido com o cadastro dele (backup, 2026-09-01),
+//
+//   cadastro que só pediu por iFood   90% tem CPF,  1% tem telefone, 99% endereço
+//   cadastro que nunca usou iFood      6% tem CPF, 99% tem telefone, 96% endereço
+//
+// O CPF aqui não está fazendo ponte entre sistemas: ele reencontra o MESMO
+// cadastro que já gerou o `h` do cliente no Firestore. Ponte de verdade — um
+// CPF que ligue um cadastro de iFood a outro com telefone — existe em 27 casos
+// por loja. Ver o comentário no fim deste arquivo sobre por que não há mais.
 //
 // GARANTIAS
 // ---------
@@ -81,14 +101,6 @@ function limparCpf(v) {
 function limparNome(v) {
   const n = String(v || '').replace(/\s+/g, ' ').trim();
   return /[A-Za-zÀ-ÿ0-9]/.test(n) ? n : '';
-}
-
-/** Espelha `chaveNomeBairro()` do importador. Nome de uma palavra só não
- *  identifica ninguém: são mil "Amanda" por bairro. */
-function chaveNomeBairro(nome, bairro) {
-  const n = normalizar(nome);
-  if (n.split(' ').filter(Boolean).length < 2) return '';
-  return `${n}|${normalizar(bairro)}`;
 }
 
 /** Espelha a escolha do endereço principal em `preparar()`: o da cidade da loja
@@ -156,38 +168,13 @@ async function carregarClientes(db, loja) {
 function casar(itens, cadastros) {
   const porTel = new Map();
   const porHash = new Map();
-  const porNomeBairro = new Map();
-  const nbAmbiguoFs = new Set();
   for (const it of itens) {
     if (it.t && !porTel.has(it.t)) porTel.set(it.t, it);
     if (it.h && !porHash.has(it.h)) porHash.set(it.h, it);
-    const k = chaveNomeBairro(it.n, it.b);
-    if (!k) continue;
-    if (porNomeBairro.has(k)) nbAmbiguoFs.add(k);
-    else porNomeBairro.set(k, it);
-  }
-  for (const k of nbAmbiguoFs) porNomeBairro.delete(k);
-
-  // Homônimos no mesmo bairro DO LADO DO BACKUP: cadastros que dividem a chave
-  // mas têm CPF ou telefone diferentes são pessoas diferentes, e a chave inteira
-  // é queimada. Sem esta trava o bot ofereceria o endereço do vizinho.
-  const vistos = new Map();
-  const nbAmbiguoBackup = new Set();
-  for (const c of cadastros) {
-    const k = chaveNomeBairro(c.nome, c.bairro);
-    if (!k) continue;
-    const ja = vistos.get(k);
-    if (!ja) {
-      vistos.set(k, c);
-      continue;
-    }
-    const cpfDivergente = ja.cpf && c.cpf && ja.cpf !== c.cpf;
-    const telDivergente = ja.tel && c.tel && ja.tel !== c.tel;
-    if (cpfDivergente || telDivergente) nbAmbiguoBackup.add(k);
   }
 
   const achados = new Map(); // item -> lista de listas de endereços
-  const via = { telefone: 0, cpf: 0, nome_bairro: 0 };
+  const via = { telefone: 0, cpf: 0 };
   let semEndereco = 0;
   let semCliente = 0;
 
@@ -204,13 +191,10 @@ function casar(itens, cadastros) {
     } else if (c.cpf && porHash.has(digerir(c.cpf))) {
       alvo = porHash.get(digerir(c.cpf));
       regra = 'cpf';
-    } else {
-      const k = chaveNomeBairro(c.nome, c.bairro);
-      if (k && !nbAmbiguoBackup.has(k) && porNomeBairro.has(k)) {
-        alvo = porNomeBairro.get(k);
-        regra = 'nome_bairro';
-      }
     }
+    // Sem telefone e sem CPF o cadastro fica de fora. Nome+bairro casaria mais
+    // 419, todos de clientes sem telefone (ver o cabeçalho) — não vale o risco
+    // de entregar no endereço de um homônimo.
     if (!alvo) {
       semCliente += 1;
       continue;
@@ -334,8 +318,7 @@ async function main() {
 
     console.log('\n  -- cadastros do backup --');
     console.log(
-      `     casados: ${via.telefone} por telefone, ${via.cpf} por CPF, ` +
-        `${via.nome_bairro} por nome+bairro`
+      `     casados: ${via.telefone} por telefone, ${via.cpf} por CPF`
     );
     console.log(`     sem endereco no cadastro: ${semEndereco}`);
     console.log(`     sem cliente correspondente na base: ${semCliente}`);
@@ -347,6 +330,15 @@ async function main() {
     console.log(
       `     com endereco: ${comEnderecoAntes} -> ${comEndereco} de ${depois.length} ` +
         `(${Math.round((100 * comEndereco) / depois.length)}%)`
+    );
+    // A métrica que decide se o bot funciona. O total acima conta junto o
+    // cliente de marketplace sem telefone, que o bot nunca vai atender — ele
+    // pesa em faturamento e bairro, não em atendimento.
+    const comTel = depois.filter((i) => i.t);
+    const comTelEEndereco = comTel.filter((i) => i.d).length;
+    console.log(
+      `     DESTES, com telefone (o publico do bot): ${comTelEEndereco} de ${comTel.length} ` +
+        `(${Math.round((100 * comTelEEndereco) / Math.max(comTel.length, 1))}%)`
     );
     console.log(`     com mais de um endereco: ${multi}`);
     console.log(`     ficam SEM endereco: ${sem.length}`);
@@ -399,9 +391,34 @@ async function main() {
   console.log('\nOK');
 }
 
+// POR QUE NÃO HÁ COMO LIGAR O CLIENTE DE IFOOD AO DE BALCÃO
+// ---------------------------------------------------------
+// A pergunta natural é se existe uma chave melhor que endereço para reconhecer
+// a mesma pessoa entre canais. Todos os campos do cadastro foram medidos no
+// backup (2026-09-01), separando quem só pediu por iFood de quem nunca usou:
+//
+//   campo        iFood   balcão/DD   serve de ponte?
+//   telefone       1%       99%      não — nunca está nos dois
+//   CPF           90%        6%      quase não — 27 pontes por loja
+//   endereço      99%       96%      é o único presente dos dois lados
+//   e-mail         0%        2%      não
+//   nascimento     0%        1%      não
+//   `notes`        0%        0%      vazio na base inteira
+//
+// E o Saipos não funde sozinho: apenas 22 cadastros na dame e 8 na lov usaram
+// iFood e outro canal com o mesmo `id_customer`. Quem pede pelos dois tem dois
+// cadastros, e nada no dado os liga além do endereço.
+//
+// A ponte que falta não está no Saipos — está no bot. Ele é o único ponto do
+// sistema que tem o telefone REAL e uma conversa: quando alguém escreve e a
+// base não o reconhece, o endereço que ele informar para a entrega fecha o elo
+// com o cadastro de iFood pela chave de lugar de `enderecos.mjs`. É a única
+// forma de construir o vínculo, e ela se paga sozinha — o bot já precisaria
+// perguntar o endereço de qualquer jeito.
+
 // O casamento é a parte delicada; exportar as funções puras deixa testá-lo sem
 // Firestore e sem o backup (scripts/clientes/backfill_enderecos.test.mjs).
-export { casar, aplicar, chaveNomeBairro, limparTelefone, limparNome, bairroPrincipal, digerir };
+export { casar, aplicar, limparTelefone, limparNome, bairroPrincipal, digerir };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((e) => {
