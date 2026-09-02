@@ -499,11 +499,11 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
             <Row title="Salários Folha" desc="Vê o valor que vai pro banco de cada funcionário, por mês. Nada além do Banco">
               <Switch
                 label="Depto Pessoal — vê Salários Folha"
-                checked={s.dpFolhaVisible === true}
+                checked={s.dpFolhaVisible === true || s.dpFolhaEdit === true}
                 onChange={(v) => toggleSection(permTarget, 'dpFolhaVisible', v)}
               />
             </Row>
-            <Row title="Salários Folha — editar" desc="Preenche o Banco. Reflete na aba Salários do admin">
+            <Row title="Salários Folha — editar" desc="Preenche o Banco (já inclui ver a subseção). Reflete na aba Salários do admin">
               <Switch
                 label="Depto Pessoal — edita Salários Folha"
                 checked={s.dpFolhaEdit === true}

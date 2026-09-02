@@ -264,7 +264,8 @@ service cloud.firestore {
     // campo: liberar dpSalarios exporia salário/adiantamento/empréstimo.
     // Mantido em dupla escrita pelas duas telas e pelo importFolha.mjs.
     match /dpSalariosBanco/{salarioId} {
-      allow read: if isAdmin() || hasSettingFlag('dpFolhaVisible');
+      // Editar implica ver: dpFolhaEdit também libera a leitura do espelho.
+      allow read: if isAdmin() || hasSettingFlag('dpFolhaVisible') || hasSettingFlag('dpFolhaEdit');
       allow write: if isAdmin() || (hasSettingFlag('dpFolhaEdit') && bancoOnlyDoc(request.resource.data));
     }
     // Transporte (aba Transp): liberação própria (dpTranspVisible), desligada
