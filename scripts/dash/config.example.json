@@ -1,9 +1,22 @@
 {
   "profile_dir": "%LOCALAPPDATA%\\dre_ai\\browser_profile_saipos",
+  "creds_from": "G:\\Meu Drive\\02 Pizzarias\\05 AI\\dre-ai\\saipos_config.json",
   "email": "",
   "senha": "",
   "lojas": {
     "DAME": "10677",
     "LOV": "11377"
-  }
+  },
+  "google_credentials": "caminho do client_secret OAuth (agenda.py)",
+  "newsletters_imap_host": "imap.aol.com",
+  "newsletters_imap_user": "",
+  "newsletters_imap_pass": "",
+  "newsletters_imap_port": 993,
+  "newsletters_remetentes": ["evolvingai", "therundown", "theneurondaily", "tldr", "deeplearning", "theaifield"],
+  "ftp_server": "ftp.fabiomachado.com.br",
+  "ftp_user": "",
+  "ftp_pass": "",
+  "ftp_port": 21,
+  "ftp_dir": "/pizzas/data",
+  "dash_token": "mesmo valor de VITE_DASH_TOKEN no .env da intranet"
 }

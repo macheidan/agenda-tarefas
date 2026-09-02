@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Runner do dashboard. Roda os coletores, consolida tudo em dashboard-data.json
-(no formato que o front consome) e publica via FTPS no HostGator.
+Runner do Dash da intranet. Roda os coletores, consolida tudo em
+dashboard-data.json e publica via FTPS em
+fabiomachado.com.br/pizzas/data/dashboard-data-<token>.json, que o Dash e a
+Mesa do Dono leem (useDashFeed, token em VITE_DASH_TOKEN).
 
 A coleta roda na máquina de casa (Task Scheduler, tarefa "DashboardColeta3h", 03h)
-por run_dash.cmd. Vive em scripts/dash/ da intranet desde 2026-09-02 (antes em
-machado-labs/_ferramentas/dashboard). O JSON tem faturamento, então NUNCA vai pro
-git — sobe direto por FTPS: /dashboard (front antigo, basic auth) e
-/pizzas/data/dashboard-data-<token>.json (o que a intranet lê, via useDashFeed).
+por run_dash.cmd. Vive em scripts/dash/ da intranet desde 2026-09-02; antes era o
+coletor do dashboard pessoal em machado-labs (fabiomachado.com.br/dashboard),
+descontinuado nessa data — o único consumidor do JSON agora é a intranet. O JSON
+tem faturamento, então NUNCA vai pro git; a pasta remota é estática e sem auth, e
+a proteção é o token no nome do arquivo.
 
 Uso:
   python runner.py                 # coleta tudo, consolida e envia
@@ -465,7 +468,7 @@ def enviar(arquivo, cfg, dst=None, remote_name=None):
     srv = cfg.get("ftp_server")
     usr = cfg.get("ftp_user")
     pwd = cfg.get("ftp_pass")
-    dst = dst or cfg.get("ftp_dir", "/dashboard")
+    dst = dst or cfg.get("ftp_dir", "/pizzas/data")
     remote_name = remote_name or arquivo.name
     if not (srv and usr and pwd):
         log("\n[AVISO] credenciais FTP ausentes no config.json "
@@ -534,17 +537,16 @@ def main():
 
     arq = consolidar()
     if not a.sem_envio:
-        ftp_dir = cfg.get("ftp_dir", "/dashboard")
-        enviar(arq, cfg, ftp_dir)                            # /dashboard (com basic auth)
-        # publica também no /pizzas (mesmo domínio, servido junto do app React;
-        # o Dash lê same-origin). Nome carrega token secreto porque /pizzas não
-        # tem auth nos estáticos — URL não-adivinhável (dash_token no config.json,
-        # espelhado em VITE_DASH_TOKEN no .env do app).
-        dst_pizzas = cfg.get("ftp_dir_pizzas") or (
-            ftp_dir.rsplit("/", 1)[0] + "/pizzas/data")
+        # O nome carrega o token porque /pizzas/data não tem auth nos estáticos:
+        # URL não-adivinhável (dash_token no config.json, espelhado em
+        # VITE_DASH_TOKEN no .env da intranet). Sem token o envio é recusado —
+        # um dashboard-data.json a descoberto exporia o faturamento.
         token = cfg.get("dash_token")
-        remote = f"dashboard-data-{token}.json" if token else arq.name
-        enviar(arq, cfg, dst_pizzas, remote_name=remote)
+        if not token:
+            log("\n[ERRO] dash_token ausente no config.json — JSON não enviado.")
+            sys.exit(1)
+        enviar(arq, cfg, cfg.get("ftp_dir", "/pizzas/data"),
+               remote_name=f"dashboard-data-{token}.json")
     log("\n== fim ==")
 
 
