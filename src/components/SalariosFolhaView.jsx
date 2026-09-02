@@ -1,11 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
-import { formatBRL } from '../utils/money';
 import styles from '../styles/SalariosView.module.css';
 
 // Salários Folha: a ficha "Por funcionário" reduzida ao que quem fecha a folha
 // precisa — loja, funcionário, mês e o valor que vai pro BANCO em cada linha.
+// Sem totais, sem histórico do ano: só o que se digita.
 // Lê o espelho dpSalariosBanco (só banco), nunca dpSalarios: é o que permite
 // liberar a tela pra outro usuário sem expor salário/adiantamento/empréstimo.
 // Editar aqui grava nas duas coleções (setSalarioBanco), então a aba Salários
@@ -20,7 +20,6 @@ const LINES = [['dia5', 'Dia 5'], ['dia20', 'Dia 20'], ['extra', 'Extra']];
 
 const num = (l, f) => Number(l?.[f]) || 0;
 const br = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
-const bancoDoMes = (d) => LINES.reduce((t, [line]) => t + num(d?.[line], 'banco'), 0);
 
 export default function SalariosFolhaView({ visibleStores, storeMeta, employees, salariosBanco, setSalarioBanco, canEdit }) {
   const { user } = useAuth();
@@ -75,10 +74,6 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
     return m;
   }, [salariosBanco, emp, year]);
   const doc = docsByMonth[month];
-
-  // Banco total por mês (lista lateral de meses) e do ano.
-  const meses = useMemo(() => MONTHS.map((_, m) => ({ m, banco: bancoDoMes(docsByMonth[m]) })), [docsByMonth]);
-  const anoBanco = meses.reduce((t, a) => t + a.banco, 0);
 
   const commit = (line, value) => {
     if (!canEdit || !emp) return;
@@ -158,9 +153,6 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
                 </span>
               )}
             </span>
-            <span className={styles.yearTotals}>
-              Banco {year}: <strong>{formatBRL(anoBanco) || 'R$ 0,00'}</strong>
-            </span>
           </div>
 
           <div className={styles.body}>
@@ -197,35 +189,6 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
                         </td>
                       );
                     })}
-                  </tr>
-                  <tr className={styles.calcRow}>
-                    <td className={styles.rowHead}>Total</td>
-                    <td className={styles.chTotal} colSpan={LINES.length}>{formatBRL(bancoDoMes(doc)) || 'R$ 0,00'}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className={styles.historico}>
-              <span className={styles.histTitle}>Banco {year}</span>
-              <table className={styles.histTable}>
-                <thead>
-                  <tr><th>Mês</th><th>Banco</th></tr>
-                </thead>
-                <tbody>
-                  {meses.map((a) => (
-                    <tr
-                      key={a.m}
-                      className={a.m === month ? styles.histActive : ''}
-                      onClick={() => setMonth(a.m)}
-                    >
-                      <td className={styles.histMonth}>{MONTHS[a.m]}</td>
-                      <td>{a.banco ? formatBRL(a.banco) : '—'}</td>
-                    </tr>
-                  ))}
-                  <tr className={styles.histTotal}>
-                    <td className={styles.histMonth}>Ano</td>
-                    <td>{formatBRL(anoBanco) || '—'}</td>
                   </tr>
                 </tbody>
               </table>
