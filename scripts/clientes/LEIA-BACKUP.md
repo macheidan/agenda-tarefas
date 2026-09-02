@@ -34,7 +34,7 @@ em claro, endereço completo e telefone.
 
 ## Como é mantido
 
-`arquivo.py`, chamado pelos dois coletores dentro da rotina diária das 04:10.
+`arquivo.py`, chamado pelos dois coletores dentro da rotina diária das 03:40.
 Duas garantias, com teste em `test_arquivo.py`:
 
 - **nunca perde** — é merge, não sobrescrita. Cadastro que sair do Saipos, ou

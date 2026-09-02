@@ -1,7 +1,7 @@
 @echo off
 rem Coleta diaria dos clientes no Saipos e importa para a intranet (secao Clientes).
-rem Agendado no Task Scheduler: todo dia 04:10 (tarefa "ClientesColeta").
-rem 04:10 e depois das outras automacoes que usam o MESMO perfil de browser
+rem Agendado no Task Scheduler: todo dia 03:40 (tarefa "ClientesColeta").
+rem 03:40 e depois das outras automacoes que usam o MESMO perfil de browser
 rem (DashboardColeta3h as 03:00, MotoboysColeta3h as 03:20) — duas ao mesmo
 rem tempo travam no lock do perfil do Chromium.
 setlocal
