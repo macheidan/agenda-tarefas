@@ -19,6 +19,10 @@
  * Pré-requisito: `npm i -D firebase-admin` e uma service account com acesso ao
  * Firestore (arquivo serviceAccount.json na raiz, ou GOOGLE_APPLICATION_CREDENTIALS).
  * serviceAccount*.json está no .gitignore — NUNCA commitar.
+ *
+ * O `banco` de cada linha também vai pro espelho `dpSalariosBanco` (só esse
+ * campo), que é o que a subseção Salários Folha lê. Backfill do espelho:
+ * scripts/espelharSalariosBanco.mjs.
  */
 import { readFileSync } from 'node:fs';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
@@ -148,16 +152,10 @@ async function main() {
     const id = `${emp.id}_${year}-${pad(month + 1)}`;
     console.log(`${args.dry ? '[dry] ' : ''}${store}/${emp.name} → ${id}.${args.line}`, patch);
     if (!args.dry) {
-      await db.collection('dpSalarios').doc(id).set(
-        {
-          employeeId: emp.id,
-          store,
-          year,
-          month,
-          [args.line]: patch,
-          updatedAt: new Date(),
-          updatedBy: 'importFolha',
-        },
+      const head = { employeeId: emp.id, store, year, month, updatedAt: new Date(), updatedBy: 'importFolha' };
+      await db.collection('dpSalarios').doc(id).set({ ...head, [args.line]: patch }, { merge: true });
+      await db.collection('dpSalariosBanco').doc(id).set(
+        { ...head, [args.line]: { banco: patch.banco ?? null } },
         { merge: true }
       );
     }

@@ -6,6 +6,7 @@ import { getNamedHolidays } from '../utils/holidays';
 import { useDepartamentoPessoal, ABSENCE_TYPES, SEM_FOLGA } from '../hooks/useDepartamentoPessoal';
 import { transporteDetalhe, empFolgaWeekdays } from '../utils/transporte';
 import SalariosView from './SalariosView';
+import SalariosFolhaView from './SalariosFolhaView';
 import TransporteView from './TransporteView';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
@@ -35,9 +36,13 @@ export default function DepartamentoPessoalView() {
   // Salários é dado sensível: EXCLUSIVO do admin (as rules de dpSalarios também
   // só liberam leitura pro admin — a antiga flag dpSalariosVisible foi aposentada).
   const canSalarios = isAdmin;
+  // Salários Folha: só o campo Banco, lido do espelho dpSalariosBanco. Ver e
+  // editar são flags separadas (dpFolhaVisible / dpFolhaEdit), desligadas por padrão.
+  const canFolha = isAdmin || settings?.dpFolhaVisible === true;
+  const canFolhaEdit = isAdmin || settings?.dpFolhaEdit === true;
   // Transp tem liberação própria (dpTranspVisible), desligada por padrão.
   const canTransp = isAdmin || settings?.dpTranspVisible === true;
-  const [dpSection, setDpSection] = useState('escala'); // escala | funcionarios | salarios
+  const [dpSection, setDpSection] = useState('escala'); // escala | salarios | folha | transp
   const {
     stores,
     loadingStores,
@@ -47,6 +52,8 @@ export default function DepartamentoPessoalView() {
     absences,
     salarios,
     setSalario,
+    salariosBanco,
+    setSalarioBanco,
     transportes,
     setTransporte,
     addStore,
@@ -65,9 +72,11 @@ export default function DepartamentoPessoalView() {
   const effectiveSection =
     dpSection === 'transp'
       ? (canTransp ? 'transp' : 'escala')
-      : dpSection === 'salarios' && canSalarios
-        ? 'salarios'
-        : 'escala';
+      : dpSection === 'folha'
+        ? (canFolha ? 'folha' : 'escala')
+        : dpSection === 'salarios' && canSalarios
+          ? 'salarios'
+          : 'escala';
 
   // Lojas escondidas para este usuário (configurado pelo admin em Settings).
   const hiddenSet = useMemo(
@@ -436,6 +445,14 @@ export default function DepartamentoPessoalView() {
                 Salários
               </button>
             )}
+            {canFolha && (
+              <button type="button"
+                className={`${styles.sectionTab} ${effectiveSection === 'folha' ? styles.sectionTabActive : ''}`}
+                onClick={() => setDpSection('folha')}
+              >
+                Salários Folha
+              </button>
+            )}
             {canTransp && (
               <button type="button"
                 className={`${styles.sectionTab} ${effectiveSection === 'transp' ? styles.sectionTabActive : ''}`}
@@ -458,6 +475,17 @@ export default function DepartamentoPessoalView() {
           setSalario={setSalario}
           updateEmployee={updateEmployee}
           isAdmin={isAdmin}
+        />
+      )}
+
+      {effectiveSection === 'folha' && (
+        <SalariosFolhaView
+          visibleStores={visibleStores}
+          storeMeta={storeMeta}
+          employees={employees}
+          salariosBanco={salariosBanco}
+          setSalarioBanco={setSalarioBanco}
+          canEdit={canFolhaEdit}
         />
       )}
 

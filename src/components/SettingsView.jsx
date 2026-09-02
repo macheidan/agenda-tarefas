@@ -493,7 +493,23 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
               />
             </Row>
             {/* Salários é exclusivo do admin (sem flag de liberação — rules e
-                cliente travam no isAdmin), por isso não há switch aqui. */}
+                cliente travam no isAdmin), por isso não há switch aqui. O que
+                se libera é a Salários Folha: só o campo Banco, por um espelho
+                (dpSalariosBanco) que não carrega o resto do salário. */}
+            <Row title="Salários Folha" desc="Vê o valor que vai pro banco de cada funcionário, por mês. Nada além do Banco">
+              <Switch
+                label="Depto Pessoal — vê Salários Folha"
+                checked={s.dpFolhaVisible === true}
+                onChange={(v) => toggleSection(permTarget, 'dpFolhaVisible', v)}
+              />
+            </Row>
+            <Row title="Salários Folha — editar" desc="Preenche o Banco. Reflete na aba Salários do admin">
+              <Switch
+                label="Depto Pessoal — edita Salários Folha"
+                checked={s.dpFolhaEdit === true}
+                onChange={(v) => toggleSection(permTarget, 'dpFolhaEdit', v)}
+              />
+            </Row>
             <Row title="Transp" desc="Cálculo de transporte da Rumi e da Patricia. Só o admin edita, mesmo com isto ligado">
               <Switch
                 label="Depto Pessoal — vê Transp"

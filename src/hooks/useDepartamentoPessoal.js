@@ -54,6 +54,8 @@ export function useDepartamentoPessoal() {
   const [employees, setEmployees] = useState([]);
   const [absences, setAbsences] = useState([]);
   const [salarios, setSalarios] = useState([]);
+  // Espelho de dpSalarios com só o `banco` de cada linha (Salários Folha).
+  const [salariosBanco, setSalariosBanco] = useState([]);
   const [transportes, setTransportes] = useState([]);
 
   // Lojas (com seed das duas lojas padrão se a coleção estiver vazia).
@@ -123,6 +125,18 @@ export function useDepartamentoPessoal() {
       // snapshot estoura permission-denied — não é erro de app, é só o dado
       // não existindo pra ele (a aba nem renderiza).
       () => setSalarios([])
+    );
+    return unsub;
+  }, []);
+
+  // Espelho só-banco (dpSalariosBanco): lê quem tem dpFolhaVisible (ou admin).
+  // Mesmo tratamento do permission-denied: sem acesso, lista vazia.
+  useEffect(() => {
+    const ref = collection(db, 'dpSalariosBanco');
+    const unsub = onSnapshot(
+      ref,
+      (snap) => setSalariosBanco(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      () => setSalariosBanco([])
     );
     return unsub;
   }, []);
@@ -232,22 +246,47 @@ export function useDepartamentoPessoal() {
   // ---- Salários ----
   // Upsert de uma linha (dia5|dia20|extra) do doc mensal do funcionário.
   // patch é um objeto parcial com as colunas (salario, banco, flash, ...).
+  // Se o patch traz `banco`, espelha em dpSalariosBanco (o que Salários Folha lê).
   const setSalario = useCallback(
     async (employeeId, storeId, year, month, line, patch, author) => {
       const id = salarioDocId(employeeId, year, month);
-      await setDoc(
-        doc(db, 'dpSalarios', id),
-        {
-          employeeId,
-          store: storeId,
-          year,
-          month,
-          [line]: patch,
-          updatedAt: Timestamp.now(),
-          updatedBy: author?.uid || '',
-        },
-        { merge: true }
-      );
+      const head = {
+        employeeId,
+        store: storeId,
+        year,
+        month,
+        updatedAt: Timestamp.now(),
+        updatedBy: author?.uid || '',
+      };
+      await setDoc(doc(db, 'dpSalarios', id), { ...head, [line]: patch }, { merge: true });
+      if (patch && typeof patch === 'object' && 'banco' in patch) {
+        await setDoc(
+          doc(db, 'dpSalariosBanco', id),
+          { ...head, [line]: { banco: patch.banco ?? null } },
+          { merge: true }
+        );
+      }
+    },
+    []
+  );
+
+  // Salários Folha: grava SÓ o banco de uma linha, nas duas coleções. Em
+  // dpSalarios o merge preserva as outras colunas da linha; as rules só deixam
+  // quem tem dpFolhaEdit tocar nesse campo.
+  const setSalarioBanco = useCallback(
+    async (employeeId, storeId, year, month, line, banco, author) => {
+      const id = salarioDocId(employeeId, year, month);
+      const payload = {
+        employeeId,
+        store: storeId,
+        year,
+        month,
+        [line]: { banco: banco ?? null },
+        updatedAt: Timestamp.now(),
+        updatedBy: author?.uid || '',
+      };
+      await setDoc(doc(db, 'dpSalariosBanco', id), payload, { merge: true });
+      await setDoc(doc(db, 'dpSalarios', id), payload, { merge: true });
     },
     []
   );
@@ -302,6 +341,8 @@ export function useDepartamentoPessoal() {
     absences,
     salarios,
     setSalario,
+    salariosBanco,
+    setSalarioBanco,
     transportes,
     setTransporte,
     addStore,
