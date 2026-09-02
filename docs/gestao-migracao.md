@@ -29,9 +29,20 @@ quando o usuário selecionado é o admin.
   `agenda-tarefas-76ef8` por `scripts/gestao/migrarDadosDash.mjs` (3.092 docs
   em 2026-08-25). O script é idempotente; pra re-rodar precisa das duas
   service accounts (ver cabeçalho dele).
-- **JSON do coletor** (`dashboard-data-<VITE_DASH_TOKEN>.json`): continua sendo
-  publicado pelo runner Python externo (Hub) via FTP em
-  `fabiomachado.com.br/pizzas/data/`. A intranet busca de lá **cross-origin**
+- **JSON do coletor** (`dashboard-data-<VITE_DASH_TOKEN>.json`): publicado
+  pelo runner Python em `scripts/dash/` (todo dia 03:00, tarefa do Task
+  Scheduler `DashboardColeta3h` → `run_dash.cmd`; até 2026-09-02 morava em
+  `machado-labs/_ferramentas/dashboard`) via FTPS em
+  `fabiomachado.com.br/pizzas/data/`. Os coletores são `saipos_vendas.py`
+  (valor, pedidos e pizzas de ontem + mês corrente por canal, via Playwright no
+  Saipos), `news.py`/`harvester.py`/`newsletters.py`/`youtube.py` (IA e
+  mercado), `agenda.py` (Google Calendar), `projetos.py`, `instagram.py` e
+  `extras.py` (clima, câmbio). `config.json` (senhas FTP/IMAP), `*.pickle` e
+  `data/` (histórico de vendas, caches, log) ficam fora do git. Debug:
+  `python runner.py --so-consolida --sem-envio`; só vendas com retry e
+  backfill dos dias que faltarem: `python runner.py --so-vendas --headless`;
+  popular a tabela diária do mês na primeira vez: `--backfill-mes`. A intranet
+  busca de lá **cross-origin**
   — o CORS vem de um `.htaccess` que foi criado nessa pasta
   (`Access-Control-Allow-Origin: *`; a proteção do arquivo segue sendo o token
   no nome). Se o runner um dia limpar a pasta, recriar o `.htaccess`.

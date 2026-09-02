@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
-// JSON do coletor Python (Hub), publicado por FTP em fabiomachado.com.br/pizzas/
-// data/ — mesmo feed do dashboard antigo. O nome do arquivo carrega um token
+// JSON do coletor Python (scripts/dash/runner.py, Task Scheduler 03:00),
+// publicado por FTPS em fabiomachado.com.br/pizzas/data/. O nome do arquivo carrega um token
 // (VITE_DASH_TOKEN) porque a pasta é estática e sem auth: o token deixa a URL
 // não-adivinhável. O CORS pra damepizza.com.br vem de um .htaccess na pasta.
 const TOKEN = import.meta.env.VITE_DASH_TOKEN;

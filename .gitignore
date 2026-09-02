@@ -45,3 +45,8 @@ __pycache__/
 
 # Apps Scripts da Gestao (contem tokens de sync; colar na planilha, nao commitar)
 scripts/gestao/*.gs
+
+# Coletor do Dash (scripts/dash): senhas FTP/IMAP, token OAuth e dados com faturamento
+scripts/dash/config.json
+scripts/dash/*.pickle
+scripts/dash/data/

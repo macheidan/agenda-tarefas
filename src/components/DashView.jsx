@@ -786,7 +786,7 @@ export default function DashView() {
         <div className={styles.erroCard}>
           <div className={styles.erroTitulo}>Não deu pra carregar o Dash</div>
           <p className={styles.erroDesc}>
-            {error}. O JSON é publicado pelo runner em fabiomachado.com.br/pizzas/data/.
+            {error}. O JSON é publicado por scripts/dash/runner.py em fabiomachado.com.br/pizzas/data/.
           </p>
           <button type="button" className={styles.retryBtn} onClick={() => reload()}>
             Tentar de novo
