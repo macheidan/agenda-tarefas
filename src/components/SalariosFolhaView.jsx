@@ -19,7 +19,6 @@ const ALL_STORES = '__all__';
 const LINES = [['dia5', 'Dia 5'], ['dia20', 'Dia 20'], ['extra', 'Extra']];
 
 const num = (l, f) => Number(l?.[f]) || 0;
-const br = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 
 export default function SalariosFolhaView({ visibleStores, storeMeta, employees, salariosBanco, setSalarioBanco, canEdit }) {
   const { user } = useAuth();
@@ -53,17 +52,9 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
     () => employees.filter((e) => relevantSet.has(e.store) && e.active !== false && !isArchived(e)).sort(byName),
     [employees, relevantSet, isArchived]
   );
-  const archived = useMemo(
-    () => employees.filter((e) => relevantSet.has(e.store) && isArchived(e)).sort(byName),
-    [employees, relevantSet, isArchived]
-  );
-  const emp =
-    list.find((e) => e.id === selectedEmpId) ||
-    archived.find((e) => e.id === selectedEmpId) ||
-    list[0] ||
-    archived[0] ||
-    null;
-  const empArchived = !!emp && isArchived(emp);
+  // Arquivados (contrato encerrado antes do mês) ficam fora daqui — a Folha é
+  // só quem está na equipe; o histórico deles mora na aba Salários.
+  const emp = list.find((e) => e.id === selectedEmpId) || list[0] || null;
 
   const docsByMonth = useMemo(() => {
     const m = {};
@@ -117,21 +108,12 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
           value={emp?.id || ''}
           onChange={(e) => setSelectedEmpId(e.target.value)}
         >
-          {list.length === 0 && archived.length === 0 && <option value="">Nenhum funcionário</option>}
+          {list.length === 0 && <option value="">Nenhum funcionário</option>}
           {list.map((e) => (
             <option key={e.id} value={e.id}>
               {isAmbas && storeMeta[e.store] ? `${storeMeta[e.store].name} — ${e.name}` : e.name}
             </option>
           ))}
-          {archived.length > 0 && (
-            <optgroup label="Arquivados">
-              {archived.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {isAmbas && storeMeta[e.store] ? `${storeMeta[e.store].name} — ${e.name}` : e.name}
-                </option>
-              ))}
-            </optgroup>
-          )}
         </select>
       </div>
 
@@ -147,11 +129,6 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
                 </span>
               )}
               {emp.name}
-              {empArchived && (
-                <span className={styles.archivedTag} title={`Contrato encerrado em ${br(emp.contractEnd)}`}>
-                  arquivado · {br(emp.contractEnd)}
-                </span>
-              )}
             </span>
           </div>
 
