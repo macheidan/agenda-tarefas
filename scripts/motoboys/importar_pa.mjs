@@ -8,7 +8,8 @@
 //   2. nome normalizado idêntico
 //   3. fuzzy determinístico (similaridade de Levenshtein >= 0.85, ou primeiro
 //      nome igual + sobrenome com inicial igual)
-//   4. LLM local (`claude -p`) para nomes digitados errado/muito parecidos
+//   4. LLM local (`claude -p --model opus`) para nomes digitados errado/muito parecidos
+//      (regra do Fábio, 2026-09-02: toda tarefa agendada roda em Opus, nunca no padrão da CLI)
 //   5. o que sobrar vai para pa.naoCasados (a tela Adm permite atribuir à mão)
 //
 // Uso:
@@ -128,7 +129,7 @@ function llmMatch(pendentes, roster) {
     'Apelidos, abreviações, erros de digitação e sobrenomes trocados de posição contam como a mesma pessoa.',
   ].join('\n');
   try {
-    const out = execFileSync('claude', ['-p', prompt], {
+    const out = execFileSync('claude', ['-p', prompt, '--model', 'opus'], {
       encoding: 'utf8',
       timeout: 180000,
       shell: true,
