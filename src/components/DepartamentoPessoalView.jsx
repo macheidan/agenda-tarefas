@@ -324,13 +324,11 @@ export default function DepartamentoPessoalView() {
     return { date, mark, t, autoFolga, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
   };
 
-  // Resumo do mês (só para editores). Transporte a Pagar mistura DOIS ciclos:
-  //  • dias corridos + folgas → ciclo a pagar: 06 do mês exibido → 05 do seguinte
-  //    (adiantado no fechamento do dia do pagamento).
-  //  • faltas + feriado trabalhado → ciclo anterior já apurado: 06 do mês
-  //    anterior → 05 do mês exibido (ocorrências que só se conhecem depois).
-  //  • férias → ciclo a pagar, como as folgas (marcadas com antecedência).
-  // Transporte a Pagar = dias − folgas − férias − faltas − feriado trabalhado.
+  // Resumo do mês (só para editores). As colunas de falta e feriado trabalhado
+  // são a apuração do ciclo anterior (06 do mês anterior → 05 do exibido), que é
+  // o que vai pra contabilidade. Transporte a Pagar segue utils/transporte.js:
+  // desconta tudo que já está marcado no ciclo a pagar (06 do exibido → 05 do
+  // seguinte) e, do ciclo anterior, só o que foi marcado depois do pagamento.
   const monthSummary = useMemo(() => {
     if (!canEdit) return [];
     const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
@@ -939,9 +937,10 @@ export default function DepartamentoPessoalView() {
             </button>
           </div>
           <p className={styles.summaryNote}>
-            <strong>Transporte a pagar</strong> de {MONTHS[month]} (pago em 05/{mmSeg}) = dias − folgas − férias − faltas − feriado trabalhado.
-            Dias corridos, folgas e férias contam de 06/{mmAtual} a 05/{mmSeg} (ciclo a pagar);
-            faltas e feriados trabalhados do ciclo anterior já apurado, de 06/{mmAnt} a 05/{mmAtual}.
+            <strong>Transporte a pagar</strong> de {MONTHS[month]} (ciclo 06/{mmAtual} a 05/{mmSeg}, pago adiantado em 05/{mmAtual}) = dias − folgas − férias − faltas − feriado trabalhado,
+            com tudo que já está marcado nesse ciclo. Falta ou feriado trabalhado do ciclo anterior (06/{mmAnt} a 05/{mmAtual})
+            marcado depois do pagamento de 05/{mmAnt} também desconta, porque foi pago sem saber.
+            As colunas de falta e feriado trabalhado mostram a apuração completa do ciclo anterior.
           </p>
           <div className={styles.summaryWrap}>
             <table className={styles.summaryTable}>

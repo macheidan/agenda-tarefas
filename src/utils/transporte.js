@@ -1,14 +1,19 @@
 // Cálculo do "Transporte a Pagar" — fonte única, usada pela Escala e por Salários.
 //
-// O transporte a pagar de um mês mistura DOIS ciclos (regra do fechamento de folha
-// das pizzarias, 06→05):
-//   • dias corridos + folgas → ciclo a pagar: 06 do mês exibido → 05 do seguinte
-//     (adiantado no fechamento do dia do pagamento).
-//   • férias → ciclo a pagar também (são marcadas com antecedência, como as folgas).
-//   • faltas + feriado trabalhado → ciclo anterior já apurado: 06 do mês anterior
-//     → 05 do mês exibido (ocorrências que só se conhecem depois).
-// Transporte a pagar (em dias) = dias corridos − folgas − férias − faltas (just. +
-// não just.) − feriados trabalhados.
+// O transporte é pago ADIANTADO no dia 05 para o ciclo 06 do mês exibido → 05 do
+// seguinte (regra do fechamento de folha das pizzarias). Então:
+//   • ciclo a pagar (06 do mês exibido → 05 do seguinte): desconta tudo que JÁ
+//     está marcado nele — folgas, férias, faltas e feriado trabalhado. É o que
+//     faz um afastamento longo já marcado dar zero, em vez de pagar dias que a
+//     pessoa não vai trabalhar.
+//   • ciclo anterior (06 do mês anterior → 05 do exibido): já foi pago no dia 05
+//     do mês anterior; falta e feriado trabalhado marcados DEPOIS desse pagamento
+//     (createdAt) não foram descontados na época e descontam agora. O que já
+//     estava marcado antes do pagamento entrou no cálculo daquele mês — contar
+//     de novo seria dobrar.
+// Transporte a pagar (em dias) = dias corridos − folgas − férias − faltas e
+// feriados trabalhados do ciclo (marcados) − faltas e feriados trabalhados
+// tardios do ciclo anterior. Nunca fica negativo (não há saldo a compensar).
 
 const pad = (n) => String(n).padStart(2, '0');
 const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
@@ -42,8 +47,22 @@ function isFolgaOn(emp, dt, absences) {
   return false;
 }
 
+// Data (ISO) em que a marcação foi criada. Sem createdAt (registro antigo ou
+// importado) tratamos como tardia: é o comportamento anterior, que descontava
+// toda falta do ciclo anterior.
+function createdISO(a) {
+  const c = a.createdAt;
+  if (!c) return null;
+  const d = typeof c.toDate === 'function' ? c.toDate() : c instanceof Date ? c : new Date(c);
+  return Number.isNaN(d.getTime()) ? null : toISO(d);
+}
+const isFalta = (t) => t === 'falta_justificada' || t === 'falta_injustificada';
+
 // Detalhamento do transporte a pagar de um funcionário no mês exibido.
-// Retorna { dias, daysInWindow, folgas, ferias, faltas, faltaJust, faltaNaoJust, feriadoTrab }.
+// Retorna { dias, daysInWindow, folgas, ferias, faltasCiclo, feriadoTrabCiclo,
+//   faltasTardias, feriadoTrabTardio, faltas, faltaJust, faltaNaoJust, feriadoTrab }.
+// faltas/faltaJust/faltaNaoJust/feriadoTrab são a apuração COMPLETA do ciclo
+// anterior (o que vai pra contabilidade); só a parte tardia entra no transporte.
 export function transporteDetalhe(emp, absences, year, month) {
   const winStart = new Date(year, month, 6);
   const winEnd = new Date(year, month + 1, 5);
@@ -51,6 +70,8 @@ export function transporteDetalhe(emp, absences, year, month) {
   const absEnd = new Date(year, month, 5);
   const absStartISO = toISO(absStart);
   const absEndISO = toISO(absEnd);
+  // O ciclo anterior foi pago no dia 05 do mês anterior (véspera do 06).
+  const prevPaidISO = toISO(new Date(year, month - 1, 5));
   // Datas ISO (YYYY-MM-DD) comparam cronologicamente como string.
   const inAbsWindow = (iso) => iso >= absStartISO && iso <= absEndISO;
   const daysInWindow = Math.round((winEnd - winStart) / 86400000) + 1;
@@ -61,23 +82,34 @@ export function transporteDetalhe(emp, absences, year, month) {
   const faltaJust = occAbs.filter((a) => a.type === 'falta_justificada').length;
   const faltaNaoJust = occAbs.filter((a) => a.type === 'falta_injustificada').length;
   const feriadoTrab = occAbs.filter((a) => a.type === 'feriado_trabalhado').length;
+  // Tardias: marcadas depois do pagamento do ciclo anterior (ou sem createdAt).
+  const tardia = (a) => { const c = createdISO(a); return c == null || c > prevPaidISO; };
+  const faltasTardias = occAbs.filter((a) => isFalta(a.type) && tardia(a)).length;
+  const feriadoTrabTardio = occAbs.filter((a) => a.type === 'feriado_trabalhado' && tardia(a)).length;
 
-  // Folgas e férias no ciclo a pagar. Dia de férias que cai na folga fixa da
-  // semana conta uma vez só (férias), senão seria descontado em dobro.
+  // Ciclo a pagar, dia a dia: a marcação real do dia manda; sem marcação, vale
+  // a folga automática da config. Cada dia desconta no máximo uma vez.
   let folgas = 0;
   let ferias = 0;
+  let faltasCiclo = 0;
+  let feriadoTrabCiclo = 0;
   const dt = new Date(winStart);
   while (dt <= winEnd) {
     const ds = toISO(dt);
     const real = absences.find((a) => a.employeeId === emp.id && a.date === ds);
     if (real?.type === 'ferias') ferias++;
+    else if (isFalta(real?.type)) faltasCiclo++;
+    else if (real?.type === 'feriado_trabalhado') feriadoTrabCiclo++;
     else if (isFolgaOn(emp, dt, absences)) folgas++;
     dt.setDate(dt.getDate() + 1);
   }
 
-  const dias = Math.max(0, daysInWindow - folgas - ferias - faltaJust - faltaNaoJust - feriadoTrab);
+  const dias = Math.max(
+    0,
+    daysInWindow - folgas - ferias - faltasCiclo - feriadoTrabCiclo - faltasTardias - feriadoTrabTardio
+  );
   return {
-    dias, daysInWindow, folgas, ferias,
+    dias, daysInWindow, folgas, ferias, faltasCiclo, feriadoTrabCiclo, faltasTardias, feriadoTrabTardio,
     faltas: faltaJust + faltaNaoJust, faltaJust, faltaNaoJust, feriadoTrab,
   };
 }
