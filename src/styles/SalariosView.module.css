@@ -8,6 +8,9 @@
   --ch-dinheiro: color-mix(in srgb, #52c234 18%, var(--card));
   --ch-total: color-mix(in srgb, var(--text-secondary) 10%, var(--card));
   --font-in: #2f6fef; /* entra (azul) */
+  /* Fundo da célula por grupo de linha (o input por cima fica branco). */
+  --grp-in: color-mix(in srgb, var(--font-in) 10%, var(--card));
+  --grp-out: color-mix(in srgb, var(--danger) 10%, var(--card));
 }
 :global(:root[data-theme='dark']) .container {
   --font-in: #6aa3ff;
@@ -327,6 +330,11 @@
   color: var(--danger);
   font-weight: 700;
 }
+
+/* Fundo por grupo de linha: recebe (azul claro) × desconto (vermelho claro).
+   Vai na td — o campo (moneyInput) mantém o fundo branco do cartão. */
+.grpIn { background: var(--grp-in); }
+.grpOut { background: var(--grp-out); }
 
 /* Cor de fonte por natureza: entra (azul), sai/negativo (vermelho).
    Declaradas após .moneyInput:disabled pra vencer no modo leitura. */

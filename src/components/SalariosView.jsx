@@ -15,10 +15,11 @@ const LINES = [['dia5', 'Dia 5'], ['dia20', 'Dia 20'], ['extra', 'Extra']];
 // Campos editáveis (viram LINHAS na tabela transposta do mês).
 const FIELDS = [
   ['salario', 'Salário'],
-  ['adiantamento', 'Adiantamento'],
   ['transporte', 'Transporte'],
   ['feriado', 'Feriado'],
   ['entrada', 'Entrada'],
+  ['adiantamento', 'Adiantamento'],
+  ['falta', 'Faltas'],
   ['empres', 'Empréstimo'],
   ['adianta', 'Adiantado'],
   ['banco', 'Banco'],
@@ -30,10 +31,11 @@ const FIELDS = [
 // Total são calculados (prefixo __), o resto é editável célula a célula.
 const ANUAL_COLS = [
   ['salario', 'Salário'],
-  ['adiantamento', 'Adiantam.'],
   ['transporte', 'Transporte'],
   ['feriado', 'Feriado'],
   ['entrada', 'Entrada'],
+  ['adiantamento', 'Adiantam.'],
+  ['falta', 'Faltas'],
   ['empres', 'Empres'],
   ['adianta', 'Adiantado'],
   ['__dinheiro', 'Dinheiro'],
@@ -45,12 +47,19 @@ const ANUAL_COLS = [
 // Cores espelhando o bg/fonte das planilhas: canal de pagamento (fundo) e
 // natureza entra/sai (fonte). Banco=pêssego, Flash=rosa, Dinheiro=verde.
 const ROW_BG = { banco: 'chBanco', flash: 'chFlash' };
-// Entrada = entra (azul); Adiantamento/Empréstimo/Adiantado = sai (vermelho).
-const ROW_FONT = { entrada: 'fontIn', adiantamento: 'fontOut', adianta: 'fontOut', empres: 'fontOut' };
-// Adiantamento (desconto do que foi pago no dia 20) e Adiantado (outros
-// adiantamentos, campo antigo) são sempre desconto: o digitado vira negativo.
+// Entrada = entra (azul); Adiantamento/Faltas/Empréstimo/Adiantado = sai (vermelho).
+const ROW_FONT = { entrada: 'fontIn', adiantamento: 'fontOut', falta: 'fontOut', adianta: 'fontOut', empres: 'fontOut' };
+// Fundo da célula por grupo (o campo em si fica branco): o que o funcionário
+// recebe = azul claro; descontos = vermelho claro.
+const ROW_GROUP = {
+  salario: 'grpIn', transporte: 'grpIn', feriado: 'grpIn', entrada: 'grpIn',
+  adiantamento: 'grpOut', falta: 'grpOut', empres: 'grpOut', adianta: 'grpOut',
+};
+// Descontos são sempre negativos: o que for digitado vira negativo no commit.
+// Adiantamento = o que foi pago no dia 20; Adiantado = campo antigo (outros
+// adiantamentos); Faltas = desconto por falta.
 const neg = (v) => (v == null ? null : -Math.abs(v));
-const NORMALIZE = { adiantamento: neg, adianta: neg };
+const NORMALIZE = { adiantamento: neg, falta: neg, adianta: neg };
 // O Salário do Dia 20 (adiantamento pago) vira o Adiantamento (negativo) do
 // Dia 5 do mês seguinte — só a partir de agosto/2026 (mês 7), quando a folha
 // passou a lançar o desconto explícito em vez de já descontar no Salário do dia 5.
@@ -71,8 +80,8 @@ const num = (l, f) => Number(l?.[f]) || 0;
 const br = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 // Σ(B:G) = valor devido ao funcionário na linha.
 const somaBG = (l) =>
-  num(l, 'salario') + num(l, 'adiantamento') + num(l, 'transporte') + num(l, 'feriado') +
-  num(l, 'entrada') + num(l, 'adianta') + num(l, 'empres');
+  num(l, 'salario') + num(l, 'transporte') + num(l, 'feriado') + num(l, 'entrada') +
+  num(l, 'adiantamento') + num(l, 'falta') + num(l, 'empres') + num(l, 'adianta');
 // Dinheiro (H) = Σ(B:G) − (Banco + Flash). Total (K) = Banco + Flash + Dinheiro.
 const dinheiroDe = (l) => somaBG(l) - (num(l, 'banco') + num(l, 'flash'));
 const totalDe = (l) => num(l, 'banco') + num(l, 'flash') + dinheiroDe(l);
@@ -598,8 +607,9 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                               const warn = f === 'banco' && l.liquidoFolha != null && l.liquidoFolha !== '' && v !== Number(l.liquidoFolha);
                               const bgCls = ROW_BG[f] ? styles[ROW_BG[f]] : '';
                               const fontCls = ROW_FONT[f] ? styles[ROW_FONT[f]] : '';
+                              const grpCls = ROW_GROUP[f] ? styles[ROW_GROUP[f]] : '';
                               return (
-                                <td key={f} className={warn ? styles.warnCell : ''} title={warn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})` : ''}>
+                                <td key={f} className={`${grpCls} ${warn ? styles.warnCell : ''}`} title={warn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})` : ''}>
                                   <MoneyInput
                                     className={`${styles.moneyInput} ${bgCls} ${fontCls} ${v < 0 ? styles.neg : ''}`}
                                     value={l[f]}
@@ -694,6 +704,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                   {FIELDS.map(([f, label]) => {
                     const bgCls = ROW_BG[f] ? styles[ROW_BG[f]] : '';
                     const fontCls = ROW_FONT[f] ? styles[ROW_FONT[f]] : '';
+                    const grpCls = ROW_GROUP[f] ? styles[ROW_GROUP[f]] : '';
                     return (
                       <tr key={f}>
                         <td className={styles.rowHead}>{label}</td>
@@ -704,7 +715,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                           const flashWarn = f === 'flash' && line === 'dia5' && dias > 0 && num(l, 'flash') !== flashEsperado;
                           const warn = bancoWarn || flashWarn;
                           return (
-                            <td key={line} className={warn ? styles.warnCell : ''} title={
+                            <td key={line} className={`${grpCls} ${warn ? styles.warnCell : ''}`} title={
                               bancoWarn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})`
                                 : flashWarn ? `Esperado ${formatBRL(flashEsperado)} (transporte × R$12)` : ''
                             }>
