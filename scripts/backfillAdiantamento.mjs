@@ -2,7 +2,8 @@
  * backfillAdiantamento.mjs — Salário do Dia 20 → Adiantamento (negativo) do
  * Dia 5 do mês seguinte, para meses já lançados antes da cópia automática
  * existir na tela (SalariosView, 2026-09-03). Idempotente: só grava quando o
- * Adiantamento do dia 5 seguinte está vazio ou diferente do esperado.
+ * Adiantamento (campo `adiantamento`) do dia 5 seguinte está vazio ou
+ * diferente do esperado. O campo antigo `adianta` (linha Adiantado) não é tocado.
  *
  *   GOOGLE_APPLICATION_CREDENTIALS=./serviceAccount.json \
  *   node scripts/backfillAdiantamento.mjs --de 2026-08 [--ate 2026-08] [--dry]
@@ -53,11 +54,11 @@ for (const [id, s] of Object.entries(byId)) {
   const nm = (s.month + 1) % 12;
   const nextId = `${s.employeeId}_${ny}-${pad(nm + 1)}`;
   const next = byId[nextId];
-  const atual = next?.dia5?.adianta;
+  const atual = next?.dia5?.adiantamento;
   const name = emps[s.employeeId]?.name || s.employeeId;
   if (Number(atual) === esperado) { iguais++; continue; }
 
-  console.log(`${dry ? '[dry] ' : ''}${name}: ${key} dia20 salário ${salario20} → ${nextId}.dia5.adianta ${esperado}${atual != null && atual !== '' ? ` (era ${atual})` : ''}`);
+  console.log(`${dry ? '[dry] ' : ''}${name}: ${key} dia20 salário ${salario20} → ${nextId}.dia5.adiantamento ${esperado}${atual != null && atual !== '' ? ` (era ${atual})` : ''}`);
   if (!dry) {
     await db.collection('dpSalarios').doc(nextId).set(
       {
@@ -65,7 +66,7 @@ for (const [id, s] of Object.entries(byId)) {
         store: s.store,
         year: ny,
         month: nm,
-        dia5: { ...(next?.dia5 || {}), adianta: esperado },
+        dia5: { ...(next?.dia5 || {}), adiantamento: esperado },
         updatedAt: new Date(),
         updatedBy: 'backfillAdiantamento',
       },

@@ -15,11 +15,12 @@ const LINES = [['dia5', 'Dia 5'], ['dia20', 'Dia 20'], ['extra', 'Extra']];
 // Campos editáveis (viram LINHAS na tabela transposta do mês).
 const FIELDS = [
   ['salario', 'Salário'],
-  ['adianta', 'Adiantamento'],
+  ['adiantamento', 'Adiantamento'],
   ['transporte', 'Transporte'],
   ['feriado', 'Feriado'],
   ['entrada', 'Entrada'],
   ['empres', 'Empréstimo'],
+  ['adianta', 'Adiantado'],
   ['banco', 'Banco'],
   ['flash', 'Flash'],
   ['liquidoFolha', 'Líq. folha'],
@@ -29,11 +30,12 @@ const FIELDS = [
 // Total são calculados (prefixo __), o resto é editável célula a célula.
 const ANUAL_COLS = [
   ['salario', 'Salário'],
+  ['adiantamento', 'Adiantam.'],
   ['transporte', 'Transporte'],
   ['feriado', 'Feriado'],
   ['entrada', 'Entrada'],
-  ['adianta', 'Adianta'],
   ['empres', 'Empres'],
+  ['adianta', 'Adiantado'],
   ['__dinheiro', 'Dinheiro'],
   ['banco', 'Banco'],
   ['flash', 'Flash'],
@@ -43,10 +45,12 @@ const ANUAL_COLS = [
 // Cores espelhando o bg/fonte das planilhas: canal de pagamento (fundo) e
 // natureza entra/sai (fonte). Banco=pêssego, Flash=rosa, Dinheiro=verde.
 const ROW_BG = { banco: 'chBanco', flash: 'chFlash' };
-// Entrada = entra (azul); Adianta/Empréstimo = sai (vermelho).
-const ROW_FONT = { entrada: 'fontIn', adianta: 'fontOut', empres: 'fontOut' };
-// Adiantamento é sempre desconto: o que for digitado vira negativo no commit.
-const NORMALIZE = { adianta: (v) => (v == null ? null : -Math.abs(v)) };
+// Entrada = entra (azul); Adiantamento/Empréstimo/Adiantado = sai (vermelho).
+const ROW_FONT = { entrada: 'fontIn', adiantamento: 'fontOut', adianta: 'fontOut', empres: 'fontOut' };
+// Adiantamento (desconto do que foi pago no dia 20) e Adiantado (outros
+// adiantamentos, campo antigo) são sempre desconto: o digitado vira negativo.
+const neg = (v) => (v == null ? null : -Math.abs(v));
+const NORMALIZE = { adiantamento: neg, adianta: neg };
 // O Salário do Dia 20 (adiantamento pago) vira o Adiantamento (negativo) do
 // Dia 5 do mês seguinte — só a partir de agosto/2026 (mês 7), quando a folha
 // passou a lançar o desconto explícito em vez de já descontar no Salário do dia 5.
@@ -67,7 +71,7 @@ const num = (l, f) => Number(l?.[f]) || 0;
 const br = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 // Σ(B:G) = valor devido ao funcionário na linha.
 const somaBG = (l) =>
-  num(l, 'salario') + num(l, 'transporte') + num(l, 'feriado') +
+  num(l, 'salario') + num(l, 'adiantamento') + num(l, 'transporte') + num(l, 'feriado') +
   num(l, 'entrada') + num(l, 'adianta') + num(l, 'empres');
 // Dinheiro (H) = Σ(B:G) − (Banco + Flash). Total (K) = Banco + Flash + Dinheiro.
 const dinheiroDe = (l) => somaBG(l) - (num(l, 'banco') + num(l, 'flash'));
@@ -285,7 +289,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
       // O mês seguinte pode estar no ano que vem (fora de docsByMonth): lê direto de salarios.
       const nextDoc = salarios.find((d) => d.employeeId === emp.id && d.year === ny && d.month === nm);
       const nextLine = nextDoc?.dia5 || {};
-      setSalario(emp.id, emp.store, ny, nm, 'dia5', { ...nextLine, adianta: NORMALIZE.adianta(value) }, user);
+      setSalario(emp.id, emp.store, ny, nm, 'dia5', { ...nextLine, adiantamento: neg(value) }, user);
     }
   };
   const commit = (line, field, value) => commitAt(month, line, field, value);
