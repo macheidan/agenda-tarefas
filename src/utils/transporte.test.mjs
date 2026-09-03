@@ -45,6 +45,20 @@ test('ciclo anterior: só marcação tardia desconta; a apuração completa cont
   assert.equal(r.dias, 27 - 3);
 });
 
+test('falta marcada depois do pagamento do ciclo não conta nele, só como tardia no seguinte', () => {
+  // Ciclo de agosto pago em 05/08; falta de 20/08 marcada em 22/08.
+  const abs = [{ employeeId: 'e1', date: '2026-08-20', type: 'falta_justificada', createdAt: new Date(2026, 7, 22) }];
+  const ago = transporteDetalhe(emp, abs, 2026, 7);
+  assert.equal(ago.faltasCiclo, 0);
+  assert.equal(ago.dias, 27); // o número de agosto não muda depois de pago
+  const set = transporteDetalhe(emp, abs, 2026, 8);
+  assert.equal(set.faltasTardias, 1);
+  // Marcada antes do pagamento: conta em agosto e não repete em setembro.
+  const abs2 = [{ employeeId: 'e1', date: '2026-08-20', type: 'falta_justificada', createdAt: new Date(2026, 7, 1) }];
+  assert.equal(transporteDetalhe(emp, abs2, 2026, 7).faltasCiclo, 1);
+  assert.equal(transporteDetalhe(emp, abs2, 2026, 8).faltasTardias, 0);
+});
+
 test('createdAt como Timestamp do Firestore (toDate)', () => {
   const abs = [{ employeeId: 'e1', date: '2026-07-10', type: 'falta_justificada', createdAt: { toDate: () => cedo } }];
   assert.equal(transporteDetalhe(emp, abs, 2026, 7).faltasTardias, 0);

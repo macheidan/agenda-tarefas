@@ -327,8 +327,8 @@ export default function DepartamentoPessoalView() {
   // Resumo do mês (só para editores). As colunas de falta e feriado trabalhado
   // são a apuração do ciclo anterior (06 do mês anterior → 05 do exibido), que é
   // o que vai pra contabilidade. Transporte a Pagar segue utils/transporte.js:
-  // desconta tudo que já está marcado no ciclo a pagar (06 do exibido → 05 do
-  // seguinte) e, do ciclo anterior, só o que foi marcado depois do pagamento.
+  // desconta o que estava marcado no ciclo a pagar (06 do exibido → 05 do
+  // seguinte) até o pagamento e, do ciclo anterior, o que foi marcado depois.
   const monthSummary = useMemo(() => {
     if (!canEdit) return [];
     const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
@@ -938,8 +938,8 @@ export default function DepartamentoPessoalView() {
           </div>
           <p className={styles.summaryNote}>
             <strong>Transporte a pagar</strong> de {MONTHS[month]} (ciclo 06/{mmAtual} a 05/{mmSeg}, pago adiantado em 05/{mmAtual}) = dias − folgas − férias − faltas − feriado trabalhado,
-            com tudo que já está marcado nesse ciclo. Falta ou feriado trabalhado do ciclo anterior (06/{mmAnt} a 05/{mmAtual})
-            marcado depois do pagamento de 05/{mmAnt} também desconta, porque foi pago sem saber.
+            com o que estava marcado até esse pagamento. Falta ou feriado trabalhado marcado depois do pagamento desconta
+            uma vez só, no mês seguinte: por isso o ciclo anterior (06/{mmAnt} a 05/{mmAtual}) entra aqui com o que foi marcado depois de 05/{mmAnt}.
             As colunas de falta e feriado trabalhado mostram a apuração completa do ciclo anterior.
           </p>
           <div className={styles.summaryWrap}>
