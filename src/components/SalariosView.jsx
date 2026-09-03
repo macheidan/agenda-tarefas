@@ -15,10 +15,10 @@ const LINES = [['dia5', 'Dia 5'], ['dia20', 'Dia 20'], ['extra', 'Extra']];
 // Campos editáveis (viram LINHAS na tabela transposta do mês).
 const FIELDS = [
   ['salario', 'Salário'],
+  ['adianta', 'Adiantamento'],
   ['transporte', 'Transporte'],
   ['feriado', 'Feriado'],
   ['entrada', 'Entrada'],
-  ['adianta', 'Adianta'],
   ['empres', 'Empréstimo'],
   ['banco', 'Banco'],
   ['flash', 'Flash'],
@@ -45,6 +45,14 @@ const ANUAL_COLS = [
 const ROW_BG = { banco: 'chBanco', flash: 'chFlash' };
 // Entrada = entra (azul); Adianta/Empréstimo = sai (vermelho).
 const ROW_FONT = { entrada: 'fontIn', adianta: 'fontOut', empres: 'fontOut' };
+// Adiantamento é sempre desconto: o que for digitado vira negativo no commit.
+const NORMALIZE = { adianta: (v) => (v == null ? null : -Math.abs(v)) };
+// O Salário do Dia 20 (adiantamento pago) vira o Adiantamento (negativo) do
+// Dia 5 do mês seguinte — só a partir de agosto/2026 (mês 7), quando a folha
+// passou a lançar o desconto explícito em vez de já descontar no Salário do dia 5.
+const ADIANTA_AUTO_DESDE = { year: 2026, month: 7 };
+const autoAdianta = (y, m) =>
+  y > ADIANTA_AUTO_DESDE.year || (y === ADIANTA_AUTO_DESDE.year && m >= ADIANTA_AUTO_DESDE.month);
 
 // Ícone "copiar" (feather copy), herda a cor via currentColor.
 const CopyIcon = () => (
@@ -270,6 +278,15 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     if (!isAdmin || !emp) return;
     const existing = docsByMonth[m]?.[line] || {};
     setSalario(emp.id, emp.store, year, m, line, { ...existing, [field]: value }, user);
+    // Salário do Dia 20 → Adiantamento (negativo) do Dia 5 do mês seguinte.
+    if (line === 'dia20' && field === 'salario' && autoAdianta(year, m)) {
+      const ny = m === 11 ? year + 1 : year;
+      const nm = (m + 1) % 12;
+      // O mês seguinte pode estar no ano que vem (fora de docsByMonth): lê direto de salarios.
+      const nextDoc = salarios.find((d) => d.employeeId === emp.id && d.year === ny && d.month === nm);
+      const nextLine = nextDoc?.dia5 || {};
+      setSalario(emp.id, emp.store, ny, nm, 'dia5', { ...nextLine, adianta: NORMALIZE.adianta(value) }, user);
+    }
   };
   const commit = (line, field, value) => commitAt(month, line, field, value);
   // Observações do mês (campo livre no doc dpSalarios, fora das linhas dia5/dia20/extra).
@@ -583,6 +600,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                                     className={`${styles.moneyInput} ${bgCls} ${fontCls} ${v < 0 ? styles.neg : ''}`}
                                     value={l[f]}
                                     disabled={!isAdmin}
+                                    normalize={NORMALIZE[f]}
                                     onCommit={(nv) => commitAt(m, line, f, nv)}
                                   />
                                 </td>
@@ -686,7 +704,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                               bancoWarn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})`
                                 : flashWarn ? `Esperado ${formatBRL(flashEsperado)} (transporte × R$12)` : ''
                             }>
-                              <MoneyInput className={`${styles.moneyInput} ${bgCls} ${fontCls} ${v < 0 ? styles.neg : ''}`} value={l[f]} disabled={!isAdmin} onCommit={(nv) => commit(line, f, nv)} />
+                              <MoneyInput className={`${styles.moneyInput} ${bgCls} ${fontCls} ${v < 0 ? styles.neg : ''}`} value={l[f]} disabled={!isAdmin} normalize={NORMALIZE[f]} onCommit={(nv) => commit(line, f, nv)} />
                             </td>
                           );
                         })}
