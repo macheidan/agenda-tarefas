@@ -39,14 +39,14 @@ service cloud.firestore {
       return isAdmin() || hasSettingFlag('dpEditor');
     }
 
-    // ---- Salários Folha: só o campo `banco` das linhas dia5/dia20/extra ----
-    function lineOnlyBanco(before, after, line) {
-      return after.get(line, {}).diff(before.get(line, {})).affectedKeys().hasOnly(['banco']);
+    // ---- Salários Folha: só os campos `banco` e `flash` das linhas dia5/dia20/extra ----
+    function lineOnlyFolha(before, after, line) {
+      return after.get(line, {}).diff(before.get(line, {})).affectedKeys().hasOnly(['banco', 'flash']);
     }
     function folhaLinesOk(before, after) {
-      return lineOnlyBanco(before, after, 'dia5') &&
-        lineOnlyBanco(before, after, 'dia20') &&
-        lineOnlyBanco(before, after, 'extra');
+      return lineOnlyFolha(before, after, 'dia5') &&
+        lineOnlyFolha(before, after, 'dia20') &&
+        lineOnlyFolha(before, after, 'extra');
     }
     function folhaCreateOk(after) {
       return after.keys().hasOnly(['employeeId', 'store', 'year', 'month', 'dia5', 'dia20', 'extra', 'updatedAt', 'updatedBy']) &&
@@ -56,12 +56,12 @@ service cloud.firestore {
       return after.diff(before).affectedKeys().hasOnly(['dia5', 'dia20', 'extra', 'updatedAt', 'updatedBy']) &&
         folhaLinesOk(before, after);
     }
-    // Doc do espelho dpSalariosBanco: só as chaves do cabeçalho + banco por linha.
-    function bancoOnlyDoc(d) {
+    // Doc do espelho dpSalariosBanco: só as chaves do cabeçalho + banco/flash por linha.
+    function folhaOnlyDoc(d) {
       return d.keys().hasOnly(['employeeId', 'store', 'year', 'month', 'dia5', 'dia20', 'extra', 'updatedAt', 'updatedBy']) &&
-        d.get('dia5', {}).keys().hasOnly(['banco']) &&
-        d.get('dia20', {}).keys().hasOnly(['banco']) &&
-        d.get('extra', {}).keys().hasOnly(['banco']);
+        d.get('dia5', {}).keys().hasOnly(['banco', 'flash']) &&
+        d.get('dia20', {}).keys().hasOnly(['banco', 'flash']) &&
+        d.get('extra', {}).keys().hasOnly(['banco', 'flash']);
     }
 
     function isComprasEditor() {
@@ -252,21 +252,21 @@ service cloud.firestore {
     match /dpSalarios/{salarioId} {
       allow read: if isAdmin();
       allow write: if isAdmin();
-      // Salários Folha (flag dpFolhaEdit): pode gravar SÓ o campo `banco` das
+      // Salários Folha (flag dpFolhaEdit): pode gravar SÓ `banco` e `flash` das
       // linhas dia5/dia20/extra — nunca lê o doc inteiro (o read segue admin).
       // O doc é gravado com setDoc(merge), então request.resource.data é o
       // resultado da fusão e o diff mostra exatamente o que mudou.
       allow create: if hasSettingFlag('dpFolhaEdit') && folhaCreateOk(request.resource.data);
       allow update: if hasSettingFlag('dpFolhaEdit') && folhaUpdateOk(resource.data, request.resource.data);
     }
-    // Espelho de dpSalarios com SÓ o campo banco de cada linha — é o que a
+    // Espelho de dpSalarios com SÓ banco e flash de cada linha — é o que a
     // subseção Salários Folha lê. Existe porque leitura de doc não filtra por
     // campo: liberar dpSalarios exporia salário/adiantamento/empréstimo.
     // Mantido em dupla escrita pelas duas telas e pelo importFolha.mjs.
     match /dpSalariosBanco/{salarioId} {
       // Editar implica ver: dpFolhaEdit também libera a leitura do espelho.
       allow read: if isAdmin() || hasSettingFlag('dpFolhaVisible') || hasSettingFlag('dpFolhaEdit');
-      allow write: if isAdmin() || (hasSettingFlag('dpFolhaEdit') && bancoOnlyDoc(request.resource.data));
+      allow write: if isAdmin() || (hasSettingFlag('dpFolhaEdit') && folhaOnlyDoc(request.resource.data));
     }
     // Transporte (aba Transp): liberação própria (dpTranspVisible), desligada
     // por padrão. Escrita só admin, como em Salários.

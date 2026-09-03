@@ -1,15 +1,17 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
+import { formatBRL } from '../utils/money';
+import { transporteDetalhe } from '../utils/transporte';
 import styles from '../styles/SalariosView.module.css';
 
 // Salários Folha: a ficha "Por funcionário" reduzida ao que quem fecha a folha
-// precisa — loja, funcionário, mês e o valor que vai pro BANCO em cada linha.
-// Sem totais, sem histórico do ano: só o que se digita.
-// Lê o espelho dpSalariosBanco (só banco), nunca dpSalarios: é o que permite
-// liberar a tela pra outro usuário sem expor salário/adiantamento/empréstimo.
-// Editar aqui grava nas duas coleções (setSalarioBanco), então a aba Salários
-// vê a mudança, e vice-versa.
+// precisa — loja, funcionário, mês e, em cada linha, o que vai pro BANCO e pro
+// FLASH (vale por dia de transporte). Sem totais, sem histórico do ano.
+// Lê o espelho dpSalariosBanco (só banco e flash), nunca dpSalarios: é o que
+// permite liberar a tela pra outro usuário sem expor salário/adiantamento/
+// empréstimo. Editar aqui grava nas duas coleções (setSalarioFolha), então a
+// aba Salários vê a mudança, e vice-versa.
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -17,10 +19,13 @@ const MONTHS = [
 ];
 const ALL_STORES = '__all__';
 const LINES = [['dia5', 'Dia 5'], ['dia20', 'Dia 20'], ['extra', 'Extra']];
+const VALE_DIA = 12; // R$ por dia de transporte (base do Flash) — mesmo valor da aba Salários.
+// Linhas da tabela: campo, rótulo e classe de fundo (mesmas cores da aba Salários).
+const FIELDS = [['banco', 'Banco', styles.chBanco], ['flash', 'Flash', styles.chFlash]];
 
 const num = (l, f) => Number(l?.[f]) || 0;
 
-export default function SalariosFolhaView({ visibleStores, storeMeta, employees, salariosBanco, setSalarioBanco, canEdit }) {
+export default function SalariosFolhaView({ visibleStores, storeMeta, employees, absences, salariosBanco, setSalarioFolha, canEdit }) {
   const { user } = useAuth();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -66,9 +71,13 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
   }, [salariosBanco, emp, year]);
   const doc = docsByMonth[month];
 
-  const commit = (line, value) => {
+  // Flash esperado do Dia 5 = dias de transporte a pagar × R$12 (regra da aba Salários).
+  const dias = emp ? transporteDetalhe(emp, absences || [], year, month).dias : 0;
+  const flashEsperado = dias * VALE_DIA;
+
+  const commit = (line, field, value) => {
     if (!canEdit || !emp) return;
-    setSalarioBanco(emp.id, emp.store, year, month, line, value, user);
+    setSalarioFolha(emp.id, emp.store, year, month, line, { [field]: value }, user);
   };
 
   const prevMonth = () => {
@@ -140,7 +149,13 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
                   <span className={styles.monthLabel}>{MONTHS[month]} {year}</span>
                   <button className={styles.navBtn} onClick={nextMonth} aria-label="Próximo mês">›</button>
                 </div>
-                {!canEdit && <span className={styles.transpInfo}>Somente leitura</span>}
+                <span className={styles.transpInfo}>
+                  Transporte: <strong>{dias}</strong> dias · Flash esperado <strong>{formatBRL(flashEsperado)}</strong>
+                  {canEdit && dias > 0 && num(doc?.dia5, 'flash') !== flashEsperado && (
+                    <button className={styles.applyBtn} title="Preencher o Flash do Dia 5 com transporte × R$12" onClick={() => commit('dia5', 'flash', flashEsperado)}>usar</button>
+                  )}
+                  {!canEdit && <> · Somente leitura</>}
+                </span>
               </div>
 
               <table className={styles.table}>
@@ -151,22 +166,25 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td className={styles.rowHead}>Banco</td>
-                    {LINES.map(([line]) => {
-                      const v = num(doc?.[line], 'banco');
-                      return (
-                        <td key={line}>
-                          <MoneyInput
-                            className={`${styles.moneyInput} ${styles.chBanco} ${v < 0 ? styles.neg : ''}`}
-                            value={doc?.[line]?.banco}
-                            disabled={!canEdit}
-                            onCommit={(nv) => commit(line, nv)}
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
+                  {FIELDS.map(([field, label, bgCls]) => (
+                    <tr key={field}>
+                      <td className={styles.rowHead}>{label}</td>
+                      {LINES.map(([line]) => {
+                        const v = num(doc?.[line], field);
+                        const flashWarn = field === 'flash' && line === 'dia5' && dias > 0 && v !== flashEsperado;
+                        return (
+                          <td key={line} className={flashWarn ? styles.warnCell : ''} title={flashWarn ? `Esperado ${formatBRL(flashEsperado)} (transporte × R$12)` : ''}>
+                            <MoneyInput
+                              className={`${styles.moneyInput} ${bgCls} ${v < 0 ? styles.neg : ''}`}
+                              value={doc?.[line]?.[field]}
+                              disabled={!canEdit}
+                              onCommit={(nv) => commit(line, field, nv)}
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

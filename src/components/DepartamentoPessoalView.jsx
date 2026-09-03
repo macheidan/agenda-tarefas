@@ -36,9 +36,9 @@ export default function DepartamentoPessoalView() {
   // Salários é dado sensível: EXCLUSIVO do admin (as rules de dpSalarios também
   // só liberam leitura pro admin — a antiga flag dpSalariosVisible foi aposentada).
   const canSalarios = isAdmin;
-  // Salários Folha: só o campo Banco, lido do espelho dpSalariosBanco. Flags
+  // Salários Folha: só Banco e Flash, lidos do espelho dpSalariosBanco. Flags
   // dpFolhaVisible (vê) e dpFolhaEdit (edita), desligadas por padrão; editar
-  // implica ver — quem preenche o Banco não precisa do outro switch.
+  // implica ver — quem preenche Banco/Flash não precisa do outro switch.
   const canFolhaEdit = isAdmin || settings?.dpFolhaEdit === true;
   const canFolha = canFolhaEdit || settings?.dpFolhaVisible === true;
   // Transp tem liberação própria (dpTranspVisible), desligada por padrão.
@@ -54,7 +54,7 @@ export default function DepartamentoPessoalView() {
     salarios,
     setSalario,
     salariosBanco,
-    setSalarioBanco,
+    setSalarioFolha,
     transportes,
     setTransporte,
     addStore,
@@ -485,8 +485,9 @@ export default function DepartamentoPessoalView() {
           visibleStores={visibleStores}
           storeMeta={storeMeta}
           employees={employees}
+          absences={absences}
           salariosBanco={salariosBanco}
-          setSalarioBanco={setSalarioBanco}
+          setSalarioFolha={setSalarioFolha}
           canEdit={canFolhaEdit}
         />
       )}

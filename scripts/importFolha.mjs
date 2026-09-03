@@ -20,8 +20,8 @@
  * Firestore (arquivo serviceAccount.json na raiz, ou GOOGLE_APPLICATION_CREDENTIALS).
  * serviceAccount*.json está no .gitignore — NUNCA commitar.
  *
- * O `banco` de cada linha também vai pro espelho `dpSalariosBanco` (só esse
- * campo), que é o que a subseção Salários Folha lê. Backfill do espelho:
+ * `banco` e `flash` de cada linha também vão pro espelho `dpSalariosBanco` (só
+ * esses campos), que é o que a subseção Salários Folha lê. Backfill do espelho:
  * scripts/espelharSalariosBanco.mjs.
  */
 import { readFileSync } from 'node:fs';
@@ -154,10 +154,9 @@ async function main() {
     if (!args.dry) {
       const head = { employeeId: emp.id, store, year, month, updatedAt: new Date(), updatedBy: 'importFolha' };
       await db.collection('dpSalarios').doc(id).set({ ...head, [args.line]: patch }, { merge: true });
-      await db.collection('dpSalariosBanco').doc(id).set(
-        { ...head, [args.line]: { banco: patch.banco ?? null } },
-        { merge: true }
-      );
+      const mirror = { banco: patch.banco ?? null };
+      if ('flash' in patch) mirror.flash = patch.flash ?? null;
+      await db.collection('dpSalariosBanco').doc(id).set({ ...head, [args.line]: mirror }, { merge: true });
     }
     ok++;
   }

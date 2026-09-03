@@ -44,6 +44,16 @@ export const salarioDocId = (employeeId, year, month) =>
 
 // Transporte (aba Transp): 1 doc por perfil/mês. O perfil é a "aba" da planilha
 // (rumi, patricia), não o id do funcionário — cada uma tem um cálculo próprio.
+// Campos de uma linha de salário que o espelho dpSalariosBanco carrega (o que a
+// Salários Folha vê e edita). Devolve null se o patch não toca nenhum deles.
+export const FOLHA_FIELDS = ['banco', 'flash'];
+export function folhaFieldsOf(patch) {
+  if (!patch || typeof patch !== 'object') return null;
+  const out = {};
+  for (const f of FOLHA_FIELDS) if (f in patch) out[f] = patch[f] ?? null;
+  return Object.keys(out).length ? out : null;
+}
+
 export const transporteDocId = (perfil, year, month) =>
   `${perfil}_${year}-${pad(month + 1)}`;
 
@@ -54,7 +64,7 @@ export function useDepartamentoPessoal() {
   const [employees, setEmployees] = useState([]);
   const [absences, setAbsences] = useState([]);
   const [salarios, setSalarios] = useState([]);
-  // Espelho de dpSalarios com só o `banco` de cada linha (Salários Folha).
+  // Espelho de dpSalarios com só `banco` e `flash` de cada linha (Salários Folha).
   const [salariosBanco, setSalariosBanco] = useState([]);
   const [transportes, setTransportes] = useState([]);
 
@@ -129,7 +139,7 @@ export function useDepartamentoPessoal() {
     return unsub;
   }, []);
 
-  // Espelho só-banco (dpSalariosBanco): lê quem tem dpFolhaVisible (ou admin).
+  // Espelho banco+flash (dpSalariosBanco): lê quem tem dpFolhaVisible (ou admin).
   // Mesmo tratamento do permission-denied: sem acesso, lista vazia.
   useEffect(() => {
     const ref = collection(db, 'dpSalariosBanco');
@@ -246,7 +256,7 @@ export function useDepartamentoPessoal() {
   // ---- Salários ----
   // Upsert de uma linha (dia5|dia20|extra) do doc mensal do funcionário.
   // patch é um objeto parcial com as colunas (salario, banco, flash, ...).
-  // Se o patch traz `banco`, espelha em dpSalariosBanco (o que Salários Folha lê).
+  // Se o patch traz `banco` ou `flash`, espelha em dpSalariosBanco (o que Salários Folha lê).
   const setSalario = useCallback(
     async (employeeId, storeId, year, month, line, patch, author) => {
       const id = salarioDocId(employeeId, year, month);
@@ -259,29 +269,26 @@ export function useDepartamentoPessoal() {
         updatedBy: author?.uid || '',
       };
       await setDoc(doc(db, 'dpSalarios', id), { ...head, [line]: patch }, { merge: true });
-      if (patch && typeof patch === 'object' && 'banco' in patch) {
-        await setDoc(
-          doc(db, 'dpSalariosBanco', id),
-          { ...head, [line]: { banco: patch.banco ?? null } },
-          { merge: true }
-        );
+      const mirror = folhaFieldsOf(patch);
+      if (mirror) {
+        await setDoc(doc(db, 'dpSalariosBanco', id), { ...head, [line]: mirror }, { merge: true });
       }
     },
     []
   );
 
-  // Salários Folha: grava SÓ o banco de uma linha, nas duas coleções. Em
+  // Salários Folha: grava SÓ banco/flash de uma linha, nas duas coleções. Em
   // dpSalarios o merge preserva as outras colunas da linha; as rules só deixam
-  // quem tem dpFolhaEdit tocar nesse campo.
-  const setSalarioBanco = useCallback(
-    async (employeeId, storeId, year, month, line, banco, author) => {
+  // quem tem dpFolhaEdit tocar nesses campos. patch = { banco } ou { flash }.
+  const setSalarioFolha = useCallback(
+    async (employeeId, storeId, year, month, line, patch, author) => {
       const id = salarioDocId(employeeId, year, month);
       const payload = {
         employeeId,
         store: storeId,
         year,
         month,
-        [line]: { banco: banco ?? null },
+        [line]: folhaFieldsOf(patch) || {},
         updatedAt: Timestamp.now(),
         updatedBy: author?.uid || '',
       };
@@ -342,7 +349,7 @@ export function useDepartamentoPessoal() {
     salarios,
     setSalario,
     salariosBanco,
-    setSalarioBanco,
+    setSalarioFolha,
     transportes,
     setTransporte,
     addStore,
