@@ -4,9 +4,11 @@
 // das pizzarias, 06→05):
 //   • dias corridos + folgas → ciclo a pagar: 06 do mês exibido → 05 do seguinte
 //     (adiantado no fechamento do dia do pagamento).
-//   • faltas → ciclo anterior já apurado: 06 do mês anterior → 05 do mês exibido
-//     (ocorrências que só se conhecem depois).
-// Transporte a pagar (em dias) = dias corridos − folgas − faltas (just. + não just.).
+//   • férias → ciclo a pagar também (são marcadas com antecedência, como as folgas).
+//   • faltas + feriado trabalhado → ciclo anterior já apurado: 06 do mês anterior
+//     → 05 do mês exibido (ocorrências que só se conhecem depois).
+// Transporte a pagar (em dias) = dias corridos − folgas − férias − faltas (just. +
+// não just.) − feriados trabalhados.
 
 const pad = (n) => String(n).padStart(2, '0');
 const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
@@ -41,7 +43,7 @@ function isFolgaOn(emp, dt, absences) {
 }
 
 // Detalhamento do transporte a pagar de um funcionário no mês exibido.
-// Retorna { dias, daysInWindow, folgas, faltas, faltaJust, faltaNaoJust }.
+// Retorna { dias, daysInWindow, folgas, ferias, faltas, faltaJust, faltaNaoJust, feriadoTrab }.
 export function transporteDetalhe(emp, absences, year, month) {
   const winStart = new Date(year, month, 6);
   const winEnd = new Date(year, month + 1, 5);
@@ -58,16 +60,26 @@ export function transporteDetalhe(emp, absences, year, month) {
   );
   const faltaJust = occAbs.filter((a) => a.type === 'falta_justificada').length;
   const faltaNaoJust = occAbs.filter((a) => a.type === 'falta_injustificada').length;
+  const feriadoTrab = occAbs.filter((a) => a.type === 'feriado_trabalhado').length;
 
+  // Folgas e férias no ciclo a pagar. Dia de férias que cai na folga fixa da
+  // semana conta uma vez só (férias), senão seria descontado em dobro.
   let folgas = 0;
+  let ferias = 0;
   const dt = new Date(winStart);
   while (dt <= winEnd) {
-    if (isFolgaOn(emp, dt, absences)) folgas++;
+    const ds = toISO(dt);
+    const real = absences.find((a) => a.employeeId === emp.id && a.date === ds);
+    if (real?.type === 'ferias') ferias++;
+    else if (isFolgaOn(emp, dt, absences)) folgas++;
     dt.setDate(dt.getDate() + 1);
   }
 
-  const dias = Math.max(0, daysInWindow - folgas - faltaJust - faltaNaoJust);
-  return { dias, daysInWindow, folgas, faltas: faltaJust + faltaNaoJust, faltaJust, faltaNaoJust };
+  const dias = Math.max(0, daysInWindow - folgas - ferias - faltaJust - faltaNaoJust - feriadoTrab);
+  return {
+    dias, daysInWindow, folgas, ferias,
+    faltas: faltaJust + faltaNaoJust, faltaJust, faltaNaoJust, feriadoTrab,
+  };
 }
 
 // Atalho: só o número de dias de transporte a pagar (base do Flash = dias × 12).

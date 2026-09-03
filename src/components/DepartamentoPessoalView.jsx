@@ -329,7 +329,8 @@ export default function DepartamentoPessoalView() {
   //    (adiantado no fechamento do dia do pagamento).
   //  • faltas + feriado trabalhado → ciclo anterior já apurado: 06 do mês
   //    anterior → 05 do mês exibido (ocorrências que só se conhecem depois).
-  // Transporte a Pagar = dias − folgas − faltas.
+  //  • férias → ciclo a pagar, como as folgas (marcadas com antecedência).
+  // Transporte a Pagar = dias − folgas − férias − faltas − feriado trabalhado.
   const monthSummary = useMemo(() => {
     if (!canEdit) return [];
     const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
@@ -346,11 +347,10 @@ export default function DepartamentoPessoalView() {
         occAbs.filter((a) => a.type === type).map((a) => a.date).sort();
       const faltaJustDatesISO = datesOf('falta_justificada');
       const faltaNaoJustDatesISO = datesOf('falta_injustificada');
-      const feriadoTrab = occAbs.filter((a) => a.type === 'feriado_trabalhado').length;
-      // Folgas (ciclo a pagar) e dias de transporte vêm do helper compartilhado.
-      const { dias: diasTrab, folgas, faltaJust, faltaNaoJust } =
+      // Folgas, férias, feriado trabalhado e dias de transporte vêm do helper compartilhado.
+      const { dias: diasTrab, folgas, ferias, faltaJust, faltaNaoJust, feriadoTrab } =
         transporteDetalhe(emp, absences, year, month);
-      return { id: emp.id, name: emp.name, store: emp.store, faltaJust, faltaNaoJust, faltaJustDatesISO, faltaNaoJustDatesISO, feriadoTrab, folgas, diasTrab };
+      return { id: emp.id, name: emp.name, store: emp.store, faltaJust, faltaNaoJust, faltaJustDatesISO, faltaNaoJustDatesISO, feriadoTrab, folgas, ferias, diasTrab };
     });
   }, [canEdit, storeEmployees, absences, year, month]);
 
@@ -362,9 +362,10 @@ export default function DepartamentoPessoalView() {
           faltaNaoJust: t.faltaNaoJust + r.faltaNaoJust,
           feriadoTrab: t.feriadoTrab + r.feriadoTrab,
           folgas: t.folgas + r.folgas,
+          ferias: t.ferias + r.ferias,
           diasTrab: t.diasTrab + r.diasTrab,
         }),
-        { faltaJust: 0, faltaNaoJust: 0, feriadoTrab: 0, folgas: 0, diasTrab: 0 }
+        { faltaJust: 0, faltaNaoJust: 0, feriadoTrab: 0, folgas: 0, ferias: 0, diasTrab: 0 }
       ),
     [monthSummary]
   );
@@ -937,9 +938,9 @@ export default function DepartamentoPessoalView() {
             </button>
           </div>
           <p className={styles.summaryNote}>
-            <strong>Transporte a pagar</strong> de {MONTHS[month]} (pago em 05/{mmSeg}) = dias − folgas − faltas.
-            Dias corridos e folgas contam de 06/{mmAtual} a 05/{mmSeg} (ciclo a pagar);
-            faltas e feriados do ciclo anterior já apurado, de 06/{mmAnt} a 05/{mmAtual}.
+            <strong>Transporte a pagar</strong> de {MONTHS[month]} (pago em 05/{mmSeg}) = dias − folgas − férias − faltas − feriado trabalhado.
+            Dias corridos, folgas e férias contam de 06/{mmAtual} a 05/{mmSeg} (ciclo a pagar);
+            faltas e feriados trabalhados do ciclo anterior já apurado, de 06/{mmAnt} a 05/{mmAtual}.
           </p>
           <div className={styles.summaryWrap}>
             <table className={styles.summaryTable}>
@@ -951,6 +952,7 @@ export default function DepartamentoPessoalView() {
                   <th>Falta Não Just.</th>
                   <th>Feriado Trab.</th>
                   <th>Folgas</th>
+                  <th>Férias</th>
                   <th>
                     Transporte a Pagar
                     <span className={styles.colPeriod}>ciclo 06/{mmAtual} a 05/{mmSeg}</span>
@@ -966,6 +968,7 @@ export default function DepartamentoPessoalView() {
                     <td>{r.faltaNaoJust}</td>
                     <td>{r.feriadoTrab}</td>
                     <td>{r.folgas}</td>
+                    <td>{r.ferias}</td>
                     <td>{r.diasTrab}</td>
                   </tr>
                 ))}
@@ -976,6 +979,7 @@ export default function DepartamentoPessoalView() {
                   <td>{summaryTotals.faltaNaoJust}</td>
                   <td>{summaryTotals.feriadoTrab}</td>
                   <td>{summaryTotals.folgas}</td>
+                  <td>{summaryTotals.ferias}</td>
                   <td>{summaryTotals.diasTrab}</td>
                 </tr>
               </tbody>
