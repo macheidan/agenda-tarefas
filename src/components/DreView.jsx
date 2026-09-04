@@ -11,7 +11,7 @@ import {
 } from '../lib/gestao';
 import styles from '../styles/DreView.module.css';
 
-// DRE anual (Gestão): 17 contas × 12 meses + Total, valores compactos com o
+// DRE anual (Gestão): 18 contas × 12 meses + Total, valores compactos com o
 // % sobre faturamento embaixo. Clicar numa conta expansível abre as sub-linhas
 // por favorecido (dre_detalhes, carregado só no primeiro clique).
 const LINHAS = [
@@ -29,10 +29,22 @@ const LINHAS = [
   { key: 'despesas_pessoal', label: '(-) Desp. Pessoal', tipo: 'menos', indent: true },
   { key: 'resultado_operacional', label: '(=) Resultado Operacional', tipo: 'soma' },
   { key: 'resultado_op_liquido', label: '(=) Result. Op. Líquido', tipo: 'soma' },
-  { key: 'distribuicao_lucros', label: '(-) Distribuição de Lucros', tipo: 'menos', indent: true },
+  // Linhas 21 e 22 da planilha: depósito no CPF do sócio × o resto (cartão,
+  // Flash, pró-labore, terceiros). O KPI "Lucro médio" soma as duas.
+  { key: 'distribuicao_lucros', label: '(-) Distribuição de Lucros (Depósito)', tipo: 'menos', indent: true },
+  { key: 'distribuicao_lucros_fora', label: '(-) Distribuição de Lucros (Fora)', tipo: 'menos', indent: true },
   { key: 'divisao_socios', label: '(-) Divisão Sócio Investidores', tipo: 'menos', indent: true },
   { key: 'resultado_final', label: '(=) Resultado Final', tipo: 'soma' },
 ];
+
+// Lucro distribuído no mês = linha 21 (Depósito) + linha 22 (Fora). Anos
+// anteriores a 2026 só têm a 21; mês sem nenhuma das duas fica fora da média.
+function lucroDistribuido(f) {
+  const a = f.distribuicao_lucros;
+  const b = f.distribuicao_lucros_fora;
+  if (typeof a !== 'number' && typeof b !== 'number') return null;
+  return (typeof a === 'number' ? a : 0) + (typeof b === 'number' ? b : 0);
+}
 
 const MES_LABELS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
@@ -113,7 +125,7 @@ export default function DreView() {
     };
 
     const mediaFat = mediaFrom(preenchidos, (f) => f.faturamento) ?? 0;
-    const mediaLucro = mediaFrom(preenchidos, (f) => f.distribuicao_lucros);
+    const mediaLucro = mediaFrom(preenchidos, lucroDistribuido);
     const margemMedia = mediaLucro !== null && mediaFat > 0 ? (mediaLucro / mediaFat) * 100 : null;
 
     const mesesPreenchidos = preenchidos.map((f) => parseInt(f.ano_mes.split('-')[1], 10));
@@ -123,7 +135,7 @@ export default function DreView() {
       .filter((f) => !!f && f.faturamento > 0);
 
     const refMediaFat = referencia.length > 0 ? mediaFrom(referencia, (f) => f.faturamento) : null;
-    const refMediaLucro = referencia.length > 0 ? mediaFrom(referencia, (f) => f.distribuicao_lucros) : null;
+    const refMediaLucro = referencia.length > 0 ? mediaFrom(referencia, lucroDistribuido) : null;
 
     const deltaFat = refMediaFat !== null && refMediaFat > 0 ? (mediaFat - refMediaFat) / refMediaFat : null;
     const deltaLucro = refMediaLucro !== null && refMediaLucro !== 0 && mediaLucro !== null

@@ -122,7 +122,8 @@ const SUM_KEYS = [
   'faturamento', 'pizzas', 'tributos', 'vendas_liquidas', 'insumos', 'bebidas',
   'comissoes', 'taxas_cartao', 'motoboy', 'margem_contribuicao', 'despesas_adm',
   'despesas_marketing', 'despesas_pessoal', 'resultado_operacional',
-  'resultado_op_liquido', 'distribuicao_lucros', 'divisao_socios', 'resultado_final',
+  'resultado_op_liquido', 'distribuicao_lucros', 'distribuicao_lucros_fora',
+  'divisao_socios', 'resultado_final',
 ];
 
 /** Soma fechamentos das duas marcas por ano_mes e recalcula ticket/percentuais. */
@@ -272,7 +273,7 @@ export function calcularYoY(historico, target, kpi) {
 export const CONTAS_COM_DETALHE = new Set([
   'tributos', 'insumos', 'bebidas', 'comissoes', 'taxas_cartao', 'motoboy',
   'despesas_adm', 'despesas_marketing', 'despesas_pessoal',
-  'distribuicao_lucros', 'divisao_socios',
+  'distribuicao_lucros', 'distribuicao_lucros_fora', 'divisao_socios',
 ]);
 
 // ── Tipos de gráfico (ChartTypeMenu + SeriesFlexChart/DistribFlexChart) ───

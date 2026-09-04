@@ -70,6 +70,15 @@ Detalhes de manutenção:
   token continua obrigatório em requisições web reais.
 - Quando o dashboard antigo for aposentado, tirar `'dash-pizzarias'` de
   `PROJECT_IDS` nos dois scripts (e criar nova versão das implantações).
+- **Distribuição de Lucros em duas linhas (04/09/2026).** A planilha DRE tem
+  a linha 21 `Distribuição de Lucros (Depósito)` (só o PIX no CPF do sócio) e
+  a 22 `Distribuição de Lucros (Fora)` (cartão 5121, Flash, pró-labore,
+  terceiros). O `SyncDashboard.gs` grava as duas em campos separados —
+  `distribuicao_lucros` e `distribuicao_lucros_fora` — e, em `dre_detalhes`,
+  parte DIVISÃO LUCROS pela coluna CPF/CNPJ do EXTRATOS com o mesmo critério
+  do SUMIFS. A tela mostra as duas linhas; o KPI "Lucro médio" e o
+  consolidado somam. Anos anteriores só têm a 21. Conferência:
+  `python dre_intranet.py --mes M --ano A --sem-sync` (skill `dre`).
 
 ## Variáveis de ambiente novas (`.env` + secret `DOTENV` do Action)
 
