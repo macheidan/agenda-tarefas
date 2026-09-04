@@ -70,10 +70,12 @@ Detalhes de manutenção:
   token continua obrigatório em requisições web reais.
 - Quando o dashboard antigo for aposentado, tirar `'dash-pizzarias'` de
   `PROJECT_IDS` nos dois scripts (e criar nova versão das implantações).
-- **Limite de 6 min (04/09/2026).** O `syncTudo` do DRE em dual-write leva
-  mais de 360 s e morre em "Tempo limite atingido" — por isso a intranet é
-  a PRIMEIRA em `PROJECT_IDS`: o que sobra pro fim (e não grava) é o
-  dashboard antigo. Tirar o `dash-pizzarias` resolve de vez.
+- **Limite de 6 min (04/09/2026).** O `syncTudo` do DRE em dual-write raspa
+  o teto do Apps Script: uma execução morreu em "Tempo limite atingido"
+  (360 s) e a seguinte, sem concorrência, completou em 277 s. Como o que
+  fica pro fim quando estoura (o `dre_detalhes` do 2º projeto) não é
+  gravado, a intranet passou a ser a PRIMEIRA em `PROJECT_IDS` — quem fica
+  pela metade é o dashboard antigo. Tirar o `dash-pizzarias` resolve de vez.
 - **Gatilho onChange que travou (03→04/09/2026).** O one-off de relógio
   `syncTudo` ficou "Desativado" na lista de acionadores (disparou enquanto o
   Web App segurava o lock e o `syncTudo` saía sem apagá-lo) e o
