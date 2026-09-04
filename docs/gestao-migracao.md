@@ -70,6 +70,18 @@ Detalhes de manutenção:
   token continua obrigatório em requisições web reais.
 - Quando o dashboard antigo for aposentado, tirar `'dash-pizzarias'` de
   `PROJECT_IDS` nos dois scripts (e criar nova versão das implantações).
+- **Limite de 6 min (04/09/2026).** O `syncTudo` do DRE em dual-write leva
+  mais de 360 s e morre em "Tempo limite atingido" — por isso a intranet é
+  a PRIMEIRA em `PROJECT_IDS`: o que sobra pro fim (e não grava) é o
+  dashboard antigo. Tirar o `dash-pizzarias` resolve de vez.
+- **Gatilho onChange que travou (03→04/09/2026).** O one-off de relógio
+  `syncTudo` ficou "Desativado" na lista de acionadores (disparou enquanto o
+  Web App segurava o lock e o `syncTudo` saía sem apagá-lo) e o
+  `agendarSync` o via como pendente — nenhum sync novo era agendado, e a
+  intranet ficou um dia atrás da planilha. Sintoma: dezenas de `agendarSync`
+  concluídos e nenhum `syncTudo` no log de execuções. Corrigido no `.gs`
+  (Versão 6): `agendarSync` apaga e recria o one-off sempre; `syncTudo`
+  limpa antes do lock e reagenda +2 min se perder o lock.
 - **Distribuição de Lucros em duas linhas (04/09/2026).** A planilha DRE tem
   a linha 21 `Distribuição de Lucros (Depósito)` (só o PIX no CPF do sócio) e
   a 22 `Distribuição de Lucros (Fora)` (cartão 5121, Flash, pró-labore,
