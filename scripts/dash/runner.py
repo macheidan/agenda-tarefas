@@ -537,10 +537,12 @@ def main():
 
     arq = consolidar()
     if not a.sem_envio:
-        # O nome carrega o token porque /pizzas/data não tem auth nos estáticos:
-        # URL não-adivinhável (dash_token no config.json, espelhado em
-        # VITE_DASH_TOKEN no .env da intranet). Sem token o envio é recusado —
-        # um dashboard-data.json a descoberto exporia o faturamento.
+        # A pasta /pizzas/data passou a exigir Basic auth em 09/09/2026 — quem
+        # lê é só o proxy (gemini-proxy /api/dash), com a credencial em env.
+        # Antes a única proteção era este token no nome do arquivo, e ele ia no
+        # bundle público da intranet: o faturamento estava aberto na web. O
+        # token continua (defesa em profundidade) e não é mais espelhado em
+        # nenhum VITE_*; se mudar aqui, mudar DASH_JSON_URL na Vercel.
         token = cfg.get("dash_token")
         if not token:
             log("\n[ERRO] dash_token ausente no config.json — JSON não enviado.")

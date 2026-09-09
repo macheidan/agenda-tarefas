@@ -2,6 +2,8 @@
 // Anotações) — portada do projeto dashboard_pizzarias. Datas em "YYYY-MM"
 // (ano_mes), dinheiro em número puro; formatação sempre pt-BR.
 
+import { auth } from '../firebase';
+
 // ── Marcas ────────────────────────────────────────────────────────────────
 // 'consolidado' = Dáme + Lov somadas no cliente (não existe doc consolidado).
 export const MARCAS = [
@@ -296,25 +298,33 @@ export const DISTRIB_CHART_OPTIONS = [
 ];
 
 // ── Sync Google Sheets → Firestore (Web Apps do Apps Script) ──────────────
-// URLs/tokens fora do código porque o repo é público (.env → secret DOTENV).
-const DRE_SYNC_URL = import.meta.env.VITE_SYNC_DRE_URL || '';
-const DRE_SYNC_TOKEN = import.meta.env.VITE_SYNC_DRE_TOKEN || '';
-const VENDAS_SYNC_URL = import.meta.env.VITE_SYNC_VENDAS_URL || '';
-const VENDAS_SYNC_TOKEN = import.meta.env.VITE_SYNC_VENDAS_TOKEN || '';
+// Passa pelo proxy: URL e token do /exec vivem só lá, e ele exige ID token do
+// Firebase + admin. Antes iam no bundle (VITE_*), então qualquer visitante
+// deslogado podia disparar o sync em loop e queimar a quota de 6 min do
+// Apps Script.
+const SYNC_URL =
+  import.meta.env.VITE_SYNC_SHEET_URL ||
+  'https://gemini-proxy-intranet.vercel.app/api/sync-sheet';
 
-export const dreSyncConfigured = DRE_SYNC_URL.length > 0;
-export const vendasSyncConfigured = VENDAS_SYNC_URL.length > 0;
+// O botão existe sempre: quem decide é o proxy (403 pra quem não é admin).
+export const dreSyncConfigured = true;
+export const vendasSyncConfigured = true;
 
-async function callSync(url, token) {
-  if (!url) return false;
+async function callSync(alvo) {
   try {
-    const res = await fetch(`${url}?token=${token}`);
-    const json = await res.json();
-    return !!json.ok;
+    const user = auth.currentUser;
+    if (!user) return false;
+    const token = await user.getIdToken();
+    const res = await fetch(`${SYNC_URL}?alvo=${alvo}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json().catch(() => ({}));
+    return res.ok && json.ok === true;
   } catch {
     return false;
   }
 }
 
-export const syncDreFromSheet = () => callSync(DRE_SYNC_URL, DRE_SYNC_TOKEN);
-export const syncVendasFromSheet = () => callSync(VENDAS_SYNC_URL, VENDAS_SYNC_TOKEN);
+export const syncDreFromSheet = () => callSync('dre');
+export const syncVendasFromSheet = () => callSync('vendas');
