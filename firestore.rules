@@ -432,6 +432,14 @@ service cloud.firestore {
       allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
       allow write: if false;
     }
+    // Textos das respostas automáticas do número de campanha. É a ÚNICA
+    // coleção de campanha que o cliente escreve: quem redige a mensagem é quem
+    // faz o marketing, e trocar uma vírgula não pode exigir publicar o proxy.
+    // Mesma permissão de disparar — quem pode mandar a mensagem pode escrevê-la.
+    match /campanhaConfig/{doc} {
+      allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
+      allow write: if isAdmin() || hasSettingFlag('clientesEnviar');
+    }
     // Índice com TODOS os telefones descadastrados, num doc só — é o que a tela
     // lê para não oferecer essa gente na cópia nem no disparo. Escrito só pelo
     // webhook (Admin SDK). Liberado para quem vê a lista de clientes, não só

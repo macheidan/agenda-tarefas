@@ -1,3 +1,4 @@
+import RespostasAutoForm from './RespostasAutoForm';
 import styles from '../styles/ClientesView.module.css';
 
 // Painel de histórico da sub-seção Clientes: o que já foi disparado, o que os
@@ -12,16 +13,24 @@ function quando(ts) {
   return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-export default function CampanhasPanel({ campanhas, respostas, optOuts }) {
+export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnviar }) {
+  // O formulário fica FORA do early return: as respostas automáticas precisam
+  // estar prontas antes do primeiro disparo, que é exatamente quando ainda não
+  // existe campanha nenhuma para mostrar.
+  const auto = <RespostasAutoForm ativo={podeEnviar} />;
+
   if (!campanhas.length && !respostas.length) {
     return (
-      <div className={styles.empty}>
-        <p>Nenhuma campanha disparada ainda.</p>
-        <span>
-          Escolha uma loja e uma faixa de dias na lista, e o botão{' '}
-          <code>Enviar campanha</code> aparece com o recorte pronto.
-        </span>
-      </div>
+      <>
+        <div className={styles.empty}>
+          <p>Nenhuma campanha disparada ainda.</p>
+          <span>
+            Escolha uma loja e uma faixa de dias na lista, e o botão{' '}
+            <code>Enviar campanha</code> aparece com o recorte pronto.
+          </span>
+        </div>
+        {auto}
+      </>
     );
   }
 
@@ -102,6 +111,7 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts }) {
           </table>
         </>
       )}
+      {auto}
     </>
   );
 }

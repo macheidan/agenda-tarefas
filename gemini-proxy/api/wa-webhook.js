@@ -43,6 +43,9 @@ const ATENDIMENTO = { dame: 'WA_ATENDIMENTO_DAME', lov: 'WA_ATENDIMENTO_LOV' };
 // numa conversa e não numa página com pixel.
 const FRASE_ATRIBUICAO = 'Quero saber das novidades';
 
+// Quebra de linha literal, isolada para o texto padrão ficar legível acima.
+const QUEBRA = '\n';
+
 // Uma resposta automática por número a cada 24h: sem isso, cliente que manda
 // três mensagens seguidas recebe três vezes a mesma coisa.
 const JANELA_AUTO_MS = 24 * 60 * 60 * 1000;
@@ -146,29 +149,51 @@ async function enviarTexto(loja, para, texto) {
 }
 
 /**
- * O que responder a quem interage com o número da campanha.
+ * Textos das respostas automáticas, como o marketing os escreveu.
  *
- * `clicou` separa os dois casos porque a experiência é outra: quem apertou o
- * botão do template demonstrou interesse e merece a ponte direta; quem digitou
- * precisa antes saber que ali não tem ninguém lendo.
- *
- * O link mora aqui e não no template porque a Meta RECUSA botão com link de
- * WhatsApp dentro de um template (medido em 10/09). Mensagem de sessão pode.
+ * Vivem em `campanhaConfig/mensagens` (a tela de Campanhas edita) e não no
+ * código: trocar uma vírgula não pode exigir publicar o proxy. O que está aqui
+ * é só o fallback de quando o documento ainda não existe.
  */
-function textoAtendimento(loja, clicou) {
-  const numero = String(process.env[ATENDIMENTO[loja]] || '').replace(/\D/g, '');
-  if (!numero) return '';
-  const link = `https://wa.me/${numero}?text=${encodeURIComponent(FRASE_ATRIBUICAO)}`;
-  if (clicou) {
-    return `Que bom que você quer saber! 🍕
+const PADRAO_MSG = {
+  clicou:
+    'Que bom que você quer saber! 🍕' + QUEBRA + QUEBRA +
+    'Chama a gente aqui que a gente te conta tudo: {link}',
+  digitou:
+    'Oi! Este número só envia novidades e não é atendido por aqui 🙂' + QUEBRA + QUEBRA +
+    'Para falar com a gente, chama no nosso WhatsApp: {link}' + QUEBRA + QUEBRA +
+    'Se não quiser mais receber, responda SAIR.',
+  saiu: 'Pronto! Você não vai mais receber nossas mensagens. 👋',
+};
 
-Chama a gente aqui que a gente te conta tudo: ${link}`;
+async function carregarMensagens(db) {
+  try {
+    const snap = await db.doc('campanhaConfig/mensagens').get();
+    return snap.exists ? { ...PADRAO_MSG, ...snap.data() } : PADRAO_MSG;
+  } catch (e) {
+    // Falha de leitura não pode calar a resposta: melhor o texto padrão do
+    // que deixar o cliente sem retorno nenhum.
+    console.error('wa-webhook mensagens:', e);
+    return PADRAO_MSG;
   }
-  return `Oi! Este número só envia novidades e não é atendido por aqui 🙂
+}
 
-Para falar com a gente, chama no nosso WhatsApp: ${link}
-
-Se não quiser mais receber, responda SAIR.`;
+/**
+ * Preenche os marcadores do texto escolhido.
+ *
+ * `{link}` é o WhatsApp que de fato atende — ele mora aqui e não no template
+ * porque a Meta RECUSA botão com link de WhatsApp dentro de um template
+ * (medido em 10/09). Mensagem de sessão pode.
+ */
+function montarTexto(bruto, loja, nome) {
+  if (!bruto) return '';
+  const numero = String(process.env[ATENDIMENTO[loja]] || '').replace(/\D/g, '');
+  const link = numero
+    ? `https://wa.me/${numero}?text=${encodeURIComponent(FRASE_ATRIBUICAO)}`
+    : '';
+  // Sem número configurado, um texto que promete link viraria frase quebrada.
+  if (!link && bruto.includes('{link}')) return '';
+  return bruto.replace(/\{link\}/g, link).replace(/\{nome\}/g, nome || '').trim();
 }
 
 /**
@@ -185,14 +210,18 @@ async function autoResposta(db, msg, valor, { saiu, optOutNovo }) {
   const para = String(msg.from || '').replace(/\D/g, '');
   if (!para) return;
 
+  const msgs = await carregarMensagens(db);
+  const nome = (valor?.contacts?.[0]?.profile?.name || '').trim().split(/\s+/)[0] || '';
+
   if (saiu) {
     if (!optOutNovo) return;
-    await enviarTexto(loja, para, 'Pronto! Você não vai mais receber nossas mensagens. 👋');
+    const confirmacao = montarTexto(msgs.saiu, loja, nome);
+    if (confirmacao) await enviarTexto(loja, para, confirmacao);
     return;
   }
 
   // `button` é o clique no Quick Reply do template; `text` é quem digitou.
-  const texto = textoAtendimento(loja, msg.type === 'button');
+  const texto = montarTexto(msg.type === 'button' ? msgs.clicou : msgs.digitou, loja, nome);
   if (!texto) return;
 
   const ref = db.doc(`campanhaAutoRespostas/${para}`);

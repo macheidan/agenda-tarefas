@@ -698,7 +698,12 @@ export default function ClientesView({ settings, isAdmin }) {
       )}
 
       {subAtiva === 'campanhas' && (
-        <CampanhasPanel campanhas={campanhas} respostas={respostas} optOuts={optOuts} />
+        <CampanhasPanel
+          campanhas={campanhas}
+          respostas={respostas}
+          optOuts={optOuts}
+          podeEnviar={podeEnviar}
+        />
       )}
 
       <CampanhaModal
