@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { enviarLote, novaCampanhaId, LOTE, PAUSA_MS } from '../utils/whatsapp';
 import styles from '../styles/CampanhaModal.module.css';
 
@@ -10,7 +10,41 @@ const LIMITE_PADRAO = 250;
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export default function CampanhaModal({ open, onClose, loja, lojaLabel, destinatarios, filtroDesc }) {
+// Só oferece retomar campanha recente: mais que isso e a lista de destinatários
+// já é outra, então "continuar" enganaria mais do que ajudaria.
+const PRAZO_RETOMADA_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * Campanha da loja que parou no meio.
+ *
+ * O disparo roda no navegador, de 20 em 20: aba fechada, PC desligado ou queda
+ * de rede param a campanha onde estava. Retomar precisa reusar o MESMO
+ * `campanhaId`, porque é por `campanhaId__telefone` que o servidor sabe quem já
+ * recebeu. Com id novo — que é o que um clique em "Disparar" gera — ninguém é
+ * reconhecido e quem já recebeu recebe de novo, cobrado de novo.
+ */
+function campanhaPendente(campanhas, loja) {
+  const agora = Date.now();
+  return (
+    (campanhas || []).find((c) => {
+      if (c.loja !== loja || !c.totalAlvo) return false;
+      const feitos = (c.enviados || 0) + (c.falhas || 0) + (c.pulados || 0);
+      if (feitos >= c.totalAlvo || feitos === 0) return false;
+      const quando = c.ultimoEnvioEm?.toMillis?.() || c.criadoEm?.toMillis?.() || 0;
+      return quando > 0 && agora - quando < PRAZO_RETOMADA_MS;
+    }) || null
+  );
+}
+
+export default function CampanhaModal({
+  open,
+  onClose,
+  loja,
+  lojaLabel,
+  destinatarios,
+  filtroDesc,
+  campanhas,
+}) {
   const [template, setTemplate] = useState('');
   const [idioma, setIdioma] = useState('pt_BR');
   const [titulo, setTitulo] = useState('');
@@ -21,27 +55,38 @@ export default function CampanhaModal({ open, onClose, loja, lojaLabel, destinat
   const [erro, setErro] = useState(null);
   const pararRef = useRef(false);
 
+  const pendente = useMemo(() => campanhaPendente(campanhas, loja), [campanhas, loja]);
+  const feitosPendente = pendente
+    ? (pendente.enviados || 0) + (pendente.falhas || 0) + (pendente.pulados || 0)
+    : 0;
+
   if (!open) return null;
 
   const alvo = destinatarios.slice(0, Math.max(0, Number(limite) || 0));
   const exemplo = alvo[0];
   const preview = texto.replace(/\{\{1\}\}/g, exemplo?.nome || 'Fulano');
 
-  const disparar = async () => {
-    if (!template.trim()) {
+  const disparar = async (retomar = null) => {
+    const nomeTemplate = (retomar?.template || template).trim();
+    if (!nomeTemplate) {
       setErro('Informe o nome do template aprovado na Meta.');
       return;
     }
     const ok = window.confirm(
-      `Disparar para ${alvo.length} cliente(s) da ${lojaLabel}?\n\n` +
-        'A mensagem sai de verdade e é cobrada por envio. Não tem como desfazer.'
+      retomar
+        ? `Retomar "${retomar.titulo || retomar.id}"?\n\n` +
+            'Quem já recebeu nesta campanha é pulado sem custo. Os demais recebem de verdade.'
+        : `Disparar para ${alvo.length} cliente(s) da ${lojaLabel}?\n\n` +
+            'A mensagem sai de verdade e é cobrada por envio. Não tem como desfazer.'
     );
     if (!ok) return;
 
     pararRef.current = false;
     setErro(null);
     setEnviando(true);
-    const campanhaId = novaCampanhaId(loja);
+    // Retomar reusa o id: é a única coisa que faz o servidor reconhecer quem já
+    // recebeu. Id novo aqui significaria mensagem repetida e cobrada de novo.
+    const campanhaId = retomar?.id || novaCampanhaId(loja);
     const totais = { feitos: 0, enviados: 0, falhas: 0, pulados: 0, campanhaId };
     setProgresso({ ...totais });
 
@@ -52,11 +97,11 @@ export default function CampanhaModal({ open, onClose, loja, lojaLabel, destinat
         const r = await enviarLote({
           campanhaId,
           loja,
-          template: template.trim(),
-          idioma,
+          template: nomeTemplate,
+          idioma: retomar?.idioma || idioma,
           destinatarios: lote,
           meta: {
-            titulo: titulo.trim() || template.trim(),
+            titulo: retomar?.titulo || titulo.trim() || nomeTemplate,
             filtro: filtroDesc,
             texto: texto.trim(),
             totalAlvo: alvo.length,
@@ -88,6 +133,20 @@ export default function CampanhaModal({ open, onClose, loja, lojaLabel, destinat
         </button>
         <h3 className={styles.titulo}>Enviar campanha · {lojaLabel}</h3>
         <p className={styles.subtitulo}>{filtroDesc}</p>
+
+        {pendente && !enviando && !progresso && (
+          <div className={styles.pendente}>
+            <strong>Campanha interrompida</strong>
+            <p>
+              &quot;{pendente.titulo || pendente.id}&quot; parou em {feitosPendente} de 
+              {pendente.totalAlvo}. Retomar continua de onde parou: quem já recebeu é pulado sem
+              custo. Disparar de novo criaria outra campanha e mandaria tudo outra vez.
+            </p>
+            <button className={styles.retomarBtn} onClick={() => disparar(pendente)}>
+              Retomar {pendente.template}
+            </button>
+          </div>
+        )}
 
         <div className={styles.resumo}>
           <span>

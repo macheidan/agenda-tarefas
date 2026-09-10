@@ -432,6 +432,14 @@ service cloud.firestore {
       allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
       allow write: if false;
     }
+    // Índice com TODOS os telefones descadastrados, num doc só — é o que a tela
+    // lê para não oferecer essa gente na cópia nem no disparo. Escrito só pelo
+    // webhook (Admin SDK). Liberado para quem vê a lista de clientes, não só
+    // para quem dispara: o botão de copiar telefones também depende dele.
+    match /clientesMeta/{doc} {
+      allow read: if isAdmin() || hasSettingFlag('clientesEnabled') || hasSettingFlag('clientesEnviar');
+      allow write: if false;
+    }
 
     // ── Gestão (migrada do dashboard_pizzarias) ─────────────────────────────
     // Dado financeiro do dono: EXCLUSIVO do admin em todas as coleções (as

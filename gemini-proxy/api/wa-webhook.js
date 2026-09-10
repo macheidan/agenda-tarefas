@@ -22,6 +22,11 @@ const PALAVRAS_SAIR = ['sair', 'parar', 'pare', 'cancelar', 'descadastrar', 'sto
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
+// Espelho de todos os descadastros num doc só, para a tela ler de uma vez.
+// Teto prático: são ~13 bytes por telefone, então o limite de 1 MB do Firestore
+// só apertaria perto de 70 mil descadastros — ordens de grandeza acima da base.
+const INDICE_OPTOUT = 'clientesMeta/optOut';
+
 /**
  * Número que de fato ATENDE, por loja — em E.164, só dígitos (ex.: 555133322440).
  *
@@ -231,16 +236,26 @@ async function tratarMensagem(db, msg, valor) {
   if (saiu) {
     const jaEstava = (await db.doc(`clientesOptOut/${formas[0]}`).get()).exists;
     optOutNovo = !jaEstava;
-    await Promise.all(
-      formas.map((t) =>
+    await Promise.all([
+      ...formas.map((t) =>
         db.doc(`clientesOptOut/${t}`).set({
           telefone: t,
           motivo: 'pediu no WhatsApp',
           texto: texto.slice(0, 200),
           criadoEm: FieldValue.serverTimestamp(),
         })
-      )
-    );
+      ),
+      // Índice de um documento só. A tela precisa saber QUEM saiu para não
+      // oferecer essa gente na cópia nem no disparo, e assinar a coleção inteira
+      // custaria uma leitura por descadastro toda vez que alguém abre a aba —
+      // numa conta que já bateu no teto do plano gratuito. Aqui é 1 leitura,
+      // não importa o tamanho. O doc individual continua existindo: é ele que
+      // guarda quando e por quê, e é ele que o servidor confere no envio.
+      db.doc(INDICE_OPTOUT).set(
+        { telefones: FieldValue.arrayUnion(...formas), atualizadoEm: FieldValue.serverTimestamp() },
+        { merge: true }
+      ),
+    ]);
   }
 
   await autoResposta(db, msg, valor, { saiu, optOutNovo });

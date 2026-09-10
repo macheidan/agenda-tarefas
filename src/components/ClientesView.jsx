@@ -153,8 +153,10 @@ export default function ClientesView({ settings, isAdmin }) {
   // Disparar campanha é permissão à parte de ver a lista: quem consulta cliente
   // não necessariamente pode mandar mensagem cobrada em nome da loja.
   const podeEnviar = isAdmin || settings?.clientesEnviar === true;
-  const { campanhas, respostas, optOuts } = useCampanhas(podeEnviar);
-  const optOutSet = useMemo(() => new Set(optOuts.map((o) => o.id)), [optOuts]);
+  const { campanhas, respostas, optOuts, optOutTelefones } = useCampanhas(podeEnviar);
+  // Vem do índice, não da lista dos 500 recentes: descadastro antigo tem que
+  // continuar fora das listas mesmo quando o painel já não o mostra.
+  const optOutSet = useMemo(() => new Set(optOutTelefones), [optOutTelefones]);
 
   // Quem não pode disparar não tem aba de campanhas — nem por URL montada.
   const subsVisiveis = useMemo(() => SUBS.filter((x) => !x.restrita || podeEnviar), [podeEnviar]);
@@ -706,6 +708,7 @@ export default function ClientesView({ settings, isAdmin }) {
         lojaLabel={LOJA_LABELS[lojaAlvo] || ''}
         destinatarios={destinatarios}
         filtroDesc={filtroDesc}
+        campanhas={campanhas}
       />
     </div>
   );
