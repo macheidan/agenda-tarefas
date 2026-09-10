@@ -224,6 +224,64 @@ O `scripts/clientes/criar_template_wa.mjs` submete e acompanha
 **exemplo da variável**, escondido atrás de um "Adicionar exemplo" fácil de
 pular no painel — sem ele a Meta rejeita por conteúdo incompleto.
 
+## Rota escolhida em 2026-09-10: chip como 2º número no BM da Dáme
+
+O chip foi ativado em 10/09 (nunca aberto no app do WhatsApp). O Fábio decidiu
+**não** usar o BM da Lov nem criar portfólio novo: a WABA do chip nasce **no BM
+da Dáme** (`1952138181466044`), como **segundo número**, ao lado do 3332-2440.
+
+O que isso encurta: o app `Intranet Pizzarias` (`1610742780487306`) já é
+reivindicado por esse BM, o usuário de sistema `intranet-whatsapp` já existe e o
+webhook já está verificado e no ar. Some tudo que a rota da Lov exigia de app
+novo, usuário de sistema novo e `WA_APP_SECRET_LOV`.
+
+**O 3332-2440 não é tocado.** Ele continua na WABA `206538077125724`, atendido
+no aplicativo, com a qualidade GREEN e o tier de 2.000/24h. WABA é container: a
+do chip é outra, e as duas convivem no mesmo portfólio. Não pendurar o chip na
+WABA do 2240 — ela é SMB/ON_PREMISE; **WABA nova nasce CLOUD_API**, que é o que
+permite registrar.
+
+O chip ocupa o slot **`DAME`** das envs (`WA_TOKEN_DAME`/`WA_PHONE_ID_DAME`),
+que hoje aponta para o 2240 `DISCONNECTED` — sobrescrever não custa nada e faz o
+modal disparar para a base de clientes da Dáme.
+
+⚠️ **O que continua travado:** mensagem de marketing é sempre paga e a forma de
+pagamento é do **portfólio** — o mesmo que a linha de crédito da ManyChat
+bloqueia. Os passos 1 a 8 rodam e o template pode até ser aprovado; o **disparo
+real** só sai quando a linha for desalocada.
+
+### A resposta da ManyChat (ticket #555459) — não seguir ao pé da letra
+
+Respondeu em 19/08, **pelo AI Agent deles**, e cobrou resposta em 20/08. O
+roteiro que mandaram manda **excluir o número da WABA pelo ícone da lixeira**.
+**Não fazer isso**: joga fora a qualidade GREEN e o tier de 2.000/24h do
+3332-2440, que não voltam — número re-adicionado começa frio. E o primeiro passo
+deles ("remova a conta do WhatsApp da Manychat") parte de premissa errada: o
+canal já aparece **não conectado** e as duas assinaturas estão Expired, como o
+próprio ticket dizia. O caminho é escalar para humano pedindo a desalocação.
+
+### Quem responde o número que ninguém atende
+
+O chip não está aberto em aparelho nenhum — é condição para registrar na Cloud
+API. Consequência: **quem responde à campanha não fala com ninguém**. Por isso
+duas mudanças, feitas em 10/09:
+
+1. **O botão do template virou URL** apontando para o 3332-2440
+   (`wa.me/555133322440?text=Quero saber das novidades`), no lugar do Quick
+   Reply. O Quick Reply fazia sentido quando o disparo sairia do próprio 2240;
+   com número separado, o botão precisa levar o cliente para quem atende. O
+   `?text=` também serve de atribuição.
+2. **`wa-webhook.js` responde automaticamente** quem escreve em vez de clicar:
+   texto livre na janela de 24h (que a mensagem do cliente abre), dizendo que a
+   conta não é atendida e repetindo o link. Uma vez a cada 24h por número
+   (`campanhaAutoRespostas/{telefone}`), e **nunca** para quem pediu SAIR —
+   esse recebe só a confirmação do descadastro, uma única vez. Mandar link para
+   quem acabou de pedir para sair é o caminho curto para o bloqueio, e bloqueio
+   derruba a nota de qualidade.
+
+Isso exige a env **`WA_ATENDIMENTO_DAME`** (número que atende, E.164 só dígitos:
+`555133322440`). Sem ela o webhook simplesmente não responde nada.
+
 ## Passo a passo do cadastro (é o que falta para funcionar)
 
 ### 1. Conta e verificação
@@ -289,6 +347,8 @@ No projeto `gemini-proxy-intranet` → Settings → Environment Variables:
 | `WA_PHONE_ID_LOV` | idem, Lov |
 | `WA_VERIFY_TOKEN` | frase que você inventa, usada só no passo 7 |
 | `WA_APP_SECRET` | App Secret do app (Configurações → Básico) |
+| `WA_ATENDIMENTO_DAME` | número que ATENDE (E.164 só dígitos) — destino da resposta automática |
+| `WA_ATENDIMENTO_LOV` | idem, Lov (sem ela, nada é respondido nesse slot) |
 
 `FIREBASE_SERVICE_ACCOUNT` e `ADMIN_EMAIL` já existem lá, do proxy do Gemini.
 

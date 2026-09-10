@@ -4,6 +4,7 @@
 //
 // Envs (Vercel): FIREBASE_SERVICE_ACCOUNT, WA_VERIFY_TOKEN, WA_APP_SECRET
 //   (+ WA_APP_SECRET_LOV quando a segunda WABA roda sob outro app)
+//   (+ WA_TOKEN_*/WA_PHONE_ID_* e WA_ATENDIMENTO_* para a resposta automática)
 //
 // Configurar na Meta (Webhooks do produto WhatsApp):
 //   URL: https://<projeto>.vercel.app/api/wa-webhook
@@ -18,6 +19,23 @@ import { app } from '../lib/auth.js';
 export const config = { api: { bodyParser: false } };
 
 const PALAVRAS_SAIR = ['sair', 'parar', 'pare', 'cancelar', 'descadastrar', 'stop', 'remover'];
+
+const GRAPH = 'https://graph.facebook.com/v21.0';
+
+/**
+ * Número que de fato ATENDE, por loja — em E.164, só dígitos (ex.: 555133322440).
+ *
+ * A conta que dispara campanha é um chip que não está aberto em aparelho nenhum:
+ * é condição para ele registrar na Cloud API. Ninguém lê o que chega ali. O
+ * template leva um botão de URL para o número de atendimento, mas quem digita
+ * em vez de clicar falaria com uma parede — é esse buraco que a resposta
+ * automática tapa. Sem a env configurada, nada é respondido.
+ */
+const ATENDIMENTO = { dame: 'WA_ATENDIMENTO_DAME', lov: 'WA_ATENDIMENTO_LOV' };
+
+// Uma resposta automática por número a cada 24h: sem isso, cliente que manda
+// três mensagens seguidas recebe três vezes a mesma coisa.
+const JANELA_AUTO_MS = 24 * 60 * 60 * 1000;
 
 // Avanço de status: a Meta reentrega webhook, e sem essa ordem o mesmo evento
 // contaria duas vezes nos totais.
@@ -87,6 +105,81 @@ function variantesLocais(e164) {
   return [...formas];
 }
 
+function slotDoPhoneId(phoneId) {
+  const alvo = String(phoneId || '');
+  if (!alvo) return null;
+  return ['dame', 'lov'].find((l) => process.env[`WA_PHONE_ID_${l.toUpperCase()}`] === alvo) || null;
+}
+
+/** Texto livre na janela de 24h: só vale porque o cliente acabou de escrever. */
+async function enviarTexto(loja, para, texto) {
+  const token = process.env[`WA_TOKEN_${loja.toUpperCase()}`];
+  const phoneId = process.env[`WA_PHONE_ID_${loja.toUpperCase()}`];
+  if (!token || !phoneId) return false;
+  const resp = await fetch(`${GRAPH}/${phoneId}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to: para,
+      type: 'text',
+      // preview_url falso de propósito: o cartão do wa.me rouba a atenção do texto.
+      text: { preview_url: false, body: texto },
+    }),
+  });
+  if (!resp.ok) {
+    const e = await resp.json().catch(() => ({}));
+    console.error('wa-webhook auto-resposta:', e?.error?.message || resp.status);
+    return false;
+  }
+  return true;
+}
+
+function textoAtendimento(loja) {
+  const numero = String(process.env[ATENDIMENTO[loja]] || '').replace(/\D/g, '');
+  if (!numero) return '';
+  // Template literal com quebras de verdade: a mensagem chega ao cliente com
+  // as linhas em branco que separam o convite do aviso de descadastro.
+  return `Oi! Este número é usado só para enviar novidades e não é atendido por aqui 🙂
+
+Para falar com a gente, chama no nosso WhatsApp: https://wa.me/${numero}
+
+Se não quiser mais receber, responda SAIR.`;
+}
+
+/**
+ * Responde uma vez, e só quando há o que dizer.
+ *
+ * Quem pediu SAIR recebe a confirmação (uma única vez, na hora em que o
+ * descadastro é criado) e nunca o convite para conversar — mandar link para
+ * quem acabou de pedir para sair é o caminho curto para o bloqueio, e bloqueio
+ * derruba a nota de qualidade do número.
+ */
+async function autoResposta(db, msg, valor, { saiu, optOutNovo }) {
+  const loja = slotDoPhoneId(valor?.metadata?.phone_number_id);
+  if (!loja) return;
+  const para = String(msg.from || '').replace(/\D/g, '');
+  if (!para) return;
+
+  if (saiu) {
+    if (!optOutNovo) return;
+    await enviarTexto(loja, para, 'Pronto! Você não vai mais receber nossas mensagens. 👋');
+    return;
+  }
+
+  const texto = textoAtendimento(loja);
+  if (!texto) return;
+
+  const ref = db.doc(`campanhaAutoRespostas/${para}`);
+  const snap = await ref.get();
+  const ultimo = snap.exists ? snap.data()?.em?.toMillis?.() || 0 : 0;
+  if (Date.now() - ultimo < JANELA_AUTO_MS) return;
+
+  if (await enviarTexto(loja, para, texto)) {
+    await ref.set({ telefone: para, loja, em: FieldValue.serverTimestamp() });
+  }
+}
+
 async function tratarStatus(db, st) {
   const novo = DE_META[st.status];
   if (!novo) return;
@@ -117,7 +210,13 @@ async function tratarMensagem(db, msg, valor) {
   const formas = variantesLocais(msg.from);
   const nome = valor?.contacts?.[0]?.profile?.name || '';
 
-  await db.doc(`campanhaRespostas/${msg.id}`).set({
+  // A Meta reentrega o mesmo webhook quando não recebe 200 a tempo. Sem esta
+  // saída, a reentrega dispararia a resposta automática de novo — e o cliente
+  // receberia a mesma mensagem duas vezes por uma falha nossa.
+  const refResposta = db.doc(`campanhaRespostas/${msg.id}`);
+  if ((await refResposta.get()).exists) return;
+
+  await refResposta.set({
     telefone: formas[0],
     nome,
     texto: texto.slice(0, 1000),
@@ -127,7 +226,11 @@ async function tratarMensagem(db, msg, valor) {
 
   // Descadastro: grava todas as formas do número, senão o 9 a mais ou a menos
   // faz o cliente continuar recebendo depois de ter pedido para sair.
-  if (PALAVRAS_SAIR.includes(texto.toLowerCase().replace(/[^a-zà-ÿ]/gi, ''))) {
+  const saiu = PALAVRAS_SAIR.includes(texto.toLowerCase().replace(/[^a-zà-ÿ]/gi, ''));
+  let optOutNovo = false;
+  if (saiu) {
+    const jaEstava = (await db.doc(`clientesOptOut/${formas[0]}`).get()).exists;
+    optOutNovo = !jaEstava;
     await Promise.all(
       formas.map((t) =>
         db.doc(`clientesOptOut/${t}`).set({
@@ -139,6 +242,8 @@ async function tratarMensagem(db, msg, valor) {
       )
     );
   }
+
+  await autoResposta(db, msg, valor, { saiu, optOutNovo });
 }
 
 export default async function handler(req, res) {

@@ -39,11 +39,18 @@ const TEMPLATE = {
   // Rodapé de descadastro: além da LGPD, é ele que segura a nota de qualidade —
   // quem consegue sair não bloqueia, e bloqueio derruba o número.
   rodape: 'Responda SAIR para não receber mais.',
-  // Quick Reply, não URL: a campanha sai do mesmo número que atende, então um
-  // botão wa.me apontaria para a própria conversa. A resposta do quick reply
-  // chega no celular de quem atende E no nosso webhook (vira campanhaRespostas).
-  botao: 'Quero saber',
+  // Botão de URL, não Quick Reply: a campanha sai de um CHIP que não está aberto
+  // em aparelho nenhum (condição para ele registrar na Cloud API), então uma
+  // resposta ali não chega a ninguém — o botão precisa levar o cliente para o
+  // número que a loja de fato atende. O `?text=` já vem preenchido e serve de
+  // atribuição: quem chega com essa frase veio da campanha.
+  botao: 'Falar com a gente',
+  frase: 'Quero saber das novidades',
 };
+
+// Número que ATENDE cada loja, em E.164 só com dígitos — destino do botão.
+// Não confundir com o número que dispara: são outros, de propósito.
+const ATENDIMENTO = { dame: '555133322440', lov: '' };
 
 function doStore(chave) {
   if (!existsSync(STORE)) return '';
@@ -56,7 +63,14 @@ function doStore(chave) {
   return '';
 }
 
-function corpoDaApi() {
+function corpoDaApi(loja) {
+  const atende = ATENDIMENTO[loja];
+  if (!atende) {
+    throw new Error(
+      `sem número de atendimento para "${loja}" — preencha ATENDIMENTO em ${import.meta.url.split('/').pop()}`
+    );
+  }
+  const url = `https://wa.me/${atende}?text=${encodeURIComponent(TEMPLATE.frase)}`;
   return {
     name: TEMPLATE.name,
     language: TEMPLATE.language,
@@ -68,7 +82,7 @@ function corpoDaApi() {
         example: { body_text: [TEMPLATE.exemplo] },
       },
       { type: 'FOOTER', text: TEMPLATE.rodape },
-      { type: 'BUTTONS', buttons: [{ type: 'QUICK_REPLY', text: TEMPLATE.botao }] },
+      { type: 'BUTTONS', buttons: [{ type: 'URL', text: TEMPLATE.botao, url }] },
     ],
   };
 }
@@ -97,7 +111,7 @@ async function main() {
   const SUF = loja.toUpperCase();
 
   if (args.includes('--seco')) {
-    console.log(JSON.stringify(corpoDaApi(), null, 2));
+    console.log(JSON.stringify(corpoDaApi(loja), null, 2));
     return;
   }
 
@@ -129,7 +143,7 @@ async function main() {
     }
 
     console.log(`\nSubmetendo "${TEMPLATE.name}" (${TEMPLATE.language}) na WABA ${waba}...`);
-    const r = await chamar(`/${waba}/message_templates`, token, corpoDaApi());
+    const r = await chamar(`/${waba}/message_templates`, token, corpoDaApi(loja));
     console.log(`   ok — id=${r.id} status=${r.status ?? 'PENDING'}`);
     console.log('\nA aprovação leva de minutos a 24h. Acompanhe com --listar.');
     console.log(`No modal de campanha da intranet, o nome do template é: ${TEMPLATE.name}`);
