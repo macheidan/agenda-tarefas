@@ -194,7 +194,10 @@ test('bairros: mesma rua escrita de dois jeitos vira uma linha só', () => {
   assert.equal(linhas.length, 2);
   const passo = linhas.find((l) => l.bairro.startsWith('Passo'));
   assert.equal(passo.qtd, 8);
-  assert.equal(passo.bairro, "Passo D'Areia", 'exibe a grafia mais comum do grupo');
+  // Desde 10/09/2026 o rótulo é a grafia CANÔNICA (utils/bairros.js), não mais
+  // a mais frequente do grupo: "Passo D'Areia" era o que aparecia mais, mas
+  // quem entra na lista de bairros é a forma correta.
+  assert.equal(passo.bairro, "Passo d'Areia", 'exibe a grafia canônica do grupo');
   assert.equal(linhas.find((l) => l.bairro.startsWith('Petr')).qtd, 10);
 });
 

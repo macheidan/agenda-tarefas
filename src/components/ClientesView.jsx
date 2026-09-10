@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useClientes, primeiroNome } from '../hooks/useClientes';
 import { useCampanhas } from '../hooks/useCampanhas';
 import { segmentoDe, SEGMENTOS } from '../utils/relatoriosClientes';
+import { bairroCanonico, chaveBairro, contarPorBairro } from '../utils/bairros';
 import BairrosModal from './BairrosModal';
 import CampanhaModal from './CampanhaModal';
 import CampanhasPanel from './CampanhasPanel';
@@ -261,6 +262,7 @@ export default function ClientesView({ settings, isAdmin }) {
   }, [daMarca, busca]);
 
   const filtrados = useMemo(() => {
+    const chavesBairro = new Set([...bairrosFiltro].map(chaveBairro));
     // Todos os recortes marcados valem ao mesmo tempo (E, não OU): marcar
     // "sem envios" + "mais de 1 pedido" pergunta por quem nunca recebeu nada E
     // já comprou mais de uma vez, que é a leitura útil.
@@ -270,7 +272,9 @@ export default function ClientesView({ settings, isAdmin }) {
         c.dias >= janela.min &&
         (janela.max === null || c.dias <= janela.max) &&
         testes.every((t) => t(c, { ultimoEnvio })) &&
-        (bairrosFiltro.size === 0 || bairrosFiltro.has(c.bairro || ''))
+        // Compara pela chave, não pelo texto: o modal marca a grafia canônica
+        // e o cadastro guarda a original ("Passo da Areia" x "Passo D'Areia").
+        (chavesBairro.size === 0 || chavesBairro.has(chaveBairro(c.bairro)))
     );
     const pegar = COLUNAS[ordem.campo] || COLUNAS.dias;
     const sinal = ordem.dir === 'asc' ? 1 : -1;
@@ -286,17 +290,7 @@ export default function ClientesView({ settings, isAdmin }) {
   // contagem é o que faz escolher rápido no modal. Não passa pelos recortes
   // nem pelo próprio filtro de bairro, senão as opções sumiriam conforme se
   // escolhe.
-  const bairrosDisponiveis = useMemo(() => {
-    const conta = new Map();
-    daMarca.forEach((c) => {
-      const b = c.bairro || '';
-      if (!b) return;
-      conta.set(b, (conta.get(b) || 0) + 1);
-    });
-    return [...conta.entries()]
-      .map(([nome, qtd]) => ({ nome, qtd }))
-      .sort((a, b) => b.qtd - a.qtd || a.nome.localeCompare(b.nome));
-  }, [daMarca]);
+  const bairrosDisponiveis = useMemo(() => contarPorBairro(daMarca), [daMarca]);
 
   const conflito = CONTRADITORIOS.find(([a, b]) => recortes.has(a) && recortes.has(b));
 
@@ -844,7 +838,7 @@ export default function ClientesView({ settings, isAdmin }) {
                       )}
                     </td>
                     <td data-label="Bairro" className={styles.colBairro}>
-                      {c.bairro || '—'}
+                      {bairroCanonico(c.bairro) || '—'}
                     </td>
                     <td data-label="Última compra" className={styles.colData}>
                       {formatarData(c.ultimaCompra)}

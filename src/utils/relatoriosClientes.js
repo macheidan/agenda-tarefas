@@ -223,28 +223,16 @@ export function diasAteSegundaCompra(clientes, coberturaDesde = '') {
 }
 
 /**
- * Chave de agrupamento de bairro. O Saipos recebe o bairro digitado (balcão) ou
- * vindo do marketplace, então o mesmo lugar chega escrito de vários jeitos:
- * "Passo D'Areia" e "Passo da Areia" apareciam como duas linhas de ~150
- * clientes cada, e nenhuma das duas entrava no top da tabela.
+ * Chave de agrupamento de bairro — reexportada de `utils/bairros.js`.
  *
- * Tira acento, pontuação e os conectivos (da/de/do/d'), que é onde mora a
- * variação. Não tenta corrigir grafia — "Petropolis" e "Petrópolis" casam,
- * "Petrópoles" não.
+ * Viveu aqui até 10/09/2026, quando a lista de clientes ganhou filtro por
+ * bairro e passou a precisar da mesma normalização. Duas cópias da regra é o
+ * caminho garantido para o relatório e o filtro discordarem sobre quantos
+ * clientes moram no Passo d'Areia; a de lá também corrige erro de digitação
+ * ("Petropolsi", "Paternon"), que esta nunca corrigiu.
  */
-const CONECTIVOS_BAIRRO = new Set(['da', 'de', 'do', 'das', 'dos', 'd', 'e']);
-
-export function chaveBairro(nome) {
-  return String(nome || '')
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .split(' ')
-    .filter((p) => p && !CONECTIVOS_BAIRRO.has(p))
-    .join(' ');
-}
+export { chaveBairro } from './bairros.js';
+import { bairroCanonico, chaveBairro } from './bairros.js';
 
 /**
  * Bairros ordenados por receita. `lojas` é a lista de chaves ('dame','lov') que
@@ -257,7 +245,7 @@ export function bairros(clientes, { lojas = [], minimo = 3 } = {}) {
   const mapa = new Map();
   const grafias = new Map();
   for (const c of clientes) {
-    const nome = c.bairro || 'Sem bairro';
+    const nome = bairroCanonico(c.bairro) || 'Sem bairro';
     const chave = chaveBairro(nome) || 'sem bairro';
     if (!mapa.has(chave)) {
       mapa.set(chave, []);
