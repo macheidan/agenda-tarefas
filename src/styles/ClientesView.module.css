@@ -715,3 +715,161 @@
     font-size: 16px; /* abaixo disso o iOS dá zoom ao focar */
   }
 }
+
+/* ── Seleção, paginação e recortes ────────────────────────────────────────── */
+.colCheck {
+  width: 34px;
+  text-align: center;
+}
+
+.colCheck input {
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
+.colCheck input:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.linhaMarcada {
+  background: var(--accent-light) !important;
+}
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.paginaInfo {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.recortes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+.recorteBtn {
+  padding: 6px 14px;
+  border: 2px solid var(--input-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recorteBtn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.recorteAtivo {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .colCheck {
+    width: auto;
+  }
+}
+
+/* ── Detalhe da campanha ──────────────────────────────────────────────────── */
+.linhaClicavel {
+  cursor: pointer;
+}
+
+.linhaClicavel:hover {
+  background: var(--bg-secondary);
+}
+
+.detalheTopo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.detalheTopo .subTitulo {
+  margin: 0;
+}
+
+.detalheCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.detalheCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 18px;
+  min-width: 110px;
+  border: 2px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.detalheCard strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.detalheCard span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.detalheCardAtivo {
+  border-color: var(--accent);
+}
+
+.stChip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.stEntregue {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.stLido {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.stErro {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.stEnviado {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}

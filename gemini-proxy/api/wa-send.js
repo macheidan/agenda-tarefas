@@ -209,6 +209,19 @@ export default async function handler(req, res) {
     return { telefone: d.telefone, ...r };
   });
 
+  // Índice de quem já recebeu alguma coisa, num doc só: é o que a lista lê para
+  // mostrar a coluna "Enviado" e para o filtro "sem envios". Um doc por cliente
+  // custaria uma leitura por linha da tabela; aqui é uma leitura para a tela
+  // inteira. Guarda milissegundos (número), não Timestamp, porque são milhares
+  // de chaves no mesmo documento e cada byte conta contra o teto de 1 MB.
+  const agora = Date.now();
+  const marcados = Object.fromEntries(
+    resultados.filter((r) => r.ok && !r.pulado).map((r) => [r.telefone, agora])
+  );
+  if (Object.keys(marcados).length) {
+    await db.doc('clientesMeta/ultimoEnvio').set({ tel: marcados }, { merge: true });
+  }
+
   const enviados = resultados.filter((r) => r.ok && !r.pulado).length;
   const falhas = resultados.filter((r) => !r.ok && !r.pulado).length;
   const pulados = resultados.filter((r) => r.pulado).length;

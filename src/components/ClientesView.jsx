@@ -80,7 +80,30 @@ const porMes = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maxi
 const reais = (v) =>
   (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
-const PAGINA = 200;
+const PAGINA = 50;
+
+/**
+ * Telefone fixo não recebe WhatsApp — e cada tentativa dele custa uma mensagem
+ * cobrada e uma falha na estatística da campanha (medido em 10/09: o
+ * 51 3372-0465 voltou "Message undeliverable"). Celular no Brasil tem 9
+ * dígitos; o número de 10 que começa em 6-9 é celular ANTIGO, ainda válido, e
+ * não pode ser confundido com fixo.
+ */
+function ehFixo(telefone) {
+  const t = String(telefone || '').replace(/\D/g, '');
+  const local = t.startsWith('55') && t.length >= 12 ? t.slice(2) : t;
+  if (local.length === 11) return local[2] !== '9';
+  if (local.length === 10) return !/[6-9]/.test(local[2]);
+  return true;
+}
+
+// Recortes rápidos que não cabem na régua de dias. Ficam ao lado dela porque
+// respondem à mesma pergunta ("para quem eu mando agora?") por outro eixo.
+const RECORTES = [
+  { key: 'semEnvio', label: 'Sem envios', teste: (c, ctx) => !ctx.ultimoEnvio[c.telefone] },
+  { key: 'muitos', label: 'Mais de 20 pedidos', teste: (c) => (c.pedidos || 0) > 20 },
+  { key: 'unico', label: 'Apenas 1 pedido', teste: (c) => (c.pedidos || 0) === 1 },
+];
 
 // Fim da régua de dias sem pedir: um ano. Quem passou disso continua na lista —
 // o ponto direito no fim da régua significa "sem teto", não 365.
@@ -134,7 +157,9 @@ export default function ClientesView({ settings, isAdmin }) {
   const [contato, setContato] = useState('todos');
   const [busca, setBusca] = useState('');
   const [ordem, setOrdem] = useState({ campo: 'dias', dir: 'desc' });
-  const [limite, setLimite] = useState(PAGINA);
+  const [pagina, setPagina] = useState(0);
+  const [recorte, setRecorte] = useState(null);
+  const [selecionados, setSelecionados] = useState(() => new Set());
   const [copiado, setCopiado] = useState(false);
   const [modalCampanha, setModalCampanha] = useState(false);
   // Recorte por segmento RFV, ligado a partir do relatório. Fica na lista (e não
@@ -153,7 +178,7 @@ export default function ClientesView({ settings, isAdmin }) {
   // Disparar campanha é permissão à parte de ver a lista: quem consulta cliente
   // não necessariamente pode mandar mensagem cobrada em nome da loja.
   const podeEnviar = isAdmin || settings?.clientesEnviar === true;
-  const { campanhas, respostas, optOuts, optOutTelefones } = useCampanhas(podeEnviar);
+  const { campanhas, respostas, optOuts, optOutTelefones, ultimoEnvio } = useCampanhas(podeEnviar);
   // Vem do índice, não da lista dos 500 recentes: descadastro antigo tem que
   // continuar fora das listas mesmo quando o painel já não o mostra.
   const optOutSet = useMemo(() => new Set(optOutTelefones), [optOutTelefones]);
@@ -228,8 +253,12 @@ export default function ClientesView({ settings, isAdmin }) {
   }, [daMarca, busca]);
 
   const filtrados = useMemo(() => {
+    const teste = RECORTES.find((r) => r.key === recorte)?.teste;
     const base = buscados.filter(
-      (c) => c.dias >= janela.min && (janela.max === null || c.dias <= janela.max)
+      (c) =>
+        c.dias >= janela.min &&
+        (janela.max === null || c.dias <= janela.max) &&
+        (!teste || teste(c, { ultimoEnvio }))
     );
     const pegar = COLUNAS[ordem.campo] || COLUNAS.dias;
     const sinal = ordem.dir === 'asc' ? 1 : -1;
@@ -239,9 +268,54 @@ export default function ClientesView({ settings, isAdmin }) {
       if (va === vb) return (a.nome || '').localeCompare(b.nome || '');
       return va > vb ? sinal : -sinal;
     });
-  }, [buscados, janela, ordem]);
+  }, [buscados, janela, ordem, recorte, ultimoEnvio]);
 
-  const visiveis = filtrados.slice(0, limite);
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGINA));
+  const paginaAtual = Math.min(pagina, totalPaginas - 1);
+  const visiveis = useMemo(
+    () => filtrados.slice(paginaAtual * PAGINA, paginaAtual * PAGINA + PAGINA),
+    [filtrados, paginaAtual]
+  );
+
+  /**
+   * Quem pode entrar numa campanha.
+   *
+   * Três travas, e cada uma existe por um motivo diferente: sem telefone do RS
+   * não há para onde mandar; quem pediu para sair não pode voltar a receber; e
+   * telefone fixo gasta mensagem cobrada para falhar.
+   */
+  const bloqueio = (c) => {
+    if (!c.podeReceber) return 'sem telefone';
+    if (optOutSet.has(c.telefone)) return 'pediu para sair';
+    if (ehFixo(c.telefone)) return 'telefone fixo';
+    return null;
+  };
+
+  const selecionaveis = useMemo(() => visiveis.filter((c) => !bloqueio(c)), [visiveis, optOutSet]);
+  const chaveDe = (c) => `${c.loja}_${c.chave}`;
+  const todosDaPagina =
+    selecionaveis.length > 0 && selecionaveis.every((c) => selecionados.has(chaveDe(c)));
+
+  const alternar = (c) => {
+    if (bloqueio(c)) return;
+    setSelecionados((s) => {
+      const n = new Set(s);
+      const k = chaveDe(c);
+      if (n.has(k)) n.delete(k); else n.add(k);
+      return n;
+    });
+  };
+
+  // O checkbox do cabeçalho age só sobre a PÁGINA visível — marcar 6 mil
+  // clientes de uma vez com um clique é o tipo de gesto que ninguém desfaz a
+  // tempo, e o custo de errar aqui é mensagem cobrada.
+  const alternarPagina = () => {
+    setSelecionados((s) => {
+      const n = new Set(s);
+      selecionaveis.forEach((c) => (todosDaPagina ? n.delete(chaveDe(c)) : n.add(chaveDe(c))));
+      return n;
+    });
+  };
   const marcasComDados = useMemo(() => new Set(daLoja.map((c) => c.loja)), [daLoja]);
 
   // Contagem de cada recorte de contato dentro da loja escolhida — sem passar
@@ -265,10 +339,10 @@ export default function ClientesView({ settings, isAdmin }) {
 
   // Todo filtro volta pro topo da lista — senão a pessoa continua vendo o
   // "mostrar mais" de um recorte que não existe mais.
-  const trocarJanela = (nova) => { setJanela(nova); setLimite(PAGINA); };
-  const trocarLoja = (v) => { setLojaFiltro(v); setLimite(PAGINA); };
-  const trocarContato = (v) => { setContato(v); setLimite(PAGINA); };
-  const trocarBusca = (v) => { setBusca(v); setLimite(PAGINA); };
+  const trocarJanela = (nova) => { setJanela(nova); setPagina(0); };
+  const trocarLoja = (v) => { setLojaFiltro(v); setPagina(0); };
+  const trocarContato = (v) => { setContato(v); setPagina(0); };
+  const trocarBusca = (v) => { setBusca(v); setPagina(0); };
 
   // Clicar num segmento no relatório leva pra lista já filtrada. A janela de
   // dias volta pra "todos" de propósito: o segmento já carrega a recência dele,
@@ -276,12 +350,12 @@ export default function ClientesView({ settings, isAdmin }) {
   const verSegmento = (key) => {
     setSegmentoFiltro(key);
     setJanela({ min: 0, max: null });
-    setLimite(PAGINA);
+    setPagina(0);
     setSub('lista');
   };
 
   const ordenarPor = (campo) => {
-    setLimite(PAGINA);
+    setPagina(0);
     setOrdem((o) =>
       o.campo === campo
         ? { campo, dir: o.dir === 'asc' ? 'desc' : 'asc' }
@@ -324,9 +398,22 @@ export default function ClientesView({ settings, isAdmin }) {
 
   // Descadastrado nunca entra no disparo. Ele continua na tabela, marcado — some
   // da lista seria pior: ninguém entenderia por que o total não bate.
+  /**
+   * Quem vai receber: os MARCADOS na tabela, não o recorte inteiro.
+   *
+   * Disparar para tudo que estava filtrado era fácil de fazer sem querer — o
+   * recorte muda com um arrastar de régua, e a conta só aparecia na confirmação.
+   * Com seleção explícita, mandar para 800 pessoas exige ter marcado 800.
+   *
+   * A varredura é sobre `filtrados` (todas as páginas) e não sobre `visiveis`:
+   * seleção feita na página 1 continua valendo depois de virar para a 2.
+   */
   const destinatarios = useMemo(
-    () => elegiveis.map((c) => ({ telefone: c.telefone, nome: primeiroNome(c.nome) })),
-    [elegiveis]
+    () =>
+      filtrados
+        .filter((c) => selecionados.has(`${c.loja}_${c.chave}`) && !bloqueio(c))
+        .map((c) => ({ telefone: c.telefone, nome: primeiroNome(c.nome) })),
+    [filtrados, selecionados, optOutSet]
   );
 
   const todosAtivo = janela.min === 0 && janela.max === null;
@@ -485,6 +572,22 @@ export default function ClientesView({ settings, isAdmin }) {
         </div>
       </div>
 
+      {/* Recortes que a régua de dias não expressa: quem nunca recebeu nada,
+          o cliente fiel e o de uma compra só. Ficam abaixo dela porque
+          respondem à mesma pergunta por outro eixo. */}
+      <div className={styles.recortes}>
+        {RECORTES.map((r) => (
+          <button
+            key={r.key}
+            className={`${styles.recorteBtn} ${recorte === r.key ? styles.recorteAtivo : ''}`}
+            onClick={() => { setRecorte(recorte === r.key ? null : r.key); setPagina(0); }}
+            type="button"
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       <div className={styles.toolbar}>
         <input
           className={styles.search}
@@ -497,7 +600,7 @@ export default function ClientesView({ settings, isAdmin }) {
         {segmentoFiltro && (
           <button
             className={styles.filtroChip}
-            onClick={() => { setSegmentoFiltro(null); setLimite(PAGINA); }}
+            onClick={() => { setSegmentoFiltro(null); setPagina(0); }}
             title="Voltar para a base inteira"
           >
             Segmento: {SEG_LABELS[segmentoFiltro]} <span aria-hidden="true">✕</span>
@@ -509,6 +612,15 @@ export default function ClientesView({ settings, isAdmin }) {
           {totais.pedidos === 1 ? '' : 's'} · ticket {reais(totais.ticket)}
           {atualizadoEm && ` · atualizado em ${atualizadoEm.toLocaleDateString('pt-BR')}`}
         </span>
+        {selecionados.size > 0 && (
+          <button
+            className={styles.ghostBtn}
+            onClick={() => setSelecionados(new Set())}
+            title="Desmarcar todos, inclusive os de outras páginas"
+          >
+            Limpar seleção ({selecionados.size})
+          </button>
+        )}
         <button
           className={styles.ghostBtn}
           onClick={copiarLista}
@@ -528,7 +640,7 @@ export default function ClientesView({ settings, isAdmin }) {
                 : 'Escolha uma loja — cada marca dispara do seu próprio número'
             }
           >
-            Enviar campanha ({destinatarios.length})
+            Enviar campanha ({destinatarios.length} selecionado{destinatarios.length === 1 ? '' : 's'})
           </button>
         )}
       </div>
@@ -560,6 +672,18 @@ export default function ClientesView({ settings, isAdmin }) {
           <table className={styles.table}>
             <thead>
               <tr>
+                {podeEnviar && (
+                  <th className={styles.colCheck}>
+                    <input
+                      type="checkbox"
+                      checked={todosDaPagina}
+                      onChange={alternarPagina}
+                      disabled={selecionaveis.length === 0}
+                      title="Selecionar todos os desta página"
+                      aria-label="Selecionar todos os desta página"
+                    />
+                  </th>
+                )}
                 <th className={styles.thSort} onClick={() => ordenarPor('nome')}>
                   Nome {seta('nome')}
                 </th>
@@ -595,13 +719,35 @@ export default function ClientesView({ settings, isAdmin }) {
                 >
                   Frequência {seta('frequencia')}
                 </th>
+                {podeEnviar && (
+                  <th className={styles.colData} title="Quando este cliente recebeu a última campanha">
+                    Enviado
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
               {visiveis.map((c) => {
                 const f = FAIXAS.find((x) => c.dias >= x.min && c.dias <= x.max);
+                const trava = bloqueio(c);
+                const marcado = selecionados.has(chaveDe(c));
                 return (
-                  <tr key={`${c.loja}_${c.chave}`} className={f?.classe ? styles[f.classe] : ''}>
+                  <tr
+                    key={`${c.loja}_${c.chave}`}
+                    className={`${f?.classe ? styles[f.classe] : ''} ${marcado ? styles.linhaMarcada : ''}`}
+                  >
+                    {podeEnviar && (
+                      <td data-label="" className={styles.colCheck}>
+                        <input
+                          type="checkbox"
+                          checked={marcado}
+                          onChange={() => alternar(c)}
+                          disabled={!!trava}
+                          title={trava ? `Não pode receber campanha: ${trava}` : 'Incluir na campanha'}
+                          aria-label={c.nome || 'cliente'}
+                        />
+                      </td>
+                    )}
                     <td data-label="Nome" className={styles.nome}>
                       {c.nome || <span className={styles.semNome}>Sem nome</span>}
                       {lojaFiltro === 'all' && marcasComDados.size > 1 && (
@@ -667,16 +813,37 @@ export default function ClientesView({ settings, isAdmin }) {
                     >
                       {c.frequencia === null ? '—' : `${porMes(c.frequencia)}/mês`}
                     </td>
+                    {podeEnviar && (
+                      <td data-label="Enviado" className={styles.colData}>
+                        {ultimoEnvio[c.telefone]
+                          ? new Date(ultimoEnvio[c.telefone]).toLocaleDateString('pt-BR')
+                          : ''}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
             </tbody>
           </table>
 
-          {filtrados.length > visiveis.length && (
-            <div className={styles.maisRow}>
-              <button className={styles.ghostBtn} onClick={() => setLimite((n) => n + PAGINA)}>
-                Mostrar mais ({filtrados.length - visiveis.length} restantes)
+          {totalPaginas > 1 && (
+            <div className={styles.paginacao}>
+              <button
+                className={styles.ghostBtn}
+                onClick={() => setPagina((n) => Math.max(0, n - 1))}
+                disabled={paginaAtual === 0}
+              >
+                ← Anterior
+              </button>
+              <span className={styles.paginaInfo}>
+                Página {paginaAtual + 1} de {totalPaginas} · {filtrados.length} clientes
+              </span>
+              <button
+                className={styles.ghostBtn}
+                onClick={() => setPagina((n) => Math.min(totalPaginas - 1, n + 1))}
+                disabled={paginaAtual >= totalPaginas - 1}
+              >
+                Próxima →
               </button>
             </div>
           )}

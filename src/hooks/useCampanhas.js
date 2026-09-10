@@ -25,6 +25,7 @@ export function useCampanhas(ativo) {
   const [respostas, setRespostas] = useState([]);
   const [optOuts, setOptOuts] = useState([]);
   const [optOutTelefones, setOptOutTelefones] = useState([]);
+  const [ultimoEnvio, setUltimoEnvio] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -79,5 +80,18 @@ export function useCampanhas(ativo) {
     []
   );
 
-  return { campanhas, respostas, optOuts, optOutTelefones, loading };
+  // Quando cada telefone recebeu a última mensagem: {telefone: ms}. Mesmo
+  // motivo do índice de opt-out — a alternativa seria varrer campanhaEnvios,
+  // que tem um documento por MENSAGEM enviada.
+  useEffect(
+    () =>
+      onSnapshot(
+        doc(db, 'clientesMeta', 'ultimoEnvio'),
+        (snap) => setUltimoEnvio(snap.exists() ? snap.data()?.tel || {} : {}),
+        (err) => console.error('Firestore clientesMeta/ultimoEnvio error:', err)
+      ),
+    []
+  );
+
+  return { campanhas, respostas, optOuts, optOutTelefones, ultimoEnvio, loading };
 }

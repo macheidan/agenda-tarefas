@@ -196,10 +196,29 @@ export default function CampanhaModal({
 
   const terminou = progresso && !enviando;
 
+  /**
+   * Fechar sem querer custa o que foi digitado.
+   *
+   * O overlay fecha no clique fora, que é o gesto certo para um modal de
+   * leitura e errado para um de formulário: o texto do template e o nome da
+   * campanha são digitados à mão e não voltam. Só pergunta se há o que perder.
+   */
+  const temRascunho = Boolean(
+    template.trim() || titulo.trim() || texto.trim() || cupom.trim() || testeTel.trim()
+  );
+
+  const tentarFechar = () => {
+    if (enviando) return;
+    if (temRascunho && !terminou && !window.confirm('Sair sem enviar? O que você digitou será perdido.')) {
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <div className={styles.overlay} onClick={enviando ? undefined : onClose}>
+    <div className={styles.overlay} onClick={tentarFechar}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeBtn} onClick={onClose} disabled={enviando} aria-label="Fechar">
+        <button className={styles.closeBtn} onClick={tentarFechar} disabled={enviando} aria-label="Fechar">
           ×
         </button>
         <h3 className={styles.titulo}>Enviar campanha · {lojaLabel}</h3>
@@ -366,7 +385,7 @@ export default function CampanhaModal({
               Parar depois deste lote
             </button>
           ) : (
-            <button className={styles.ghost} onClick={onClose}>
+            <button className={styles.ghost} onClick={tentarFechar}>
               {terminou ? 'Fechar' : 'Cancelar'}
             </button>
           )}
