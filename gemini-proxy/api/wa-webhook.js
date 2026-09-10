@@ -38,6 +38,11 @@ const INDICE_OPTOUT = 'clientesMeta/optOut';
  */
 const ATENDIMENTO = { dame: 'WA_ATENDIMENTO_DAME', lov: 'WA_ATENDIMENTO_LOV' };
 
+// Vai no `?text=` do link: quem chega ao número de atendimento com essa frase
+// veio da campanha. É a única atribuição que sobra, já que o clique acontece
+// numa conversa e não numa página com pixel.
+const FRASE_ATRIBUICAO = 'Quero saber das novidades';
+
 // Uma resposta automática por número a cada 24h: sem isso, cliente que manda
 // três mensagens seguidas recebe três vezes a mesma coisa.
 const JANELA_AUTO_MS = 24 * 60 * 60 * 1000;
@@ -140,14 +145,28 @@ async function enviarTexto(loja, para, texto) {
   return true;
 }
 
-function textoAtendimento(loja) {
+/**
+ * O que responder a quem interage com o número da campanha.
+ *
+ * `clicou` separa os dois casos porque a experiência é outra: quem apertou o
+ * botão do template demonstrou interesse e merece a ponte direta; quem digitou
+ * precisa antes saber que ali não tem ninguém lendo.
+ *
+ * O link mora aqui e não no template porque a Meta RECUSA botão com link de
+ * WhatsApp dentro de um template (medido em 10/09). Mensagem de sessão pode.
+ */
+function textoAtendimento(loja, clicou) {
   const numero = String(process.env[ATENDIMENTO[loja]] || '').replace(/\D/g, '');
   if (!numero) return '';
-  // Template literal com quebras de verdade: a mensagem chega ao cliente com
-  // as linhas em branco que separam o convite do aviso de descadastro.
-  return `Oi! Este número é usado só para enviar novidades e não é atendido por aqui 🙂
+  const link = `https://wa.me/${numero}?text=${encodeURIComponent(FRASE_ATRIBUICAO)}`;
+  if (clicou) {
+    return `Que bom que você quer saber! 🍕
 
-Para falar com a gente, chama no nosso WhatsApp: https://wa.me/${numero}
+Chama a gente aqui que a gente te conta tudo: ${link}`;
+  }
+  return `Oi! Este número só envia novidades e não é atendido por aqui 🙂
+
+Para falar com a gente, chama no nosso WhatsApp: ${link}
 
 Se não quiser mais receber, responda SAIR.`;
 }
@@ -172,7 +191,8 @@ async function autoResposta(db, msg, valor, { saiu, optOutNovo }) {
     return;
   }
 
-  const texto = textoAtendimento(loja);
+  // `button` é o clique no Quick Reply do template; `text` é quem digitou.
+  const texto = textoAtendimento(loja, msg.type === 'button');
   if (!texto) return;
 
   const ref = db.doc(`campanhaAutoRespostas/${para}`);

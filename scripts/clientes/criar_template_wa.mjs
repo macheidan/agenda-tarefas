@@ -21,7 +21,7 @@ import { existsSync, readFileSync } from 'node:fs';
 const GRAPH = 'https://graph.facebook.com/v21.0';
 const STORE = 'C:\\claude_project\\Hub\\_credenciais\\whatsapp-cloud.env';
 
-const WABA_PADRAO = { dame: '206538077125724', lov: '' };
+const WABA_PADRAO = { dame: '2468605356970524', lov: '' };
 
 // O template, como vai para a Meta. Categoria MARKETING é obrigatória para
 // mensagem de reativação: mandar isso como UTILITY é o caminho mais curto para
@@ -39,18 +39,16 @@ const TEMPLATE = {
   // Rodapé de descadastro: além da LGPD, é ele que segura a nota de qualidade —
   // quem consegue sair não bloqueia, e bloqueio derruba o número.
   rodape: 'Responda SAIR para não receber mais.',
-  // Botão de URL, não Quick Reply: a campanha sai de um CHIP que não está aberto
-  // em aparelho nenhum (condição para ele registrar na Cloud API), então uma
-  // resposta ali não chega a ninguém — o botão precisa levar o cliente para o
-  // número que a loja de fato atende. O `?text=` já vem preenchido e serve de
-  // atribuição: quem chega com essa frase veio da campanha.
-  botao: 'Falar com a gente',
-  frase: 'Quero saber das novidades',
+  // Quick Reply, e não um botão de URL para o número que atende: a Meta RECUSA
+  // template com link de WhatsApp — medido em 10/09, `[100] Invalid parameter:
+  // Os botões não podem conter links diretos para o WhatsApp`. Não é o desenho
+  // ideal, é o único que passa.
+  //
+  // O clique vira o gatilho: ele chega como mensagem de entrada no webhook, que
+  // responde com o link do número de atendimento. Mensagem de sessão não tem
+  // essa restrição — o link só é proibido DENTRO do template.
+  botao: 'Quero saber',
 };
-
-// Número que ATENDE cada loja, em E.164 só com dígitos — destino do botão.
-// Não confundir com o número que dispara: são outros, de propósito.
-const ATENDIMENTO = { dame: '555133322440', lov: '' };
 
 function doStore(chave) {
   if (!existsSync(STORE)) return '';
@@ -63,14 +61,7 @@ function doStore(chave) {
   return '';
 }
 
-function corpoDaApi(loja) {
-  const atende = ATENDIMENTO[loja];
-  if (!atende) {
-    throw new Error(
-      `sem número de atendimento para "${loja}" — preencha ATENDIMENTO em ${import.meta.url.split('/').pop()}`
-    );
-  }
-  const url = `https://wa.me/${atende}?text=${encodeURIComponent(TEMPLATE.frase)}`;
+function corpoDaApi() {
   return {
     name: TEMPLATE.name,
     language: TEMPLATE.language,
@@ -82,7 +73,7 @@ function corpoDaApi(loja) {
         example: { body_text: [TEMPLATE.exemplo] },
       },
       { type: 'FOOTER', text: TEMPLATE.rodape },
-      { type: 'BUTTONS', buttons: [{ type: 'URL', text: TEMPLATE.botao, url }] },
+      { type: 'BUTTONS', buttons: [{ type: 'QUICK_REPLY', text: TEMPLATE.botao }] },
     ],
   };
 }
@@ -111,7 +102,7 @@ async function main() {
   const SUF = loja.toUpperCase();
 
   if (args.includes('--seco')) {
-    console.log(JSON.stringify(corpoDaApi(loja), null, 2));
+    console.log(JSON.stringify(corpoDaApi(), null, 2));
     return;
   }
 
@@ -143,7 +134,7 @@ async function main() {
     }
 
     console.log(`\nSubmetendo "${TEMPLATE.name}" (${TEMPLATE.language}) na WABA ${waba}...`);
-    const r = await chamar(`/${waba}/message_templates`, token, corpoDaApi(loja));
+    const r = await chamar(`/${waba}/message_templates`, token, corpoDaApi());
     console.log(`   ok — id=${r.id} status=${r.status ?? 'PENDING'}`);
     console.log('\nA aprovação leva de minutos a 24h. Acompanhe com --listar.');
     console.log(`No modal de campanha da intranet, o nome do template é: ${TEMPLATE.name}`);
