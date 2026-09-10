@@ -53,3 +53,4 @@ scripts/dash/data/
 
 # Coleta de vendas por bairro (JSON cru do Saipos)
 scripts/vendas/data/
+scripts/mesadono/data/
