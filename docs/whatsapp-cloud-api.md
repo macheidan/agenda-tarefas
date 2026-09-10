@@ -197,7 +197,7 @@ finalmente for verificado, ele entra **na mesma WABA** e só troca o
 
 | # | Passo | Onde |
 |---|---|---|
-| 1 | Ativar o chip no CPF, com recarga automática | portal/app da TIM |
+| 1 | ✅ **Feito em 10/09** — chip ativado no CPF, com recarga automática | portal/app da TIM |
 | 2 | Criar app + usuário de sistema no **BM da Lov** | developers.facebook.com |
 | 3 | Criar a WABA e adicionar o número (SMS/ligação) | business.facebook.com |
 | 4 | Webhook do app novo: mesma URL, mesmo verify token, campo `messages` | painel do app |
