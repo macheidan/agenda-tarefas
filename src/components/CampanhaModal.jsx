@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { enviarLote, novaCampanhaId, LOTE, PAUSA_MS } from '../utils/whatsapp';
+import { auth } from '../firebase';
 import styles from '../styles/CampanhaModal.module.css';
 
 // Limite de destinatários novos por dia. Número novo na Meta começa baixo e
@@ -54,6 +55,9 @@ export default function CampanhaModal({
   const [progresso, setProgresso] = useState(null);
   const [erro, setErro] = useState(null);
   const pararRef = useRef(false);
+  const [testeTel, setTesteTel] = useState('');
+  const [testando, setTestando] = useState(false);
+  const [testeOk, setTesteOk] = useState(null);
 
   const pendente = useMemo(() => campanhaPendente(campanhas, loja), [campanhas, loja]);
   const feitosPendente = pendente
@@ -65,6 +69,58 @@ export default function CampanhaModal({
   const alvo = destinatarios.slice(0, Math.max(0, Number(limite) || 0));
   const exemplo = alvo[0];
   const preview = texto.replace(/\{\{1\}\}/g, exemplo?.nome || 'Fulano');
+
+  /**
+   * Um envio só, para um número digitado na hora.
+   *
+   * Existe porque o disparo normal manda para o RECORTE da lista, e quem vai
+   * conferir se o template ficou bom quase nunca está na base de clientes.
+   * Vai pelo mesmo caminho do disparo de verdade — proxy, template, webhook —
+   * senão não seria teste de nada: cria campanha própria, marcada como teste,
+   * e o status dela no painel é a prova de que o webhook está de pé.
+   */
+  const enviarTeste = async () => {
+    const tel = testeTel.replace(/\D/g, '');
+    if (tel.length < 10) {
+      setTesteOk({ erro: 'Telefone incompleto. Digite com DDD.' });
+      return;
+    }
+    if (!template.trim()) {
+      setTesteOk({ erro: 'Informe o nome do template aprovado na Meta.' });
+      return;
+    }
+    setTestando(true);
+    setTesteOk(null);
+    try {
+      const nome = (auth.currentUser?.displayName || '').trim().split(/\s+/)[0] || 'Fábio';
+      const r = await enviarLote({
+        campanhaId: `teste-${novaCampanhaId(loja)}`,
+        loja,
+        template: template.trim(),
+        idioma,
+        destinatarios: [{ telefone: tel, nome }],
+        meta: {
+          titulo: `Teste · ${tel}`,
+          filtro: 'envio de teste',
+          texto: texto.trim(),
+          totalAlvo: 1,
+        },
+      });
+      const pulou = r.pulados > 0;
+      setTesteOk({
+        ok: r.enviados > 0,
+        msg: r.enviados > 0
+          ? 'Enviado! Confira o celular.'
+          : pulou
+            ? 'Pulado: esse número pediu para sair ou já recebeu este teste.'
+            : r.resultados?.[0]?.erro || 'não saiu',
+      });
+    } catch (e) {
+      setTesteOk({ erro: e.message || 'falha no envio' });
+    } finally {
+      setTestando(false);
+    }
+  };
 
   const disparar = async (campanha = null) => {
     // Só é retomada se veio um doc de campanha com id. Sem esta guarda, um
@@ -241,6 +297,36 @@ export default function CampanhaModal({
             <p>{preview}</p>
           </div>
         )}
+
+        <div className={styles.teste}>
+          <label htmlFor="camp-teste">Enviar um teste antes</label>
+          <div className={styles.testeLinha}>
+            <input
+              id="camp-teste"
+              value={testeTel}
+              onChange={(e) => setTesteTel(e.target.value)}
+              placeholder="51 99999-9999"
+              disabled={testando || enviando}
+            />
+            <button
+              className={styles.testeBtn}
+              onClick={enviarTeste}
+              disabled={testando || enviando || !testeTel.trim()}
+              type="button"
+            >
+              {testando ? 'Enviando…' : 'Enviar teste'}
+            </button>
+          </div>
+          <span className={styles.dica}>
+            Uma mensagem só, para o número que você digitar — mesmo caminho do disparo de
+            verdade, e cobrada como qualquer outra. Não precisa estar na lista de clientes.
+          </span>
+          {testeOk && (
+            <span className={testeOk.ok ? styles.testeOk : styles.testeErro}>
+              {testeOk.erro || testeOk.msg}
+            </span>
+          )}
+        </div>
 
         {progresso && (
           <div className={styles.progresso}>

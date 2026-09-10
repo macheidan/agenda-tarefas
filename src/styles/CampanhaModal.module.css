@@ -312,3 +312,79 @@
 .retomarBtn:hover {
   filter: brightness(0.95);
 }
+
+/* Envio de teste: fica antes do disparo real de propósito — é a última chance
+   de ver o template como o cliente vê, e quem confere raramente está na base. */
+.teste {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.teste label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.testeLinha {
+  display: flex;
+  gap: 8px;
+}
+
+.testeLinha input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.testeLinha input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.testeBtn {
+  padding: 9px 16px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.testeBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.testeOk {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--success);
+  margin-top: 8px;
+}
+
+.testeErro {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+  margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  .testeLinha input {
+    font-size: 16px;
+  }
+}
