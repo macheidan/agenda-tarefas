@@ -66,7 +66,12 @@ export default function CampanhaModal({
   const exemplo = alvo[0];
   const preview = texto.replace(/\{\{1\}\}/g, exemplo?.nome || 'Fulano');
 
-  const disparar = async (retomar = null) => {
+  const disparar = async (campanha = null) => {
+    // Só é retomada se veio um doc de campanha com id. Sem esta guarda, um
+    // `onClick={disparar}` distraído passaria o evento do clique aqui e o
+    // usuário veria a confirmação de RETOMADA no lugar da que avisa que a
+    // mensagem sai de verdade e é cobrada.
+    const retomar = campanha && campanha.id ? campanha : null;
     const nomeTemplate = (retomar?.template || template).trim();
     if (!nomeTemplate) {
       setErro('Informe o nome do template aprovado na Meta.');
@@ -104,7 +109,13 @@ export default function CampanhaModal({
             titulo: retomar?.titulo || titulo.trim() || nomeTemplate,
             filtro: filtroDesc,
             texto: texto.trim(),
-            totalAlvo: alvo.length,
+            // O recorte inteiro, não a fatia de hoje: é `totalAlvo` que diz se a
+            // campanha ficou pela metade. Gravando só o lote do dia, uma
+            // campanha de 800 com limite 250 fecharia como "completa" e o
+            // botão Retomar nunca apareceria — justamente no caso mais comum,
+            // o do limite diário, em que continuar no dia seguinte com id novo
+            // reenviaria (e recobraria) os 250 do primeiro dia.
+            totalAlvo: destinatarios.length,
           },
         });
         totais.feitos += lote.length;
@@ -115,8 +126,9 @@ export default function CampanhaModal({
         if (i + LOTE < alvo.length) await espera(PAUSA_MS);
       }
     } catch (e) {
-      // Erro de lote não perde o que já saiu: o servidor pula quem já recebeu,
-      // então reabrir e disparar de novo continua de onde parou.
+      // Erro de lote não perde o que já saiu, MAS continuar exige o botão
+      // Retomar (que reusa o campanhaId). "Disparar" de novo cria campanha
+      // nova, e o servidor só reconhece quem já recebeu dentro do mesmo id.
       setErro(e.message || 'falha no envio');
     } finally {
       setEnviando(false);
@@ -261,7 +273,7 @@ export default function CampanhaModal({
           )}
           <button
             className={styles.primario}
-            onClick={disparar}
+            onClick={() => disparar()}
             disabled={enviando || alvo.length === 0}
           >
             {enviando ? 'Enviando…' : terminou ? 'Disparar de novo' : `Disparar (${alvo.length})`}
