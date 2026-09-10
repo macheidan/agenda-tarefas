@@ -294,8 +294,16 @@ export default function ClientesView({ settings, isAdmin }) {
   // nem na cópia, nem no disparo. Continua contando no resto da tela.
   const comWhatsapp = useMemo(() => filtrados.filter((c) => c.podeReceber), [filtrados]);
 
+  // Quem pediu para sair não entra em NENHUMA lista de contato — nem no disparo
+  // daqui, nem na cópia. A cópia é o caminho que vaza: o texto colado vai parar
+  // em outro disparador, onde a checagem do servidor não existe para segurar.
+  const elegiveis = useMemo(
+    () => comWhatsapp.filter((c) => !optOutSet.has(c.telefone)),
+    [comWhatsapp, optOutSet]
+  );
+
   const copiarLista = async () => {
-    const texto = comWhatsapp
+    const texto = elegiveis
       .map((c) => `${primeiroNome(c.nome)},${paraWhatsapp(c.telefone)}`)
       .join('\n');
     try {
@@ -315,11 +323,8 @@ export default function ClientesView({ settings, isAdmin }) {
   // Descadastrado nunca entra no disparo. Ele continua na tabela, marcado — some
   // da lista seria pior: ninguém entenderia por que o total não bate.
   const destinatarios = useMemo(
-    () =>
-      comWhatsapp
-        .filter((c) => !optOutSet.has(c.telefone))
-        .map((c) => ({ telefone: c.telefone, nome: primeiroNome(c.nome) })),
-    [comWhatsapp, optOutSet]
+    () => elegiveis.map((c) => ({ telefone: c.telefone, nome: primeiroNome(c.nome) })),
+    [elegiveis]
   );
 
   const todosAtivo = janela.min === 0 && janela.max === null;
@@ -505,10 +510,10 @@ export default function ClientesView({ settings, isAdmin }) {
         <button
           className={styles.ghostBtn}
           onClick={copiarLista}
-          disabled={comWhatsapp.length === 0}
+          disabled={elegiveis.length === 0}
           title="Copia primeiro nome e telefone, um por linha, separados por vírgula"
         >
-          {copiado ? 'Copiado!' : `Copiar nomes + telefones (${comWhatsapp.length})`}
+          {copiado ? 'Copiado!' : `Copiar nomes + telefones (${elegiveis.length})`}
         </button>
         {podeEnviar && (
           <button
