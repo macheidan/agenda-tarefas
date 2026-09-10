@@ -71,6 +71,29 @@
   box-shadow: var(--shadow-xs);
 }
 
+/* Métrica (Pedidos/Faturamento) do Por Bairro: mesmo segmented control das
+   sub-abas, só que menor — mora na direita do header do painel. */
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.metricaTabs {
+  display: inline-flex;
+  background: var(--badge-bg);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 2px;
+}
+
+.metricaTabs .sectionTab {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 3fr 2fr;
