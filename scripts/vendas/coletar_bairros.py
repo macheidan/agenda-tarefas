@@ -178,7 +178,22 @@ def diagnostico(page) -> dict:
         texto = page.locator("body").inner_text(timeout=5000)[:3000]
     except Exception as e:
         texto = f"ERRO {e}"
-    return {"scope": chaves, "texto": texto}
+    # Os campos da tela entram junto porque a outra falha possível é o filtro
+    # deste relatório não ser o par de inputs `dateString` que o `abrir_relatorio`
+    # sabe preencher — e aí o log só diria "campos de data não apareceram".
+    try:
+        campos = page.evaluate(
+            """() => ({
+              inputs: [...document.querySelectorAll('input')].map(
+                (i) => `${i.getAttribute('ng-model') || '?'}|${i.getAttribute('placeholder') || ''}`),
+              selects: [...document.querySelectorAll('select')].map((s) => s.getAttribute('ng-model')),
+              botoes: [...document.querySelectorAll('button')].map(
+                (b) => `${(b.innerText || '').trim()}|${b.getAttribute('ng-click') || ''}`).slice(0, 30),
+            })"""
+        )
+    except Exception as e:
+        campos = f"ERRO {e}"
+    return {"scope": chaves, "texto": texto, "tela": campos}
 
 
 def coletar_mes(page, id_store: str, ano_mes: str, descobrir: bool = False) -> tuple[list[dict], dict | None]:
@@ -240,6 +255,9 @@ def main():
                 except Exception as e:  # um mês ruim não derruba a coleta inteira
                     print(f"  {loja} {ano_mes}: FALHOU ({type(e).__name__} {e})", flush=True)
                     falhas.append(f"{loja} {ano_mes}")
+                    if not diagnosticos:
+                        diagnosticos.append({"loja": loja, "ano_mes": ano_mes,
+                                             "erro": f"{type(e).__name__} {e}", **diagnostico(page)})
                     continue
                 if diag and not diagnosticos:
                     # Só o primeiro: são 64 meses e o diagnóstico é o mesmo.
