@@ -897,3 +897,9 @@
   color: var(--warning-text);
   font-size: 12px;
 }
+
+.reguaDica {
+  color: var(--text-secondary);
+  cursor: help;
+  font-size: 11px;
+}

@@ -5,6 +5,7 @@ import { segmentoDe, SEGMENTOS } from '../utils/relatoriosClientes';
 import { bairroCanonico, chaveBairro, contarPorBairro } from '../utils/bairros';
 import BairrosModal from './BairrosModal';
 import CampanhaModal from './CampanhaModal';
+import ReguaDias from './ReguaDias';
 import CampanhasPanel from './CampanhasPanel';
 import ClientesRelatorios from './ClientesRelatorios';
 import styles from '../styles/ClientesView.module.css';
@@ -167,6 +168,9 @@ export default function ClientesView({ settings, isAdmin }) {
   const [pagina, setPagina] = useState(0);
   const [recortes, setRecortes] = useState(() => new Set());
   const [bairrosFiltro, setBairrosFiltro] = useState(() => new Set());
+  // Segunda régua: há quanto tempo o cliente não recebe campanha. É o corte que
+  // evita bater no mesmo cliente duas semanas seguidas.
+  const [janelaMsg, setJanelaMsg] = useState({ min: 0, max: null });
   const [modalBairros, setModalBairros] = useState(false);
   const [selecionados, setSelecionados] = useState(() => new Set());
   const [copiado, setCopiado] = useState(false);
@@ -263,6 +267,19 @@ export default function ClientesView({ settings, isAdmin }) {
 
   const filtrados = useMemo(() => {
     const chavesBairro = new Set([...bairrosFiltro].map(chaveBairro));
+    /**
+     * Dias desde a última campanha recebida.
+     *
+     * Quem nunca recebeu vale Infinity, não zero: "nunca recebeu" é o extremo
+     * de "faz tempo que não recebe", e é justamente esse o público que a régua
+     * existe para achar. Zero jogaria essa gente no mesmo balde de quem recebeu
+     * hoje — o oposto do que se procura.
+     */
+    const diasMsg = (c) => {
+      const ms = ultimoEnvio[c.telefone];
+      return ms ? Math.floor((Date.now() - ms) / 86400000) : Infinity;
+    };
+    const msgTodos = janelaMsg.min === 0 && janelaMsg.max === null;
     // Todos os recortes marcados valem ao mesmo tempo (E, não OU): marcar
     // "sem envios" + "mais de 1 pedido" pergunta por quem nunca recebeu nada E
     // já comprou mais de uma vez, que é a leitura útil.
@@ -274,7 +291,10 @@ export default function ClientesView({ settings, isAdmin }) {
         testes.every((t) => t(c, { ultimoEnvio })) &&
         // Compara pela chave, não pelo texto: o modal marca a grafia canônica
         // e o cadastro guarda a original ("Passo da Areia" x "Passo D'Areia").
-        (chavesBairro.size === 0 || chavesBairro.has(chaveBairro(c.bairro)))
+        (chavesBairro.size === 0 || chavesBairro.has(chaveBairro(c.bairro))) &&
+        (msgTodos ||
+          (diasMsg(c) >= janelaMsg.min &&
+            (janelaMsg.max === null || diasMsg(c) <= janelaMsg.max)))
     );
     const pegar = COLUNAS[ordem.campo] || COLUNAS.dias;
     const sinal = ordem.dir === 'asc' ? 1 : -1;
@@ -284,7 +304,7 @@ export default function ClientesView({ settings, isAdmin }) {
       if (va === vb) return (a.nome || '').localeCompare(b.nome || '');
       return va > vb ? sinal : -sinal;
     });
-  }, [buscados, janela, ordem, recortes, bairrosFiltro, ultimoEnvio]);
+  }, [buscados, janela, ordem, recortes, bairrosFiltro, janelaMsg, ultimoEnvio]);
 
   // Bairros do recorte de loja/contato, com quantos clientes cada um tem — a
   // contagem é o que faz escolher rápido no modal. Não passa pelos recortes
@@ -364,6 +384,7 @@ export default function ClientesView({ settings, isAdmin }) {
   // Todo filtro volta pro topo da lista — senão a pessoa continua vendo o
   // "mostrar mais" de um recorte que não existe mais.
   const trocarJanela = (nova) => { setJanela(nova); setPagina(0); };
+  const trocarJanelaMsg = (nova) => { setJanelaMsg(nova); setPagina(0); };
   const trocarLoja = (v) => { setLojaFiltro(v); setPagina(0); };
   const trocarContato = (v) => { setContato(v); setPagina(0); };
   const trocarBusca = (v) => { setBusca(v); setPagina(0); };
@@ -443,20 +464,15 @@ export default function ClientesView({ settings, isAdmin }) {
   const todosAtivo = janela.min === 0 && janela.max === null;
   const janelaDesc = janela.max === null ? `${janela.min}+ dias` : `${janela.min} a ${janela.max} dias`;
 
-  // Sem teto, o ponto da direita mora no fim da régua.
-  const maxValor = janela.max === null ? REGUA_MAX : Math.min(janela.max, REGUA_MAX);
-  const pctMin = (Math.min(janela.min, REGUA_MAX) / REGUA_MAX) * 100;
-  const pctMax = (maxValor / REGUA_MAX) * 100;
 
-  // Um ponto nunca passa do outro: o que sobrar do arrasto vira empate.
-  const mudarMin = (v) => trocarJanela({ ...janela, min: Math.min(Number(v), maxValor) });
-  const mudarMax = (v) => {
-    const n = Math.max(Number(v), janela.min);
-    trocarJanela({ ...janela, max: n >= REGUA_MAX ? null : n });
-  };
+  const msgDesc =
+    janelaMsg.min === 0 && janelaMsg.max === null
+      ? null
+      : `sem mensagem ${janelaMsg.max === null ? `${janelaMsg.min}+` : `${janelaMsg.min} a ${janelaMsg.max}`} dias`;
 
   const filtroDesc = [
     todosAtivo ? 'todos os dias' : janelaDesc,
+    msgDesc,
     lojaAlvo ? LOJA_LABELS[lojaAlvo] : 'todas as lojas',
     segmentoFiltro ? `segmento ${SEG_LABELS[segmentoFiltro]}` : null,
     busca.trim() ? `busca "${busca.trim()}"` : null,
@@ -554,47 +570,17 @@ export default function ClientesView({ settings, isAdmin }) {
           botões de faixa (0 a 30, 31 a 60…) porque faz o mesmo e mais — "quem
           sumiu entre 45 e 70 dias" não tinha botão. Arrastar o ponto direito
           até o fim solta o teto; senão quem está além da régua sumiria. */}
-      <div className={styles.reguaBox}>
-        <div className={styles.reguaTopo}>
-          <span className={styles.reguaLabel}>Dias sem pedir</span>
-          <strong className={styles.reguaValor}>{todosAtivo ? 'todos' : janelaDesc}</strong>
-        </div>
-        <div className={styles.regua}>
-          <div className={styles.trilho} />
-          <div
-            className={styles.trilhoAtivo}
-            style={{ left: `${pctMin}%`, width: `${Math.max(0, pctMax - pctMin)}%` }}
-          />
-          <input
-            className={styles.pontoRegua}
-            type="range"
-            min="0"
-            max={REGUA_MAX}
-            value={janela.min}
-            // Os dois pontos podem se encostar; quem fica por cima é sempre o
-            // que ainda tem para onde ir, senão um deles fica impossível de pegar.
-            style={{ zIndex: pctMin >= 100 ? 3 : 5 }}
-            onChange={(e) => mudarMin(e.target.value)}
-            aria-label="Mínimo de dias sem pedir"
-            aria-valuetext={`a partir de ${janela.min} dias`}
-          />
-          <input
-            className={styles.pontoRegua}
-            type="range"
-            min="0"
-            max={REGUA_MAX}
-            value={maxValor}
-            style={{ zIndex: pctMin >= 100 ? 5 : 4 }}
-            onChange={(e) => mudarMax(e.target.value)}
-            aria-label="Máximo de dias sem pedir"
-            aria-valuetext={janela.max === null ? 'sem limite' : `até ${janela.max} dias`}
-          />
-        </div>
-        <div className={styles.reguaEscala}>
-          <span>0</span>
-          <span>{REGUA_MAX}+</span>
-        </div>
-      </div>
+      <ReguaDias label="Dias sem pedir" janela={janela} onChange={trocarJanela} max={REGUA_MAX} />
+
+      {podeEnviar && (
+        <ReguaDias
+          label="Dias sem receber mensagem"
+          janela={janelaMsg}
+          onChange={trocarJanelaMsg}
+          max={REGUA_MAX}
+          dica="Quem nunca recebeu campanha conta como tempo infinito — some do recorte assim que você põe um teto à direita."
+        />
+      )}
 
       {/* Recortes que a régua de dias não expressa: quem nunca recebeu nada,
           o cliente fiel e o de uma compra só. Ficam abaixo dela porque
