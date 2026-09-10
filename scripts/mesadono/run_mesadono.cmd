@@ -4,8 +4,17 @@ rem  Mesa do Dono - fecha o MES ANTERIOR (dia 01, 04:40)
 rem
 rem  Existe porque agosto/2026 ficou pela metade na Mesa do Dono: o documento
 rem  fechamentos_mensais/2026-08_<marca> tinha o DRE (dre_synced_at 04/09 11:38)
-rem  mas nao tinha `pizzas`, `ticket` nem `canais` - o lado da planilha VENDAS
-rem  LOJAS (dados_synced_at parou em 02/09 19:17, cobrindo so ate julho).
+rem  mas nao tinha `pizzas`, `ticket` nem `canais` (dados_synced_at parou em
+rem  02/09 19:17, cobrindo so ate julho). Na tela: faturamento certo com Pizzas
+rem  e Ticket zerados - cara de mes que nao rodou.
+rem
+rem  A CAUSA (confirmada ao rodar agosto em 10/09/2026): a planilha VENDAS LOJAS
+rem  JA TINHA agosto - as celulas DADOS!M136/N136 (Dame) e E136/F136 (Lov)
+rem  estavam preenchidas desde o /dre de 04/09. O que nunca aconteceu foi o
+rem  SYNC: gravacao pela API do Sheets NAO dispara o gatilho onChange do Apps
+rem  Script, entao a planilha ficou certa e o Firestore ficou velho. Por isso o
+rem  passo 2 aqui e obrigatorio e nao pode depender do gatilho.
+rem
 rem  Nenhum job da grade cobria essa metade: o intranet-dashboard so alimenta o
 rem  MES CORRENTE e o vendas-bairros escreve noutra colecao.
 rem
@@ -15,6 +24,9 @@ rem      Exporta os itens vendidos do Saipos, confere a consistencia e grava nas
 rem      abas ITENS DAME / ITENS LOV e na aba DADOS (contagem de pizzas por
 rem      canal) da planilha VENDAS LOJAS. Sem --mes/--ano ele ja assume o mes
 rem      anterior, que no dia 01 e exatamente o que acabou de fechar.
+rem      Se o /dre do mes ja tiver preenchido essas celulas, o passo 1 sai com
+rem      [PULA]/[ABORT] e NAO sobrescreve - isso e esperado e nao e falha: o
+rem      que fecha o buraco e o passo 2. Foi exatamente o caso de agosto.
 rem   2) Dispara o Web App do SyncVendas.gs (planilha VENDAS LOJAS), que le a
 rem      aba DADOS e escreve pizzas/ticket/canais em fechamentos_mensais.
 rem      ISSO E OBRIGATORIO: gravacao pela API do Sheets NAO dispara o gatilho
