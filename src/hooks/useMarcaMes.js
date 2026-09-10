@@ -11,7 +11,13 @@ const MES_KEY = 'gestao:anoMes';
 const marcaValida = (m) => MARCAS.some((x) => x.id === m);
 const mesValido = (s) => /^\d{4}-\d{2}$/.test(s || '');
 
-export function useMarcaMes() {
+/**
+ * @param {string} [defaultAnoMes] mês de abertura quando ainda não há nada em
+ * localStorage (1ª visita). Default: mês anterior (fechamento mais recente
+ * disponível) — a Mesa do Dono passa o mês corrente, porque tem dado ao vivo
+ * (vendas por dia) que as outras views (Vendas, DRE) não têm.
+ */
+export function useMarcaMes(defaultAnoMes) {
   const [marca, setMarcaState] = useState(() => {
     try {
       const saved = localStorage.getItem(MARCA_KEY);
@@ -19,12 +25,12 @@ export function useMarcaMes() {
     } catch { return 'consolidado'; }
   });
 
-  // Default: mês anterior (fechamento mais recente disponível).
   const [anoMes, setAnoMesState] = useState(() => {
+    const fallback = defaultAnoMes || previousAnoMes(currentAnoMes());
     try {
       const saved = localStorage.getItem(MES_KEY);
-      return mesValido(saved) ? saved : previousAnoMes(currentAnoMes());
-    } catch { return previousAnoMes(currentAnoMes()); }
+      return mesValido(saved) ? saved : fallback;
+    } catch { return fallback; }
   });
 
   const setMarca = useCallback((m) => {

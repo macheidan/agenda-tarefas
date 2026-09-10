@@ -38,6 +38,7 @@ ROOT = Path(__file__).resolve().parent      # scripts/dash
 COL  = Path(__file__).parent                         # coletores
 DATA = ROOT / "data"
 CFG  = COL / "config.json"
+REPO_ROOT = ROOT.parent.parent               # raiz da intranet (scripts/dash -> scripts -> raiz)
 
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
          "agosto", "setembro", "outubro", "novembro", "dezembro"]
@@ -463,6 +464,26 @@ def consolidar():
     return out
 
 
+def importar_vendas_dias():
+    """Persiste vendas_dias.json (histórico diário acumulado do mês) no
+    Firestore via importar_vendas_dias.mjs — o JSON local reseta ao virar o
+    mês, então sem isso a Mesa do Dono não enxerga dias de meses passados.
+    Best-effort: falha aqui não derruba o resto do runner."""
+    f = DATA / "vendas_dias.json"
+    if not f.exists():
+        return
+    try:
+        r = subprocess.run(
+            ["node", str(ROOT / "importar_vendas_dias.mjs"), str(f)],
+            cwd=str(REPO_ROOT), timeout=120, capture_output=True, text=True)
+        ok = r.returncode == 0
+        log(f"  {'✓' if ok else '✗'} vendas_dias -> Firestore")
+        for linha in (r.stdout + r.stderr).splitlines():
+            log(f"    {linha}")
+    except Exception as e:
+        log(f"  ✗ vendas_dias -> Firestore: {type(e).__name__} {e}")
+
+
 # ── envio FTPS ───────────────────────────────────────────────────────────────
 def enviar(arquivo, cfg, dst=None, remote_name=None):
     srv = cfg.get("ftp_server")
@@ -536,6 +557,7 @@ def main():
             backfill_mes(a.headless)
 
     arq = consolidar()
+    importar_vendas_dias()
     if not a.sem_envio:
         # A pasta /pizzas/data passou a exigir Basic auth em 09/09/2026 — quem
         # lê é só o proxy (gemini-proxy /api/dash), com a credencial em env.

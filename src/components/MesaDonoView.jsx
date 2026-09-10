@@ -4,6 +4,7 @@ import { useMarcaMes } from '../hooks/useMarcaMes';
 import { useFechamentos } from '../hooks/useFechamentos';
 import { useCheckpoints } from '../hooks/useCheckpoints';
 import { useDashFeed } from '../hooks/useDashFeed';
+import { useVendasDias } from '../hooks/useVendasDias';
 import MarcaMesPicker from './gestao/MarcaMesPicker';
 import { KpiCard, DeltaChip } from './gestao/KpiCard';
 import { ChartTypeMenu } from './gestao/ChartTypeMenu';
@@ -12,8 +13,8 @@ import { SeriesFlexChart } from './gestao/charts';
 import { CheckpointTooltip } from './gestao/checkpointUtils';
 import { makeCheckpointDot } from './gestao/checkpointDot';
 import {
-  MES_LABELS, SERIES_CHART_OPTIONS, calcularMoM, calcularYoY, formatAnoMes, formatAnoMesLong,
-  formatCompactCurrency, formatCurrency, formatNumber, formatPercent,
+  MES_LABELS, SERIES_CHART_OPTIONS, calcularMoM, calcularYoY, currentAnoMes, formatAnoMes,
+  formatAnoMesLong, formatCompactCurrency, formatCurrency, formatNumber, formatPercent,
   marcaInfo, nextAnoMes, projetarMes, shortMonthAndYearToAnoMes,
 } from '../lib/gestao';
 import gStyles from '../styles/Gestao.module.css';
@@ -35,11 +36,15 @@ const totDia = (d) => [d.dame[0] + d.lov[0], d.dame[1] + d.lov[1], d.dame[2] + d
 const brl = (n) => formatNumber(Math.round(n || 0));
 
 export default function MesaDonoView() {
-  const { marca, setMarca, anoMes, setAnoMes } = useMarcaMes();
+  // Default = mês corrente (não o mês anterior das outras views de Gestão):
+  // é o único que tem vendas por dia ao vivo.
+  const { marca, setMarca, anoMes, setAnoMes } = useMarcaMes(currentAnoMes());
   const info = marcaInfo(marca);
   const { fechamentos, loading, error } = useFechamentos(marca);
   const { byMes: checkpointsByMes } = useCheckpoints(marca);
   const { data: dashData } = useDashFeed();
+  const mesAoVivo = anoMes === currentAnoMes();
+  const { dias: diasHistorico } = useVendasDias(mesAoVivo ? null : anoMes);
 
   // Totais do mês corrente a partir das vendas diárias, só dias fechados (até
   // ontem) — alimentam os KPIs mesmo sem fechamento na planilha.
@@ -108,7 +113,7 @@ export default function MesaDonoView() {
     [fechamentos]
   );
 
-  const salesDays = dashData?.sales_days ?? [];
+  const salesDays = mesAoVivo ? (dashData?.sales_days ?? []) : diasHistorico;
   const [fatType, setFatType] = useChartType('dash-faturamento', SERIES_CHART_OPTIONS, 'linha');
 
   return (
@@ -125,12 +130,17 @@ export default function MesaDonoView() {
 
       {error && <div className={styles.erro}>Erro ao carregar fechamentos: {error}</div>}
 
-      {salesDays.length > 0 && (
+      {salesDays.length > 0 ? (
         <VendasMesCard
           dias={salesDays}
-          month={dashData?.sales_month}
-          mesLabel={dashData?.sales_month?.mes ? formatAnoMesLong(dashData.sales_month.mes) : undefined}
+          month={mesAoVivo ? dashData?.sales_month : undefined}
+          mesLabel={formatAnoMesLong(anoMes)}
         />
+      ) : !mesAoVivo && (
+        <div className={gStyles.empty}>
+          Sem vendas por dia salvas pra {formatAnoMesLong(anoMes)} — o histórico diário só existe a
+          partir de quando esse registro passou a ser gravado.
+        </div>
       )}
 
       {loading ? (
@@ -313,6 +323,12 @@ function CanaisMesCards({ marca, canais, totalPizzas, salesMonth, mesCorrente })
 function VendasMesCard({ dias, month, mesLabel }) {
   // null → dia mais recente. Clica na barra pra fixar.
   const [si, setSi] = useState(null);
+  // Troca de mês (não de dia dentro do mesmo mês): descarta a seleção fixada.
+  const [mesLabelAnterior, setMesLabelAnterior] = useState(mesLabel);
+  if (mesLabel !== mesLabelAnterior) {
+    setMesLabelAnterior(mesLabel);
+    setSi(null);
+  }
   if (!dias.length) return null;
 
   const idx = si == null ? dias.length - 1 : Math.max(0, Math.min(dias.length - 1, si));

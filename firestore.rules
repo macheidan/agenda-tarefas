@@ -456,6 +456,12 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+    // Histórico diário de vendas (card "Vendas por dia" da Mesa do Dono):
+    // escrita só pelo Admin SDK de scripts/dash/importar_vendas_dias.mjs.
+    match /vendas_dias/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
     // Anotações de negócio (checkpoints): CRUD do admin pela aba Anotações.
     match /checkpoints/{id} {
       allow read, write: if isAdmin();
