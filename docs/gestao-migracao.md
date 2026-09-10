@@ -19,7 +19,7 @@ quando o usuário selecionado é o admin.
 
 | Seção | Fonte | Coleção/arquivo |
 |---|---|---|
-| Mesa do Dono | Firestore + JSON do coletor | `fechamentos_mensais`, `checkpoints` + `dashboard-data-<token>.json` |
+| Mesa do Dono | Firestore + JSON do coletor | `fechamentos_mensais`, `checkpoints`, `vendas_dias` + `dashboard-data-<token>.json` |
 | Dash | JSON do coletor + localStorage | `dashboard-data-<token>.json` (foco/frases/layout ficam no browser) |
 | Vendas | Firestore | `vendas_itens`, `checkpoints` |
 | DRE | Firestore | `fechamentos_mensais`, `dre_detalhes` |
@@ -46,6 +46,19 @@ quando o usuário selecionado é o admin.
   — o CORS vem de um `.htaccess` que foi criado nessa pasta
   (`Access-Control-Allow-Origin: *`; a proteção do arquivo segue sendo o token
   no nome). Se o runner um dia limpar a pasta, recriar o `.htaccess`.
+
+## Vendas por dia da Mesa do Dono: mês corrente ao vivo, passados no Firestore
+
+O card "Vendas por dia" mostra o mês corrente direto do JSON do coletor
+(`dashData.sales_days`, ao vivo). Meses passados vêm de `vendas_dias/{ano_mes}`
+no Firestore, gravado toda madrugada pelo runner (`atualizar_dias_mes()` →
+`scripts/dash/importar_vendas_dias.mjs`), porque o `vendas_dias.json` local
+**reseta ao virar o mês** — sem essa persistência, o histórico diário de um
+mês fechado desaparecia. `useVendasDias(anoMes)` decide a fonte: `anoMes ===
+currentAnoMes()` usa o feed ao vivo, senão assina o doc do Firestore. A Mesa
+do Dono também é a única view de Gestão que abre no **mês corrente** por
+padrão (`useMarcaMes(currentAnoMes())`) — Vendas e DRE continuam no mês
+anterior, que é o fechamento mais recente disponível.
 
 ## Quem mantém o Firestore em dia: Apps Scripts em DUAL-WRITE
 
