@@ -215,8 +215,16 @@ export default async function handler(req, res) {
 
   // A coleção `campanhas` é só de escrita do servidor (as rules barram o
   // cliente), então o cabeçalho da campanha entra aqui, no primeiro lote.
+  //
+  // A condição olha o `criadoEm`, e não só a existência do documento: sem esse
+  // campo a campanha fica INVISÍVEL na tela, porque o painel lê com
+  // `orderBy('criadoEm')` e o Firestore omite da query quem não tem o campo
+  // ordenado. Aconteceu em 10/09 com uma campanha de 47 envios — os envios
+  // todos lá, o cabeçalho sem `criadoEm`, e a campanha simplesmente não
+  // aparecia. Assim o lote seguinte conserta sozinho o que faltou no primeiro.
   const refCampanha = db.doc(`campanhas/${campanhaId}`);
-  const cabecalho = (await refCampanha.get()).exists
+  const atual = await refCampanha.get();
+  const cabecalho = atual.exists && atual.data()?.criadoEm
     ? {}
     : {
         titulo: String(meta?.titulo || '').slice(0, 120),

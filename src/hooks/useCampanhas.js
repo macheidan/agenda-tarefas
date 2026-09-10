@@ -41,8 +41,24 @@ export function useCampanhas(ativo) {
           setLoading(false);
         }
       );
+    // `campanhas` sem orderBy de propósito: o Firestore OMITE da query ordenada
+    // todo documento que não tem o campo, então uma campanha cujo cabeçalho
+    // ficou sem `criadoEm` desapareceria da tela inteira — com os envios todos
+    // gravados. Ordenar aqui no cliente custa nada em 30 documentos e não
+    // esconde nada.
+    const porData = (a, b) => (b.criadoEm?.toMillis?.() || 0) - (a.criadoEm?.toMillis?.() || 0);
     const unsubs = [
-      assinar('campanhas', 'criadoEm', 30, setCampanhas),
+      onSnapshot(
+        query(collection(db, 'campanhas'), limit(30)),
+        (snap) => {
+          setCampanhas(snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort(porData));
+          setLoading(false);
+        },
+        (err) => {
+          console.error('Firestore campanhas error:', err);
+          setLoading(false);
+        }
+      ),
       assinar('campanhaRespostas', 'recebidoEm', 100, setRespostas),
       assinar('clientesOptOut', 'criadoEm', 500, setOptOuts),
     ];
