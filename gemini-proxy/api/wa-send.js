@@ -23,11 +23,78 @@ function credenciais(loja) {
   const sufixo = loja.toUpperCase();
   const token = process.env[`WA_TOKEN_${sufixo}`];
   const phoneId = process.env[`WA_PHONE_ID_${sufixo}`];
-  return token && phoneId ? { token, phoneId } : null;
+  const waba = process.env[`WA_WABA_${sufixo}`];
+  return token && phoneId ? { token, phoneId, waba } : null;
+}
+
+/**
+ * O que o template exige além do nome do cliente.
+ *
+ * Um botão "copiar código da oferta" (COPY_CODE) é parâmetro OBRIGATÓRIO no
+ * envio: sem ele a Meta recusa a mensagem inteira com
+ * `(#131008) Required parameter is missing` — sem dizer qual parâmetro, o que
+ * torna o erro difícil de ligar ao botão que alguém adicionou no painel horas
+ * antes. Por isso o servidor lê o template e monta sozinho o que falta, em vez
+ * de confiar que quem dispara sabe o que tem lá dentro.
+ *
+ * O índice do botão importa e é posicional: o COPY_CODE do template do cupom é
+ * o segundo botão, depois do de URL.
+ *
+ * Cache no escopo do módulo: a função serverless reaproveita entre os lotes de
+ * uma mesma campanha, então uma consulta serve para as 800 mensagens.
+ */
+const cacheTemplate = new Map();
+
+async function lerTemplate({ token, waba }, nome, idioma) {
+  if (!waba) return null;
+  const chave = `${waba}/${nome}/${idioma}`;
+  if (cacheTemplate.has(chave)) return cacheTemplate.get(chave);
+  try {
+    const url = `${GRAPH}/${waba}/message_templates?fields=name,language,components&name=${encodeURIComponent(nome)}&limit=20`;
+    const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await resp.json().catch(() => ({}));
+    const achado =
+      (data?.data || []).find((t) => t.name === nome && t.language === idioma) ||
+      (data?.data || []).find((t) => t.name === nome) ||
+      null;
+    cacheTemplate.set(chave, achado);
+    return achado;
+  } catch (e) {
+    // Sem o template, seguimos com o envio simples: pior falhar como falhava
+    // antes do que não enviar nada por causa de uma consulta.
+    console.error('wa-send lerTemplate:', e);
+    return null;
+  }
+}
+
+/** Componentes de botão que o template exige, hoje só o do cupom. */
+function componentesBotao(tpl, cupom) {
+  const botoes = (tpl?.components || []).find((c) => c.type === 'BUTTONS')?.buttons || [];
+  const extras = [];
+  botoes.forEach((b, i) => {
+    if (b.type !== 'COPY_CODE') return;
+    // Sem cupom informado na tela, vale o exemplo aprovado com o template —
+    // que é o código que o revisor da Meta viu.
+    const codigo = String(cupom || b.example?.[0] || '').trim();
+    if (!codigo) return;
+    extras.push({
+      type: 'button',
+      sub_type: 'copy_code',
+      index: String(i),
+      parameters: [{ type: 'coupon_code', coupon_code: codigo }],
+    });
+  });
+  return extras;
 }
 
 /** Manda um template e devolve o wamid, ou o erro que a Meta explicou. */
-async function enviarUm({ token, phoneId }, telefone, template, idioma, nome) {
+async function enviarUm({ token, phoneId }, telefone, template, idioma, nome, extras = []) {
+  const componentes = [
+    // {{1}} = primeiro nome. Template sem variável ignora componente vazio,
+    // por isso só mandamos o body quando há nome.
+    ...(nome ? [{ type: 'body', parameters: [{ type: 'text', text: nome }] }] : []),
+    ...extras,
+  ];
   const resp = await fetch(`${GRAPH}/${phoneId}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -38,9 +105,7 @@ async function enviarUm({ token, phoneId }, telefone, template, idioma, nome) {
       template: {
         name: template,
         language: { code: idioma },
-        // {{1}} = primeiro nome. Template sem variável ignora componente vazio,
-        // por isso só mandamos o body quando há nome.
-        ...(nome ? { components: [{ type: 'body', parameters: [{ type: 'text', text: nome }] }] } : {}),
+        ...(componentes.length ? { components: componentes } : {}),
       },
     }),
   });
@@ -73,7 +138,7 @@ export default async function handler(req, res) {
   const usuario = await autenticar(req, res, 'clientesEnviar');
   if (!usuario) return;
 
-  const { campanhaId, loja, template, idioma = 'pt_BR', destinatarios, meta } = req.body || {};
+  const { campanhaId, loja, template, idioma = 'pt_BR', destinatarios, meta, cupom } = req.body || {};
   if (!campanhaId || typeof campanhaId !== 'string') {
     return res.status(400).json({ error: 'campanhaId ausente' });
   }
@@ -93,6 +158,12 @@ export default async function handler(req, res) {
 
   app();
   const db = getFirestore();
+
+  // Uma consulta por lote (cacheada entre lotes): descobre se o template exige
+  // o código do cupom, que é o parâmetro cuja falta a Meta reporta só como
+  // "Required parameter is missing".
+  const tpl = await lerTemplate(cred, template, idioma);
+  const extras = componentesBotao(tpl, cupom);
 
   // Telefone é só dígitos com DDI: a base guarda DDD+número, o wa.me e a Meta
   // querem o 55 na frente.
@@ -120,7 +191,7 @@ export default async function handler(req, res) {
     const jaFoi = envios[i].exists && envios[i].data().status !== 'erro';
     if (jaFoi) return { telefone: d.telefone, ok: true, pulado: 'repetido' };
 
-    const r = await enviarUm(cred, d.e164, template, idioma, d.nome);
+    const r = await enviarUm(cred, d.e164, template, idioma, d.nome, extras);
     await refsEnvio[i].set(
       {
         campanhaId,

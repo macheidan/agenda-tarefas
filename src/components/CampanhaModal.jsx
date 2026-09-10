@@ -48,6 +48,7 @@ export default function CampanhaModal({
 }) {
   const [template, setTemplate] = useState('');
   const [idioma, setIdioma] = useState('pt_BR');
+  const [cupom, setCupom] = useState('');
   const [titulo, setTitulo] = useState('');
   const [texto, setTexto] = useState('');
   const [limite, setLimite] = useState(LIMITE_PADRAO);
@@ -98,6 +99,7 @@ export default function CampanhaModal({
         loja,
         template: template.trim(),
         idioma,
+        cupom: cupom.trim(),
         destinatarios: [{ telefone: tel, nome }],
         meta: {
           titulo: `Teste · ${tel}`,
@@ -160,6 +162,7 @@ export default function CampanhaModal({
           loja,
           template: nomeTemplate,
           idioma: retomar?.idioma || idioma,
+          cupom: cupom.trim(),
           destinatarios: lote,
           meta: {
             titulo: retomar?.titulo || titulo.trim() || nomeTemplate,
@@ -259,6 +262,16 @@ export default function CampanhaModal({
               min="1"
               value={limite}
               onChange={(e) => setLimite(e.target.value)}
+              disabled={enviando}
+            />
+          </div>
+          <div className={styles.campoPequeno}>
+            <label htmlFor="camp-cupom">Cupom</label>
+            <input
+              id="camp-cupom"
+              value={cupom}
+              onChange={(e) => setCupom(e.target.value.toUpperCase())}
+              placeholder="DAME20"
               disabled={enviando}
             />
           </div>
