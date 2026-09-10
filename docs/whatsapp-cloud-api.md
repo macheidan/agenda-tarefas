@@ -224,6 +224,57 @@ O `scripts/clientes/criar_template_wa.mjs` submete e acompanha
 **exemplo da variável**, escondido atrás de um "Adicionar exemplo" fácil de
 pular no painel — sem ele a Meta rejeita por conteúdo incompleto.
 
+## FEITO em 2026-09-10 — o chip está registrado na Cloud API
+
+| O quê | Valor |
+|---|---|
+| Número | **+55 51 98223-6600** (chip TIM, nunca aberto no app) |
+| WABA nova | **`2468605356970524`** — "Dáme Pizza", no BM da Dáme |
+| **Phone number ID** (`WA_PHONE_ID_DAME`) | **`1329634636895484`** |
+| Conta de pagamento | `2063816380908016` |
+| Template | `retorno_cliente` (pt_BR, MARKETING) — id `1086403230837685` |
+
+Diagnóstico do número após o registro: `platform_type` **CLOUD_API**, `status`
+**CONNECTED**, `code_verification_status` **VERIFIED**, `name_status`
+PENDING_REVIEW. É a diferença que importa em relação ao 3332-2440, que é
+ON_PREMISE e por isso nunca registrou.
+
+O usuário de sistema `intranet-whatsapp` **já enxergava a WABA nova** sem
+atribuição manual (ele é admin do BM), então o passo de "atribuir ativo" do
+roteiro antigo não existiu. Envs de produção atualizadas na Vercel
+(`WA_PHONE_ID_DAME`, `WA_ATENDIMENTO_DAME`) e proxy publicado.
+
+### A conclusão de 19/08 sobre o pagamento estava errada
+
+Aquele dia concluiu que a linha de crédito da ManyChat travava o **portfólio**
+inteiro, e que "WABA nova dentro do BM da Dáme herdaria o bloqueio" — foi por
+isso que a rota do BM da Lov nasceu. **Não herdou.** A WABA nova tem conta de
+pagamento própria, com **"Adicionar forma de pagamento" habilitado**, e a linha
+da ManyChat aparece lá como **"Acesso removido"**, limite "—". O bloqueio estava
+amarrado à conta de pagamento da WABA antiga, não ao portfólio.
+
+Consequência prática: **o BM da Lov deixou de ser necessário**, e o ticket
+#555459 da ManyChat deixou de ser caminho crítico. Ele só volta a importar no
+dia da coexistência do 3332-2440, que usa a WABA velha.
+
+### A Meta recusa link de WhatsApp dentro de template
+
+O botão de URL para o 2440 foi submetido e voltou
+`[100] Invalid parameter → Os botões não podem conter links diretos para o
+WhatsApp`. Template não pode apontar para outro número de WhatsApp, ponto.
+
+Por isso o botão é **Quick Reply** e o link vive na **resposta automática**: o
+clique chega ao webhook como mensagem de entrada (`type: 'button'`) e a resposta
+sai como mensagem de sessão, onde a restrição não existe. O texto é diferente
+para quem clicou (já demonstrou interesse) e para quem digitou (precisa saber
+antes que ninguém lê ali).
+
+### O que falta
+
+1. **Cartão na conta de pagamento** — só o Fábio faz.
+2. **Aprovação do template** (`--listar` acompanha) e do nome de exibição.
+3. Ligar a flag **Enviar campanha** em Configurações e fazer o disparo de teste.
+
 ## Rota escolhida em 2026-09-10: chip como 2º número no BM da Dáme
 
 O chip foi ativado em 10/09 (nunca aberto no app do WhatsApp). O Fábio decidiu
