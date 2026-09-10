@@ -873,3 +873,27 @@
   background: var(--bg-secondary);
   color: var(--text-secondary);
 }
+
+.recorteLimpar {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.recorteLimpar:hover {
+  color: var(--text);
+}
+
+.avisoConflito {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  color: var(--warning-text);
+  font-size: 12px;
+}

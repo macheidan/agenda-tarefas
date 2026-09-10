@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useClientes, primeiroNome } from '../hooks/useClientes';
 import { useCampanhas } from '../hooks/useCampanhas';
 import { segmentoDe, SEGMENTOS } from '../utils/relatoriosClientes';
+import BairrosModal from './BairrosModal';
 import CampanhaModal from './CampanhaModal';
 import CampanhasPanel from './CampanhasPanel';
 import ClientesRelatorios from './ClientesRelatorios';
@@ -103,7 +104,12 @@ const RECORTES = [
   { key: 'semEnvio', label: 'Sem envios', teste: (c, ctx) => !ctx.ultimoEnvio[c.telefone] },
   { key: 'muitos', label: 'Mais de 20 pedidos', teste: (c) => (c.pedidos || 0) > 20 },
   { key: 'unico', label: 'Apenas 1 pedido', teste: (c) => (c.pedidos || 0) === 1 },
+  { key: 'recorrente', label: 'Mais de 1 pedido', teste: (c) => (c.pedidos || 0) > 1 },
 ];
+
+// Recortes que se anulam quando marcados juntos. Não são bloqueados — combinar
+// filtros é o pedido —, mas a lista vazia precisa dizer por que está vazia.
+const CONTRADITORIOS = [['unico', 'recorrente'], ['unico', 'muitos']];
 
 // Fim da régua de dias sem pedir: um ano. Quem passou disso continua na lista —
 // o ponto direito no fim da régua significa "sem teto", não 365.
@@ -158,7 +164,9 @@ export default function ClientesView({ settings, isAdmin }) {
   const [busca, setBusca] = useState('');
   const [ordem, setOrdem] = useState({ campo: 'dias', dir: 'desc' });
   const [pagina, setPagina] = useState(0);
-  const [recorte, setRecorte] = useState(null);
+  const [recortes, setRecortes] = useState(() => new Set());
+  const [bairrosFiltro, setBairrosFiltro] = useState(() => new Set());
+  const [modalBairros, setModalBairros] = useState(false);
   const [selecionados, setSelecionados] = useState(() => new Set());
   const [copiado, setCopiado] = useState(false);
   const [modalCampanha, setModalCampanha] = useState(false);
@@ -253,12 +261,16 @@ export default function ClientesView({ settings, isAdmin }) {
   }, [daMarca, busca]);
 
   const filtrados = useMemo(() => {
-    const teste = RECORTES.find((r) => r.key === recorte)?.teste;
+    // Todos os recortes marcados valem ao mesmo tempo (E, não OU): marcar
+    // "sem envios" + "mais de 1 pedido" pergunta por quem nunca recebeu nada E
+    // já comprou mais de uma vez, que é a leitura útil.
+    const testes = RECORTES.filter((r) => recortes.has(r.key)).map((r) => r.teste);
     const base = buscados.filter(
       (c) =>
         c.dias >= janela.min &&
         (janela.max === null || c.dias <= janela.max) &&
-        (!teste || teste(c, { ultimoEnvio }))
+        testes.every((t) => t(c, { ultimoEnvio })) &&
+        (bairrosFiltro.size === 0 || bairrosFiltro.has(c.bairro || ''))
     );
     const pegar = COLUNAS[ordem.campo] || COLUNAS.dias;
     const sinal = ordem.dir === 'asc' ? 1 : -1;
@@ -268,7 +280,25 @@ export default function ClientesView({ settings, isAdmin }) {
       if (va === vb) return (a.nome || '').localeCompare(b.nome || '');
       return va > vb ? sinal : -sinal;
     });
-  }, [buscados, janela, ordem, recorte, ultimoEnvio]);
+  }, [buscados, janela, ordem, recortes, bairrosFiltro, ultimoEnvio]);
+
+  // Bairros do recorte de loja/contato, com quantos clientes cada um tem — a
+  // contagem é o que faz escolher rápido no modal. Não passa pelos recortes
+  // nem pelo próprio filtro de bairro, senão as opções sumiriam conforme se
+  // escolhe.
+  const bairrosDisponiveis = useMemo(() => {
+    const conta = new Map();
+    daMarca.forEach((c) => {
+      const b = c.bairro || '';
+      if (!b) return;
+      conta.set(b, (conta.get(b) || 0) + 1);
+    });
+    return [...conta.entries()]
+      .map(([nome, qtd]) => ({ nome, qtd }))
+      .sort((a, b) => b.qtd - a.qtd || a.nome.localeCompare(b.nome));
+  }, [daMarca]);
+
+  const conflito = CONTRADITORIOS.find(([a, b]) => recortes.has(a) && recortes.has(b));
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGINA));
   const paginaAtual = Math.min(pagina, totalPaginas - 1);
@@ -579,14 +609,45 @@ export default function ClientesView({ settings, isAdmin }) {
         {RECORTES.map((r) => (
           <button
             key={r.key}
-            className={`${styles.recorteBtn} ${recorte === r.key ? styles.recorteAtivo : ''}`}
-            onClick={() => { setRecorte(recorte === r.key ? null : r.key); setPagina(0); }}
+            className={`${styles.recorteBtn} ${recortes.has(r.key) ? styles.recorteAtivo : ''}`}
+            onClick={() => {
+              setRecortes((s) => {
+                const n = new Set(s);
+                if (n.has(r.key)) n.delete(r.key); else n.add(r.key);
+                return n;
+              });
+              setPagina(0);
+            }}
             type="button"
           >
             {r.label}
           </button>
         ))}
+        <button
+          className={`${styles.recorteBtn} ${bairrosFiltro.size ? styles.recorteAtivo : ''}`}
+          onClick={() => setModalBairros(true)}
+          type="button"
+        >
+          Bairro{bairrosFiltro.size ? ` (${bairrosFiltro.size})` : ''}
+        </button>
+        {(recortes.size > 0 || bairrosFiltro.size > 0) && (
+          <button
+            className={styles.recorteLimpar}
+            onClick={() => { setRecortes(new Set()); setBairrosFiltro(new Set()); setPagina(0); }}
+            type="button"
+          >
+            limpar filtros
+          </button>
+        )}
       </div>
+
+      {conflito && (
+        <p className={styles.avisoConflito}>
+          &quot;{RECORTES.find((r) => r.key === conflito[0]).label}&quot; e &quot;
+          {RECORTES.find((r) => r.key === conflito[1]).label}&quot; se anulam — os filtros valem
+          todos ao mesmo tempo, então nenhum cliente atende aos dois.
+        </p>
+      )}
 
       <div className={styles.toolbar}>
         <input
@@ -882,6 +943,15 @@ export default function ClientesView({ settings, isAdmin }) {
         filtroDesc={filtroDesc}
         campanhas={campanhas}
       />
+      {modalBairros && (
+        <BairrosModal
+          open
+          onClose={() => setModalBairros(false)}
+          bairros={bairrosDisponiveis}
+          selecionados={bairrosFiltro}
+          onAplicar={(novos) => { setBairrosFiltro(novos); setPagina(0); }}
+        />
+      )}
     </div>
   );
 }
