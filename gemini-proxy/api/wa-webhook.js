@@ -151,9 +151,10 @@ async function enviarTexto(loja, para, texto) {
 /**
  * Textos das respostas automáticas, como o marketing os escreveu.
  *
- * Vivem em `campanhaConfig/mensagens` (a tela de Campanhas edita) e não no
- * código: trocar uma vírgula não pode exigir publicar o proxy. O que está aqui
- * é só o fallback de quando o documento ainda não existe.
+ * Vivem em `campanhaConfig/mensagens_{loja}` (a tela de Campanhas edita) e não
+ * no código: trocar uma vírgula não pode exigir publicar o proxy. Um doc por
+ * loja porque Dáme e Lov têm tom e link de atendimento próprios — o que está
+ * aqui é só o fallback genérico de quando o documento da loja ainda não existe.
  */
 const PADRAO_MSG = {
   clicou:
@@ -166,9 +167,9 @@ const PADRAO_MSG = {
   saiu: 'Pronto! Você não vai mais receber nossas mensagens. 👋',
 };
 
-async function carregarMensagens(db) {
+async function carregarMensagens(db, loja) {
   try {
-    const snap = await db.doc('campanhaConfig/mensagens').get();
+    const snap = await db.doc(`campanhaConfig/mensagens_${loja}`).get();
     return snap.exists ? { ...PADRAO_MSG, ...snap.data() } : PADRAO_MSG;
   } catch (e) {
     // Falha de leitura não pode calar a resposta: melhor o texto padrão do
@@ -210,7 +211,7 @@ async function autoResposta(db, msg, valor, { saiu, optOutNovo }) {
   const para = String(msg.from || '').replace(/\D/g, '');
   if (!para) return;
 
-  const msgs = await carregarMensagens(db);
+  const msgs = await carregarMensagens(db, loja);
   const nome = (valor?.contacts?.[0]?.profile?.name || '').trim().split(/\s+/)[0] || '';
 
   if (saiu) {

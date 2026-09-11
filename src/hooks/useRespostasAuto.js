@@ -3,7 +3,7 @@ import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
 /**
- * Textos das respostas automáticas do número de campanha.
+ * Textos das respostas automáticas do número de campanha, um doc por loja.
  *
  * O número que dispara é um chip que não está aberto em aparelho nenhum — é
  * condição para ele registrar na Cloud API. Quem responde à campanha não fala
@@ -11,8 +11,10 @@ import { db } from '../firebase';
  *
  * Vivem no Firestore e não no código porque quem escreve a mensagem é quem faz
  * o marketing, não quem faz deploy: mudar uma vírgula aqui não pode depender de
- * publicar o proxy na Vercel. O webhook lê este documento a cada mensagem
- * recebida e só cai nos padrões embutidos se ele não existir.
+ * publicar o proxy na Vercel. Cada loja tem o seu (`mensagens_dame`,
+ * `mensagens_lov`) porque Dáme e Lov falam diferente e atendem em números
+ * diferentes. O webhook lê o documento da loja a cada mensagem recebida e só
+ * cai nos padrões embutidos se ele não existir.
  */
 export const PLACEHOLDERS = {
   link: 'o link do WhatsApp que atende (vem do número configurado no servidor)',
@@ -33,28 +35,32 @@ export const PADROES = {
   saiu: 'Pronto! Você não vai mais receber nossas mensagens. 👋',
 };
 
-export function useRespostasAuto(ativo) {
-  const [mensagens, setMensagens] = useState(null);
-  const [loading, setLoading] = useState(true);
+export function useRespostasAuto(ativo, loja) {
+  // Guarda a loja junto do resultado: é o que permite descartar o snapshot da
+  // loja anterior sem precisar zerar estado dentro do efeito (o snapshot da
+  // troca ainda não chegou, mas o de-para abaixo já esconde o dado velho).
+  const [estado, setEstado] = useState({ loja: null, mensagens: null });
 
   useEffect(() => {
-    if (!ativo) return undefined;
+    if (!ativo || !loja) return undefined;
+    const docId = `mensagens_${loja}`;
     return onSnapshot(
-      doc(db, 'campanhaConfig', 'mensagens'),
-      (snap) => {
-        setMensagens(snap.exists() ? snap.data() : {});
-        setLoading(false);
-      },
+      doc(db, 'campanhaConfig', docId),
+      (snap) => setEstado({ loja, mensagens: snap.exists() ? snap.data() : {} }),
       (err) => {
-        console.error('Firestore campanhaConfig/mensagens error:', err);
-        setLoading(false);
+        console.error(`Firestore campanhaConfig/${docId} error:`, err);
+        setEstado({ loja, mensagens: null });
       }
     );
-  }, [ativo]);
+  }, [ativo, loja]);
+
+  const carregado = estado.loja === loja;
+  const mensagens = carregado ? estado.mensagens : null;
+  const loading = !carregado || mensagens === null;
 
   const salvar = async (valores, usuario) =>
     setDoc(
-      doc(db, 'campanhaConfig', 'mensagens'),
+      doc(db, 'campanhaConfig', `mensagens_${loja}`),
       {
         ...valores,
         atualizadoEm: serverTimestamp(),

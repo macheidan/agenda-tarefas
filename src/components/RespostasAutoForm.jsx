@@ -23,30 +23,48 @@ const CAMPOS = [
   },
 ];
 
-export default function RespostasAutoForm({ ativo }) {
-  const { mensagens, loading, salvar } = useRespostasAuto(ativo);
-  const [rascunho, setRascunho] = useState(null);
+// `lojas` é a lista de lojas que este usuário pode ver (já filtrada por
+// permissão) e `lojaLabels` o rótulo de cada uma — Dáme e Lov disparam de
+// números diferentes e podem falar diferente, então cada uma tem seu texto.
+export default function RespostasAutoForm({ ativo, lojas, lojaLabels }) {
+  const [lojaAtiva, setLojaAtiva] = useState(lojas?.[0] || null);
+  useEffect(() => {
+    if (lojas?.length && !lojas.includes(lojaAtiva)) setLojaAtiva(lojas[0]);
+  }, [lojas, lojaAtiva]);
+
+  const { mensagens, loading, salvar } = useRespostasAuto(ativo && !!lojaAtiva, lojaAtiva);
+  // Um rascunho por loja: trocar a aba não pode apagar o que estava sendo
+  // digitado na outra.
+  const [rascunhos, setRascunhos] = useState({});
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
   const [salvo, setSalvo] = useState(false);
 
-  // O rascunho nasce do que está gravado, e só na primeira vez que os dados
-  // chegam — recarregar a cada snapshot apagaria o que está sendo digitado.
+  // O rascunho da loja ativa nasce do que está gravado, e só na primeira vez
+  // que os dados chegam — recarregar a cada snapshot apagaria o que está
+  // sendo digitado.
   useEffect(() => {
-    if (mensagens && rascunho === null) {
-      setRascunho({
-        clicou: mensagens.clicou ?? PADROES.clicou,
-        digitou: mensagens.digitou ?? PADROES.digitou,
-        saiu: mensagens.saiu ?? PADROES.saiu,
-      });
+    if (mensagens && lojaAtiva && !rascunhos[lojaAtiva]) {
+      setRascunhos((r) => ({
+        ...r,
+        [lojaAtiva]: {
+          clicou: mensagens.clicou ?? PADROES.clicou,
+          digitou: mensagens.digitou ?? PADROES.digitou,
+          saiu: mensagens.saiu ?? PADROES.saiu,
+        },
+      }));
     }
-  }, [mensagens, rascunho]);
+  }, [mensagens, lojaAtiva, rascunhos]);
 
-  if (!ativo) return null;
+  if (!ativo || !lojaAtiva) return null;
+  const rascunho = rascunhos[lojaAtiva];
   if (loading || !rascunho) return null;
 
   const mudou = CAMPOS.some((c) => (mensagens?.[c.key] ?? PADROES[c.key]) !== rascunho[c.key]);
   const semLink = !rascunho.clicou.includes('{link}') || !rascunho.digitou.includes('{link}');
+
+  const setCampo = (key, valor) =>
+    setRascunhos((r) => ({ ...r, [lojaAtiva]: { ...r[lojaAtiva], [key]: valor } }));
 
   const gravar = async () => {
     setSalvando(true);
@@ -73,6 +91,21 @@ export default function RespostasAutoForm({ ativo }) {
         o WhatsApp que atende e <code>{'{nome}'}</code> para o primeiro nome de quem escreveu.
       </p>
 
+      {lojas?.length > 1 && (
+        <div className={styles.storeBar}>
+          {lojas.map((l) => (
+            <button
+              key={l}
+              className={`${styles.sectionTab} ${lojaAtiva === l ? styles.sectionTabActive : ''}`}
+              onClick={() => setLojaAtiva(l)}
+              type="button"
+            >
+              {lojaLabels?.[l] || l}
+            </button>
+          ))}
+        </div>
+      )}
+
       {CAMPOS.map((campo) => (
         <div key={campo.key} className={styles.autoCampo}>
           <label htmlFor={`auto-${campo.key}`}>{campo.label}</label>
@@ -80,7 +113,7 @@ export default function RespostasAutoForm({ ativo }) {
             id={`auto-${campo.key}`}
             rows={campo.key === 'saiu' ? 2 : 4}
             value={rascunho[campo.key]}
-            onChange={(e) => setRascunho({ ...rascunho, [campo.key]: e.target.value })}
+            onChange={(e) => setCampo(campo.key, e.target.value)}
             disabled={salvando}
           />
           <span className={styles.autoHint}>{campo.hint}</span>
@@ -106,7 +139,7 @@ export default function RespostasAutoForm({ ativo }) {
         </button>
         <button
           className={styles.autoGhost}
-          onClick={() => setRascunho({ ...PADROES })}
+          onClick={() => setRascunhos((r) => ({ ...r, [lojaAtiva]: { ...PADROES } }))}
           disabled={salvando}
           type="button"
         >

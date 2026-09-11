@@ -19,7 +19,7 @@ function quando(ts) {
   return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnviar }) {
+export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnviar, lojas, lojaLabels }) {
   const [pagina, setPagina] = useState(0);
   const [aberta, setAberta] = useState(null);
 
@@ -34,7 +34,7 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
   // O formulário fica FORA do early return: as respostas automáticas precisam
   // estar prontas antes do primeiro disparo, que é exatamente quando ainda não
   // existe campanha nenhuma para mostrar.
-  const auto = <RespostasAutoForm ativo={podeEnviar} />;
+  const auto = <RespostasAutoForm ativo={podeEnviar} lojas={lojas} lojaLabels={lojaLabels || LOJA_LABELS} />;
 
   if (!campanhas.length && !respostas.length) {
     return (

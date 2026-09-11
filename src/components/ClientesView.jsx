@@ -911,6 +911,8 @@ export default function ClientesView({ settings, isAdmin }) {
           respostas={respostas}
           optOuts={optOuts}
           podeEnviar={podeEnviar}
+          lojas={lojaKeys}
+          lojaLabels={LOJA_LABELS}
         />
       )}
 
