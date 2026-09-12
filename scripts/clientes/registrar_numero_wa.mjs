@@ -53,9 +53,9 @@ const LOJAS = {
   // nova CLOUD_API. O 3332-2440 (WABA 206538077125724, phone 2802736619807612)
   // é SMB/ON_PREMISE e nunca registrou — só entra por coexistência.
   dame: { waba: '2468605356970524', phone: '1329634636895484', rotulo: 'Dáme · chip +55 51 98223-6600' },
-  // Slot da Lov — hoje é por ele que passa o chip TIM de teste, numa WABA nova
-  // no BM da Lov (a WABA da Dáme está travada pela linha de crédito da ManyChat).
-  lov: { waba: '110959808608511', phone: null, rotulo: 'Lov / chip de teste' },
+  // Lov: chip próprio +55 51 98223-7660, WABA que já existia no BM da Lov
+  // (já era CLOUD_API — só faltava número verificado). App próprio "Intranet Lov".
+  lov: { waba: '110959808608511', phone: '1307854305744855', rotulo: 'Lov · chip +55 51 98223-7660' },
 };
 
 // Mensagens da Meta que valem tradução — são as que de fato aparecem aqui.
