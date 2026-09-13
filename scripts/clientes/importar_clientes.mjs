@@ -252,12 +252,19 @@ function indexarNomeBairro(idx, item) {
   else idx.porNomeBairro.set(k, item);
 }
 
-function fundir(existentes, novos) {
+/**
+ * `soNovos` é o modo da carga retroativa (ex.: Lov desde 2023): quem casa com
+ * alguém que JÁ estava na base é pulado inteiro — nem o registro antigo nem o
+ * novo são tocados. Entre si, os cadastros da própria carga se fundem normalmente.
+ */
+function fundir(existentes, novos, { soNovos = false } = {}) {
   const vivos = new Set(existentes);
+  const originais = new Set(existentes);
   const idx = indexar(existentes);
   let inseridos = 0;
   let atualizados = 0;
   let unificados = 0;
+  let pulados = 0;
 
   for (const c of novos) {
     // Sem data de última compra não dá para calcular "dias sem pedir", que é a
@@ -280,6 +287,11 @@ function fundir(existentes, novos) {
       novo.t ? null : idx.porNomeBairro.get(chaveNomeBairro(novo.n, novo.b)),
     ]) {
       if (cand && vivos.has(cand) && !achados.includes(cand)) achados.push(cand);
+    }
+
+    if (soNovos && achados.some((a) => originais.has(a))) {
+      pulados += 1;
+      continue;
     }
 
     if (!achados.length) {
@@ -320,32 +332,51 @@ function fundir(existentes, novos) {
   // Mais recente primeiro: a tela mostra "dias sem pedir" e a leitura natural
   // é do topo, então o bloco 0 já traz quem comprou agora.
   const itens = [...vivos].sort((a, b) => (b.u || '').localeCompare(a.u || ''));
-  return { itens, inseridos, atualizados, unificados };
+  return { itens, inseridos, atualizados, unificados, pulados };
 }
 
-async function gravar(db, loja, itens, meta, chunksAntigos, metaAntiga) {
+// Teto de um commit do Firestore é 10 MiB. A base diária cabe folgada num só,
+// mas uma carga retroativa (dezenas de milhares de clientes) não.
+const COMMIT_BYTES = 8 * 1024 * 1024;
+
+async function gravar(db, loja, itens, meta, chunksAntigos, metaAntiga, { soNovos = false } = {}) {
   // A data a partir da qual a base é COMPLETA. A coleta enxerga 90 dias para
   // trás, então a primeira importação já cobre esse retrovisor; daí em diante a
   // base só cresce. Nunca anda para a frente — é o que permite ao relatório de
   // coorte dizer "esta turma está inflada: dela só sobrou quem voltou".
-  const coberturaDesde = menorData(metaAntiga?.coberturaDesde || '', meta.inicio || '');
+  //
+  // A carga retroativa (`soNovos`) NÃO mexe nela: `coberturaDesde` é lida como a
+  // menor entre as lojas, e recuar só a da Lov faria a tela tratar a Dáme como
+  // completa desde 2023. Janela e data de coleta também ficam as da rotina diária.
+  const coberturaDesde = soNovos
+    ? metaAntiga?.coberturaDesde || ''
+    : menorData(metaAntiga?.coberturaDesde || '', meta.inicio || '');
   const blocos = [];
   for (let i = 0; i < itens.length; i += CHUNK_SIZE) blocos.push(itens.slice(i, i + CHUNK_SIZE));
 
-  const batch = db.batch();
-  blocos.forEach((bloco, i) => {
+  let batch = db.batch();
+  let bytes = 0;
+  for (const [i, bloco] of blocos.entries()) {
+    const tamanho = Buffer.byteLength(JSON.stringify(bloco));
+    if (bytes && bytes + tamanho > COMMIT_BYTES) {
+      await batch.commit();
+      batch = db.batch();
+      bytes = 0;
+    }
+    bytes += tamanho;
     batch.set(db.collection('clientes').doc(`${loja}_${i}`), {
       loja,
       chunk: i,
       itens: bloco,
       atualizadoEm: FieldValue.serverTimestamp(),
     });
-  });
+  }
   // Base encolheu (não deve acontecer, mas se acontecer não pode sobrar bloco
   // órfão duplicando clientes na tela).
   for (let i = blocos.length; i < chunksAntigos; i += 1) {
     batch.delete(db.collection('clientes').doc(`${loja}_${i}`));
   }
+  const metaDiaria = soNovos && metaAntiga;
   batch.set(db.collection('clientes').doc(`${loja}_meta`), {
     loja,
     meta: true,
@@ -354,9 +385,9 @@ async function gravar(db, loja, itens, meta, chunksAntigos, metaAntiga) {
     comHistorico: itens.filter((i) => i.hm).length,
     comReceitaMensal: itens.filter((i) => i.vm).length,
     chunks: blocos.length,
-    janelaDias: meta.janelaDias || null,
+    janelaDias: (metaDiaria ? metaAntiga.janelaDias : meta.janelaDias) || null,
     coberturaDesde: coberturaDesde || null,
-    coletadoEm: meta.geradoEm || null,
+    coletadoEm: (metaDiaria ? metaAntiga.coletadoEm : meta.geradoEm) || null,
     atualizadoEm: FieldValue.serverTimestamp(),
   });
   await batch.commit();
@@ -367,8 +398,9 @@ async function main() {
   const args = process.argv.slice(2);
   const file = args.find((a) => !a.startsWith('--'));
   const dry = args.includes('--dry');
+  const soNovos = args.includes('--so-novos');
   if (!file) {
-    console.error('uso: node scripts/clientes/importar_clientes.mjs <clientes-*.json> [--dry]');
+    console.error('uso: node scripts/clientes/importar_clientes.mjs <clientes-*.json> [--dry] [--so-novos]');
     process.exit(1);
   }
   const dados = JSON.parse(readFileSync(file, 'utf8'));
@@ -381,19 +413,20 @@ async function main() {
       continue;
     }
     const { itens: existentes, chunks, metaAntiga } = await carregarExistentes(db, loja);
-    const { itens, inseridos, atualizados, unificados } = fundir(existentes, novos);
+    const { itens, inseridos, atualizados, unificados, pulados } = fundir(existentes, novos, { soNovos });
     const comTel = itens.filter((i) => i.t).length;
-    console.log(`\n== ${loja.toUpperCase()} ==`);
+    console.log(`\n== ${loja.toUpperCase()} ==${soNovos ? ' (só novos)' : ''}`);
     console.log(
       `  base atual: ${existentes.length} · coleta: ${novos.length} · novos: ${inseridos} · ` +
-        `atualizados: ${atualizados} · duplicados unificados: ${unificados}`
+        `atualizados: ${atualizados} · duplicados unificados: ${unificados}` +
+        (soNovos ? ` · já na base (intocados): ${pulados}` : '')
     );
     console.log(`  base final: ${itens.length} clientes (${comTel} com telefone)`);
     if (dry) {
       console.log('  [dry] nada gravado');
       continue;
     }
-    const blocos = await gravar(db, loja, itens, dados, chunks, metaAntiga);
+    const blocos = await gravar(db, loja, itens, dados, chunks, metaAntiga, { soNovos });
     console.log(`  gravado em ${blocos} bloco(s)`);
   }
   console.log('\nOK');

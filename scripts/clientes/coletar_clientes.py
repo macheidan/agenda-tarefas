@@ -584,12 +584,12 @@ def agregar(registros: list) -> list:
     return sorted(saida, key=lambda c: c["ultimaCompra"] or "", reverse=True)
 
 
-def coletar(lojas: dict[str, str], dias: int, headless: bool) -> dict:
+def coletar(lojas: dict[str, str], dias: int, headless: bool, inicio: date | None = None) -> dict:
     fim = date.today()
-    inicio = fim - timedelta(days=dias)
+    inicio = inicio or fim - timedelta(days=dias)
     saida = {
         "geradoEm": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "janelaDias": dias,
+        "janelaDias": (fim - inicio).days,
         "inicio": inicio.isoformat(),
         "fim": fim.isoformat(),
         "lojas": {},
@@ -618,6 +618,9 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser()
     ap.add_argument("--dias", type=int, default=90, help="janela de dias (default 90)")
+    # Carga retroativa (ex.: Lov desde 2023-01-01). Importar com
+    # `importar_clientes.mjs --so-novos`, que não mexe em quem já está na base.
+    ap.add_argument("--inicio", type=date.fromisoformat, help="data inicial YYYY-MM-DD (ignora --dias)")
     ap.add_argument("--loja", help="DAME ou LOV (default: as duas)")
     ap.add_argument("--visivel", action="store_true", help="browser visivel (debug)")
     ap.add_argument("--out", help="arquivo de saida (default: data/clientes-<data>.json)")
@@ -635,7 +638,7 @@ def main() -> int:
     ultimo_erro = None
     for tentativa in range(3):
         try:
-            dados = coletar(lojas, args.dias, headless=not args.visivel and tentativa < 2)
+            dados = coletar(lojas, args.dias, headless=not args.visivel and tentativa < 2, inicio=args.inicio)
             break
         except Exception as e:  # noqa: BLE001
             ultimo_erro = e

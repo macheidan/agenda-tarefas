@@ -317,3 +317,46 @@ test('cliente sem endereço nenhum não ganha o campo `d`', () => {
   const { itens } = fundir([], [coletado()]);
   assert.equal('d' in itens[0], false);
 });
+
+test('--so-novos: quem já está na base fica intocado, quem não está entra', () => {
+  const antigo = { k: 't:51999990000', t: '51999990000', n: 'Fulano', p: 10, v: 1200, u: '2026-08-01', b: 'Centro' };
+  const { itens, inseridos, pulados } = fundir(
+    [antigo],
+    [
+      coletado({ pedidos: 99, valorTotal: 9999, ultimaCompra: '2026-09-01', bairro: 'Petrópolis' }),
+      coletado({ chave: 't:51988880000', telefone: '51988880000', nome: 'Beltrano', ultimaCompra: '2024-03-10' }),
+    ],
+    { soNovos: true }
+  );
+  assert.equal(inseridos, 1);
+  assert.equal(pulados, 1);
+  assert.equal(itens.length, 2);
+  assert.deepEqual(itens.find((i) => i.t === '51999990000'), antigo);
+  assert.equal(itens.find((i) => i.t === '51988880000').u, '2024-03-10');
+});
+
+test('--so-novos: casar pelo hash de CPF também conta como já importado', () => {
+  const antigo = { k: 'c:abc123', h: 'abc123', n: 'Fulana', p: 2, v: 150, u: '2026-07-01' };
+  const { itens, pulados } = fundir(
+    [antigo],
+    [coletado({ chave: 't:51977770000', telefone: '51977770000', cpfHash: 'abc123', ultimaCompra: '2023-05-01' })],
+    { soNovos: true }
+  );
+  assert.equal(pulados, 1);
+  assert.deepEqual(itens, [antigo]);
+});
+
+test('--so-novos: cadastros da própria carga ainda se fundem entre si', () => {
+  const { itens, inseridos, atualizados } = fundir(
+    [],
+    [
+      coletado({ chave: 'c:zzz', telefone: '', cpfHash: 'zzz', telefoneOrigem: '', ultimaCompra: '2023-02-01' }),
+      coletado({ chave: 't:51966660000', telefone: '51966660000', cpfHash: 'zzz', ultimaCompra: '2024-01-01' }),
+    ],
+    { soNovos: true }
+  );
+  assert.equal(inseridos, 1);
+  assert.equal(atualizados, 1);
+  assert.equal(itens.length, 1);
+  assert.equal(itens[0].t, '51966660000');
+});
