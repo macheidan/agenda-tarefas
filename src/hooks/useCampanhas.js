@@ -1,6 +1,22 @@
 import { useState, useEffect } from 'react';
-import { collection, doc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import {
+  collection, doc, onSnapshot, query, orderBy, limit, updateDoc, serverTimestamp, deleteField,
+} from 'firebase/firestore';
 import { db } from '../firebase';
+
+/**
+ * Usos da campanha, digitados à mão (quantos clientes usaram o cupom/oferta).
+ * É o ÚNICO campo de `campanhas` que o cliente escreve — as regras só deixam
+ * mexer em `usos*`, para ninguém adulterar os contadores que vêm da Meta.
+ * `usos` vazio apaga o campo: "não conferido" é diferente de zero.
+ */
+export async function salvarUsosCampanha(campanhaId, usos, usuario) {
+  await updateDoc(doc(db, 'campanhas', campanhaId), {
+    usos: usos === null ? deleteField() : usos,
+    usosAtualizadoEm: serverTimestamp(),
+    usosAtualizadoPor: usuario?.email || usuario?.uid || null,
+  });
+}
 
 /**
  * Campanhas de WhatsApp e o que voltou delas.

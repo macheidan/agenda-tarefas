@@ -842,6 +842,59 @@
   border-color: var(--accent);
 }
 
+.usosBloco {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.usosCampo {
+  display: flex;
+  flex-direction: column;
+}
+
+.usosCampo label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.usosCampo input {
+  width: 120px;
+  padding: 8px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.usosCampo input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.usosHint {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .usosCampo input {
+    font-size: 16px;
+  }
+}
+
 .stChip {
   display: inline-block;
   padding: 2px 8px;

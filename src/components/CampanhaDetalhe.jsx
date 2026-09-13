@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
+import { salvarUsosCampanha } from '../hooks/useCampanhas';
 import styles from '../styles/ClientesView.module.css';
 
 // Uma linha por mensagem: é a única tela que abre `campanhaEnvios`, e só da
@@ -36,6 +37,19 @@ export default function CampanhaDetalhe({ campanha, onVoltar }) {
   const [envios, setEnvios] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [filtro, setFiltro] = useState(null);
+  // Rascunho de Usos: nasce do gravado e só reinicia ao trocar de campanha —
+  // a campanha é viva (o webhook grava nela o tempo todo), e recarregar a cada
+  // snapshot apagaria o número no meio da digitação.
+  const [usosRascunho, setUsosRascunho] = useState(campanha?.usos != null ? String(campanha.usos) : '');
+  const [salvandoUsos, setSalvandoUsos] = useState(false);
+  const [erroUsos, setErroUsos] = useState(null);
+  const [usosSalvo, setUsosSalvo] = useState(false);
+
+  useEffect(() => {
+    setUsosRascunho(campanha?.usos != null ? String(campanha.usos) : '');
+    setErroUsos(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campanha?.id]);
 
   useEffect(() => {
     if (!campanha?.id) return undefined;
@@ -71,6 +85,26 @@ export default function CampanhaDetalhe({ campanha, onVoltar }) {
   const chegaram = contagem.entregue + contagem.lido;
   const taxa = chegaram ? Math.round((contagem.lido / chegaram) * 100) : 0;
 
+  const usosTexto = usosRascunho.trim();
+  const usosValido = usosTexto === '' || /^\d+$/.test(usosTexto);
+  const usosNovo = usosTexto === '' ? null : Number(usosTexto);
+  const usosMudou = usosValido && usosNovo !== (campanha.usos ?? null);
+
+  const gravarUsos = async () => {
+    if (!usosMudou || salvandoUsos) return;
+    setSalvandoUsos(true);
+    setErroUsos(null);
+    try {
+      await salvarUsosCampanha(campanha.id, usosNovo, auth.currentUser);
+      setUsosSalvo(true);
+      setTimeout(() => setUsosSalvo(false), 2500);
+    } catch (e) {
+      setErroUsos(e.message || 'não consegui salvar');
+    } finally {
+      setSalvandoUsos(false);
+    }
+  };
+
   return (
     <>
       <div className={styles.detalheTopo}>
@@ -105,6 +139,37 @@ export default function CampanhaDetalhe({ campanha, onVoltar }) {
           <strong>{taxa}%</strong>
           <span>leram (de {chegaram} que chegaram)</span>
         </div>
+      </div>
+
+      <div className={styles.usosBloco}>
+        <div className={styles.usosCampo}>
+          <label htmlFor="campanha-usos">Usos</label>
+          <input
+            id="campanha-usos"
+            type="text"
+            inputMode="numeric"
+            placeholder="—"
+            value={usosRascunho}
+            onChange={(e) => setUsosRascunho(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') gravarUsos(); }}
+            disabled={salvandoUsos}
+          />
+        </div>
+        <button
+          className={styles.autoSalvar}
+          onClick={gravarUsos}
+          disabled={salvandoUsos || !usosMudou}
+          type="button"
+        >
+          {salvandoUsos ? 'Salvando…' : usosSalvo ? 'Salvo!' : 'Salvar'}
+        </button>
+        <span className={styles.usosHint}>
+          {!usosValido
+            ? 'Só números inteiros.'
+            : erroUsos
+              ? erroUsos
+              : 'Quantos clientes usaram a campanha. Digitado à mão — aparece na coluna Usos da lista. Vazio = não conferido.'}
+        </span>
       </div>
 
       {carregando && <p className={styles.subInfoBloco}>Carregando os envios…</p>}

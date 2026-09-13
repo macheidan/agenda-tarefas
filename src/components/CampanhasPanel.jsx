@@ -63,6 +63,7 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
               <th className={styles.colPedidos}>Enviados</th>
               <th className={styles.colPedidos}>Entregues</th>
               <th className={styles.colPedidos}>Lidos</th>
+              <th className={styles.colPedidos}>Usos</th>
               <th className={styles.colPedidos}>Falhas</th>
             </tr>
           </thead>
@@ -84,6 +85,9 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
                 <td data-label="Enviados" className={`${styles.colPedidos} ${styles.num}`}>{c.enviados ?? 0}</td>
                 <td data-label="Entregues" className={`${styles.colPedidos} ${styles.num}`}>{c.entregues ?? 0}</td>
                 <td data-label="Lidos" className={`${styles.colPedidos} ${styles.num}`}>{c.lidos ?? 0}</td>
+                {/* Usos é digitado à mão dentro da campanha: a Meta não sabe quem
+                    usou o cupom. Sem valor fica "—", não 0 — zero é um resultado. */}
+                <td data-label="Usos" className={`${styles.colPedidos} ${styles.num}`}>{c.usos ?? '—'}</td>
                 <td data-label="Falhas" className={`${styles.colPedidos} ${styles.num}`}>{c.falhas ?? 0}</td>
               </tr>
             ))}
