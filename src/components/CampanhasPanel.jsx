@@ -22,6 +22,16 @@ function quando(ts) {
   return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
+// % do funil, sempre sobre a etapa anterior (enviados/alvo, entregues/enviados,
+// lidos/entregues, usos/lidos). Teto de 100%: o webhook só anda o status para
+// frente, então um "entregue" que chega depois do "lido" não soma em entregues
+// e lidos pode passar deles — mostrar 104% seria ruído, não informação.
+function Pct({ parte, base, titulo }) {
+  if (!base || parte == null) return null;
+  const v = Math.min(100, Math.round((parte / base) * 100));
+  return <span className={styles.pct} title={`${v}% ${titulo}`}>{v}%</span>;
+}
+
 export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnviar, lojas, lojaLabels }) {
   const [pagina, setPagina] = useState(0);
   const [aberta, setAberta] = useState(null);
@@ -134,12 +144,24 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
                 </td>
                 <td data-label="Quando" className={styles.colData}>{quando(c.criadoEm)}</td>
                 <td data-label="Alvo" className={`${styles.colPedidos} ${styles.num}`}>{c.totalAlvo ?? '—'}</td>
-                <td data-label="Enviados" className={`${styles.colPedidos} ${styles.num}`}>{c.enviados ?? 0}</td>
-                <td data-label="Entregues" className={`${styles.colPedidos} ${styles.num}`}>{c.entregues ?? 0}</td>
-                <td data-label="Lidos" className={`${styles.colPedidos} ${styles.num}`}>{c.lidos ?? 0}</td>
+                <td data-label="Enviados" className={`${styles.colPedidos} ${styles.num}`}>
+                  {c.enviados ?? 0}
+                  <Pct parte={c.enviados} base={c.totalAlvo} titulo="do alvo" />
+                </td>
+                <td data-label="Entregues" className={`${styles.colPedidos} ${styles.num}`}>
+                  {c.entregues ?? 0}
+                  <Pct parte={c.entregues} base={c.enviados} titulo="dos enviados" />
+                </td>
+                <td data-label="Lidos" className={`${styles.colPedidos} ${styles.num}`}>
+                  {c.lidos ?? 0}
+                  <Pct parte={c.lidos} base={c.entregues} titulo="dos entregues" />
+                </td>
                 {/* Usos é digitado à mão dentro da campanha: a Meta não sabe quem
                     usou o cupom. Sem valor fica "—", não 0 — zero é um resultado. */}
-                <td data-label="Usos" className={`${styles.colPedidos} ${styles.num}`}>{c.usos ?? '—'}</td>
+                <td data-label="Usos" className={`${styles.colPedidos} ${styles.num}`}>
+                  {c.usos ?? '—'}
+                  {c.usos != null && <Pct parte={c.usos} base={c.lidos} titulo="dos lidos" />}
+                </td>
                 <td data-label="Falhas" className={`${styles.colPedidos} ${styles.num}`}>{c.falhas ?? 0}</td>
                 <td className={styles.colAcao}>
                   <button

@@ -349,6 +349,22 @@
   text-align: right;
 }
 
+/* `.table th` alinha à esquerda com mais especificidade que `.colPedidos` —
+   sem isto o título fica à esquerda e o número à direita da mesma coluna. */
+.table th.colDias,
+.table th.colPedidos,
+.table th.colAcao {
+  text-align: right;
+}
+
+/* % do funil ao lado do número: menor e apagado, para não competir com ele. */
+.pct {
+  margin-left: 5px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
 .colData {
   width: 104px;
   white-space: nowrap;
