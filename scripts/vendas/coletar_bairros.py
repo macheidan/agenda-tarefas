@@ -92,12 +92,27 @@ JS_RESULTADO = r"""() => {
   // filtros: lista de bairros cadastrados, seleção de lojas...).
   candidatos.sort((a, b) => b.linhas.length - a.linhas.length);
   const alvo = candidatos[0];
-  const cBairro = alvo.campos.find(ehBairro);
-  const cQtd    = alvo.campos.find(ehQtd);
-  const cValor  = alvo.campos.find(ehValor);
+  // O campo do bairro é escolhido pelo CONTEÚDO, não só pelo nome: a linha tem
+  // também `id_district`-e-afins, e casar pelo primeiro nome com "district"
+  // gravou 64 meses com IDs ("3706908", "3706908|3706909") no lugar do nome
+  // (coleta de 12/09/2026). Vence o campo cujos valores mais têm letra.
+  const temLetra = (x) => typeof x === 'string' && /[a-zà-ÿ]/i.test(x);
+  const nota = (k) => alvo.linhas.reduce((s, l) => s + (temLetra(l[k]) ? 1 : 0), 0);
+  const porConteudo = (lista) => lista
+    .map((k) => ({ k, n: nota(k) })).filter((c) => c.n > 0)
+    .sort((a, b) => b.n - a.n || /id/i.test(a.k) - /id/i.test(b.k))[0];
+  const escolhido = porConteudo(alvo.campos.filter(ehBairro))
+    || porConteudo(alvo.campos.filter((k) => /name|nome|desc/i.test(k)));
+  if (!escolhido) {
+    return { chave: alvo.chave, campos: alvo.campos, amostra: alvo.linhas.slice(0, 3), linhas: [] };
+  }
+  const cBairro = escolhido.k;
+  const numerico = (k) => alvo.linhas.every((l) => l[k] == null || !isNaN(Number(l[k])));
+  const cQtd    = alvo.campos.find((k) => ehQtd(k) && !/id/i.test(k) && numerico(k));
+  const cValor  = alvo.campos.find((k) => ehValor(k) && !/id/i.test(k) && numerico(k));
 
   return {
-    chave: alvo.chave, campos: alvo.campos,
+    chave: alvo.chave, campos: alvo.campos, amostra: alvo.linhas.slice(0, 3),
     usando: { bairro: cBairro, qtd: cQtd, valor: cValor },
     linhas: alvo.linhas.map((l) => ({
       bairro: (l[cBairro] || '').toString().trim(),
