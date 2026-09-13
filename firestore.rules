@@ -416,14 +416,17 @@ service cloud.firestore {
     // texto de conversa de cliente.
     match /campanhas/{id} {
       allow read: if isAdmin() || hasSettingFlag('clientesEnviar');
-      // Exceção única: `usos` é digitado à mão na tela da campanha (a Meta não
-      // sabe quem usou o cupom). Só esses campos — os contadores do webhook
-      // continuam intocáveis pelo cliente.
+      // Exceções: `usos` é digitado à mão na tela da campanha (a Meta não sabe
+      // quem usou o cupom) e `arquivada` tira a campanha da lista. Só esses
+      // campos — os contadores do webhook continuam intocáveis pelo cliente.
       allow update: if (isAdmin() || hasSettingFlag('clientesEnviar'))
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['usos', 'usosAtualizadoEm', 'usosAtualizadoPor'])
+             .hasOnly(['usos', 'usosAtualizadoEm', 'usosAtualizadoPor',
+                       'arquivada', 'arquivadaEm', 'arquivadaPor'])
         && (!('usos' in request.resource.data)
-            || (request.resource.data.usos is int && request.resource.data.usos >= 0));
+            || (request.resource.data.usos is int && request.resource.data.usos >= 0))
+        && (!('arquivada' in request.resource.data)
+            || request.resource.data.arquivada is bool);
       allow create, delete: if false;
     }
     match /campanhaEnvios/{id} {

@@ -795,6 +795,53 @@
   background: var(--bg-secondary);
 }
 
+.campanhasTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.campanhasTopo .subTitulo {
+  margin: 0;
+}
+
+.colAcao {
+  width: 44px;
+  text-align: right;
+}
+
+.acaoBtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.acaoBtn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.acaoBtn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.acaoBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .detalheTopo {
   display: flex;
   align-items: center;

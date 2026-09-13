@@ -19,6 +19,18 @@ export async function salvarUsosCampanha(campanhaId, usos, usuario) {
 }
 
 /**
+ * Arquivar só tira a campanha da lista principal — os envios, contadores e o
+ * bloqueio de reenvio por `campanhaId__telefone` continuam intactos.
+ */
+export async function arquivarCampanha(campanhaId, arquivada, usuario) {
+  await updateDoc(doc(db, 'campanhas', campanhaId), {
+    arquivada,
+    arquivadaEm: serverTimestamp(),
+    arquivadaPor: usuario?.email || usuario?.uid || null,
+  });
+}
+
+/**
  * Campanhas de WhatsApp e o que voltou delas.
  *
  * As três coleções são escritas SÓ pelo servidor (o proxy na Vercel e o webhook

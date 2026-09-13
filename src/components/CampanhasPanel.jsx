@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import CampanhaDetalhe from './CampanhaDetalhe';
 import RespostasAutoForm from './RespostasAutoForm';
+import { Icon } from './icons';
+import { auth } from '../firebase';
+import { arquivarCampanha } from '../hooks/useCampanhas';
 import styles from '../styles/ClientesView.module.css';
 
 // Painel de histórico da sub-seção Clientes: o que já foi disparado, o que os
@@ -22,15 +25,44 @@ function quando(ts) {
 export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnviar, lojas, lojaLabels }) {
   const [pagina, setPagina] = useState(0);
   const [aberta, setAberta] = useState(null);
+  const [verArquivadas, setVerArquivadas] = useState(false);
+  const [arquivando, setArquivando] = useState(null);
+
+  // Arquivar é o "não quero mais ver": some da lista principal e só aparece em
+  // Arquivadas. Nada é apagado — é só um campo no documento.
+  const arquivadasCount = useMemo(() => campanhas.filter((c) => c.arquivada === true).length, [campanhas]);
+  const daAba = useMemo(
+    () => campanhas.filter((c) => (verArquivadas ? c.arquivada === true : c.arquivada !== true)),
+    [campanhas, verArquivadas]
+  );
 
   // A campanha aberta vem da lista viva, não de uma cópia congelada: os
   // contadores continuam subindo pelo webhook enquanto a tela está aberta.
   const detalhe = aberta ? campanhas.find((c) => c.id === aberta) : null;
   if (detalhe) return <CampanhaDetalhe campanha={detalhe} onVoltar={() => setAberta(null)} />;
 
-  const totalPaginas = Math.max(1, Math.ceil(campanhas.length / POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(daAba.length / POR_PAGINA));
   const paginaAtual = Math.min(pagina, totalPaginas - 1);
-  const visiveis = campanhas.slice(paginaAtual * POR_PAGINA, paginaAtual * POR_PAGINA + POR_PAGINA);
+  const visiveis = daAba.slice(paginaAtual * POR_PAGINA, paginaAtual * POR_PAGINA + POR_PAGINA);
+
+  const alternarAba = () => {
+    setVerArquivadas((v) => !v);
+    setPagina(0);
+  };
+
+  const alternarArquivo = async (e, c) => {
+    // A linha inteira abre a campanha; o botão não pode abrir junto.
+    e.stopPropagation();
+    setArquivando(c.id);
+    try {
+      await arquivarCampanha(c.id, !c.arquivada, auth.currentUser);
+    } catch (err) {
+      console.error('Arquivar campanha:', err);
+      window.alert(`Não consegui ${c.arquivada ? 'desarquivar' : 'arquivar'}: ${err.message}`);
+    } finally {
+      setArquivando(null);
+    }
+  };
   // O formulário fica FORA do early return: as respostas automáticas precisam
   // estar prontas antes do primeiro disparo, que é exatamente quando ainda não
   // existe campanha nenhuma para mostrar.
@@ -54,6 +86,25 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
   return (
     <>
       {campanhas.length > 0 && (
+        <div className={styles.campanhasTopo}>
+          <h3 className={styles.subTitulo}>
+            {verArquivadas ? `Campanhas arquivadas (${daAba.length})` : `Campanhas (${daAba.length})`}
+          </h3>
+          {(arquivadasCount > 0 || verArquivadas) && (
+            <button className={styles.ghostBtn} onClick={alternarAba} type="button">
+              {verArquivadas ? '← Voltar' : `Arquivadas (${arquivadasCount})`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {campanhas.length > 0 && daAba.length === 0 && (
+        <div className={styles.empty}>
+          <p>{verArquivadas ? 'Nenhuma campanha arquivada.' : 'Todas as campanhas estão arquivadas.'}</p>
+        </div>
+      )}
+
+      {daAba.length > 0 && (
         <table className={styles.table}>
           <thead>
             <tr>
@@ -65,6 +116,7 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
               <th className={styles.colPedidos}>Lidos</th>
               <th className={styles.colPedidos}>Usos</th>
               <th className={styles.colPedidos}>Falhas</th>
+              <th className={styles.colAcao} aria-label="Ações" />
             </tr>
           </thead>
           <tbody>
@@ -89,6 +141,18 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
                     usou o cupom. Sem valor fica "—", não 0 — zero é um resultado. */}
                 <td data-label="Usos" className={`${styles.colPedidos} ${styles.num}`}>{c.usos ?? '—'}</td>
                 <td data-label="Falhas" className={`${styles.colPedidos} ${styles.num}`}>{c.falhas ?? 0}</td>
+                <td className={styles.colAcao}>
+                  <button
+                    className={styles.acaoBtn}
+                    title={c.arquivada ? 'Desarquivar' : 'Arquivar'}
+                    aria-label={c.arquivada ? 'Desarquivar' : 'Arquivar'}
+                    onClick={(e) => alternarArquivo(e, c)}
+                    disabled={arquivando === c.id}
+                    type="button"
+                  >
+                    <Icon k={c.arquivada ? 'archiveRestore' : 'archive'} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -105,7 +169,7 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
             ← Anterior
           </button>
           <span className={styles.paginaInfo}>
-            Página {paginaAtual + 1} de {totalPaginas} · {campanhas.length} campanhas
+            Página {paginaAtual + 1} de {totalPaginas} · {daAba.length} campanhas
           </span>
           <button
             className={styles.ghostBtn}
