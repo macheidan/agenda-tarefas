@@ -335,9 +335,11 @@ export default function ClientesView({ settings, isAdmin }) {
     return null;
   };
 
-  const selecionaveis = useMemo(() => visiveis.filter((c) => !bloqueio(c)), [visiveis, optOutSet]);
+  // Todos os que podem receber no recorte inteiro (todas as páginas), não só
+  // na página visível: é sobre eles que age o checkbox do cabeçalho.
+  const selecionaveis = useMemo(() => filtrados.filter((c) => !bloqueio(c)), [filtrados, optOutSet]);
   const chaveDe = (c) => `${c.loja}_${c.chave}`;
-  const todosDaPagina =
+  const todosDaLista =
     selecionaveis.length > 0 && selecionaveis.every((c) => selecionados.has(chaveDe(c)));
 
   const alternar = (c) => {
@@ -350,13 +352,13 @@ export default function ClientesView({ settings, isAdmin }) {
     });
   };
 
-  // O checkbox do cabeçalho age só sobre a PÁGINA visível — marcar 6 mil
-  // clientes de uma vez com um clique é o tipo de gesto que ninguém desfaz a
-  // tempo, e o custo de errar aqui é mensagem cobrada.
-  const alternarPagina = () => {
+  // O checkbox do cabeçalho marca a LISTA FILTRADA INTEIRA, todas as páginas.
+  // A trava contra mandar para gente demais fica no disparo: o modal mostra
+  // quantos estão selecionados, aplica o limite do dia e pede confirmação.
+  const alternarLista = () => {
     setSelecionados((s) => {
       const n = new Set(s);
-      selecionaveis.forEach((c) => (todosDaPagina ? n.delete(chaveDe(c)) : n.add(chaveDe(c))));
+      selecionaveis.forEach((c) => (todosDaLista ? n.delete(chaveDe(c)) : n.add(chaveDe(c))));
       return n;
     });
   };
@@ -717,11 +719,11 @@ export default function ClientesView({ settings, isAdmin }) {
                   <th className={styles.colCheck}>
                     <input
                       type="checkbox"
-                      checked={todosDaPagina}
-                      onChange={alternarPagina}
+                      checked={todosDaLista}
+                      onChange={alternarLista}
                       disabled={selecionaveis.length === 0}
-                      title="Selecionar todos os desta página"
-                      aria-label="Selecionar todos os desta página"
+                      title={`Selecionar todos da lista (${selecionaveis.length}), em todas as páginas`}
+                      aria-label="Selecionar todos da lista"
                     />
                   </th>
                 )}
