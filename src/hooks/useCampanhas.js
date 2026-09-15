@@ -46,6 +46,7 @@ export async function salvarCampanha(dados, usuario) {
     idioma: dados.idioma,
     texto: dados.texto,
     cupom: dados.cupom,
+    botaoTexto: dados.botaoTexto,
     botaoUrl: dados.botaoUrl,
     salva: true,
     criadoEm: serverTimestamp(),

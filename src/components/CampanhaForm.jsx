@@ -10,7 +10,9 @@ import styles from '../styles/CampanhaModal.module.css';
 // regra do proxy e das rules — errar aqui só adiaria o erro para o disparo.
 const TEMPLATE_OK = /^[a-z0-9_]{1,512}$/;
 
-const VAZIO = { titulo: '', template: '', idioma: 'pt_BR', texto: '', cupom: '', botaoUrl: '' };
+const VAZIO = {
+  titulo: '', template: '', idioma: 'pt_BR', texto: '', cupom: '', botaoTexto: '', botaoUrl: '',
+};
 
 /**
  * Cadastro de campanha, fixo no topo da sub-aba Campanhas.
@@ -63,6 +65,7 @@ export default function CampanhaForm({ lojas, lojaLabels, lojaPadrao, inicial, f
           idioma: dados.idioma.trim() || 'pt_BR',
           texto: dados.texto.trim(),
           cupom: dados.cupom.trim(),
+          botaoTexto: dados.botaoTexto.trim(),
           botaoUrl: dados.botaoUrl.trim(),
         },
         auth.currentUser
@@ -144,7 +147,22 @@ export default function CampanhaForm({ lojas, lojaLabels, lojaPadrao, inicial, f
 
       <div className={styles.linha}>
         <div className={styles.campo}>
-          <label htmlFor="form-url">Botão · Acessar o site</label>
+          <label htmlFor="form-botao-texto">Botão · Acessar o site · título</label>
+          <input
+            id="form-botao-texto"
+            value={dados.botaoTexto}
+            onChange={(e) => set('botaoTexto', e.target.value)}
+            placeholder="ex: Pedir agora"
+            maxLength={25}
+            disabled={salvando}
+          />
+          <span className={styles.dica}>
+            O texto do botão como está no modelo (até 25 caracteres). A Meta não deixa trocar no
+            envio — é para conferir.
+          </span>
+        </div>
+        <div className={styles.campo}>
+          <label htmlFor="form-url">Botão · Acessar o site · link</label>
           <input
             id="form-url"
             value={dados.botaoUrl}
@@ -157,6 +175,9 @@ export default function CampanhaForm({ lojas, lojaLabels, lojaPadrao, inicial, f
             fixa vale a do modelo; vazio usa o exemplo aprovado.
           </span>
         </div>
+      </div>
+
+      <div className={styles.linha}>
         <div className={styles.campo}>
           <label htmlFor="form-cupom">Botão · Copiar código da oferta</label>
           <input
@@ -170,7 +191,12 @@ export default function CampanhaForm({ lojas, lojaLabels, lojaPadrao, inicial, f
         </div>
       </div>
 
-      <CampanhaPreview texto={dados.texto} botaoUrl={dados.botaoUrl} cupom={dados.cupom} />
+      <CampanhaPreview
+        texto={dados.texto}
+        botaoTexto={dados.botaoTexto}
+        botaoUrl={dados.botaoUrl}
+        cupom={dados.cupom}
+      />
 
       <CampanhaTeste id="form-teste" loja={loja} campanha={dados} disabled={salvando} />
 

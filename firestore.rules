@@ -433,7 +433,7 @@ service cloud.firestore {
       allow create: if (isAdmin() || hasSettingFlag('clientesEnviar'))
         && request.resource.data.keys()
              .hasOnly(['titulo', 'loja', 'template', 'idioma', 'texto', 'cupom',
-                       'botaoUrl', 'salva', 'criadoEm', 'criadoPor'])
+                       'botaoTexto', 'botaoUrl', 'salva', 'criadoEm', 'criadoPor'])
         && request.resource.data.loja in ['dame', 'lov']
         && request.resource.data.template is string
         && request.resource.data.template.matches('^[a-z0-9_]{1,512}$')

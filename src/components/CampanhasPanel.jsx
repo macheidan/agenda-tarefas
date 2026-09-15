@@ -130,6 +130,7 @@ export default function CampanhasPanel({
         idioma: c.idioma || 'pt_BR',
         texto: c.texto || '',
         cupom: c.cupom || '',
+        botaoTexto: c.botaoTexto || '',
         botaoUrl: c.botaoUrl || '',
       },
     });

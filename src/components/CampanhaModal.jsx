@@ -198,6 +198,7 @@ export default function CampanhaModal({
             <CampanhaPreview
               texto={sel.texto}
               nome={exemplo?.nome}
+              botaoTexto={sel.botaoTexto}
               botaoUrl={sel.botaoUrl}
               cupom={sel.cupom}
             />
