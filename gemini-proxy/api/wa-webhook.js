@@ -264,6 +264,9 @@ async function tratarMensagem(db, msg, valor) {
   const texto = (msg.text?.body || msg.button?.text || '').trim();
   const formas = variantesLocais(msg.from);
   const nome = valor?.contacts?.[0]?.profile?.name || '';
+  // Dáme e Lov disparam de números diferentes: o número que recebeu diz de qual
+  // equipe é a resposta (e o descadastro). Sem isso a tela misturava as duas.
+  const loja = slotDoPhoneId(valor?.metadata?.phone_number_id);
 
   // A Meta reentrega o mesmo webhook quando não recebe 200 a tempo. Sem esta
   // saída, a reentrega dispararia a resposta automática de novo — e o cliente
@@ -276,6 +279,7 @@ async function tratarMensagem(db, msg, valor) {
     nome,
     texto: texto.slice(0, 1000),
     tipo: msg.type || 'text',
+    loja,
     recebidoEm: FieldValue.serverTimestamp(),
   });
 
@@ -288,12 +292,19 @@ async function tratarMensagem(db, msg, valor) {
     optOutNovo = !jaEstava;
     await Promise.all([
       ...formas.map((t) =>
-        db.doc(`clientesOptOut/${t}`).set({
-          telefone: t,
-          motivo: 'pediu no WhatsApp',
-          texto: texto.slice(0, 200),
-          criadoEm: FieldValue.serverTimestamp(),
-        })
+        // `lojas` é lista porque o doc é por telefone: quem sai da Dáme e depois
+        // da Lov aparece nas duas. O bloqueio de envio continua valendo para
+        // qualquer loja — aqui é só de qual equipe veio o pedido.
+        db.doc(`clientesOptOut/${t}`).set(
+          {
+            telefone: t,
+            motivo: 'pediu no WhatsApp',
+            texto: texto.slice(0, 200),
+            ...(loja ? { loja, lojas: FieldValue.arrayUnion(loja) } : {}),
+            criadoEm: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        )
       ),
       // Índice de um documento só. A tela precisa saber QUEM saiu para não
       // oferecer essa gente na cópia nem no disparo, e assinar a coleção inteira

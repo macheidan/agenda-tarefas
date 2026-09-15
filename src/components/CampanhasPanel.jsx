@@ -38,6 +38,10 @@ function Pct({ parte, base, titulo }) {
   return <span className={styles.pct} title={`${v}% ${titulo}`}>{v}%</span>;
 }
 
+// "Todas as lojas" mostra tudo; com uma loja escolhida, só o que é dela.
+const daEquipe = (lojaFiltro, lojasDoItem) =>
+  !lojaFiltro || lojaFiltro === 'all' || lojasDoItem.includes(lojaFiltro);
+
 export default function CampanhasPanel({
   campanhas, respostas, optOuts, podeEnviar, lojas, lojaLabels, lojaFiltro,
 }) {
@@ -64,6 +68,19 @@ export default function CampanhasPanel({
       ),
     [campanhas, lojaFiltro]
   );
+
+  // Respostas e descadastros são da equipe cujo número recebeu a mensagem
+  // (`loja`, gravada pelo webhook). Descadastro é por telefone e guarda
+  // `lojas`: quem saiu das duas aparece nas duas.
+  const respostasDaLoja = useMemo(
+    () => respostas.filter((r) => daEquipe(lojaFiltro, r.loja ? [r.loja] : [])),
+    [respostas, lojaFiltro]
+  );
+  const optOutsDaLoja = useMemo(
+    () => optOuts.filter((o) => daEquipe(lojaFiltro, o.lojas || (o.loja ? [o.loja] : []))),
+    [optOuts, lojaFiltro]
+  );
+  const saiuSet = useMemo(() => new Set(optOutsDaLoja.map((o) => o.telefone)), [optOutsDaLoja]);
 
   // Arquivar é o "não quero mais ver": some da lista principal e só aparece em
   // Arquivadas. Nada é apagado — é só um campo no documento.
@@ -157,7 +174,7 @@ export default function CampanhasPanel({
   // exatamente quando ainda não existe campanha nenhuma para mostrar.
   const auto = <RespostasAutoForm ativo={podeEnviar} lojas={lojas} lojaLabels={labels} />;
 
-  if (!daLoja.length && !respostas.length) {
+  if (!daLoja.length && !respostasDaLoja.length) {
     return (
       <>
         {form}
@@ -308,10 +325,10 @@ export default function CampanhasPanel({
         </div>
       )}
 
-      {respostas.length > 0 && (
+      {respostasDaLoja.length > 0 && (
         <>
           <h3 className={styles.subTitulo}>
-            Respostas ({respostas.length}) · {optOuts.length} pediram para sair
+            Respostas ({respostasDaLoja.length}) · {optOutsDaLoja.length} pediram para sair
           </h3>
           <p className={styles.subInfoBloco}>
             Quem responde no número da campanha cai aqui — o número de campanha não é atendido por
@@ -327,10 +344,18 @@ export default function CampanhasPanel({
               </tr>
             </thead>
             <tbody>
-              {respostas.map((r) => (
+              {respostasDaLoja.map((r) => (
                 <tr key={r.id}>
                   <td data-label="Cliente" className={styles.nome}>
                     {r.nome || <span className={styles.semNome}>Sem nome</span>}
+                    {(!lojaFiltro || lojaFiltro === 'all') && r.loja && (
+                      <span className={styles.brandChip}>{LOJA_LABELS[r.loja] || r.loja}</span>
+                    )}
+                    {saiuSet.has(r.telefone) && (
+                      <span className={styles.optOutChip} title="Pediu para não receber mensagens">
+                        descadastrado
+                      </span>
+                    )}
                   </td>
                   <td data-label="Telefone" className={styles.colTel}>
                     <a
