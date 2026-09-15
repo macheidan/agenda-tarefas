@@ -85,13 +85,39 @@ async function lerTemplate({ token, waba }, nome, idioma) {
  */
 const cacheMidia = new Map();
 
+// Teto de imagem do WhatsApp é 5 MB; a folga cobre o multipart.
+const LIMITE_IMAGEM = 4.8 * 1024 * 1024;
+
+/** JPEG de até 1600 px no lado maior, baixando a qualidade até caber. */
+async function reduzirImagem(buffer) {
+  // Import sob demanda: o sharp é pesado e só entra quando a imagem estoura.
+  const { default: sharp } = await import('sharp');
+  for (const [lado, qualidade] of [[1600, 85], [1600, 72], [1280, 70], [1080, 60]]) {
+    const saida = await sharp(buffer)
+      .rotate()
+      .resize({ width: lado, height: lado, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: qualidade, mozjpeg: true })
+      .toBuffer();
+    if (saida.length <= LIMITE_IMAGEM) return new Blob([saida], { type: 'image/jpeg' });
+  }
+  throw new Error('imagem do cabeçalho continua acima de 5 MB mesmo reduzida');
+}
+
 async function subirMidia({ token, phoneId }, link) {
   const chave = `${phoneId}/${link}`;
   if (cacheMidia.has(chave)) return cacheMidia.get(chave);
   const orig = await fetch(link);
   if (!orig.ok) throw new Error(`download da mídia: HTTP ${orig.status}`);
-  const blob = await orig.blob();
-  const tipo = blob.type || 'image/jpeg';
+  let blob = await orig.blob();
+  let tipo = blob.type || 'image/jpeg';
+  // O WhatsApp recusa imagem acima de 5 MB ("Arquivo muito grande"), mas o
+  // modelo aceita cadastrar maior: o `diadocliente_dame` subiu com 12 MB em
+  // 15/09 e todo envio voltou "Media upload error". Reduz aqui em vez de
+  // depender de quem monta o modelo lembrar do limite.
+  if (tipo.startsWith('image/') && blob.size > LIMITE_IMAGEM) {
+    blob = await reduzirImagem(Buffer.from(await blob.arrayBuffer()));
+    tipo = 'image/jpeg';
+  }
   const form = new FormData();
   form.append('messaging_product', 'whatsapp');
   form.append('type', tipo);
@@ -107,20 +133,26 @@ async function subirMidia({ token, phoneId }, link) {
   return data.id;
 }
 
+class ErroMidia extends Error {}
+
 async function componentesExtras(cred, tpl, cupom, botaoUrl) {
   const extras = [];
   const header = (tpl?.components || []).find((c) => c.type === 'HEADER');
   const midia = { IMAGE: 'image', VIDEO: 'video', DOCUMENT: 'document' }[header?.format];
   const link = header?.example?.header_handle?.[0];
   if (midia && link) {
-    // Se o upload falhar, tenta pelo link: pior falhar como antes do que parar.
-    const ref = await subirMidia(cred, link)
-      .then((id) => ({ id }))
-      .catch((e) => {
-        console.error('wa-send subirMidia:', e);
-        return { link };
-      });
-    extras.push({ type: 'header', parameters: [{ type: midia, [midia]: ref }] });
+    // Upload falhou = para tudo, com o motivo. Já houve fallback para o `link`
+    // aqui, mas ele NUNCA funciona (a Meta aceita e o webhook volta "Media
+    // upload error" segundos depois): a tela mostrava "Enviado!" e o cliente
+    // não recebia nada. Uma campanha inteira sairia assim.
+    let id;
+    try {
+      id = await subirMidia(cred, link);
+    } catch (e) {
+      console.error('wa-send subirMidia:', e);
+      throw new ErroMidia(`imagem do cabeçalho: ${e.message}`);
+    }
+    extras.push({ type: 'header', parameters: [{ type: midia, [midia]: { id } }] });
   }
 
   const botoes = (tpl?.components || []).find((c) => c.type === 'BUTTONS')?.buttons || [];
@@ -239,7 +271,13 @@ export default async function handler(req, res) {
   // mídia no cabeçalho ou o código do cupom — parâmetros cuja falta a Meta
   // reporta com erros que não dizem qual parâmetro é.
   const tpl = await lerTemplate(cred, template, idioma);
-  const extras = await componentesExtras(cred, tpl, cupom, String(botaoUrl || '').slice(0, 2000));
+  let extras;
+  try {
+    extras = await componentesExtras(cred, tpl, cupom, String(botaoUrl || '').slice(0, 2000));
+  } catch (e) {
+    if (e instanceof ErroMidia) return res.status(502).json({ error: e.message });
+    throw e;
+  }
 
   // Telefone é só dígitos com DDI: a base guarda DDD+número, o wa.me e a Meta
   // querem o 55 na frente.
