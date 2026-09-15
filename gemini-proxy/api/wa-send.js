@@ -75,16 +75,52 @@ async function lerTemplate({ token, waba }, nome, idioma) {
  * e a falta dele volta como `(#132012) Parameter format does not match format
  * in the created template` — de novo sem apontar o cabeçalho. Aconteceu no
  * `diadocliente_lov` em 15/09. A mídia é a de exemplo aprovada com o template
- * (a mesma que o revisor viu); é URL do CDN da Meta e expira (~30 dias), mas
- * sai fresca a cada leitura do template, que é refeita a cada cold start.
+ * (a mesma que o revisor viu).
+ *
+ * Ela NÃO vai como `link`: o exemplo é URL assinada do CDN da Meta, que baixa
+ * normalmente de fora, mas o WhatsApp recusa buscar — a Meta aceita o envio e
+ * o webhook volta "Media upload error" segundos depois (medido em 15/09). Por
+ * isso o servidor baixa a mídia e sobe em `/{phoneId}/media`, mandando só o
+ * `id`. O id vale 30 dias e fica em cache no módulo: um upload por campanha.
  */
-function componentesExtras(tpl, cupom) {
+const cacheMidia = new Map();
+
+async function subirMidia({ token, phoneId }, link) {
+  const chave = `${phoneId}/${link}`;
+  if (cacheMidia.has(chave)) return cacheMidia.get(chave);
+  const orig = await fetch(link);
+  if (!orig.ok) throw new Error(`download da mídia: HTTP ${orig.status}`);
+  const blob = await orig.blob();
+  const tipo = blob.type || 'image/jpeg';
+  const form = new FormData();
+  form.append('messaging_product', 'whatsapp');
+  form.append('type', tipo);
+  form.append('file', blob, `cabecalho.${tipo.split('/')[1] || 'jpg'}`);
+  const resp = await fetch(`${GRAPH}/${phoneId}/media`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!data?.id) throw new Error(data?.error?.message || `upload da mídia: HTTP ${resp.status}`);
+  cacheMidia.set(chave, data.id);
+  return data.id;
+}
+
+async function componentesExtras(cred, tpl, cupom) {
   const extras = [];
   const header = (tpl?.components || []).find((c) => c.type === 'HEADER');
   const midia = { IMAGE: 'image', VIDEO: 'video', DOCUMENT: 'document' }[header?.format];
   const link = header?.example?.header_handle?.[0];
   if (midia && link) {
-    extras.push({ type: 'header', parameters: [{ type: midia, [midia]: { link } }] });
+    // Se o upload falhar, tenta pelo link: pior falhar como antes do que parar.
+    const ref = await subirMidia(cred, link)
+      .then((id) => ({ id }))
+      .catch((e) => {
+        console.error('wa-send subirMidia:', e);
+        return { link };
+      });
+    extras.push({ type: 'header', parameters: [{ type: midia, [midia]: ref }] });
   }
 
   const botoes = (tpl?.components || []).find((c) => c.type === 'BUTTONS')?.buttons || [];
@@ -180,7 +216,7 @@ export default async function handler(req, res) {
   // mídia no cabeçalho ou o código do cupom — parâmetros cuja falta a Meta
   // reporta com erros que não dizem qual parâmetro é.
   const tpl = await lerTemplate(cred, template, idioma);
-  const extras = componentesExtras(tpl, cupom);
+  const extras = await componentesExtras(cred, tpl, cupom);
 
   // Telefone é só dígitos com DDI: a base guarda DDD+número, o wa.me e a Meta
   // querem o 55 na frente.
