@@ -67,10 +67,27 @@ async function lerTemplate({ token, waba }, nome, idioma) {
   }
 }
 
-/** Componentes de botão que o template exige, hoje só o do cupom. */
-function componentesBotao(tpl, cupom) {
-  const botoes = (tpl?.components || []).find((c) => c.type === 'BUTTONS')?.buttons || [];
+/**
+ * Componentes que o template exige além do corpo: a mídia do cabeçalho e o
+ * código do cupom.
+ *
+ * Cabeçalho de IMAGEM/VÍDEO/DOCUMENTO também é parâmetro obrigatório no envio,
+ * e a falta dele volta como `(#132012) Parameter format does not match format
+ * in the created template` — de novo sem apontar o cabeçalho. Aconteceu no
+ * `diadocliente_lov` em 15/09. A mídia é a de exemplo aprovada com o template
+ * (a mesma que o revisor viu); é URL do CDN da Meta e expira (~30 dias), mas
+ * sai fresca a cada leitura do template, que é refeita a cada cold start.
+ */
+function componentesExtras(tpl, cupom) {
   const extras = [];
+  const header = (tpl?.components || []).find((c) => c.type === 'HEADER');
+  const midia = { IMAGE: 'image', VIDEO: 'video', DOCUMENT: 'document' }[header?.format];
+  const link = header?.example?.header_handle?.[0];
+  if (midia && link) {
+    extras.push({ type: 'header', parameters: [{ type: midia, [midia]: { link } }] });
+  }
+
+  const botoes = (tpl?.components || []).find((c) => c.type === 'BUTTONS')?.buttons || [];
   botoes.forEach((b, i) => {
     if (b.type !== 'COPY_CODE') return;
     // Sem cupom informado na tela, vale o exemplo aprovado com o template —
@@ -160,10 +177,10 @@ export default async function handler(req, res) {
   const db = getFirestore();
 
   // Uma consulta por lote (cacheada entre lotes): descobre se o template exige
-  // o código do cupom, que é o parâmetro cuja falta a Meta reporta só como
-  // "Required parameter is missing".
+  // mídia no cabeçalho ou o código do cupom — parâmetros cuja falta a Meta
+  // reporta com erros que não dizem qual parâmetro é.
   const tpl = await lerTemplate(cred, template, idioma);
-  const extras = componentesBotao(tpl, cupom);
+  const extras = componentesExtras(tpl, cupom);
 
   // Telefone é só dígitos com DDI: a base guarda DDD+número, o wa.me e a Meta
   // querem o 55 na frente.
