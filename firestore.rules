@@ -427,7 +427,19 @@ service cloud.firestore {
             || (request.resource.data.usos is int && request.resource.data.usos >= 0))
         && (!('arquivada' in request.resource.data)
             || request.resource.data.arquivada is bool);
-      allow create, delete: if false;
+      // Campanha salva na sub-aba Campanhas: o cliente cria só o molde
+      // (template, textos, botões). Contadores e cabeçalho do disparo
+      // continuam sendo só do servidor — por isso a lista fechada de campos.
+      allow create: if (isAdmin() || hasSettingFlag('clientesEnviar'))
+        && request.resource.data.keys()
+             .hasOnly(['titulo', 'loja', 'template', 'idioma', 'texto', 'cupom',
+                       'botaoUrl', 'salva', 'criadoEm', 'criadoPor'])
+        && request.resource.data.loja in ['dame', 'lov']
+        && request.resource.data.template is string
+        && request.resource.data.template.matches('^[a-z0-9_]{1,512}$')
+        && request.resource.data.criadoEm == request.time;
+      // Excluir apaga só o cabeçalho; campanhaEnvios (quem recebeu) fica.
+      allow delete: if isAdmin() || hasSettingFlag('clientesEnviar');
     }
     match /campanhaEnvios/{id} {
       allow read: if isAdmin() || hasSettingFlag('clientesEnviar');

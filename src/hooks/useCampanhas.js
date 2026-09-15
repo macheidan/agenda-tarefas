@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  collection, doc, onSnapshot, query, orderBy, limit, updateDoc, serverTimestamp, deleteField,
+  collection, doc, onSnapshot, query, orderBy, limit, updateDoc, setDoc, deleteDoc, serverTimestamp,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { novaCampanhaId } from '../utils/whatsapp';
 
 /**
  * Usos da campanha, digitados à mão (quantos clientes usaram o cupom/oferta).
@@ -16,6 +18,48 @@ export async function salvarUsosCampanha(campanhaId, usos, usuario) {
     usosAtualizadoEm: serverTimestamp(),
     usosAtualizadoPor: usuario?.email || usuario?.uid || null,
   });
+}
+
+/**
+ * Envio de teste vira campanha própria (`teste-…`) pelo mesmo caminho do
+ * disparo de verdade, mas não é campanha de ninguém: fica fora das listas.
+ */
+export const ehTeste = (c) => String(c?.id || '').startsWith('teste-');
+
+/**
+ * Campanha salva, ainda sem envio: o molde que a Lista escolhe na hora de
+ * disparar. O id dela é o `campanhaId` do disparo — é por
+ * `campanhaId__telefone` que o servidor pula quem já recebeu, então mandar a
+ * mesma campanha de novo (outro dia, outro recorte, ou retomando um disparo
+ * interrompido) nunca repete mensagem. Para mandar outra vez a quem já
+ * recebeu, copia-se a campanha, o que gera id novo.
+ *
+ * As rules só deixam o cliente CRIAR com estes campos; os contadores continuam
+ * sendo só do servidor.
+ */
+export async function salvarCampanha(dados, usuario) {
+  const id = novaCampanhaId(dados.loja);
+  await setDoc(doc(db, 'campanhas', id), {
+    titulo: dados.titulo,
+    loja: dados.loja,
+    template: dados.template,
+    idioma: dados.idioma,
+    texto: dados.texto,
+    cupom: dados.cupom,
+    botaoUrl: dados.botaoUrl,
+    salva: true,
+    criadoEm: serverTimestamp(),
+    criadoPor: usuario?.email || usuario?.uid || null,
+  });
+  return id;
+}
+
+/**
+ * Apaga só o cabeçalho. Os envios (`campanhaEnvios`) ficam — são o histórico
+ * de quem recebeu o quê e o índice `clientesMeta/ultimoEnvio` depende deles.
+ */
+export async function excluirCampanha(campanhaId) {
+  await deleteDoc(doc(db, 'campanhas', campanhaId));
 }
 
 /**
@@ -74,11 +118,12 @@ export function useCampanhas(ativo) {
     // todo documento que não tem o campo, então uma campanha cujo cabeçalho
     // ficou sem `criadoEm` desapareceria da tela inteira — com os envios todos
     // gravados. Ordenar aqui no cliente custa nada em 30 documentos e não
-    // esconde nada.
+    // esconde nada. Limite de 60, não 30: os envios de teste também são docs
+    // desta coleção e, escondidos da tela, ainda comeriam a cota da query.
     const porData = (a, b) => (b.criadoEm?.toMillis?.() || 0) - (a.criadoEm?.toMillis?.() || 0);
     const unsubs = [
       onSnapshot(
-        query(collection(db, 'campanhas'), limit(30)),
+        query(collection(db, 'campanhas'), limit(60)),
         (snap) => {
           setCampanhas(snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort(porData));
           setLoading(false);

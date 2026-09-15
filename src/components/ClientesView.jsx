@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useClientes, primeiroNome } from '../hooks/useClientes';
-import { useCampanhas } from '../hooks/useCampanhas';
+import { useCampanhas, ehTeste } from '../hooks/useCampanhas';
 import { segmentoDe, SEGMENTOS } from '../utils/relatoriosClientes';
 import { bairroCanonico, chaveBairro, contarPorBairro } from '../utils/bairros';
 import BairrosModal from './BairrosModal';
@@ -502,7 +502,7 @@ export default function ClientesView({ settings, isAdmin }) {
               onClick={() => setSub(x.key)}
             >
               {x.label}
-              {x.key === 'campanhas' ? ` (${campanhas.length})` : ''}
+              {x.key === 'campanhas' ? ` (${campanhas.filter((c) => !ehTeste(c) && c.template).length})` : ''}
             </button>
           ))}
         </div>
@@ -677,7 +677,7 @@ export default function ClientesView({ settings, isAdmin }) {
             disabled={!lojaAlvo || destinatarios.length === 0}
             title={
               lojaAlvo
-                ? 'Dispara o template aprovado na Meta para este recorte'
+                ? 'Escolhe uma campanha salva e dispara para os clientes marcados'
                 : 'Escolha uma loja — cada marca dispara do seu próprio número'
             }
           >
@@ -913,6 +913,7 @@ export default function ClientesView({ settings, isAdmin }) {
           podeEnviar={podeEnviar}
           lojas={lojaKeys}
           lojaLabels={LOJA_LABELS}
+          lojaFiltro={lojaFiltro}
         />
       )}
 
@@ -924,6 +925,7 @@ export default function ClientesView({ settings, isAdmin }) {
         destinatarios={destinatarios}
         filtroDesc={filtroDesc}
         campanhas={campanhas}
+        onNovaCampanha={() => setSub('campanhas')}
       />
       {modalBairros && (
         <BairrosModal

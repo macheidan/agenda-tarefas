@@ -14,14 +14,16 @@ export const LOTE = 20;
 /** Pausa entre lotes — evita bater no limite de taxa da Meta num disparo longo. */
 export const PAUSA_MS = 1000;
 
-export async function enviarLote({ campanhaId, loja, template, idioma, destinatarios, meta, cupom }) {
+export async function enviarLote({
+  campanhaId, loja, template, idioma, destinatarios, meta, cupom, botaoUrl,
+}) {
   const user = auth.currentUser;
   if (!user) throw new Error('401 não autenticado');
   const token = await user.getIdToken();
   const res = await fetch(SEND_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ campanhaId, loja, template, idioma, destinatarios, meta, cupom }),
+    body: JSON.stringify({ campanhaId, loja, template, idioma, destinatarios, meta, cupom, botaoUrl }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`${res.status} ${data.error || res.statusText}`);

@@ -1019,3 +1019,45 @@
   cursor: help;
   font-size: 11px;
 }
+
+/* ── Cadastro de campanha no topo da sub-aba Campanhas ─────────────────── */
+.formCampanha {
+  margin-top: 16px;
+}
+
+.formCampanha .subTitulo {
+  margin-top: 0;
+}
+
+.colAcoes {
+  width: 108px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table th.colAcoes {
+  text-align: right;
+}
+
+.acaoBtn + .acaoBtn {
+  margin-left: 4px;
+}
+
+.acaoPerigo:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.naoEnviadaChip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}

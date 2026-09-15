@@ -430,3 +430,142 @@
   font-weight: 600;
   color: var(--text-secondary);
 }
+
+/* ── Campanha salva: cadastro (sub-aba Campanhas) e escolha no disparo ────── */
+.campoPequeno select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg, var(--card));
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.campoPequeno select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Botões do modelo na prévia: imitam o botão do WhatsApp, sem cor nova. */
+.previewBotoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.previewBotao {
+  display: block;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.rotulo {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.vazio {
+  padding: 20px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+.vazio p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.listaCampanhas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.itemCampanha {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.itemCampanha:hover {
+  border-color: var(--accent);
+}
+
+.itemCampanha input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.itemCampanhaAtivo {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.itemCampanhaCorpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemCampanhaCorpo strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.itemCampanhaInfo {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.aviso {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--warning-text);
+}
+
+.sucesso {
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  background: var(--success-bg);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--success);
+}
+
+@media (max-width: 480px) {
+  .campoPequeno select {
+    font-size: 16px;
+  }
+}

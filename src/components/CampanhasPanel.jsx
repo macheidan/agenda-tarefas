@@ -1,14 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import CampanhaDetalhe from './CampanhaDetalhe';
+import CampanhaForm from './CampanhaForm';
 import RespostasAutoForm from './RespostasAutoForm';
 import { Icon } from './icons';
 import { auth } from '../firebase';
-import { arquivarCampanha } from '../hooks/useCampanhas';
+import { arquivarCampanha, excluirCampanha, ehTeste } from '../hooks/useCampanhas';
 import styles from '../styles/ClientesView.module.css';
 
-// Painel de histórico da sub-seção Clientes: o que já foi disparado, o que os
-// clientes responderam e quem pediu para sair. Divide o CSS module da
-// ClientesView de propósito — é a mesma seção, com a mesma tabela.
+// Painel da sub-seção Campanhas: cadastro de campanha no topo, depois o que já
+// foi salvo/disparado, o que os clientes responderam e quem pediu para sair.
+// Divide o CSS module da ClientesView de propósito — é a mesma seção, com a
+// mesma tabela.
 
 const LOJA_LABELS = { dame: 'Dáme', lov: 'Lov' };
 
@@ -22,6 +24,10 @@ function quando(ts) {
   return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
+// Já saiu alguma mensagem? Campanha antiga não tem `disparadaEm` (o campo é de
+// 15/09 em diante), então os contadores também contam.
+const foiEnviada = (c) => Boolean(c.disparadaEm || c.enviados || c.falhas || c.pulados);
+
 // % do funil, sempre sobre a etapa anterior (enviados/alvo, entregues/enviados,
 // lidos/entregues, usos/lidos). Teto de 100%: o webhook só anda o status para
 // frente, então um "entregue" que chega depois do "lido" não soma em entregues
@@ -32,18 +38,39 @@ function Pct({ parte, base, titulo }) {
   return <span className={styles.pct} title={`${v}% ${titulo}`}>{v}%</span>;
 }
 
-export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnviar, lojas, lojaLabels }) {
+export default function CampanhasPanel({
+  campanhas, respostas, optOuts, podeEnviar, lojas, lojaLabels, lojaFiltro,
+}) {
   const [pagina, setPagina] = useState(0);
   const [aberta, setAberta] = useState(null);
   const [verArquivadas, setVerArquivadas] = useState(false);
-  const [arquivando, setArquivando] = useState(null);
+  const [ocupada, setOcupada] = useState(null);
+  // Cópia de uma campanha para o formulário. `n` muda a cada clique e vira a
+  // `key` do form, que assim nasce de novo com os campos da cópia.
+  const [copia, setCopia] = useState(null);
+  const formRef = useRef(null);
+  const labels = lojaLabels || LOJA_LABELS;
+
+  // Teste de envio não é campanha: fica fora da tela inteira. Sem `template`
+  // é cabeçalho fantasma — o webhook recria com `merge` só os contadores de
+  // uma campanha excluída quando um status atrasado chega depois.
+  const daLoja = useMemo(
+    () =>
+      campanhas.filter(
+        (c) =>
+          !ehTeste(c) &&
+          c.template &&
+          (!lojaFiltro || lojaFiltro === 'all' || c.loja === lojaFiltro)
+      ),
+    [campanhas, lojaFiltro]
+  );
 
   // Arquivar é o "não quero mais ver": some da lista principal e só aparece em
   // Arquivadas. Nada é apagado — é só um campo no documento.
-  const arquivadasCount = useMemo(() => campanhas.filter((c) => c.arquivada === true).length, [campanhas]);
+  const arquivadasCount = useMemo(() => daLoja.filter((c) => c.arquivada === true).length, [daLoja]);
   const daAba = useMemo(
-    () => campanhas.filter((c) => (verArquivadas ? c.arquivada === true : c.arquivada !== true)),
-    [campanhas, verArquivadas]
+    () => daLoja.filter((c) => (verArquivadas ? c.arquivada === true : c.arquivada !== true)),
+    [daLoja, verArquivadas]
   );
 
   // A campanha aberta vem da lista viva, não de uma cópia congelada: os
@@ -60,32 +87,85 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
     setPagina(0);
   };
 
+  // Os botões ficam dentro da linha, que inteira abre a campanha: nenhum deles
+  // pode abrir junto.
   const alternarArquivo = async (e, c) => {
-    // A linha inteira abre a campanha; o botão não pode abrir junto.
     e.stopPropagation();
-    setArquivando(c.id);
+    setOcupada(c.id);
     try {
       await arquivarCampanha(c.id, !c.arquivada, auth.currentUser);
     } catch (err) {
       console.error('Arquivar campanha:', err);
       window.alert(`Não consegui ${c.arquivada ? 'desarquivar' : 'arquivar'}: ${err.message}`);
     } finally {
-      setArquivando(null);
+      setOcupada(null);
     }
   };
-  // O formulário fica FORA do early return: as respostas automáticas precisam
-  // estar prontas antes do primeiro disparo, que é exatamente quando ainda não
-  // existe campanha nenhuma para mostrar.
-  const auto = <RespostasAutoForm ativo={podeEnviar} lojas={lojas} lojaLabels={lojaLabels || LOJA_LABELS} />;
 
-  if (!campanhas.length && !respostas.length) {
+  const copiar = (e, c) => {
+    e.stopPropagation();
+    setCopia({
+      n: Date.now(),
+      dados: {
+        loja: c.loja,
+        titulo: `${c.titulo || c.template} (cópia)`,
+        template: c.template || '',
+        idioma: c.idioma || 'pt_BR',
+        texto: c.texto || '',
+        cupom: c.cupom || '',
+        botaoUrl: c.botaoUrl || '',
+      },
+    });
+    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
+  const excluir = async (e, c) => {
+    e.stopPropagation();
+    const nome = c.titulo || c.template;
+    const ok = window.confirm(
+      `Excluir a campanha "${nome}"? Tem certeza?\n\n` +
+        (foiEnviada(c)
+          ? `Ela já foi enviada para ${c.enviados || 0} cliente(s): os números dela somem da lista. `
+          : '') +
+        'Não tem como desfazer.'
+    );
+    if (!ok) return;
+    setOcupada(c.id);
+    try {
+      await excluirCampanha(c.id);
+    } catch (err) {
+      console.error('Excluir campanha:', err);
+      window.alert(`Não consegui excluir: ${err.message}`);
+    } finally {
+      setOcupada(null);
+    }
+  };
+
+  const form = podeEnviar && (
+    <CampanhaForm
+      key={copia?.n || 'nova'}
+      formRef={formRef}
+      lojas={lojas}
+      lojaLabels={labels}
+      lojaPadrao={lojaFiltro && lojaFiltro !== 'all' ? lojaFiltro : null}
+      inicial={copia?.dados || null}
+    />
+  );
+
+  // O formulário de respostas fica FORA do early return: as respostas
+  // automáticas precisam estar prontas antes do primeiro disparo, que é
+  // exatamente quando ainda não existe campanha nenhuma para mostrar.
+  const auto = <RespostasAutoForm ativo={podeEnviar} lojas={lojas} lojaLabels={labels} />;
+
+  if (!daLoja.length && !respostas.length) {
     return (
       <>
+        {form}
         <div className={styles.empty}>
-          <p>Nenhuma campanha disparada ainda.</p>
+          <p>Nenhuma campanha salva ainda.</p>
           <span>
-            Escolha uma loja e uma faixa de dias na lista, e o botão{' '}
-            <code>Enviar campanha</code> aparece com o recorte pronto.
+            Preencha o formulário acima e clique em <code>Salvar campanha</code>. Depois, na Lista,
+            marque os clientes e escolha a campanha em <code>Enviar campanha</code>.
           </span>
         </div>
         {auto}
@@ -95,7 +175,9 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
 
   return (
     <>
-      {campanhas.length > 0 && (
+      {form}
+
+      {daLoja.length > 0 && (
         <div className={styles.campanhasTopo}>
           <h3 className={styles.subTitulo}>
             {verArquivadas ? `Campanhas arquivadas (${daAba.length})` : `Campanhas (${daAba.length})`}
@@ -108,7 +190,7 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
         </div>
       )}
 
-      {campanhas.length > 0 && daAba.length === 0 && (
+      {daLoja.length > 0 && daAba.length === 0 && (
         <div className={styles.empty}>
           <p>{verArquivadas ? 'Nenhuma campanha arquivada.' : 'Todas as campanhas estão arquivadas.'}</p>
         </div>
@@ -126,7 +208,7 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
               <th className={styles.colPedidos}>Lidos</th>
               <th className={styles.colPedidos}>Usos</th>
               <th className={styles.colPedidos}>Falhas</th>
-              <th className={styles.colAcao} aria-label="Ações" />
+              <th className={styles.colAcoes} aria-label="Ações" />
             </tr>
           </thead>
           <tbody>
@@ -140,9 +222,12 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
                 <td data-label="Campanha" className={styles.nome}>
                   {c.titulo || c.template}
                   <span className={styles.brandChip}>{LOJA_LABELS[c.loja] || c.loja}</span>
-                  {c.filtro && <span className={styles.subInfo}>{c.filtro}</span>}
+                  {!foiEnviada(c) && <span className={styles.naoEnviadaChip}>não enviada</span>}
+                  <span className={styles.subInfo}>
+                    {[c.template, c.cupom && `código ${c.cupom}`, c.filtro].filter(Boolean).join(' · ')}
+                  </span>
                 </td>
-                <td data-label="Quando" className={styles.colData}>{quando(c.criadoEm)}</td>
+                <td data-label="Quando" className={styles.colData}>{quando(c.disparadaEm || c.criadoEm)}</td>
                 <td data-label="Alvo" className={`${styles.colPedidos} ${styles.num}`}>{c.totalAlvo ?? '—'}</td>
                 <td data-label="Enviados" className={`${styles.colPedidos} ${styles.num}`}>
                   {c.enviados ?? 0}
@@ -163,16 +248,36 @@ export default function CampanhasPanel({ campanhas, respostas, optOuts, podeEnvi
                   {c.usos != null && <Pct parte={c.usos} base={c.lidos} titulo="dos lidos" />}
                 </td>
                 <td data-label="Falhas" className={`${styles.colPedidos} ${styles.num}`}>{c.falhas ?? 0}</td>
-                <td className={styles.colAcao}>
+                <td className={styles.colAcoes}>
+                  <button
+                    className={styles.acaoBtn}
+                    title="Copiar para uma nova campanha"
+                    aria-label="Copiar para uma nova campanha"
+                    onClick={(e) => copiar(e, c)}
+                    disabled={!podeEnviar}
+                    type="button"
+                  >
+                    <Icon k="copy" />
+                  </button>
                   <button
                     className={styles.acaoBtn}
                     title={c.arquivada ? 'Desarquivar' : 'Arquivar'}
                     aria-label={c.arquivada ? 'Desarquivar' : 'Arquivar'}
                     onClick={(e) => alternarArquivo(e, c)}
-                    disabled={arquivando === c.id}
+                    disabled={ocupada === c.id}
                     type="button"
                   >
                     <Icon k={c.arquivada ? 'archiveRestore' : 'archive'} />
+                  </button>
+                  <button
+                    className={`${styles.acaoBtn} ${styles.acaoPerigo}`}
+                    title="Excluir"
+                    aria-label="Excluir"
+                    onClick={(e) => excluir(e, c)}
+                    disabled={ocupada === c.id}
+                    type="button"
+                  >
+                    <Icon k="trash" />
                   </button>
                 </td>
               </tr>

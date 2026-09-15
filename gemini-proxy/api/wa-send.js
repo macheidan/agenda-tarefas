@@ -107,7 +107,7 @@ async function subirMidia({ token, phoneId }, link) {
   return data.id;
 }
 
-async function componentesExtras(cred, tpl, cupom) {
+async function componentesExtras(cred, tpl, cupom, botaoUrl) {
   const extras = [];
   const header = (tpl?.components || []).find((c) => c.type === 'HEADER');
   const midia = { IMAGE: 'image', VIDEO: 'video', DOCUMENT: 'document' }[header?.format];
@@ -125,6 +125,27 @@ async function componentesExtras(cred, tpl, cupom) {
 
   const botoes = (tpl?.components || []).find((c) => c.type === 'BUTTONS')?.buttons || [];
   botoes.forEach((b, i) => {
+    // Botão "Acessar o site" com URL dinâmica (`…/{{1}}`): o sufixo também é
+    // parâmetro obrigatório, e falta dele volta como o mesmo #131008 mudo.
+    // Com URL fixa não há parâmetro — a Meta usa a do modelo e recusaria um.
+    // Aceita a URL inteira (tira o prefixo do modelo) ou só o sufixo.
+    if (b.type === 'URL') {
+      if (!/\{\{\d+\}\}/.test(b.url || '')) return;
+      const prefixo = b.url.split(/\{\{\d+\}\}/)[0];
+      const sufixoDe = (u) => {
+        const s = String(u || '').trim();
+        return s.startsWith(prefixo) ? s.slice(prefixo.length) : s;
+      };
+      const sufixo = sufixoDe(botaoUrl) || sufixoDe(b.example?.[0]);
+      if (!sufixo) return;
+      extras.push({
+        type: 'button',
+        sub_type: 'url',
+        index: String(i),
+        parameters: [{ type: 'text', text: sufixo }],
+      });
+      return;
+    }
     if (b.type !== 'COPY_CODE') return;
     // Sem cupom informado na tela, vale o exemplo aprovado com o template —
     // que é o código que o revisor da Meta viu.
@@ -191,7 +212,9 @@ export default async function handler(req, res) {
   const usuario = await autenticar(req, res, 'clientesEnviar');
   if (!usuario) return;
 
-  const { campanhaId, loja, template, idioma = 'pt_BR', destinatarios, meta, cupom } = req.body || {};
+  const {
+    campanhaId, loja, template, idioma = 'pt_BR', destinatarios, meta, cupom, botaoUrl,
+  } = req.body || {};
   if (!campanhaId || typeof campanhaId !== 'string') {
     return res.status(400).json({ error: 'campanhaId ausente' });
   }
@@ -216,7 +239,7 @@ export default async function handler(req, res) {
   // mídia no cabeçalho ou o código do cupom — parâmetros cuja falta a Meta
   // reporta com erros que não dizem qual parâmetro é.
   const tpl = await lerTemplate(cred, template, idioma);
-  const extras = await componentesExtras(cred, tpl, cupom);
+  const extras = await componentesExtras(cred, tpl, cupom, String(botaoUrl || '').slice(0, 2000));
 
   // Telefone é só dígitos com DDI: a base guarda DDD+número, o wa.me e a Meta
   // querem o 55 na frente.
@@ -278,27 +301,30 @@ export default async function handler(req, res) {
   const enviados = resultados.filter((r) => r.ok && !r.pulado).length;
   const falhas = resultados.filter((r) => !r.ok && !r.pulado).length;
   const pulados = resultados.filter((r) => r.pulado).length;
+  // Alvo = telefones distintos que esta campanha já tentou. Soma só quem não
+  // tinha envio registrado: a mesma campanha salva é disparada em vários dias
+  // e recortes (e retomada depois de interrompida), e quem se repete entre
+  // eles já foi contado na primeira vez.
+  const novos = lote.filter((_, i) => !optOuts[i].exists && !envios[i].exists).length;
 
-  // A coleção `campanhas` é só de escrita do servidor (as rules barram o
-  // cliente), então o cabeçalho da campanha entra aqui, no primeiro lote.
-  //
-  // A condição olha o `criadoEm`, e não só a existência do documento: sem esse
-  // campo a campanha fica INVISÍVEL na tela, porque o painel lê com
-  // `orderBy('criadoEm')` e o Firestore omite da query quem não tem o campo
-  // ordenado. Aconteceu em 10/09 com uma campanha de 47 envios — os envios
-  // todos lá, o cabeçalho sem `criadoEm`, e a campanha simplesmente não
-  // aparecia. Assim o lote seguinte conserta sozinho o que faltou no primeiro.
+  // O cabeçalho da campanha: a campanha salva na tela (rules deixam o cliente
+  // criar só o molde) já chega com título e `criadoEm`; o envio de teste e a
+  // campanha antiga, sem doc prévio, nascem aqui. Cada campo só é gravado se
+  // faltar — o `criadoEm` em especial: sem ele a campanha já ficou invisível
+  // numa query ordenada (10/09, 47 envios), e assim o lote seguinte conserta
+  // sozinho o que faltou no primeiro.
   const refCampanha = db.doc(`campanhas/${campanhaId}`);
   const atual = await refCampanha.get();
-  const cabecalho = atual.exists && atual.data()?.criadoEm
-    ? {}
-    : {
-        titulo: String(meta?.titulo || '').slice(0, 120),
-        filtro: String(meta?.filtro || '').slice(0, 200),
-        totalAlvo: Number(meta?.totalAlvo) || destinatarios.length,
-        criadoEm: FieldValue.serverTimestamp(),
-        criadoPor: usuario.email || usuario.uid,
-      };
+  const dados = (atual.exists && atual.data()) || {};
+  const cabecalho = {
+    ...(dados.criadoEm
+      ? {}
+      : { criadoEm: FieldValue.serverTimestamp(), criadoPor: usuario.email || usuario.uid }),
+    ...(dados.titulo ? {} : { titulo: String(meta?.titulo || '').slice(0, 120) }),
+    ...(dados.disparadaEm ? {} : { disparadaEm: FieldValue.serverTimestamp() }),
+    // O recorte do disparo mais recente: é o que a lista mostra embaixo do nome.
+    ...(meta?.filtro ? { filtro: String(meta.filtro).slice(0, 200) } : {}),
+  };
 
   await refCampanha.set(
     {
@@ -306,6 +332,7 @@ export default async function handler(req, res) {
       loja,
       template,
       idioma,
+      totalAlvo: FieldValue.increment(novos),
       enviados: FieldValue.increment(enviados),
       falhas: FieldValue.increment(falhas),
       pulados: FieldValue.increment(pulados),
