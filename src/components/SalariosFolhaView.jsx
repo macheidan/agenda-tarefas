@@ -8,8 +8,9 @@ import styles from '../styles/SalariosView.module.css';
 
 // Salários Folha: a ficha "Por funcionário" reduzida ao que quem fecha a folha
 // precisa — loja, funcionário, mês e, em cada linha, o que vai pro BANCO e pro
-// FLASH (vale por dia de transporte). Sem totais, sem histórico do ano.
-// Lê o espelho dpSalariosBanco (só banco e flash), nunca dpSalarios: é o que
+// FLASH (vale por dia de transporte), mais o TRANSPORTE da linha. Sem totais,
+// sem histórico do ano.
+// Lê o espelho dpSalariosBanco (só banco, flash e transporte), nunca dpSalarios: é o que
 // permite liberar a tela pra outro usuário sem expor salário/adiantamento/
 // empréstimo. Editar aqui grava nas duas coleções (setSalarioFolha), então a
 // aba Salários vê a mudança, e vice-versa.
@@ -25,7 +26,11 @@ const ALL_STORES = '__all__';
 const LINES = [['dia5', 'Dia 5'], ['dia20', 'Dia 20'], ['extra', 'Extra']];
 const VALE_DIA = 12; // R$ por dia de transporte (base do Flash) — mesmo valor da aba Salários.
 // Linhas da tabela: campo, rótulo e classe de fundo (mesmas cores da aba Salários).
-const FIELDS = [['banco', 'Banco', styles.chBanco], ['flash', 'Flash', styles.chFlash]];
+const FIELDS = [
+  ['banco', 'Banco', styles.chBanco],
+  ['flash', 'Flash', styles.chFlash],
+  ['transporte', 'Transporte', ''],
+];
 
 const num = (l, f) => Number(l?.[f]) || 0;
 const ZERO_RESUMO = { banco5: 0, banco20: 0, flash5: 0, flash20: 0, extraBanco: 0, extraFlash: 0, total: 0 };

@@ -2,7 +2,7 @@
 /**
  * espelharSalariosBanco.mjs — (re)constrói o espelho `dpSalariosBanco` a partir
  * de `dpSalarios`: mesmo id, mesmo cabeçalho (employeeId/store/year/month) e,
- * em cada linha dia5/dia20/extra, SÓ os campos `banco` e `flash`.
+ * em cada linha dia5/dia20/extra, SÓ os campos `banco`, `flash` e `transporte`.
  *
  * É o que a subseção Salários Folha lê (liberável a outros usuários sem expor o
  * resto do salário). Idempotente: pode rodar quantas vezes quiser. As duas telas
@@ -46,7 +46,11 @@ async function main() {
     };
     for (const line of LINES) {
       if (s[line] && typeof s[line] === 'object') {
-        out[line] = { banco: s[line].banco ?? null, flash: s[line].flash ?? null };
+        out[line] = {
+          banco: s[line].banco ?? null,
+          flash: s[line].flash ?? null,
+          transporte: s[line].transporte ?? null,
+        };
       }
     }
     n++;

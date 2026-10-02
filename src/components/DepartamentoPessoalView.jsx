@@ -36,9 +36,9 @@ export default function DepartamentoPessoalView() {
   // Salários é dado sensível: EXCLUSIVO do admin (as rules de dpSalarios também
   // só liberam leitura pro admin — a antiga flag dpSalariosVisible foi aposentada).
   const canSalarios = isAdmin;
-  // Salários Folha: só Banco e Flash, lidos do espelho dpSalariosBanco. Flags
+  // Salários Folha: só Banco, Flash e Transporte, lidos do espelho dpSalariosBanco. Flags
   // dpFolhaVisible (vê) e dpFolhaEdit (edita), desligadas por padrão; editar
-  // implica ver — quem preenche Banco/Flash não precisa do outro switch.
+  // implica ver — quem preenche Banco/Flash/Transporte não precisa do outro switch.
   const canFolhaEdit = isAdmin || settings?.dpFolhaEdit === true;
   const canFolha = canFolhaEdit || settings?.dpFolhaVisible === true;
   // Transp tem liberação própria (dpTranspVisible), desligada por padrão.

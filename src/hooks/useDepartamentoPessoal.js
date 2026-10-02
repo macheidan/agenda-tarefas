@@ -46,7 +46,7 @@ export const salarioDocId = (employeeId, year, month) =>
 // (rumi, patricia), não o id do funcionário — cada uma tem um cálculo próprio.
 // Campos de uma linha de salário que o espelho dpSalariosBanco carrega (o que a
 // Salários Folha vê e edita). Devolve null se o patch não toca nenhum deles.
-export const FOLHA_FIELDS = ['banco', 'flash'];
+export const FOLHA_FIELDS = ['banco', 'flash', 'transporte'];
 export function folhaFieldsOf(patch) {
   if (!patch || typeof patch !== 'object') return null;
   const out = {};
@@ -64,7 +64,7 @@ export function useDepartamentoPessoal() {
   const [employees, setEmployees] = useState([]);
   const [absences, setAbsences] = useState([]);
   const [salarios, setSalarios] = useState([]);
-  // Espelho de dpSalarios com só `banco` e `flash` de cada linha (Salários Folha).
+  // Espelho de dpSalarios com só `banco`, `flash` e `transporte` de cada linha (Salários Folha).
   const [salariosBanco, setSalariosBanco] = useState([]);
   const [transportes, setTransportes] = useState([]);
 
@@ -139,7 +139,7 @@ export function useDepartamentoPessoal() {
     return unsub;
   }, []);
 
-  // Espelho banco+flash (dpSalariosBanco): lê quem tem dpFolhaVisible (ou admin).
+  // Espelho banco+flash+transporte (dpSalariosBanco): lê quem tem dpFolhaVisible (ou admin).
   // Mesmo tratamento do permission-denied: sem acesso, lista vazia.
   useEffect(() => {
     const ref = collection(db, 'dpSalariosBanco');
@@ -256,7 +256,7 @@ export function useDepartamentoPessoal() {
   // ---- Salários ----
   // Upsert de uma linha (dia5|dia20|extra) do doc mensal do funcionário.
   // patch é um objeto parcial com as colunas (salario, banco, flash, ...).
-  // Se o patch traz `banco` ou `flash`, espelha em dpSalariosBanco (o que Salários Folha lê).
+  // Se o patch traz `banco`, `flash` ou `transporte`, espelha em dpSalariosBanco (o que Salários Folha lê).
   const setSalario = useCallback(
     async (employeeId, storeId, year, month, line, patch, author) => {
       const id = salarioDocId(employeeId, year, month);
@@ -277,9 +277,9 @@ export function useDepartamentoPessoal() {
     []
   );
 
-  // Salários Folha: grava SÓ banco/flash de uma linha, nas duas coleções. Em
+  // Salários Folha: grava SÓ banco/flash/transporte de uma linha, nas duas coleções. Em
   // dpSalarios o merge preserva as outras colunas da linha; as rules só deixam
-  // quem tem dpFolhaEdit tocar nesses campos. patch = { banco } ou { flash }.
+  // quem tem dpFolhaEdit tocar nesses campos. patch = { banco }, { flash } ou { transporte }.
   const setSalarioFolha = useCallback(
     async (employeeId, storeId, year, month, line, patch, author) => {
       const id = salarioDocId(employeeId, year, month);
