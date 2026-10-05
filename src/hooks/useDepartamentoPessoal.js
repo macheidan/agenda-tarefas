@@ -36,7 +36,7 @@ const DEFAULT_STORES = [
 const pad = (n) => String(n).padStart(2, '0');
 
 // Campos do perfil salarial (resumo O1:P4 das planilhas) guardados no funcionário.
-const SALARY_FIELDS = ['salaryMode', 'salaryBase', 'transporteRef', 'feriadoUnit', 'adiantamento'];
+const SALARY_FIELDS = ['salaryMode', 'salaryBase', 'transporteRef', 'feriadoUnit', 'adiantamento', 'mesAumento'];
 
 // ID determinístico do doc de salário (1 por funcionário/mês) → upsert idempotente.
 export const salarioDocId = (employeeId, year, month) =>

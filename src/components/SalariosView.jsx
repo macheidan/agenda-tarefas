@@ -673,6 +673,16 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                 <span>Adiantamento</span>
                 {isAdmin ? <MoneyInput className={styles.moneyInput} value={emp.adiantamento} onCommit={(v) => setProfile('adiantamento', v)} /> : <span className={styles.ro}>{formatBRL(emp.adiantamento)}</span>}
               </label>
+              {/* Só registro: não entra em nenhuma conta. Guarda o índice do mês (0–11). */}
+              <label className={styles.field}>
+                <span>Mês de aumento</span>
+                {isAdmin ? (
+                  <select className={styles.modeSelect} value={emp.mesAumento ?? ''} onChange={(e) => setProfile('mesAumento', e.target.value === '' ? null : Number(e.target.value))}>
+                    <option value="">—</option>
+                    {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                  </select>
+                ) : <span className={styles.ro}>{MONTHS[emp.mesAumento] || '—'}</span>}
+              </label>
             </div>
           </div>
 
