@@ -38,6 +38,12 @@ if errorlevel 1 (
   echo OK >> %LOG%
 )
 
+rem Clientes que nasceram no sistema de pedidos (balcao ou bot) e o Saipos nao
+rem enxerga: sobem os dos ultimos 2 dias. E a rede de seguranca do aviso de
+rem "caixa fechado" que a loja manda ao whatsbot (regra do Fabio, 2026-10-06).
+rem --forcar porque aqui estamos dentro da janela da coleta, logo depois dela.
+for %%l in (dame lov) do node scripts\clientes\subir_pdv.mjs --loja %%l --dias 2 --forcar >> %LOG% 2>&1
+
 rem Cada coleta guarda um JSON de ~4 MB e so a vespera ainda tem uso (--novos-de).
 rem Sem esta limpeza a pasta cresce ~1,4 GB por ano.
 forfiles /p "C:\claude_project\Pizzarias\intranet-pizzarias\scripts\clientes\data" /m clientes-*.json /d -7 /c "cmd /c del @path" >nul 2>&1

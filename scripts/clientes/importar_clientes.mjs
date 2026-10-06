@@ -172,6 +172,9 @@ function fundirItem(antigo, novo) {
     o: novo.t ? novo.o || '' : antigo.o || '',
     a: novo.a || antigo.a || '',
     e: novo.e || antigo.e || '',
+    // Fonte do cadastro quando NÃO veio do Saipos ('pdv' = nasceu no sistema de
+    // pedidos, balcão ou bot). Sobrevive à fusão para a tela saber de onde veio.
+    f: novo.f || antigo.f || '',
     // O histórico vem recalculado inteiro pelo coletar_historico.py; quando a
     // rodada não o trouxe (script pulado, cliente sem mudança), fica o que havia.
     hm: novo.hm || antigo.hm || null,
@@ -222,6 +225,7 @@ function daColeta(c) {
     o: c.telefoneOrigem && c.telefoneOrigem !== 'cadastro' ? c.telefoneOrigem : '',
     a: c.aniversario || '',
     e: c.email || '',
+    f: c.fonte || '',
     hm: c.meses && Object.keys(c.meses).length ? c.meses : null,
     vm: c.valorMeses && Object.keys(c.valorMeses).length ? c.valorMeses : null,
     pc: c.primeiraCompra || '',
@@ -434,7 +438,10 @@ async function main() {
 
 // O merge é a parte delicada deste script; exportar as funções puras deixa
 // testá-lo sem Firestore (scripts/clientes/importar_clientes.test.mjs).
-export { fundir, fundirItem, daColeta };
+// `carregarExistentes`, `gravar` e `initFirestore` saem para o subir_pdv.mjs
+// (clientes nascidos no sistema de pedidos) usar a MESMA fusão e a MESMA
+// gravação em blocos, em vez de reinventar o formato da coleção.
+export { fundir, fundirItem, daColeta, carregarExistentes, gravar, initFirestore, LOJAS };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((e) => {
