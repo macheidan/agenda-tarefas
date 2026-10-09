@@ -586,6 +586,28 @@
   background: var(--accent-hover);
 }
 
+.dangerBtn {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dangerBtn:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.dangerBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 12px 10px;

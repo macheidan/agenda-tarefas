@@ -39,5 +39,22 @@ export function usePostagens() {
 
   useEffect(() => { load(); }, [load]);
 
-  return { itens: data?.itens || [], lido: data?.lido || null, loading, error, reload: load };
+  /** Apaga a linha da fila (não vale para publicado). Lança com a mensagem do servidor. */
+  const excluir = useCallback(async (id) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('não autenticado');
+    const token = await user.getIdToken();
+    const res = await fetch(FEED_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) {
+      const corpo = await res.json().catch(() => ({}));
+      throw new Error(corpo.error || `HTTP ${res.status}`);
+    }
+    setData((d) => (d ? { ...d, itens: d.itens.filter((p) => p.id !== id) } : d));
+  }, []);
+
+  return { itens: data?.itens || [], lido: data?.lido || null, loading, error, reload: load, excluir };
 }

@@ -1,11 +1,14 @@
-import { useEffect } from 'react';
-import { MARCA_LABEL, TIPO_LABEL, FORMATO_LABEL, statusDe, hora } from '../utils/postagens';
+import { useEffect, useState } from 'react';
+import { MARCA_LABEL, TIPO_LABEL, FORMATO_LABEL, STATUS, statusDe, hora } from '../utils/postagens';
 import styles from '../styles/PostagensView.module.css';
 
 const ehVideo = (u) => /\.(mp4|mov|m4v|webm)(\?|$)/i.test(u || '');
 
-/** Detalhe de uma postagem (só leitura): prévia, informações e link do post publicado. */
-export default function PostagemModal({ post, onClose }) {
+/** Detalhe de uma postagem: prévia, informações, link do post publicado e exclusão. */
+export default function PostagemModal({ post, onClose, onExcluir }) {
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroExcluir, setErroExcluir] = useState(null);
+
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', esc);
@@ -17,6 +20,20 @@ export default function PostagemModal({ post, onClose }) {
   const principal = midias[0];
   const d = post.data;
   const dia = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  // Publicado já está no perfil: tirar da fila não apaga do Instagram.
+  const podeExcluir = st !== STATUS.publicado && onExcluir;
+  const excluir = async () => {
+    if (!window.confirm('Excluir este agendamento? Ele sai da fila e não será publicado.')) return;
+    setExcluindo(true);
+    setErroExcluir(null);
+    try {
+      await onExcluir(post.id);
+      onClose();
+    } catch (e) {
+      setErroExcluir(e instanceof Error ? e.message : 'erro ao excluir');
+      setExcluindo(false);
+    }
+  };
   const link = /^https:\/\/(www\.)?instagram\.com\//.test(post.resultado || '') ? post.resultado : null;
   // Depois do `social.py limpar` a mídia sai do servidor e a prévia some.
   const onErroMidia = (e) => { e.currentTarget.style.display = 'none'; };
@@ -66,6 +83,13 @@ export default function PostagemModal({ post, onClose }) {
           {link && (
             <a className={styles.primaryBtn} href={link} target="_blank" rel="noopener noreferrer">Ver no Instagram</a>
           )}
+
+          {podeExcluir && (
+            <button type="button" className={styles.dangerBtn} onClick={excluir} disabled={excluindo}>
+              {excluindo ? 'Excluindo…' : 'Excluir agendamento'}
+            </button>
+          )}
+          {erroExcluir && <div className={styles.erroTxt}>Não excluiu: {erroExcluir}</div>}
         </div>
       </div>
     </div>

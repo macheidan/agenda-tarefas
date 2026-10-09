@@ -6,8 +6,8 @@ import {
 } from '../utils/postagens';
 import styles from '../styles/PostagensView.module.css';
 
-// Calendário só de leitura da fila do /mkt-social-agendamento, no molde do
-// mLabs (publish.mlabs.io/schedules). Agendar continua sendo pela skill.
+// Calendário da fila do /mkt-social-agendamento, no molde do mLabs
+// (publish.mlabs.io/schedules). Daqui só se exclui; agendar é pela skill.
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -77,7 +77,7 @@ function Item({ p, onOpen }) {
 }
 
 export default function PostagensView() {
-  const { itens, lido, loading, error, reload } = usePostagens();
+  const { itens, lido, loading, error, reload, excluir } = usePostagens();
   const [anchor, setAnchor] = useState(() => new Date());
   const [view, setView] = useState(() => (window.matchMedia?.('(max-width: 768px)').matches ? 'lista' : 'mes'));
   const [marca, setMarca] = useState('todas');
@@ -240,7 +240,7 @@ export default function PostagensView() {
         </div>
       )}
 
-      {aberto && <PostagemModal post={aberto} onClose={() => setAberto(null)} />}
+      {aberto && <PostagemModal post={aberto} onClose={() => setAberto(null)} onExcluir={excluir} />}
     </div>
   );
 }
