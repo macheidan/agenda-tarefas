@@ -155,6 +155,7 @@ export default function PostagensView() {
           <span className={styles.titleText}>{titulo}</span>
           <button type="button" className={styles.navBtn} onClick={() => mover(1)} aria-label="Próximo">›</button>
           <button type="button" className={styles.ghostBtn} onClick={() => setAnchor(new Date())}>Hoje</button>
+          <code className={styles.skillHint} title="Para agendar, rode no Claude Code">/skill mkt-social-agendamento</code>
         </div>
         <div className={styles.toolbarRight}>
           <div className={styles.viewToggle}>
