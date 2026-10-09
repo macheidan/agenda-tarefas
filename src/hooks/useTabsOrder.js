@@ -6,6 +6,7 @@ export const DEFAULT_TABS_ORDER = [
   'calendar',
   'reels',
   'contentPlan',
+  'postagens',
   'influencers',
   'notes',
   'shopping',

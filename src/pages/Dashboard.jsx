@@ -51,6 +51,7 @@ const DepartamentoPessoalView = lazy(() => import('../components/DepartamentoPes
 const SuprimentosView = lazy(() => import('../components/SuprimentosView'));
 const MotoboysView = lazy(() => import('../components/MotoboysView'));
 const ClientesView = lazy(() => import('../components/ClientesView'));
+const PostagensView = lazy(() => import('../components/PostagensView'));
 const MesaDonoView = lazy(() => import('../components/MesaDonoView'));
 const DashView = lazy(() => import('../components/DashView'));
 const VendasView = lazy(() => import('../components/VendasView'));
@@ -63,7 +64,7 @@ const NAV_LABELS = {
   calendar: 'Agenda', reels: 'Instagram', contentPlan: 'Conteúdo', influencers: 'Influencers',
   notes: 'Notas', shopping: 'Suprimentos', ideas: 'Ideias', reviews: 'Avaliações',
   knowledge: 'Conhecimento', precosInsumos: 'Preços', departamentoPessoal: 'Depto',
-  motoboys: 'Motoboys', clientes: 'Clientes',
+  motoboys: 'Motoboys', clientes: 'Clientes', postagens: 'Postagens',
   mesaDono: 'Mesa do Dono', dash: 'Dash', vendas: 'Vendas', dre: 'DRE', gestaoNotas: 'Anotações',
 };
 
@@ -131,6 +132,9 @@ export default function Dashboard() {
   const motoboysEnabled = !settingsLoading && settings.motoboysEnabled === true;
   // Clientes (base para campanhas de WhatsApp): default OFF, admin habilita por usuário.
   const clientesEnabled = !settingsLoading && settings.clientesEnabled === true;
+  // Postagens (calendário só leitura da fila do /mkt-social-agendamento): default OFF,
+  // admin vê sempre. O proxy (gemini-proxy/api/postagens.js) confere a mesma flag.
+  const postagensEnabled = !settingsLoading && (isAdmin || settings.postagensEnabled === true);
   // Categoria Gestão (migrada do dashboard_pizzarias): dado financeiro do dono —
   // EXCLUSIVA do admin (as firestore.rules também só liberam leitura pro admin).
   // A flag por usuário continua valendo pro próprio admin esconder seções.
@@ -178,7 +182,7 @@ export default function Dashboard() {
     influencers: influencersEnabled, notes: notesEnabled, shopping: shoppingListEnabled,
     ideas: ideasEnabled, reviews: reviewsEnabled, knowledge: knowledgeEnabled,
     precosInsumos: precosInsumosEnabled, departamentoPessoal: departamentoPessoalEnabled,
-    motoboys: motoboysEnabled, clientes: clientesEnabled,
+    motoboys: motoboysEnabled, clientes: clientesEnabled, postagens: postagensEnabled,
     mesaDono: mesaDonoEnabled, dash: dashEnabled, vendas: vendasEnabled,
     dre: dreEnabled, gestaoNotas: gestaoNotasEnabled,
   };
@@ -240,6 +244,7 @@ export default function Dashboard() {
     departamentoPessoalEnabled,
     motoboysEnabled,
     clientesEnabled,
+    postagensEnabled,
     mesaDonoEnabled,
     dashEnabled,
     vendasEnabled,
@@ -382,6 +387,7 @@ export default function Dashboard() {
         {activeTab === 'clientes' && clientesEnabled && (
           <ClientesView settings={settings} isAdmin={isAdmin} />
         )}
+        {activeTab === 'postagens' && postagensEnabled && <PostagensView />}
         {activeTab === 'mesaDono' && mesaDonoEnabled && <MesaDonoView />}
         {activeTab === 'dash' && dashEnabled && <DashView />}
         {activeTab === 'vendas' && vendasEnabled && <VendasView />}

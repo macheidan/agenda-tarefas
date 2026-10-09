@@ -21,7 +21,7 @@ const NAV_GROUPS = [
   { label: 'Operação', keys: ['calendar', 'shopping', 'precosInsumos'] },
   { label: 'Gestão', keys: ['mesaDono', 'dash', 'vendas', 'dre', 'gestaoNotas'] },
   { label: 'Equipe', keys: ['departamentoPessoal', 'motoboys'] },
-  { label: 'Marketing', keys: ['reels', 'contentPlan', 'influencers', 'reviews', 'clientes'] },
+  { label: 'Marketing', keys: ['reels', 'contentPlan', 'postagens', 'influencers', 'reviews', 'clientes'] },
   { label: 'Ferramentas', keys: ['notes', 'ideas', 'knowledge'] },
 ];
 
@@ -45,6 +45,7 @@ export default function AppShellV2({
   departamentoPessoalEnabled,
   motoboysEnabled,
   clientesEnabled,
+  postagensEnabled,
   mesaDonoEnabled,
   dashEnabled,
   vendasEnabled,
@@ -71,6 +72,7 @@ export default function AppShellV2({
     departamentoPessoal: { enabled: departamentoPessoalEnabled, key: 'departamentoPessoal', label: 'Depto Pessoal' },
     motoboys: { enabled: motoboysEnabled, key: 'motoboys', label: 'Motoboys' },
     clientes: { enabled: clientesEnabled, key: 'clientes', label: 'Clientes' },
+    postagens: { enabled: postagensEnabled, key: 'postagens', label: 'Postagens' },
     mesaDono: { enabled: mesaDonoEnabled, key: 'mesaDono', label: 'Mesa do Dono' },
     dash: { enabled: dashEnabled, key: 'dash', label: 'Dash' },
     vendas: { enabled: vendasEnabled, key: 'vendas', label: 'Vendas' },

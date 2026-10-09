@@ -21,6 +21,7 @@ const TAB_LABELS = {
   departamentoPessoal: 'Depto Pessoal',
   motoboys: 'Motoboys',
   clientes: 'Clientes',
+  postagens: 'Postagens',
   mesaDono: 'Mesa do Dono',
   dash: 'Dash',
   vendas: 'Vendas',
@@ -45,6 +46,7 @@ const SECTIONS = [
   { key: 'precosInsumosEnabled', tab: 'precosInsumos', label: 'Preços', desc: 'Preços de insumos, fornecedores e fichas técnicas' },
   { key: 'departamentoPessoalEnabled', tab: 'departamentoPessoal', label: 'Depto Pessoal', desc: 'Escala, faltas e folha de pagamento', defaultOff: true },
   { key: 'motoboysEnabled', tab: 'motoboys', label: 'Motoboys', desc: 'Conferência semanal de entregas', defaultOff: true },
+  { key: 'postagensEnabled', tab: 'postagens', label: 'Postagens', desc: 'Calendário dos posts agendados no Instagram (só visualização)', defaultOff: true },
   { key: 'clientesEnabled', tab: 'clientes', label: 'Clientes', desc: 'Base de clientes por tempo sem pedir, para campanhas de WhatsApp', defaultOff: true },
   // Categoria Gestão: EXCLUSIVA do admin (soAdmin) — as linhas abaixo só
   // aparecem quando o usuário selecionado em Permissões é o próprio admin, e
