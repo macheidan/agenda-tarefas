@@ -1,0 +1,61 @@
+.dica { font-size: 13px; color: var(--text-secondary); margin: 0 0 14px; line-height: 1.5; }
+.vazio { padding: 28px; text-align: center; color: var(--text-muted); font-size: 14px; border: 1px dashed var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); }
+.lista { display: flex; flex-direction: column; gap: 14px; }
+.card { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: var(--card); transition: box-shadow .15s, border-color .15s; }
+.card:hover { box-shadow: var(--shadow-sm); border-color: var(--accent); }
+.st_erro { border-color: var(--danger); }
+.st_enviado, .st_descartado { opacity: .8; }
+.cardTop { display: flex; gap: 16px; align-items: flex-start; }
+.info { flex: 1; min-width: 0; }
+.nomeLinha { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.nome { font-size: 15px; color: var(--text); }
+.handle { font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 600; }
+.handle:hover { text-decoration: underline; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.chip { font-size: 11px; font-weight: 700; text-transform: uppercase; background: var(--accent-light); color: var(--accent); border-radius: 999px; padding: 2px 8px; }
+.status { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--badge-bg); color: var(--text-secondary); }
+.s_pendente { background: var(--warning-bg); color: var(--warning-text); }
+.s_aprovado, .s_enviando { background: var(--accent-light); color: var(--accent); }
+.s_enviado { background: var(--success-bg); color: var(--success); }
+.s_erro { background: var(--danger-bg); color: var(--danger); }
+.meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
+.motivo, .bio { font-size: 13px; color: var(--text-secondary); margin: 8px 0 0; line-height: 1.45; }
+.bio { color: var(--text-muted); font-style: italic; }
+.printBtn { padding: 0; border: 1px solid var(--border); border-radius: var(--radius-md); background: none; cursor: zoom-in; flex-shrink: 0; overflow: hidden; }
+.print { display: block; width: 220px; height: auto; }
+.printVazio { width: 220px; height: 120px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-muted); border: 1px dashed var(--border); border-radius: var(--radius-md); flex-shrink: 0; }
+.overlay { position: fixed; inset: 0; background: var(--overlay); display: flex; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 16px; }
+.printGrande { max-width: 100%; max-height: 100%; border-radius: var(--radius-md); }
+.original { margin-top: 14px; }
+.originalTexto { margin-top: 4px; white-space: pre-wrap; font-size: 14px; background: var(--bg-secondary); border-left: 4px solid var(--accent); border-radius: var(--radius-md); padding: 10px 14px; color: var(--text); }
+.label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+.label small { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.form { margin-top: 14px; padding: 14px; background: var(--bg-secondary); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 10px; }
+.campo { display: block; }
+.campo input, .campo textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--input-border); border-radius: var(--radius-md); background: var(--input-bg); color: var(--text); }
+.campo textarea { resize: vertical; line-height: 1.5; }
+.campo input:focus, .campo textarea:focus { outline: none; border-color: var(--input-focus); }
+.emailCampos { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; }
+.canalPicker { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.canalPicker .label { margin: 0 4px 0 0; }
+.canalBtn { padding: 6px 12px; border: 2px solid var(--accent); border-radius: var(--radius-md); background: var(--card); color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; }
+.canalBtnOn { background: var(--accent); color: #fff; }
+.acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.aprovarBtn { padding: 8px 18px; border: none; border-radius: var(--radius-md); background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+.aprovarBtn:hover { background: var(--accent-hover); }
+.descartarBtn { padding: 8px 14px; border: 1px solid var(--input-border); border-radius: var(--radius-md); background: var(--card); color: var(--danger); font-size: 14px; font-weight: 600; cursor: pointer; }
+.aprovarBtn:disabled, .descartarBtn:disabled { opacity: .5; cursor: default; }
+.erro { margin: 0; font-size: 13px; color: var(--danger); background: var(--danger-bg); border-radius: var(--radius-md); padding: 8px 10px; }
+.final { margin-top: 12px; }
+.finalTexto { white-space: pre-wrap; font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 6px; }
+.historicoBox { margin-top: 20px; }
+.historicoBtn { padding: 8px 14px; border: 1px solid var(--input-border); border-radius: var(--radius-md); background: var(--card); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 12px; }
+@media (max-width: 768px) {
+  .cardTop { flex-direction: column; }
+  .print, .printVazio { width: 100%; }
+  .printBtn { width: 100%; }
+  .emailCampos { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .campo input, .campo textarea { font-size: 16px; }
+}

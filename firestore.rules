@@ -175,6 +175,32 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Fila de aprovação do bot de influencers (Influencers → Aprovações). O bot
+    // cria os docs pelo Admin SDK (Pizzarias/bot ig influencers/intranet.py) e o
+    // despachante.py envia o que foi aprovado. No cliente, quem tem a permissão
+    // (admin ou flag influencersAprovar) só DECIDE: pendente|erro -> aprovado |
+    // descartado, com o texto final. Aprovar dispara envio de verdade, por isso
+    // a flag nasce desligada e a lista de campos é fechada.
+    match /influencerMensagens/{id} {
+      allow read: if isAdmin() || hasSettingFlag('influencersAprovar');
+      allow update: if (isAdmin() || hasSettingFlag('influencersAprovar'))
+        && resource.data.status in ['pendente', 'erro']
+        && request.resource.data.status in ['aprovado', 'descartado']
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'textoFinal', 'canalFinal', 'paraFinal', 'assuntoFinal',
+                       'decididoPor', 'decididoEm'])
+        && request.resource.data.decididoPor.uid == request.auth.uid
+        && request.resource.data.decididoEm == request.time
+        && (!('canalFinal' in request.resource.data)
+            || request.resource.data.canalFinal in ['email', 'direct']);
+      allow create, delete: if false;
+    }
+    // Print do feed de cada mensagem da fila (doc separado: a lista não carrega imagem).
+    match /influencerPrints/{id} {
+      allow read: if isAdmin() || hasSettingFlag('influencersAprovar');
+      allow write: if false;
+    }
+
     // Avaliações internas (admin → funcionário): seção substituída pelas
     // pesquisas do Delivery Direto (surveys). Sem tela desde 2026-07-15; as
     // regras ficam só para não perder o acesso aos dados históricos.

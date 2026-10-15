@@ -348,6 +348,7 @@ export default function Dashboard() {
             deleteInfluencer={deleteInfluencer}
             archiveInfluencer={archiveInfluencer}
             unarchiveInfluencer={unarchiveInfluencer}
+            podeAprovar={isAdmin || settings.influencersAprovar === true}
           />
         )}
         {activeTab === 'notes' && notesEnabled && (

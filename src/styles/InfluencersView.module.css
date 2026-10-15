@@ -505,3 +505,10 @@
     font-size: 16px;
   }
 }
+
+/* Submenu Cadastro | Aprovações (fila do bot de influencers) */
+.subMenu { display: inline-flex; gap: 8px; margin-right: auto; margin-left: 8px; flex-wrap: wrap; }
+.subBtn { padding: 6px 12px; border: 2px solid var(--accent); border-radius: var(--radius-md); background: var(--card); color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; }
+.subBtnOn { background: var(--accent); color: #fff; }
+.subBtnAprov { border-color: var(--success); color: var(--success); }
+.subBtnAprovOn { background: var(--success); color: #fff; }

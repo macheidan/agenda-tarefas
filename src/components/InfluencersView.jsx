@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import InfluencersModal from './InfluencersModal';
+import InfluencersAprovacoes from './InfluencersAprovacoes';
+import { useInfluencerMensagens } from '../hooks/useInfluencerMensagens';
 import styles from '../styles/InfluencersView.module.css';
 
 const MONTHS_ORDER = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -89,8 +91,19 @@ export default function InfluencersView({
   deleteInfluencer,
   archiveInfluencer,
   unarchiveInfluencer,
+  podeAprovar = false,
 }) {
   const { user, isAdmin } = useAuth();
+  // Sub-seção espelhada em ?sub= (padrão 10 do CLAUDE.md): F5 volta para a mesma.
+  const [sub, setSub] = useState(() => (new URLSearchParams(window.location.search).get('sub') === 'aprovacoes' ? 'aprovacoes' : 'cadastro'));
+  const subAtiva = podeAprovar ? sub : 'cadastro';
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (subAtiva === 'aprovacoes') url.searchParams.set('sub', 'aprovacoes'); else url.searchParams.delete('sub');
+    window.history.replaceState(null, '', url);
+  }, [subAtiva]);
+  const { mensagens, loading: msgLoading, decidir, carregarPrint } = useInfluencerMensagens(podeAprovar);
+  const pendentes = useMemo(() => mensagens.filter((m) => m.status === 'pendente' || m.status === 'erro').length, [mensagens]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -205,6 +218,24 @@ export default function InfluencersView({
     <div className={styles.container}>
       <div className={styles.header}>
         <h2>{showArchived ? 'Influencers — Arquivados' : 'Influencers'}</h2>
+        {podeAprovar && !showArchived && (
+          <div className={styles.subMenu}>
+            <button
+              type="button"
+              className={`${styles.subBtn} ${subAtiva === 'cadastro' ? styles.subBtnOn : ''}`}
+              onClick={() => setSub('cadastro')}
+            >
+              Cadastro
+            </button>
+            <button
+              type="button"
+              className={`${styles.subBtn} ${styles.subBtnAprov} ${subAtiva === 'aprovacoes' ? styles.subBtnAprovOn : ''}`}
+              onClick={() => setSub('aprovacoes')}
+            >
+              Aprovações ({pendentes})
+            </button>
+          </div>
+        )}
         <div className={styles.headerActions}>
           {isAdmin && (
             <button
@@ -214,11 +245,16 @@ export default function InfluencersView({
               {showArchived ? 'Voltar' : `Arquivados (${archivedCount})`}
             </button>
           )}
-          {!showArchived && (
+          {!showArchived && subAtiva === 'cadastro' && (
             <button className={styles.newBtn} onClick={openNew}>+ Novo influencer</button>
           )}
         </div>
       </div>
+
+      {subAtiva === 'aprovacoes' ? (
+        <InfluencersAprovacoes mensagens={mensagens} loading={msgLoading} decidir={decidir} carregarPrint={carregarPrint} />
+      ) : (
+      <>
 
       <div className={styles.stats}>
         <span><strong>{counts.total}</strong> total</span>
@@ -376,6 +412,9 @@ export default function InfluencersView({
             </tbody>
           </table>
         </div>
+      )}
+
+      </>
       )}
 
       {modalOpen && (

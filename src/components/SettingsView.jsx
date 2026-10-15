@@ -151,7 +151,7 @@ function Group({ title, desc, children }) {
 // Categorias que têm sub-permissões próprias (sub-seções, lojas ou edição).
 // Quando ligadas, a linha expande e mostra esses ajustes aninhados logo abaixo,
 // em vez de largá-los num bloco separado longe da categoria.
-const HAS_SUB = new Set(['precosInsumos', 'motoboys', 'reviews', 'departamentoPessoal', 'shopping', 'clientes']);
+const HAS_SUB = new Set(['precosInsumos', 'motoboys', 'reviews', 'departamentoPessoal', 'shopping', 'clientes', 'influencers']);
 
 /** Linha de categoria em "Seções visíveis". Quando `expandable`, a parte
  *  esquerda (chevron + ícone + texto) vira botão que abre/fecha o painel
@@ -483,6 +483,19 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
               />
             </Row>
           </>
+        );
+      case 'influencers':
+        return (
+          <Row
+            title="Aprovar mensagens do bot"
+            desc="Vê a fila de mensagens que o bot de influencers preparou (convite, resposta, lembrete; direct ou e-mail), edita e aprova o envio. Nasce desligado — aprovar envia de verdade"
+          >
+            <Switch
+              label="Influencers — aprovar mensagens"
+              checked={s.influencersAprovar === true}
+              onChange={(v) => toggleSection(permTarget, 'influencersAprovar', v)}
+            />
+          </Row>
         );
       case 'departamentoPessoal':
         return (
