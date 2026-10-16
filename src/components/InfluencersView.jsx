@@ -104,6 +104,7 @@ export default function InfluencersView({
   }, [subAtiva]);
   const { mensagens, loading: msgLoading, decidir, carregarPrint } = useInfluencerMensagens(podeAprovar);
   const pendentes = useMemo(() => mensagens.filter((m) => m.status === 'pendente' || m.status === 'erro').length, [mensagens]);
+  const aResponder = useMemo(() => mensagens.filter((m) => m.tipo === 'resposta' && (m.status === 'pendente' || m.status === 'erro')).length, [mensagens]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -232,7 +233,7 @@ export default function InfluencersView({
               className={`${styles.subBtn} ${styles.subBtnAprov} ${subAtiva === 'aprovacoes' ? styles.subBtnAprovOn : ''}`}
               onClick={() => setSub('aprovacoes')}
             >
-              Aprovações ({pendentes})
+              Aprovações ({pendentes}){aResponder > 0 && <span className={styles.subBtnResponder}>{aResponder} RESPONDER</span>}
             </button>
           </div>
         )}

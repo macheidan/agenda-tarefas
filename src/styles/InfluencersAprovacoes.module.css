@@ -5,6 +5,8 @@
 .card:hover { box-shadow: var(--shadow-sm); border-color: var(--accent); }
 .st_erro { border-color: var(--danger); }
 .st_enviado, .st_descartado, .st_rejeitado, .st_arquivado { opacity: .8; }
+.cardResponder { border: 2px solid var(--danger); }
+.responderTag { display: inline-block; margin-bottom: 10px; padding: 4px 10px; border-radius: var(--radius-md); background: var(--danger); color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .06em; }
 .cardTop { display: flex; gap: 16px; align-items: flex-start; }
 .info { flex: 1; min-width: 0; }
 .nomeLinha { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }

@@ -61,6 +61,8 @@ function Cartao({ m, decidir, carregarPrint, user }) {
   const [assunto, setAssunto] = useState(m.assuntoFinal || m.assunto || '');
   const [salvando, setSalvando] = useState(false);
   const ctx = m.contexto || {};
+  // resposta = a pessoa escreveu e espera retorno (Fábio, 16/10/2026: destaque RESPONDER, no topo da fila)
+  const responder = m.tipo === 'resposta' && editavel;
 
   const aprovar = async () => {
     if (!texto.trim()) return;
@@ -92,7 +94,8 @@ function Cartao({ m, decidir, carregarPrint, user }) {
   };
 
   return (
-    <article className={`${styles.card} ${styles['st_' + m.status] || ''}`}>
+    <article className={`${styles.card} ${styles['st_' + m.status] || ''} ${responder ? styles.cardResponder : ''}`}>
+      {responder && <div className={styles.responderTag}>RESPONDER</div>}
       <div className={styles.cardTop}>
         {m.temPrint && editavel ? <Print id={m.id} carregarPrint={carregarPrint} /> : null}
         <div className={styles.info}>
@@ -193,7 +196,9 @@ export default function InfluencersAprovacoes({ mensagens, loading, decidir, car
   const [verArquivadas, setVerArquivadas] = useState(false);
 
   const { abertas, arquivadas, historico } = useMemo(() => {
-    const abertas = mensagens.filter((m) => ['pendente', 'aprovado', 'enviando', 'erro'].includes(m.status));
+    const abertas = mensagens
+      .filter((m) => ['pendente', 'aprovado', 'enviando', 'erro'].includes(m.status))
+      .sort((a, b) => (b.tipo === 'resposta') - (a.tipo === 'resposta'));
     const arquivadas = mensagens.filter((m) => m.status === 'arquivado');
     const historico = mensagens.filter((m) => ['enviado', 'descartado', 'rejeitado'].includes(m.status));
     return { abertas, arquivadas, historico };
@@ -207,6 +212,7 @@ export default function InfluencersAprovacoes({ mensagens, loading, decidir, car
         Mensagens que o bot preparou. Confira o feed, ajuste o texto se quiser e clique em Enviar: sai sozinho em
         segundos (e-mail pela marketing@lovpizza.com.br, direct pela conta @lovpizza). Rejeitar descarta a pessoa;
         Arquivar tira da fila sem enviar e dá pra voltar depois. Nada expira: fica aqui até alguém decidir.
+        As marcadas RESPONDER são de quem já escreveu para a Lov e vêm primeiro.
       </p>
       {abertas.length === 0 ? (
         <div className={styles.vazio}>Nada esperando aprovação agora.</div>
