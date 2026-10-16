@@ -184,8 +184,9 @@ service cloud.firestore {
     match /influencerMensagens/{id} {
       allow read: if isAdmin() || hasSettingFlag('influencersAprovar');
       allow update: if (isAdmin() || hasSettingFlag('influencersAprovar'))
-        && resource.data.status in ['pendente', 'erro']
-        && request.resource.data.status in ['aprovado', 'descartado']
+        && ((resource.data.status in ['pendente', 'erro']
+             && request.resource.data.status in ['aprovado', 'rejeitado', 'arquivado'])
+            || (resource.data.status == 'arquivado' && request.resource.data.status == 'pendente'))
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status', 'textoFinal', 'canalFinal', 'paraFinal', 'assuntoFinal',
                        'decididoPor', 'decididoEm'])

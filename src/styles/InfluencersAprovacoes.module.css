@@ -4,7 +4,7 @@
 .card { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: var(--card); transition: box-shadow .15s, border-color .15s; }
 .card:hover { box-shadow: var(--shadow-sm); border-color: var(--accent); }
 .st_erro { border-color: var(--danger); }
-.st_enviado, .st_descartado { opacity: .8; }
+.st_enviado, .st_descartado, .st_rejeitado, .st_arquivado { opacity: .8; }
 .cardTop { display: flex; gap: 16px; align-items: flex-start; }
 .info { flex: 1; min-width: 0; }
 .nomeLinha { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
@@ -44,7 +44,8 @@
 .aprovarBtn { padding: 8px 18px; border: none; border-radius: var(--radius-md); background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .aprovarBtn:hover { background: var(--accent-hover); }
 .descartarBtn { padding: 8px 14px; border: 1px solid var(--input-border); border-radius: var(--radius-md); background: var(--card); color: var(--danger); font-size: 14px; font-weight: 600; cursor: pointer; }
-.aprovarBtn:disabled, .descartarBtn:disabled { opacity: .5; cursor: default; }
+.arquivarBtn { padding: 8px 14px; border: 1px solid var(--input-border); border-radius: var(--radius-md); background: var(--card); color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer; }
+.aprovarBtn:disabled, .descartarBtn:disabled, .arquivarBtn:disabled { opacity: .5; cursor: default; }
 .erro { margin: 0; font-size: 13px; color: var(--danger); background: var(--danger-bg); border-radius: var(--radius-md); padding: 8px 10px; }
 .final { margin-top: 12px; }
 .finalTexto { white-space: pre-wrap; font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 6px; }

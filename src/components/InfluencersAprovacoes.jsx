@@ -5,7 +5,8 @@ import styles from '../styles/InfluencersAprovacoes.module.css';
 // Fila de aprovação do bot de influencers (pedido do Fábio, 15/10/2026): o bot não abre mais abas no
 // Chrome dele; cada mensagem pronta cai aqui. Quem tem a permissão edita, aprova ou descarta, e o
 // despachante (Pizzarias/bot ig influencers/despachante.py) envia o aprovado por e-mail ou direct.
-// Regra do bot: o que não for aprovado até a próxima rodada (08:00 / 16:00) é descartado.
+// 16/10/2026 (Fábio): botões Enviar / Rejeitar / Arquivar, e nada expira — fica na fila até alguém decidir.
+// Arquivada sai da fila sem enviar e sem rejeitar; dá pra devolver à fila depois.
 
 const TIPO_LABEL = { convite: 'Convite', resposta: 'Resposta', lembrete: 'Lembrete' };
 const CANAL_LABEL = { email: 'E-mail', direct: 'Direct IG' };
@@ -16,6 +17,8 @@ const STATUS_LABEL = {
   enviado: 'Enviado',
   erro: 'Erro no envio',
   descartado: 'Descartado',
+  rejeitado: 'Rejeitado',
+  arquivado: 'Arquivado',
 };
 
 const fmt = (ts) => {
@@ -72,10 +75,20 @@ function Cartao({ m, decidir, carregarPrint, user }) {
     } finally { setSalvando(false); }
   };
 
-  const descartar = async () => {
-    if (!window.confirm(`Descartar a mensagem para ${m.nome || m.u}? Não será enviada.`)) return;
+  const rejeitar = async () => {
+    if (!window.confirm(`Rejeitar a mensagem para ${m.nome || m.u}? Não será enviada e o bot não volta a procurar essa pessoa.`)) return;
     setSalvando(true);
-    try { await decidir(m.id, 'descartado', user); } finally { setSalvando(false); }
+    try { await decidir(m.id, 'rejeitado', user); } finally { setSalvando(false); }
+  };
+
+  const arquivar = async () => {
+    setSalvando(true);
+    try { await decidir(m.id, 'arquivado', user); } finally { setSalvando(false); }
+  };
+
+  const devolver = async () => {
+    setSalvando(true);
+    try { await decidir(m.id, 'pendente', user); } finally { setSalvando(false); }
   };
 
   return (
@@ -150,18 +163,24 @@ function Cartao({ m, decidir, carregarPrint, user }) {
           {m.status === 'erro' && <p className={styles.erro}>{m.erro}</p>}
           <div className={styles.acoes}>
             <button type="button" className={styles.aprovarBtn} onClick={aprovar} disabled={salvando}>
-              {m.status === 'erro' ? 'Tentar de novo' : 'Aprovar e enviar'}
+              {m.status === 'erro' ? 'Tentar de novo' : 'Enviar'}
             </button>
-            <button type="button" className={styles.descartarBtn} onClick={descartar} disabled={salvando}>Descartar</button>
+            <button type="button" className={styles.descartarBtn} onClick={rejeitar} disabled={salvando}>Rejeitar</button>
+            <button type="button" className={styles.arquivarBtn} onClick={arquivar} disabled={salvando}>Arquivar</button>
           </div>
         </div>
       ) : (
         <div className={styles.final}>
           <div className={styles.finalTexto}>{m.textoFinal || m.texto}</div>
           <div className={styles.meta}>
-            {m.decididoPor?.nome && <span>{m.status === 'descartado' ? 'descartado' : 'aprovado'} por {m.decididoPor.nome} {fmt(m.decididoEm)}</span>}
+            {m.decididoPor?.nome && <span>{['descartado', 'rejeitado', 'arquivado'].includes(m.status) ? STATUS_LABEL[m.status].toLowerCase() : 'aprovado'} por {m.decididoPor.nome} {fmt(m.decididoEm)}</span>}
             {m.enviadoEm && <span>enviado {fmt(m.enviadoEm)}</span>}
           </div>
+          {m.status === 'arquivado' && (
+            <div className={styles.acoes}>
+              <button type="button" className={styles.arquivarBtn} onClick={devolver} disabled={salvando}>Voltar para a fila</button>
+            </div>
+          )}
         </div>
       )}
     </article>
@@ -171,11 +190,13 @@ function Cartao({ m, decidir, carregarPrint, user }) {
 export default function InfluencersAprovacoes({ mensagens, loading, decidir, carregarPrint }) {
   const { user } = useAuth();
   const [verHistorico, setVerHistorico] = useState(false);
+  const [verArquivadas, setVerArquivadas] = useState(false);
 
-  const { abertas, historico } = useMemo(() => {
+  const { abertas, arquivadas, historico } = useMemo(() => {
     const abertas = mensagens.filter((m) => ['pendente', 'aprovado', 'enviando', 'erro'].includes(m.status));
-    const historico = mensagens.filter((m) => ['enviado', 'descartado'].includes(m.status));
-    return { abertas, historico };
+    const arquivadas = mensagens.filter((m) => m.status === 'arquivado');
+    const historico = mensagens.filter((m) => ['enviado', 'descartado', 'rejeitado'].includes(m.status));
+    return { abertas, arquivadas, historico };
   }, [mensagens]);
 
   if (loading) return <div className={styles.vazio}>Carregando…</div>;
@@ -183,9 +204,9 @@ export default function InfluencersAprovacoes({ mensagens, loading, decidir, car
   return (
     <div>
       <p className={styles.dica}>
-        Mensagens que o bot preparou. Confira o feed, ajuste o texto se quiser e aprove: o envio sai sozinho em
-        segundos (e-mail pela marketing@lovpizza.com.br, direct pela conta @lovpizza). O que não for aprovado até a
-        próxima rodada do bot (08:00 e 16:00) é descartado.
+        Mensagens que o bot preparou. Confira o feed, ajuste o texto se quiser e clique em Enviar: sai sozinho em
+        segundos (e-mail pela marketing@lovpizza.com.br, direct pela conta @lovpizza). Rejeitar descarta a pessoa;
+        Arquivar tira da fila sem enviar e dá pra voltar depois. Nada expira: fica aqui até alguém decidir.
       </p>
       {abertas.length === 0 ? (
         <div className={styles.vazio}>Nada esperando aprovação agora.</div>
@@ -194,6 +215,20 @@ export default function InfluencersAprovacoes({ mensagens, loading, decidir, car
           {abertas.map((m) => (
             <Cartao key={m.id} m={m} decidir={decidir} carregarPrint={carregarPrint} user={user} />
           ))}
+        </div>
+      )}
+      {arquivadas.length > 0 && (
+        <div className={styles.historicoBox}>
+          <button type="button" className={styles.historicoBtn} onClick={() => setVerArquivadas((v) => !v)}>
+            {verArquivadas ? 'Esconder arquivadas' : `Arquivadas (${arquivadas.length})`}
+          </button>
+          {verArquivadas && (
+            <div className={styles.lista}>
+              {arquivadas.map((m) => (
+                <Cartao key={m.id} m={m} decidir={decidir} carregarPrint={carregarPrint} user={user} />
+              ))}
+            </div>
+          )}
         </div>
       )}
       {historico.length > 0 && (
