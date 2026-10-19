@@ -22,6 +22,8 @@ export const CORES = {
 };
 export const COR_KEYS = Object.keys(CORES);
 export const WD = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+// Área de cada funcionário na escala (guardada em config.emps[id].area).
+export const AREAS = [['pizzaiolo', 'Pizzaiolo'], ['atendimento', 'Atendimento']];
 export const SNAP = 15;
 
 export const pad = (n) => String(n).padStart(2, '0');

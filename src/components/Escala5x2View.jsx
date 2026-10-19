@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEscala5x2 } from '../hooks/useEscala5x2';
 import {
-  CORES, COR_KEYS, WD, DEFAULT_REGRAS,
+  CORES, COR_KEYS, WD, AREAS, DEFAULT_REGRAS,
   pad, dkey, parseKey, addDays, mondayOf, weekDays, toMin, fmt, hm, hhmm, snap, clamp,
   parseHoras, regrasOf, lockWin, makeTurno, fixTurno, storeTurno, shiftLabel, coverage, validar,
 } from '../utils/escala5x2';
@@ -24,6 +24,13 @@ const MONTHS = [
 ];
 // Sub-seções da Escala 5x2.
 const MODOS = [['semana', 'Semana'], ['mes', 'Mês']];
+const AREA_TABS = [['todos', 'Todos'], ...AREAS];
+const AREA_NAME = Object.fromEntries(AREAS);
+const ORDENS = [['entrada', 'Entrada'], ['nome', 'Funcionário'], ['area', 'Área']];
+const ZERO_MINS = [0, 0, 0, 0, 0, 0, 0];
+// Preferência de visualização de quem está olhando (não vai para o banco).
+const pref = (key, def) => { try { return localStorage.getItem(`escala5x2.${key}`) || def; } catch { return def; } };
+const savePref = (key, v) => { try { localStorage.setItem(`escala5x2.${key}`, v); } catch { /* sem storage */ } };
 
 export default function Escala5x2View({ visibleStores, employees, canEdit }) {
   const { user } = useAuth();
@@ -33,6 +40,10 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
   const [week, setWeek] = useState(() => dkey(mondayOf(new Date())));
   const [modo, setModo] = useState('semana'); // semana | mes
   const [mes, setMes] = useState(() => ({ y: new Date().getFullYear(), m: new Date().getMonth() }));
+  const [area, setAreaState] = useState(() => pref('area', 'todos'));   // todos | pizzaiolo | atendimento
+  const [ordem, setOrdemState] = useState(() => pref('ordem', 'entrada')); // ordem das barras em cada dia
+  const setArea = (v) => { setAreaState(v); savePref('area', v); };
+  const setOrdem = (v) => { setOrdemState(v); savePref('ordem', v); };
   const [repN, setRepN] = useState(3);
   const [showRegras, setShowRegras] = useState(false);
   const [empDlg, setEmpDlg] = useState(null);   // { id, jr, ini, cor }
@@ -58,10 +69,13 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
       .map((e, i) => {
         const c = cfg[e.id] || {};
         const jr = c.jr ?? 8;
-        return { id: e.id, name: e.name, jr, ini: c.ini || (jr <= 6 ? '18:00' : '15:00'), cor: c.cor || COR_KEYS[i % COR_KEYS.length] };
+        return { id: e.id, name: e.name, jr, ini: c.ini || (jr <= 6 ? '18:00' : '15:00'), cor: c.cor || COR_KEYS[i % COR_KEYS.length], area: c.area || null };
       });
   }, [employees, storeId, periodoIni, periodoFim, config]);
   const empById = useMemo(() => Object.fromEntries(emps.map((e) => [e.id, e])), [emps]);
+  // Recorte por área: quem aparece no pool, nas barras, nas tabelas e no mês.
+  const empsVis = useMemo(() => (area === 'todos' ? emps : emps.filter((e) => e.area === area)), [emps, area]);
+  const semArea = area !== 'todos' ? emps.filter((e) => !e.area).length : 0;
   // Nome de quem saiu da loja mas ainda tem turno gravado em semana antiga.
   const nameOf = useCallback((id) => empById[id]?.name || employees.find((e) => e.id === id)?.name || '?', [empById, employees]);
 
@@ -74,9 +88,18 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
     return m;
   }, [semanas, r]);
   const dayOf = useCallback((k) => allDays[k] || NONE, [allDays]);
+  // Só os turnos da área escolhida (para contar pessoas e conferir). Gravar usa sempre dayOf.
+  const visDays = useMemo(() => {
+    if (area === 'todos') return allDays;
+    const ids = new Set(empsVis.map((e) => e.id));
+    return Object.fromEntries(Object.entries(allDays).map(([k, list]) => [k, list.filter((t) => ids.has(t.e))]));
+  }, [allDays, area, empsVis]);
+  const dayOfVis = useCallback((k) => visDays[k] || NONE, [visDays]);
+  // O mínimo de pessoas por dia vale para a loja toda: num recorte por área não é conferido.
+  const rVis = useMemo(() => (area === 'todos' ? r : { ...r, mins: ZERO_MINS }), [r, area]);
 
   const weekKeys = useMemo(() => weekDays(week).map(dkey), [week]);
-  const check = useMemo(() => validar({ emps, weekKeys, dayOf, r }), [emps, weekKeys, dayOf, r]);
+  const check = useMemo(() => validar({ emps: empsVis, weekKeys, dayOf: dayOfVis, r: rVis }), [empsVis, weekKeys, dayOfVis, rVis]);
 
   const flash = (msg) => {
     setToast(msg);
@@ -176,7 +199,7 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
     const x = ev.clientX, y = ev.clientY;
     if (!d.moved) {
       if (d.kind === 'new') {
-        setEmpDlg({ id: d.emp.id, name: d.emp.name, hrs: hhmm(d.emp.jr * 60), ini: d.emp.ini, cor: d.emp.cor });
+        setEmpDlg({ id: d.emp.id, name: d.emp.name, hrs: hhmm(d.emp.jr * 60), ini: d.emp.ini, cor: d.emp.cor, area: d.emp.area || '' });
       } else {
         const t = dayOf(d.k)[d.i];
         setTurnoDlg({ k: d.k, i: d.i, ini: fmt(t.ini), hrs: hhmm(t.mins), pi: fmt(t.pi), pd: t.pd });
@@ -270,7 +293,7 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
   }, [empDlg, r]);
   const saveEmp = () => {
     if (!empPreview?.a) return;
-    saveConfig({ emps: { [empDlg.id]: { jr: Math.round(empPreview.h * 4) / 4, ini: empDlg.ini || '18:00', cor: empDlg.cor } } }, user)
+    saveConfig({ emps: { [empDlg.id]: { jr: Math.round(empPreview.h * 4) / 4, ini: empDlg.ini || '18:00', cor: empDlg.cor, area: empDlg.area || null } } }, user)
       .catch((e) => flash(`Erro: ${e.message}`));
     setEmpDlg(null);
   };
@@ -327,6 +350,20 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
               onClick={() => setModo(key)}>{label}</button>
           ))}
         </div>
+        <div className={styles.storeTabs} role="group" aria-label="Área">
+          {AREA_TABS.map(([key, label]) => (
+            <button type="button" key={key}
+              className={`${styles.storeTab} ${area === key ? styles.storeTabActive : ''}`}
+              onClick={() => setArea(key)}>{label}</button>
+          ))}
+        </div>
+        {modo === 'semana' && (
+          <label className={styles.ordem}>Ordenar dia por
+            <select value={ordem} onChange={(e) => setOrdem(e.target.value)}>
+              {ORDENS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            </select>
+          </label>
+        )}
         {modo === 'semana' ? (
           <div className={styles.weekNav}>
             <button type="button" className={styles.btn} onClick={() => shiftWeek(-1)} aria-label="Semana anterior">‹</button>
@@ -353,6 +390,12 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
           <button type="button" className={`${styles.btn} ${showRegras ? styles.btnOn : ''}`} onClick={() => setShowRegras((v) => !v)}>Regras</button>
         </div>
       </div>
+
+      {semArea > 0 && (
+        <div className={styles.muted}>
+          {semArea} funcionário(s) sem área definida não aparecem neste filtro. Em <b>Todos</b>, clique no post-it para escolher a área.
+        </div>
+      )}
 
       {error && <div className={styles.error}>Erro ao acessar o banco: {error}. Pode faltar publicar as regras do Firestore (dpEscala5x2Config / dpEscala5x2Semanas).</div>}
 
@@ -424,7 +467,7 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
       )}
 
       {modo === 'mes' && (
-        <Escala5x2Mes year={mes.y} month={mes.m} emps={emps} dayOf={dayOf} r={r} onOpenDay={openDay} />
+        <Escala5x2Mes year={mes.y} month={mes.m} emps={empsVis} dayOf={dayOfVis} r={rVis} onOpenDay={openDay} />
       )}
 
       {modo === 'semana' && (<>
@@ -432,16 +475,17 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
         <aside className={styles.aside} ref={asideRef}>
           <h3 className={styles.asideTitle}>Funcionários</h3>
           <div className={styles.pool}>
-            {emps.map((e) => (
+            {empsVis.map((e) => (
               <div key={e.id} className={styles.card} style={{ background: CORES[e.cor], color: POSTIT_INK, cursor: canEdit ? 'grab' : 'default' }}
                 onPointerDown={(ev) => onCardDown(ev, e)}
-                title={canEdit ? 'Arraste para um dia · clique para ajustar horas, entrada e cor' : ''}>
+                title={canEdit ? 'Arraste para um dia · clique para ajustar horas, entrada, área e cor' : ''}>
                 <span className={styles.cardName}>{e.name}</span>
                 <span className={styles.cardJr}>{hm(e.jr * 60)}</span>
-                <span className={styles.cardSub}>{shiftLabel(newTurno(e, toMin(e.ini)))}</span>
+                <span className={styles.cardSub}>{shiftLabel(newTurno(e, toMin(e.ini)))}{e.area ? ` · ${AREA_NAME[e.area]}` : ''}</span>
               </div>
             ))}
             {!emps.length && <div className={styles.empty}>Nenhum funcionário ativo nesta loja. Cadastre na sub-aba Escala.</div>}
+            {!!emps.length && !empsVis.length && <div className={styles.empty}>Ninguém com esta área.</div>}
           </div>
           {canEdit && (
             <p className={styles.hint}>
@@ -465,17 +509,28 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
               </div>
             </div>
             {weekKeys.map((k, i) => {
-              const list = dayOf(k);
-              const sorted = list.map((t, idx) => ({ t, idx })).sort((a, b) => a.t.ini - b.t.ini);
+              const list = dayOfVis(k);
+              // idx = posição no dia completo (dayOf), que é o que a edição usa.
+              const sorted = dayOf(k).map((t, idx) => ({ t, idx }))
+                .filter(({ t }) => area === 'todos' || empById[t.e]?.area === area)
+                .sort((a, b) => {
+                  const na = nameOf(a.t.e), nb = nameOf(b.t.e);
+                  if (ordem === 'area') {
+                    const aa = empById[a.t.e]?.area || 'zz', ab = empById[b.t.e]?.area || 'zz';
+                    if (aa !== ab) return aa.localeCompare(ab);
+                  }
+                  if (ordem !== 'entrada') return na.localeCompare(nb, 'pt-BR') || a.t.ini - b.t.ini;
+                  return a.t.ini - b.t.ini || na.localeCompare(nb, 'pt-BR');
+                });
               const tot = list.reduce((s, t) => s + t.mins, 0);
-              const short = r.mins[i] > 0 && list.length < r.mins[i];
+              const short = rVis.mins[i] > 0 && list.length < rVis.mins[i];
               const d = parseKey(k);
               return (
                 <div key={k} className={`${styles.day} ${short ? styles.short : ''}`}>
                   <div className={styles.row}>
                     <div className={styles.dlabel}>
                       <span className={`${styles.dn} ${i === 6 ? styles.sun : ''}`}>{WD[i]} {pad(d.getDate())}/{pad(d.getMonth() + 1)}</span>
-                      <small>{list.length} pess · {hm(tot)}{r.mins[i] ? ` · mín ${r.mins[i]}` : ''}</small>
+                      <small>{list.length} pess · {hm(tot)}{rVis.mins[i] ? ` · mín ${rVis.mins[i]}` : ''}</small>
                     </div>
                     <div className={styles.track} data-date={k} style={{ height: (sorted.length + 1) * ROW + 4 }}>
                       <div className={styles.openBand} style={{ left: `${pct(o0)}%`, width: `${((o1 - o0) / span) * 100}%` }} />
@@ -575,6 +630,12 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
                 `Intervalo mínimo: ${breakText(empPreview.a.pd)}${empPreview.a.pd ? ` (${fmt(empPreview.a.pi)}–${fmt(empPreview.a.pi + empPreview.a.pd)})` : ''} · turno ${shiftLabel(empPreview.a)} · ${hm(empPreview.h * 300)}/semana em 5x2${empPreview.over ? ' — passa de 8 h/dia' : ''}.`
               ))}
             </p>
+            <label>Área
+              <select value={empDlg.area} onChange={(e) => setEmpDlg({ ...empDlg, area: e.target.value })}>
+                <option value="">— sem área —</option>
+                {AREAS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            </label>
             <label>Cor
               <span className={styles.swatches}>
                 {COR_KEYS.map((c) => (
