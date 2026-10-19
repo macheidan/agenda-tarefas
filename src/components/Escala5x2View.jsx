@@ -6,6 +6,7 @@ import {
   pad, dkey, parseKey, addDays, mondayOf, weekDays, toMin, fmt, hm, hhmm, snap, clamp,
   parseHoras, regrasOf, lockWin, makeTurno, fixTurno, storeTurno, shiftLabel, coverage, validar,
 } from '../utils/escala5x2';
+import Escala5x2Mes from './Escala5x2Mes';
 import styles from '../styles/Escala5x2View.module.css';
 
 const ROW = 36;
@@ -14,11 +15,15 @@ const NONE = [];
 const POSTIT_INK = '#1a1d26';
 const breakText = (pd) => (pd ? (pd === 60 ? '1 h' : `${pd} min`) : 'sem intervalo');
 
-// Funcionário no período do contrato durante a semana?
-const inContract = (e, monKey) => {
-  const ini = monKey, fim = dkey(addDays(parseKey(monKey), 6));
-  return (!e.contractStart || e.contractStart <= fim) && (!e.contractEnd || e.contractEnd >= ini);
-};
+// Funcionário no período do contrato entre as datas ini e fim (YYYY-MM-DD)?
+const inContract = (e, ini, fim) =>
+  (!e.contractStart || e.contractStart <= fim) && (!e.contractEnd || e.contractEnd >= ini);
+const MONTHS = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+// Sub-seções da Escala 5x2.
+const MODOS = [['semana', 'Semana'], ['mes', 'Mês']];
 
 export default function Escala5x2View({ visibleStores, employees, canEdit }) {
   const { user } = useAuth();
@@ -26,6 +31,8 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
   const storeId = visibleStores.find((s) => s.id === storeSel)?.id || visibleStores[0]?.id || null;
   const { config, semanas, loading, error, saveSemana, saveSemanas, saveConfig } = useEscala5x2(storeId);
   const [week, setWeek] = useState(() => dkey(mondayOf(new Date())));
+  const [modo, setModo] = useState('semana'); // semana | mes
+  const [mes, setMes] = useState(() => ({ y: new Date().getFullYear(), m: new Date().getMonth() }));
   const [repN, setRepN] = useState(3);
   const [showRegras, setShowRegras] = useState(false);
   const [empDlg, setEmpDlg] = useState(null);   // { id, jr, ini, cor }
@@ -40,16 +47,20 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
   const span = (r.h1 - r.h0) * 60;
   const pct = useCallback((m) => ((m - r.h0 * 60) / span) * 100, [r.h0, span]);
 
+  // Período exibido: a semana ou o mês inteiro (define quem aparece pelo contrato).
+  const [periodoIni, periodoFim] = modo === 'mes'
+    ? [dkey(new Date(mes.y, mes.m, 1)), dkey(new Date(mes.y, mes.m + 1, 0))]
+    : [week, dkey(addDays(parseKey(week), 6))];
   const emps = useMemo(() => {
     const cfg = config?.emps || {};
     return employees
-      .filter((e) => e.store === storeId && e.active !== false && inContract(e, week))
+      .filter((e) => e.store === storeId && e.active !== false && inContract(e, periodoIni, periodoFim))
       .map((e, i) => {
         const c = cfg[e.id] || {};
         const jr = c.jr ?? 8;
         return { id: e.id, name: e.name, jr, ini: c.ini || (jr <= 6 ? '18:00' : '15:00'), cor: c.cor || COR_KEYS[i % COR_KEYS.length] };
       });
-  }, [employees, storeId, week, config]);
+  }, [employees, storeId, periodoIni, periodoFim, config]);
   const empById = useMemo(() => Object.fromEntries(emps.map((e) => [e.id, e])), [emps]);
   // Nome de quem saiu da loja mas ainda tem turno gravado em semana antiga.
   const nameOf = useCallback((id) => empById[id]?.name || employees.find((e) => e.id === id)?.name || '?', [empById, employees]);
@@ -225,6 +236,9 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
 
   /* ---------- ações ---------- */
   const shiftWeek = (n) => setWeek((w) => dkey(addDays(parseKey(w), n * 7)));
+  const shiftMes = (n) => setMes(({ y, m }) => { const d = new Date(y, m + n, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+  // Do mapa do mês para a semana do dia clicado.
+  const openDay = (d) => { setWeek(dkey(mondayOf(d))); setModo('semana'); };
   const repetir = () => {
     const n = clamp(Number(repN) || 1, 1, 26);
     const base = semanas[week] || {};
@@ -306,14 +320,30 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
               onClick={() => setStoreSel(s.id)}>{s.name}</button>
           ))}
         </div>
-        <div className={styles.weekNav}>
-          <button type="button" className={styles.btn} onClick={() => shiftWeek(-1)} aria-label="Semana anterior">‹</button>
-          <strong>{wLabel}</strong>
-          <button type="button" className={styles.btn} onClick={() => shiftWeek(1)} aria-label="Próxima semana">›</button>
-          <button type="button" className={styles.btn} onClick={() => setWeek(dkey(mondayOf(new Date())))}>Hoje</button>
+        <div className={styles.storeTabs}>
+          {MODOS.map(([key, label]) => (
+            <button type="button" key={key}
+              className={`${styles.storeTab} ${modo === key ? styles.storeTabActive : ''}`}
+              onClick={() => setModo(key)}>{label}</button>
+          ))}
         </div>
+        {modo === 'semana' ? (
+          <div className={styles.weekNav}>
+            <button type="button" className={styles.btn} onClick={() => shiftWeek(-1)} aria-label="Semana anterior">‹</button>
+            <strong>{wLabel}</strong>
+            <button type="button" className={styles.btn} onClick={() => shiftWeek(1)} aria-label="Próxima semana">›</button>
+            <button type="button" className={styles.btn} onClick={() => setWeek(dkey(mondayOf(new Date())))}>Hoje</button>
+          </div>
+        ) : (
+          <div className={styles.weekNav}>
+            <button type="button" className={styles.btn} onClick={() => shiftMes(-1)} aria-label="Mês anterior">‹</button>
+            <strong>{MONTHS[mes.m]} {mes.y}</strong>
+            <button type="button" className={styles.btn} onClick={() => shiftMes(1)} aria-label="Próximo mês">›</button>
+            <button type="button" className={styles.btn} onClick={() => setMes({ y: new Date().getFullYear(), m: new Date().getMonth() })}>Hoje</button>
+          </div>
+        )}
         <div className={styles.actions}>
-          {canEdit && (<>
+          {canEdit && modo === 'semana' && (<>
             <button type="button" className={styles.btn} onClick={repetir} title="Copia esta semana para as próximas">Repetir semana</button>
             <span className={styles.muted}>por</span>
             <input type="number" min="1" max="26" value={repN} onChange={(e) => setRepN(e.target.value)} className={styles.numInput} />
@@ -393,6 +423,11 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
         </div>
       )}
 
+      {modo === 'mes' && (
+        <Escala5x2Mes year={mes.y} month={mes.m} emps={emps} dayOf={dayOf} r={r} onOpenDay={openDay} />
+      )}
+
+      {modo === 'semana' && (<>
       <div className={styles.layout}>
         <aside className={styles.aside} ref={asideRef}>
           <h3 className={styles.asideTitle}>Funcionários</h3>
@@ -521,6 +556,7 @@ export default function Escala5x2View({ visibleStores, employees, canEdit }) {
           ? check.alerts.map(([c, t], i) => <li key={i} className={c === 'err' ? styles.alertErr : styles.alertWarn}>{t}</li>)
           : <li className={styles.alertOk}>Nenhum problema nesta semana.</li>}
       </ul>
+      </>)}
 
       {empDlg && (
         <div className={styles.overlay} onPointerDown={(e) => { if (e.target === e.currentTarget) setEmpDlg(null); }}>

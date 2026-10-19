@@ -201,6 +201,45 @@
   background: var(--text); color: var(--card); padding: 8px 14px; border-radius: var(--radius-md); font-size: 13px; box-shadow: var(--shadow-lg);
 }
 
+/* Mapa do mês (funcionário × dia) */
+.mesWrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
+.mes { border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 100%; }
+.mes th, .mes td { border-bottom: 1px solid var(--border-light); padding: 0; text-align: center; }
+.mes thead th { background: var(--bg-secondary); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+.mesName {
+  position: sticky; left: 0; z-index: 1; background: var(--card); text-align: left !important;
+  padding: 6px 10px !important; min-width: 120px; white-space: nowrap; border-right: 1px solid var(--border);
+}
+.mes thead .mesName { z-index: 3; background: var(--bg-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); font-weight: 600; }
+.mes tfoot .mesName { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); font-weight: 600; background: var(--bg-secondary); }
+.mesDay { min-width: 46px; padding: 6px 2px !important; cursor: pointer; font-weight: 600; color: var(--text); }
+.mesDay span { display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
+.mesDay small { display: block; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.mesDay small.sun { color: var(--accent); }
+.mesDay:hover { background: var(--accent-light); }
+.mesMon { border-left: 2px solid var(--border) !important; }
+.mesWkend { background: var(--bg-secondary); }
+.mesCell { padding: 3px 2px !important; cursor: pointer; height: 38px; }
+.mesCell:hover { background: var(--card-hover); }
+.mesTurno {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px;
+  padding: 2px 0; line-height: 1.15; box-shadow: var(--shadow-sm); font-variant-numeric: tabular-nums;
+}
+.mesTurno b { font-size: 11px; font-weight: 700; }
+.mesTurno small { font-size: 11px; opacity: .75; }
+.mesFolga { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.mesBad .mesTurno, .mesBad .mesFolga { outline: 2px solid var(--danger); outline-offset: 1px; border-radius: 4px; }
+.mesWarn .mesTurno { outline: 2px dashed var(--warning-text); outline-offset: 1px; }
+.mesSum {
+  padding: 6px 10px !important; white-space: nowrap; font-size: 12px; color: var(--text);
+  border-left: 1px solid var(--border-light);
+}
+.mes thead .mesSum { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); font-weight: 600; }
+.mesCount { padding: 6px 2px !important; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); background: var(--bg-secondary); }
+.mesShort { color: var(--danger) !important; background: var(--danger-bg) !important; }
+.mesWrap .hint { padding: 0 12px 12px; }
+:global([data-theme='dark']) .mesTurno { filter: brightness(0.95) saturate(0.95); }
+
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .aside { position: static; }
