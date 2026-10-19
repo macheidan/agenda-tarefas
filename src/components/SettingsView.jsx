@@ -525,6 +525,20 @@ export default function SettingsView({ onNavigate, tabsOrder = [], updateTabsOrd
                 onChange={(v) => toggleSection(permTarget, 'dpFolhaEdit', v)}
               />
             </Row>
+            <Row title="Escala 5x2" desc="Vê o simulador de turnos por hora (5x2, intervalos, horas por semana)">
+              <Switch
+                label="Depto Pessoal — vê Escala 5x2"
+                checked={s.dp5x2Visible === true || s.dp5x2Edit === true}
+                onChange={(v) => toggleSection(permTarget, 'dp5x2Visible', v)}
+              />
+            </Row>
+            <Row title="Escala 5x2 — editar" desc="Monta turnos, regras e horas de cada funcionário (já inclui ver)">
+              <Switch
+                label="Depto Pessoal — edita Escala 5x2"
+                checked={s.dp5x2Edit === true}
+                onChange={(v) => toggleSection(permTarget, 'dp5x2Edit', v)}
+              />
+            </Row>
             <Row title="Transp" desc="Cálculo de transporte da Rumi e da Patricia. Só o admin edita, mesmo com isto ligado">
               <Switch
                 label="Depto Pessoal — vê Transp"

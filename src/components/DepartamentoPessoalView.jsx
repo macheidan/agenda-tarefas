@@ -8,6 +8,7 @@ import { transporteDetalhe, empFolgaWeekdays } from '../utils/transporte';
 import SalariosView from './SalariosView';
 import SalariosFolhaView from './SalariosFolhaView';
 import TransporteView from './TransporteView';
+import Escala5x2View from './Escala5x2View';
 import styles from '../styles/DepartamentoPessoalView.module.css';
 
 const MONTHS = [
@@ -43,7 +44,11 @@ export default function DepartamentoPessoalView() {
   const canFolha = canFolhaEdit || settings?.dpFolhaVisible === true;
   // Transp tem liberação própria (dpTranspVisible), desligada por padrão.
   const canTransp = isAdmin || settings?.dpTranspVisible === true;
-  const [dpSection, setDpSection] = useState('escala'); // escala | salarios | folha | transp
+  // Escala 5x2 (simulador de turnos da EC 141/2026): dp5x2Visible (vê) e
+  // dp5x2Edit (edita, já inclui ver), desligadas por padrão.
+  const canEscala5x2Edit = isAdmin || settings?.dp5x2Edit === true;
+  const canEscala5x2 = canEscala5x2Edit || settings?.dp5x2Visible === true;
+  const [dpSection, setDpSection] = useState('escala'); // escala | escala5x2 | salarios | folha | transp
   const {
     stores,
     loadingStores,
@@ -71,7 +76,9 @@ export default function DepartamentoPessoalView() {
   // Sem acesso a Salários, a seção efetiva é sempre a Escala (fallback em render).
   // 'funcionarios' foi fundido em 'salarios' — normaliza legado.
   const effectiveSection =
-    dpSection === 'transp'
+    dpSection === 'escala5x2'
+      ? (canEscala5x2 ? 'escala5x2' : 'escala')
+      : dpSection === 'transp'
       ? (canTransp ? 'transp' : 'escala')
       : dpSection === 'folha'
         ? (canFolha ? 'folha' : 'escala')
@@ -437,6 +444,14 @@ export default function DepartamentoPessoalView() {
             >
               Escala
             </button>
+            {canEscala5x2 && (
+              <button type="button"
+                className={`${styles.sectionTab} ${effectiveSection === 'escala5x2' ? styles.sectionTabActive : ''}`}
+                onClick={() => setDpSection('escala5x2')}
+              >
+                Escala 5x2
+              </button>
+            )}
             {canSalarios && (
               <button type="button"
                 className={`${styles.sectionTab} ${effectiveSection === 'salarios' ? styles.sectionTabActive : ''}`}
@@ -487,6 +502,14 @@ export default function DepartamentoPessoalView() {
           salariosBanco={salariosBanco}
           setSalarioFolha={setSalarioFolha}
           canEdit={canFolhaEdit}
+        />
+      )}
+
+      {effectiveSection === 'escala5x2' && (
+        <Escala5x2View
+          visibleStores={visibleStores}
+          employees={employees}
+          canEdit={canEscala5x2Edit}
         />
       )}
 

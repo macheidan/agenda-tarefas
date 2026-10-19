@@ -301,6 +301,17 @@ service cloud.firestore {
       allow read: if isAdmin() || hasSettingFlag('dpTranspVisible');
       allow write: if isAdmin();
     }
+    // Escala 5x2 (simulador de turnos): dp5x2Visible lê; dp5x2Edit lê e escreve.
+    // Config por loja (regras + horas/entrada/cor de cada funcionário) e um doc
+    // por loja/semana com os turnos.
+    match /dpEscala5x2Config/{storeId} {
+      allow read: if isAdmin() || hasSettingFlag('dp5x2Visible') || hasSettingFlag('dp5x2Edit');
+      allow write: if isAdmin() || hasSettingFlag('dp5x2Edit');
+    }
+    match /dpEscala5x2Semanas/{semanaId} {
+      allow read: if isAdmin() || hasSettingFlag('dp5x2Visible') || hasSettingFlag('dp5x2Edit');
+      allow write: if isAdmin() || hasSettingFlag('dp5x2Edit');
+    }
 
     // Suprimentos (Compras + Estoque Mensal): qualquer aprovado lê. O catálogo
     // (fornecedores e cadastro de itens) é só de admin/editor; mas qualquer
