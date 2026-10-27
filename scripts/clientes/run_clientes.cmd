@@ -44,6 +44,13 @@ rem "caixa fechado" que a loja manda ao whatsbot (regra do Fabio, 2026-10-06).
 rem --forcar porque aqui estamos dentro da janela da coleta, logo depois dela.
 for %%l in (dame lov) do node scripts\clientes\subir_pdv.mjs --loja %%l --dias 2 --forcar >> %LOG% 2>&1
 
+rem E o caminho inverso: a base da intranet (Saipos cruzada) desce para o
+rem sistema de pedidos (Supabase pdv_clientes, que os PCs puxam). So entra
+rem cliente novo ou campo em branco; o cadastro da loja manda (2026-10-27).
+rem DESLIGADO ate o ok do Fabio para gravar nas lojas (ensaiado na marca teste):
+rem node scripts\clientes\descer_pdv.mjs >> %LOG% 2>&1
+rem if errorlevel 1 echo DESCIDA PARA O PDV FALHOU >> %LOG%
+
 rem Cada coleta guarda um JSON de ~4 MB e so a vespera ainda tem uso (--novos-de).
 rem Sem esta limpeza a pasta cresce ~1,4 GB por ano.
 forfiles /p "C:\claude_project\Pizzarias\intranet-pizzarias\scripts\clientes\data" /m clientes-*.json /d -7 /c "cmd /c del @path" >nul 2>&1

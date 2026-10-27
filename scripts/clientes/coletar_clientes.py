@@ -6,9 +6,15 @@ endpoint `find-all-customers`. Replicar esse GET por fora NÃO funciona: a
 requisição leva um header de assinatura ligado à URL, e qualquer URL montada
 na mão volta `{"customers":[],"customers_count":0}` com status 200 — some sem
 erro. Por isso a coleta aqui é feita DIRIGINDO o próprio controller da tela
-(`vm.filter`, `vm.number_pages`, `vm.actual_page`, `vm.findAll()`) e lendo as
+(`vm.filter`, `vm.number_pages`, `vm.currentCursor`, `vm.findAll()`) e lendo as
 respostas que o app dispara. 100 é o teto de registros por página que o
 servidor aceita (500 volta vazio).
+
+Paginação por CURSOR desde ~2026-10-15: a Saipos trocou `rownum_initial`
+(número de página) por `cursor_id_customer`; a resposta traz `has_next` e
+`next_cursor` (id do cliente onde a próxima página começa). O coletor antigo
+mandava `vm.actual_page`, que a tela não lê mais, e esperava a resposta pela
+chave `rownum_initial` — que nunca chegava ("Sem resposta para a pagina 1").
 
 Janela de 90 dias por decisão de produto: a base de "91+ dias sem pedir" da
 intranet se forma pelo envelhecimento da nossa própria lista, não pelo
@@ -194,7 +200,8 @@ def abrir_tela_clientes(page) -> None:
 
 def coletar_loja(page, loja: str, id_store: str, inicio: date, fim: date) -> list[dict]:
     """Pagina a tela toda e devolve os clientes agregados por telefone."""
-    respostas: dict[int, list] = {}
+    # resposta de cada página, pela chave do cursor que a pediu ("" = primeira)
+    respostas: dict[str, dict] = {}
     store_vistos: set[str] = set()
 
     def on_resp(resp):
@@ -203,8 +210,8 @@ def coletar_loja(page, loja: str, id_store: str, inicio: date, fim: date) -> lis
         try:
             store_vistos.add(resp.url.split("/stores/")[1].split("/")[0])
             bruto = urllib.parse.parse_qs(urllib.parse.urlparse(resp.url).query)["filter"][0]
-            ini = int(json.loads(bruto).get("rownum_initial") or 0)
-            respostas[ini] = json.loads(resp.text()).get("customers", [])
+            cur = json.loads(bruto).get("cursor_id_customer")
+            respostas["" if cur is None else str(cur)] = json.loads(resp.text())
         except Exception as e:  # noqa: BLE001
             print(f"  [aviso] resposta ilegivel: {e}")
 
@@ -216,19 +223,28 @@ def coletar_loja(page, loja: str, id_store: str, inicio: date, fim: date) -> lis
         registros: list[dict] = []
         total = None
         pagina = 1
+        cursor = None
+        vistos: set[str] = set()
         while True:
-            esperado = (pagina - 1) * PAGE_SIZE + 1
+            esperado = "" if cursor is None else str(cursor)
             respostas.pop(esperado, None)
+            # a tela ignora chamada enquanto a anterior ainda está buscando
+            for _ in range(30):
+                if not page.evaluate("() => !!window.__vm.isFetchingCustomers"):
+                    break
+                page.wait_for_timeout(500)
             page.evaluate(
-                """([ini, fim, size, pag, primeira]) => {
+                """([ini, fim, size, cursor]) => {
                   const vm = window.__vm;
                   vm.filter.start_date = ini;
                   vm.filter.end_date = fim;
                   vm.number_pages = size;
-                  vm.actual_page = pag;
-                  vm.findAll(primeira);
+                  if (cursor === null) { vm.findAll(true); return; }
+                  vm.cursorStack.push(vm.currentCursor);
+                  vm.currentCursor = cursor;
+                  vm.findAll(false);
                 }""",
-                [inicio.isoformat(), fim.isoformat(), PAGE_SIZE, pagina, pagina == 1],
+                [inicio.isoformat(), fim.isoformat(), PAGE_SIZE, cursor],
             )
             for _ in range(60):
                 page.wait_for_timeout(1000)
@@ -237,15 +253,25 @@ def coletar_loja(page, loja: str, id_store: str, inicio: date, fim: date) -> lis
             else:
                 raise RuntimeError(f"Sem resposta para a pagina {pagina} ({loja})")
 
-            lote = respostas.pop(esperado)
+            resp = respostas.pop(esperado)
+            lote = resp.get("customers") or []
             registros.extend(lote)
             if total is None:
-                total = int(page.evaluate("() => window.__vm.total_customers") or 0)
-                print(f"  {total} clientes no periodo · {max(1, -(-total // PAGE_SIZE))} paginas")
-            if pagina % 10 == 0 or len(lote) < PAGE_SIZE:
+                cc = resp.get("customers_count")
+                # o contador vem como [{"count": N}] ou numero solto; so serve para o log
+                if isinstance(cc, list) and cc and isinstance(cc[0], dict):
+                    cc = cc[0].get("count")
+                total = int(cc or 0) if str(cc or 0).isdigit() else 0
+                if total:
+                    print(f"  {total} clientes no periodo · {max(1, -(-total // PAGE_SIZE))} paginas")
+            prox = resp.get("next_cursor")
+            fim_lista = not resp.get("has_next") or prox is None or str(prox) in vistos
+            if pagina % 10 == 0 or fim_lista:
                 print(f"  pagina {pagina}: +{len(lote)} (acumulado {len(registros)})")
-            if len(lote) < PAGE_SIZE or pagina * PAGE_SIZE >= (total or 0):
+            if fim_lista:
                 break
+            vistos.add(str(prox))
+            cursor = prox
             pagina += 1
 
         # A troca de loja é o ponto frágil do fluxo (o app é uma SPA e mantém a
