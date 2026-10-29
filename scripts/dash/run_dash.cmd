@@ -13,3 +13,5 @@ echo ===== %DATE% %TIME% ===== >> data\runner.log
 rem --headless: Saipos sem janela (login automatico funciona; mais leve e nao
 rem depende de desktop interativo as 03h, que e onde o browser travava).
 "C:\Python314\python.exe" runner.py --headless >> data\runner.log 2>&1
+rem runner.py sai com 1 quando a coleta de vendas da Saipos falha (avisa o Fabio por e-mail).
+exit /b %errorlevel%

@@ -3,6 +3,10 @@ rem Coleta as entregas por motoboy no Saipos e importa para a intranet.
 rem Uso: run_motoboys.cmd [3h^|9h^|manual]   (default: manual)
 rem Agendado no Task Scheduler: quarta 03:20 (3h) e quarta 09:00 (9h, fallback).
 setlocal
+rem FALHA=1 faz o .cmd sair com codigo 1: e assim que a agenda (Hub\agenda)
+rem marca falha e manda o e-mail ao Fabio. Antes o erro ficava so no log e o
+rem painel dizia ok (coleta de clientes quebrou 12 dias calada, out/2026).
+set FALHA=0
 set FONTE=%1
 if "%FONTE%"=="" set FONTE=manual
 cd /d C:\claude_project\Pizzarias\intranet-pizzarias
@@ -28,15 +32,17 @@ if "%FONTE%"=="9h" (
 python scripts\motoboys\coletar_saipos.py --semana %SEMANA% >> %LOG% 2>&1
 if errorlevel 1 (
   echo COLETA FALHOU >> %LOG%
+  set FALHA=1
   goto :fim
 )
 
 node scripts\motoboys\importar_pa.mjs scripts\motoboys\data\pa-%SEMANA%.json --fonte %FONTE% >> %LOG% 2>&1
 if errorlevel 1 (
   echo IMPORTACAO FALHOU >> %LOG%
+  set FALHA=1
 ) else (
   echo OK >> %LOG%
 )
 
 :fim
-endlocal
+endlocal & exit /b %FALHA%

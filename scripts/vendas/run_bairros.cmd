@@ -16,6 +16,10 @@ rem
 rem Sem --headless de proposito: as 4h ninguem esta no PC, e headless as vezes
 rem trava no boot do app do Saipos (mesmo motivo do fallback do runner do Dash).
 setlocal
+rem FALHA=1 faz o .cmd sair com codigo 1: e assim que a agenda (Hub\agenda)
+rem marca falha e manda o e-mail ao Fabio. Antes o erro ficava so no log e o
+rem painel dizia ok (coleta de clientes quebrou 12 dias calada, out/2026).
+set FALHA=0
 cd /d C:\claude_project\Pizzarias\intranet-pizzarias
 if not exist scripts\vendas\data mkdir scripts\vendas\data
 set LOG=scripts\vendas\data\runner.log
@@ -32,11 +36,17 @@ echo ===== %date% %time% ===== >> %LOG%
 "C:\Python314\python.exe" scripts\vendas\coletar_bairros.py %PERIODO% >> %LOG% 2>&1
 if errorlevel 1 (
   echo COLETA FALHOU >> %LOG%
+  set FALHA=1
   goto :fim
 )
 
 node scripts\vendas\importar_bairros.mjs scripts\vendas\data\bairros-%HOJE%.json >> %LOG% 2>&1
-if errorlevel 1 (echo IMPORTACAO FALHOU >> %LOG%) else (echo OK >> %LOG%)
+if errorlevel 1 (
+  echo IMPORTACAO FALHOU >> %LOG%
+  set FALHA=1
+) else (
+  echo OK >> %LOG%
+)
 
 :fim
-endlocal
+endlocal & exit /b %FALHA%

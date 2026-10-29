@@ -52,6 +52,10 @@ rem  Para refazer um mes especifico:
 rem    run_mesadono.cmd 8 2026
 rem ============================================================================
 setlocal
+rem FALHA=1 faz o .cmd sair com codigo 1: e assim que a agenda (Hub\agenda)
+rem marca falha e manda o e-mail ao Fabio. Antes o erro ficava so no log e o
+rem painel dizia ok (coleta de clientes quebrou 12 dias calada, out/2026).
+set FALHA=0
 set SKILL=C:\Users\PICHAU\.claude\skills\dre\scripts
 cd /d "%SKILL%"
 
@@ -70,6 +74,7 @@ rem 1) Saipos -> planilha VENDAS LOJAS (abas ITENS + aba DADOS)
 "C:\Python314\python.exe" dre_itens_vendidos.py %PERIODO% --gravar-vendas >> "%LOG%" 2>&1
 if errorlevel 1 (
   echo ITENS VENDIDOS FALHOU - sync nao disparado >> "%LOG%"
+  set FALHA=1
   goto :fim
 )
 
@@ -85,7 +90,12 @@ echo (sync exit %errorlevel%) >> "%LOG%"
 
 rem 3) Confere no Firestore se o mes ficou completo.
 node "%RAIZ%\scripts\mesadono\conferir.mjs" %PERIODO% >> "%LOG%" 2>&1
-if errorlevel 1 (echo CONFERENCIA APONTOU BURACO >> "%LOG%") else (echo OK >> "%LOG%")
+if errorlevel 1 (
+  echo CONFERENCIA APONTOU BURACO >> "%LOG%"
+  set FALHA=1
+) else (
+  echo OK >> "%LOG%"
+)
 
 :fim
-endlocal
+endlocal & exit /b %FALHA%

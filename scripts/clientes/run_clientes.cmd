@@ -5,6 +5,10 @@ rem 03:40 e depois das outras automacoes que usam o MESMO perfil de browser
 rem (DashboardColeta3h as 03:00, MotoboysColeta3h as 03:20) — duas ao mesmo
 rem tempo travam no lock do perfil do Chromium.
 setlocal
+rem FALHA=1 faz o .cmd sair com codigo 1: e assim que a agenda (Hub\agenda)
+rem marca falha e manda o e-mail ao Fabio. Antes o erro ficava so no log e o
+rem painel dizia ok (coleta de clientes quebrou 12 dias calada, out/2026).
+set FALHA=0
 cd /d C:\claude_project\Pizzarias\intranet-pizzarias
 if not exist scripts\clientes\data mkdir scripts\clientes\data
 set LOG=scripts\clientes\data\runner.log
@@ -18,6 +22,7 @@ echo ===== %date% %time% ===== >> %LOG%
 "C:\Python314\python.exe" scripts\clientes\coletar_clientes.py --dias 90 >> %LOG% 2>&1
 if errorlevel 1 (
   echo COLETA FALHOU >> %LOG%
+  set FALHA=1
   goto :fim
 )
 
@@ -29,11 +34,15 @@ if exist scripts\clientes\data\clientes-%ONTEM%.json (
 ) else (
   "C:\Python314\python.exe" scripts\clientes\coletar_historico.py scripts\clientes\data\clientes-%HOJE%.json >> %LOG% 2>&1
 )
-if errorlevel 1 echo HISTORICO FALHOU (segue com a importacao) >> %LOG%
+if errorlevel 1 (
+  echo HISTORICO FALHOU - segue com a importacao >> %LOG%
+  set FALHA=1
+)
 
 node scripts\clientes\importar_clientes.mjs scripts\clientes\data\clientes-%HOJE%.json >> %LOG% 2>&1
 if errorlevel 1 (
   echo IMPORTACAO FALHOU >> %LOG%
+  set FALHA=1
 ) else (
   echo OK >> %LOG%
 )
@@ -56,4 +65,4 @@ rem Sem esta limpeza a pasta cresce ~1,4 GB por ano.
 forfiles /p "C:\claude_project\Pizzarias\intranet-pizzarias\scripts\clientes\data" /m clientes-*.json /d -7 /c "cmd /c del @path" >nul 2>&1
 
 :fim
-endlocal
+endlocal & exit /b %FALHA%

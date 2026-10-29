@@ -552,7 +552,7 @@ def main():
     if not a.so_consolida:
         # Saipos é o único que abre browser e pode travar; timeout curto por
         # tentativa (5 min) + retry/backfill em coletar_vendas_completo.
-        coletar_vendas_completo(a.headless)
+        vendas_ok = coletar_vendas_completo(a.headless)
         if a.backfill_mes:
             backfill_mes(a.headless)
 
@@ -572,6 +572,10 @@ def main():
         enviar(arq, cfg, cfg.get("ftp_dir", "/pizzas/data"),
                remote_name=f"dashboard-data-{token}.json")
     log("\n== fim ==")
+    if not a.so_consolida and not vendas_ok:
+        # O JSON sai mesmo assim (com o que havia), mas a rodada conta como
+        # falha: a agenda manda e-mail ao Fabio (Hub/agenda/avisar.py).
+        sys.exit(1)
 
 
 if __name__ == "__main__":
