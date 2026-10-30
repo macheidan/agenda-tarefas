@@ -30,3 +30,32 @@ export function calcResultado(precoNorm, raw) {
   if (isDiv) return n === 0 ? null : precoNorm / n;
   return precoNorm * n;
 }
+
+// Fator por unidade de embalagem (tabela fatores_unidade). O fator geral mora em
+// produtos.fator_regra3, mas o mesmo produto bruto pode chegar em embalagens
+// diferentes conforme o fornecedor (ex: "MORANGO" por BD de 250g na Ivanei e por
+// CX de 1kg na MH). Quando existe fator pra (produto, unidade), ele vale; senao
+// cai no fator geral do produto.
+export function chaveFatorUnidade(produtoId, unidade) {
+  return `${produtoId}|${String(unidade || '').trim().toUpperCase()}`;
+}
+
+// Mapa 'produto_id|UNID' -> fator. Sem a tabela (ou com erro), volta vazio e
+// tudo segue pelo fator geral.
+export async function fetchFatoresUnidade(supabase) {
+  const { data, error } = await supabase.from('fatores_unidade').select('produto_id, unidade, fator');
+  if (error) {
+    console.warn('[precos] fatores_unidade indisponivel:', error.message || error);
+    return {};
+  }
+  const map = {};
+  for (const r of data || []) {
+    if (r.fator != null && String(r.fator).trim() !== '') map[chaveFatorUnidade(r.produto_id, r.unidade)] = r.fator;
+  }
+  return map;
+}
+
+export function fatorEfetivo(fatoresUnidade, produtoId, unidade, fatorProduto) {
+  const v = fatoresUnidade?.[chaveFatorUnidade(produtoId, unidade)];
+  return v != null ? v : (fatorProduto ?? null);
+}

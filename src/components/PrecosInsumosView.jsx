@@ -11,7 +11,7 @@ import { useFatorSugestao } from '../hooks/useFatorSugestao';
 import { IS_V2 } from '../lib/v2';
 // Leitura da base de preços (data e Resultado/Regra3) — compartilhada com o
 // Relatório Estoque, em Suprimentos.
-import { parseDataISO, calcResultado } from '../lib/precos';
+import { parseDataISO, calcResultado, fetchFatoresUnidade, chaveFatorUnidade, fatorEfetivo } from '../lib/precos';
 
 // Sub-seções da seção e ordem em que aparecem. A visibilidade de cada uma é por
 // usuário, controlada em Configurações (chaves precosSub* em settings/{uid};
@@ -155,34 +155,69 @@ async function fetchPrecosSince(fromISO) {
   return all;
 }
 
-function mapPrecos(all) {
-  return all.map(r => ({
-    id: r.id,
-    produto_id: r.produto_id,
-    data: parseDataISO(r.data),
-    preco_bruto: Number(r.preco_bruto) || 0,
-    preco_normalizado: Number(r.preco_normalizado) || 0,
-    unidade_normalizada: r.unidade_normalizada || '',
-    qtd_embalagem: Number(r.qtd_embalagem) || 0,
-    unidade_embalagem: r.unidade_embalagem || '',
-    produto: r.produtos?.nome || '',
-    produto_padrao: r.produtos?.nome_padrao || '',
-    fator_regra3: r.produtos?.fator_regra3 ?? null,
-    fornecedor: normalizeFornecedor(r.fornecedores?.nome_curto, r.fornecedores?.nome),
-    loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
-  }));
+// fator_key diz onde o fator da linha mora: o produto inteiro (produto_id) ou,
+// quando o mesmo produto bruto chega em mais de uma unidade de embalagem (ou ja
+// tem fator por unidade), o par produto|unidade em fatores_unidade.
+function mapPrecos(all, fatoresUnidade = {}) {
+  const unidadesPorProduto = {};
+  for (const r of all) {
+    (unidadesPorProduto[r.produto_id] ||= new Set()).add(String(r.unidade_embalagem || '').trim().toUpperCase());
+  }
+  return all.map(r => {
+    const chaveUn = chaveFatorUnidade(r.produto_id, r.unidade_embalagem);
+    const porUnidade = unidadesPorProduto[r.produto_id].size > 1 || fatoresUnidade[chaveUn] != null;
+    return {
+      id: r.id,
+      produto_id: r.produto_id,
+      data: parseDataISO(r.data),
+      preco_bruto: Number(r.preco_bruto) || 0,
+      preco_normalizado: Number(r.preco_normalizado) || 0,
+      unidade_normalizada: r.unidade_normalizada || '',
+      qtd_embalagem: Number(r.qtd_embalagem) || 0,
+      unidade_embalagem: r.unidade_embalagem || '',
+      produto: r.produtos?.nome || '',
+      produto_padrao: r.produtos?.nome_padrao || '',
+      fator_regra3: fatorEfetivo(fatoresUnidade, r.produto_id, r.unidade_embalagem, r.produtos?.fator_regra3),
+      fator_produto: r.produtos?.fator_regra3 ?? null,
+      fator_key: porUnidade ? chaveUn : String(r.produto_id),
+      fornecedor: normalizeFornecedor(r.fornecedores?.nome_curto, r.fornecedores?.nome),
+      loja: normalizeLoja(r.loja ?? r.store ?? r.pizzaria ?? r.unidade_loja ?? r.notas?.loja ?? ''),
+    };
+  });
 }
 
-// Fator (Regra3) e por produto bruto (produto_id): mapa produto_id -> fator
+// Precos + fatores por unidade em paralelo.
+async function fetchPrecosMapeados(fromISO) {
+  const [all, fu] = await Promise.all([fetchPrecosSince(fromISO), fetchFatoresUnidade(supabase)]);
+  return mapPrecos(all, fu);
+}
+
+// Fator (Regra3): mapa fator_key -> fator (produto bruto, ou produto|unidade),
 // inicializado a partir do que ja esta salvo no banco.
 function buildFatores(mapped) {
   const fmap = {};
   for (const m of mapped) {
-    if (m.fator_regra3 != null && fmap[m.produto_id] === undefined) {
-      fmap[m.produto_id] = m.fator_regra3;
+    if (m.fator_regra3 != null && fmap[m.fator_key] === undefined) {
+      fmap[m.fator_key] = m.fator_regra3;
     }
   }
   return fmap;
+}
+
+// Grava o fator onde ele mora: 'produto|UNID' -> fatores_unidade (vazio apaga a
+// linha e volta a valer o fator geral); 'produto' -> produtos.fator_regra3.
+async function salvarFator(key, novo) {
+  const sep = key.indexOf('|');
+  if (sep < 0) {
+    return supabase.from('produtos').update({ fator_regra3: novo }).eq('id', Number(key));
+  }
+  const produto_id = Number(key.slice(0, sep));
+  const unidade = key.slice(sep + 1);
+  if (novo == null) {
+    return supabase.from('fatores_unidade').delete().eq('produto_id', produto_id).eq('unidade', unidade);
+  }
+  return supabase.from('fatores_unidade')
+    .upsert({ produto_id, unidade, fator: novo }, { onConflict: 'produto_id,unidade' });
 }
 
 // Alias de fornecedores que sao o mesmo negocio com CNPJ diferente. "Conservas
@@ -263,8 +298,9 @@ export default function PrecosInsumosView() {
   const [dataFim, setDataFim] = useState(new Date().toISOString().slice(0, 10));
   const [porPagina, setPorPagina] = useState(50);
   const [paginaAtual, setPaginaAtual] = useState(1);
-  // Mapa produto_id -> fator (Regra3). Compartilhado entre todas as linhas do
-  // mesmo produto bruto: editar uma reflete em todas, persiste em produtos.fator_regra3.
+  // Mapa fator_key -> fator (Regra3). Compartilhado entre todas as linhas do
+  // mesmo produto bruto (ou do mesmo produto+unidade, quando ele chega em mais de
+  // uma embalagem): editar uma reflete em todas. Persiste via salvarFator.
   const [fatores, setFatores] = useState({});
   // Valor "commitado" do fator (so muda no blur / Enter). O filtro "sem Fator"
   // usa este, e nao o que esta sendo digitado, pra que a linha nao suma da lista
@@ -277,28 +313,25 @@ export default function PrecosInsumosView() {
   // Sugestão de fator por LLM: ao focar o campo, pede a sugestão e mostra num
   // dropdown abaixo do input; clicar aplica e salva.
   const { sugestoes, sugerir } = useFatorSugestao();
-  const [fatorFoco, setFatorFoco] = useState(null); // produto_id com o campo focado
+  const [fatorFoco, setFatorFoco] = useState(null); // fator_key com o campo focado
 
-  async function aplicarSugestao(produtoId, fator) {
+  async function aplicarSugestao(key, fator) {
     const novo = fator == null ? null : String(fator).trim();
-    const salvoRaw = fatoresSalvos[produtoId];
+    const salvoRaw = fatoresSalvos[key];
     const salvo = salvoRaw === '' || salvoRaw == null ? null : String(salvoRaw).trim();
     if (novo === salvo) return;
     if (salvo != null) {
       const ok = window.confirm('A Regra3 deste produto já está preenchida. Substituir pela sugestão?');
       if (!ok) return;
     }
-    setFatores(prev => ({ ...prev, [produtoId]: novo ?? '' }));
-    setFatoresSalvos(prev => ({ ...prev, [produtoId]: novo }));
-    const { error } = await supabase
-      .from('produtos')
-      .update({ fator_regra3: novo })
-      .eq('id', produtoId);
+    setFatores(prev => ({ ...prev, [key]: novo ?? '' }));
+    setFatoresSalvos(prev => ({ ...prev, [key]: novo }));
+    const { error } = await salvarFator(key, novo);
     if (error) console.error('[precos] erro ao salvar fator sugerido:', error);
   }
 
-  function handleFatorChange(produtoId, raw) {
-    setFatores(prev => ({ ...prev, [produtoId]: raw }));
+  function handleFatorChange(key, raw) {
+    setFatores(prev => ({ ...prev, [key]: raw }));
   }
 
   // Enter so "commita" tirando o foco -> dispara o blur (mesma logica de clicar fora).
@@ -309,28 +342,31 @@ export default function PrecosInsumosView() {
   // Commit do fator: roda ao clicar fora (blur) ou ao apertar Enter. Se o campo
   // JA tinha um valor salvo e ele mudou, pede confirmacao antes de gravar; se o
   // usuario cancelar, reverte pro valor salvo. Campo vazio salva sem perguntar.
-  async function handleFatorBlur(produtoId) {
-    const raw = fatores[produtoId];
+  async function handleFatorBlur(key) {
+    const raw = fatores[key];
     const novo = raw === '' || raw == null ? null : String(raw).trim();
-    const salvoRaw = fatoresSalvos[produtoId];
+    const salvoRaw = fatoresSalvos[key];
     const salvo = salvoRaw === '' || salvoRaw == null ? null : String(salvoRaw).trim();
     if (novo === salvo) return; // nada mudou — nao pergunta nem grava
 
     if (salvo != null) {
       const ok = window.confirm('A Regra3 deste produto já está preenchida. Tem certeza que deseja editar?');
       if (!ok) {
-        setFatores(prev => ({ ...prev, [produtoId]: salvoRaw ?? '' })); // reverte
+        setFatores(prev => ({ ...prev, [key]: salvoRaw ?? '' })); // reverte
         return;
       }
     }
 
     // Commita o valor (texto exato, ex: "2" ou "/2") pro display, filtro e banco.
-    setFatoresSalvos(prev => ({ ...prev, [produtoId]: novo }));
-    setFatores(prev => ({ ...prev, [produtoId]: novo ?? '' }));
-    const { error } = await supabase
-      .from('produtos')
-      .update({ fator_regra3: novo })
-      .eq('id', produtoId);
+    // Fator por unidade apagado: volta a valer o fator geral do produto.
+    let exibido = novo;
+    if (novo == null && key.includes('|')) {
+      const linha = precos.find(p => p.fator_key === key);
+      exibido = linha?.fator_produto ?? null;
+    }
+    setFatoresSalvos(prev => ({ ...prev, [key]: exibido }));
+    setFatores(prev => ({ ...prev, [key]: exibido ?? '' }));
+    const { error } = await salvarFator(key, novo);
     if (error) console.error('[precos] erro ao salvar fator:', error);
   }
 
@@ -348,7 +384,7 @@ export default function PrecosInsumosView() {
     if (loadingFullRef.current) return;
     loadingFullRef.current = true;
     try {
-      const mapped = mapPrecos(await fetchPrecosSince(daysAgo(MAX_MONTHS_DAYS)));
+      const mapped = await fetchPrecosMapeados(daysAgo(MAX_MONTHS_DAYS));
       precosCache = { rows: mapped, fmap: buildFatores(mapped), ts: Date.now() };
       aplicarPrecos(mapped);
     } catch (e) {
@@ -372,7 +408,7 @@ export default function PrecosInsumosView() {
     setLoading(true);
     try {
       // Fase 1: ultimos 30 dias -> paint rapido (bem menos linhas que a tabela toda).
-      const recentes = mapPrecos(await fetchPrecosSince(daysAgo(RECENT_DAYS)));
+      const recentes = await fetchPrecosMapeados(daysAgo(RECENT_DAYS));
       aplicarPrecos(recentes);
       setLoading(false);
       // Fase 2: completa ate 12 meses sem travar a tela.
@@ -500,7 +536,7 @@ export default function PrecosInsumosView() {
       if (filtroLoja && p.loja !== filtroLoja) return false;
       if (filtroSemFator) {
         // Usa o valor commitado (fatoresSalvos), nao o digitado, pra linha nao sumir no meio da digitacao.
-        const fator = fatoresSalvos[p.produto_id];
+        const fator = fatoresSalvos[p.fator_key];
         if (fator != null && String(fator).trim() !== '') return false;
       }
       if (filtroTexto) {
@@ -712,14 +748,14 @@ export default function PrecosInsumosView() {
                         inputMode="text"
                         placeholder="2 ou /2"
                         title="Multiplica por padrao (ex: 2). Use / pra dividir (ex: /2). Ao focar, a LLM sugere o fator pelo nome/embalagem"
-                        value={fatores[p.produto_id] ?? ''}
+                        value={fatores[p.fator_key] ?? ''}
                         onKeyDown={handleFatorKeyDown}
-                        onFocus={() => { setFatorFoco(p.produto_id); sugerir(p); }}
-                        onChange={e => handleFatorChange(p.produto_id, e.target.value)}
-                        onBlur={() => { setFatorFoco(null); handleFatorBlur(p.produto_id); }}
+                        onFocus={() => { setFatorFoco(p.fator_key); sugerir(p); }}
+                        onChange={e => handleFatorChange(p.fator_key, e.target.value)}
+                        onBlur={() => { setFatorFoco(null); handleFatorBlur(p.fator_key); }}
                         style={fatorInputS}
                       />
-                      {fatorFoco === p.produto_id && (() => {
+                      {fatorFoco === p.fator_key && (() => {
                         const s = sugestoes[p.produto_id];
                         if (!s) return null;
                         return (
@@ -734,7 +770,7 @@ export default function PrecosInsumosView() {
                                 type="button"
                                 title="Aplicar a sugestão (grava a Regra3 do produto)"
                                 // mousedown pra rodar ANTES do blur do input (que fecharia o dropdown)
-                                onMouseDown={e => { e.preventDefault(); aplicarSugestao(p.produto_id, s.fator); }}
+                                onMouseDown={e => { e.preventDefault(); aplicarSugestao(p.fator_key, s.fator); }}
                                 style={fatorSugBtnS}
                               >
                                 <span style={{ fontWeight: 700 }}>{s.fator}</span>
@@ -746,7 +782,7 @@ export default function PrecosInsumosView() {
                       })()}
                     </td>
                     <td style={{ ...tdS, textAlign: 'right', fontSize: 12, color: 'var(--text-muted)' }}>{(() => {
-                      const res = calcResultado(p.preco_normalizado, fatores[p.produto_id]);
+                      const res = calcResultado(p.preco_normalizado, fatores[p.fator_key]);
                       // Sem fator, o Resultado cai no preco normalizado (marca o titulo pra sinalizar).
                       if (res != null) return 'R$ ' + res.toFixed(2);
                       if (p.preco_normalizado > 0) return <span title="Sem fator: usando o preço normalizado">R$ {p.preco_normalizado.toFixed(2)}</span>;

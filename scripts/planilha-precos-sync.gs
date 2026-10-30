@@ -119,9 +119,10 @@ function sync() {
 // service_role ignora RLS, então lê tudo sem token de usuário Firebase.
 function fetchNotas_(key) {
   var out = [], PAGE = 1000;
+  var fu = fetchFatoresUnidade_(key);
   for (var off = 0; off < 100000; off += PAGE) {
     var url = SUPABASE_URL + '/rest/v1/precos'
-      + '?select=data,preco_normalizado,produtos(nome_padrao,fator_regra3)'
+      + '?select=data,preco_normalizado,produto_id,unidade_embalagem,produtos(nome_padrao,fator_regra3)'
       + '&order=data.asc&limit=' + PAGE + '&offset=' + off;
     var resp = UrlFetchApp.fetch(url, {
       method: 'get',
@@ -139,12 +140,34 @@ function fetchNotas_(key) {
       out.push({
         planilha: p.nome_padrao,
         data: data,
-        resultado: calcResultado_(Number(r.preco_normalizado) || 0, p.fator_regra3),
+        resultado: calcResultado_(Number(r.preco_normalizado) || 0, fatorEfetivo_(fu, r, p.fator_regra3)),
       });
     }
     if (rows.length < PAGE) break;
   }
   return out;
+}
+
+// Fator por unidade de embalagem (tabela fatores_unidade), igual à intranet: o
+// mesmo produto pode chegar em BD numa nota e em CX noutra. Mapa 'id|UNID' -> fator.
+function fetchFatoresUnidade_(key) {
+  var resp = UrlFetchApp.fetch(SUPABASE_URL + '/rest/v1/fatores_unidade?select=produto_id,unidade,fator', {
+    method: 'get',
+    headers: { apikey: key, Authorization: 'Bearer ' + key },
+    muteHttpExceptions: true,
+  });
+  if (resp.getResponseCode() >= 300) return {};          // sem a tabela → só o fator geral
+  var rows = JSON.parse(resp.getContentText()), map = {};
+  for (var i = 0; i < rows.length; i++) {
+    var f = rows[i];
+    if (f.fator != null && String(f.fator).trim() !== '') map[f.produto_id + '|' + String(f.unidade).trim().toUpperCase()] = f.fator;
+  }
+  return map;
+}
+
+function fatorEfetivo_(fu, r, fatorProduto) {
+  var v = fu[r.produto_id + '|' + String(r.unidade_embalagem || '').trim().toUpperCase()];
+  return v != null ? v : fatorProduto;
 }
 
 // Regra3 idêntica à da intranet: "2" multiplica, "/2" divide, vírgula = decimal.

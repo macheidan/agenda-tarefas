@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { supabase } from '../utils/supabase';
-import { parseDataISO, calcResultado } from '../lib/precos';
+import { parseDataISO, calcResultado, fetchFatoresUnidade, fatorEfetivo } from '../lib/precos';
 import { relatorioId } from '../lib/suprimentos';
 
 // Relatório Estoque (sub-seção de Suprimentos): cruza a CONTAGEM do Estoque
@@ -39,7 +39,7 @@ async function fetchPrecosNoIntervalo(desde, ate) {
   for (let p = 0; p < 30; p++) {
     const { data, error } = await supabase
       .from('precos')
-      .select('id, data, preco_normalizado, unidade_normalizada, produto_id, produtos(nome, nome_padrao, medida_padrao, fator_regra3)')
+      .select('id, data, preco_normalizado, unidade_normalizada, unidade_embalagem, produto_id, produtos(nome, nome_padrao, medida_padrao, fator_regra3)')
       .gte('data', desde)
       .lt('data', ate)
       .order('data', { ascending: false })
@@ -60,7 +60,7 @@ async function fetchPrecosNoIntervalo(desde, ate) {
 // (planilha)"); quando o produto ainda não foi padronizado por lá, vale o
 // próprio nome do produto. É a mesma chave que o vínculo do item de Compras
 // (comprasItens.planilhaNome) guarda.
-function reduzirPorPlanilha(rows) {
+function reduzirPorPlanilha(rows, fatoresUnidade = {}) {
   const latest = {};
   for (const r of rows) {
     const nome = r.produtos?.nome_padrao || r.produtos?.nome;
@@ -75,7 +75,7 @@ function reduzirPorPlanilha(rows) {
   for (const nome in latest) {
     const p = latest[nome];
     const norm = Number(p.preco_normalizado) || 0;
-    const res = calcResultado(norm, p.produtos?.fator_regra3);
+    const res = calcResultado(norm, fatorEfetivo(fatoresUnidade, p.produto_id, p.unidade_embalagem, p.produtos?.fator_regra3));
     map[nome] = {
       custo: res == null ? norm : res,
       medida: p.unidade_normalizada || p.produtos?.medida_padrao || '',
@@ -99,9 +99,12 @@ export function usePrecosPlanilha(ateExclusivo) {
     setError(null);
     (async () => {
       try {
-        const rows = await fetchPrecosNoIntervalo(menos(ateExclusivo, JANELA_DIAS), ateExclusivo);
+        const [rows, fu] = await Promise.all([
+          fetchPrecosNoIntervalo(menos(ateExclusivo, JANELA_DIAS), ateExclusivo),
+          fetchFatoresUnidade(supabase),
+        ]);
         if (!vivo) return;
-        setCustos(reduzirPorPlanilha(rows));
+        setCustos(reduzirPorPlanilha(rows, fu));
       } catch (e) {
         if (!vivo) return;
         console.error('[relatorio-estoque] erro ao carregar preços:', e);
