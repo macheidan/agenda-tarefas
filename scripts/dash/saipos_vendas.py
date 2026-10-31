@@ -31,6 +31,7 @@ import re
 import os
 import json
 import argparse
+import unicodedata
 import urllib.parse
 from pathlib import Path
 from datetime import date, datetime, timedelta
@@ -66,6 +67,27 @@ DEF_BEBIDAS_KW  = ["coca", "fruki", "água", "agua", "guaran", "sprite", "fanta"
 DEF_OPCOES_PIZZA  = ["pequena combo"]              # opções cujos filhos (≠ Nenhum) são pizzas
 DEF_IGNORAR_FILHO = ["nenhum"]
 DEF_DOBRO = ["em dobro", "2 pizzas", "pizza em dobro"]
+
+# Combos pizza + bebida (Lov, 31/10/2026): contam pelo nº de pizzas e passam
+# ANTES do filtro de bebida — o "+ Coca 2l" no nome descartava o combo inteiro.
+# (termos todos no nome, sem acento/minúsculo) -> pizzas. Mais específico antes.
+# Cópia de ~/.claude/skills/dre/scripts/combos_pizza.py — mudou lá, muda aqui.
+COMBOS_PIZZA = [
+    (("combo", "4 pizzas super"), 4),
+    (("combo", "pizza super", "pequena doce"), 2),
+    (("combo", "pizza grande", "pequena doce"), 2),
+    (("combo", "pizza grande", "coca 2l"), 1),
+    (("combo", "pizza pequena", "coca lata"), 1),
+]
+
+
+def pizzas_do_combo(nome):
+    low = " ".join("".join(c for c in unicodedata.normalize("NFD", str(nome))
+                           if unicodedata.category(c) != "Mn").lower().split())
+    for termos, n in COMBOS_PIZZA:
+        if all(t in low for t in termos):
+            return n
+    return None
 
 
 def load_cfg():
@@ -203,15 +225,21 @@ def pizzas_from_scope(d, cfg):
     def fator(nome):
         return 2 if any(x in nome.lower() for x in dob) else 1
 
-    det = {"produtos": 0, "combo": 0}
+    det = {"produtos": 0, "combo": 0, "combos_bebida": 0}
     for p in produtos:
+        pz = pizzas_do_combo(p["nome"])
+        if pz is not None:
+            det["combos_bebida"] += round(p["qtd"]) * pz
+            continue
+        if "combo" in p["nome"].lower():
+            print(f"  [AVISO] combo sem regra em COMBOS_PIZZA: {p['nome']!r} ({p['qtd']})")
         if not eh_bebida(p):
             det["produtos"] += round(p["qtd"]) * fator(p["nome"])
     for o in opcoes:
         if o["nome"].strip().lower() in opz:
             det["combo"] += sum(round(f["qtd"]) for f in o["filhos"]
                                 if f["nome"].strip().lower() not in ign)
-    return det["produtos"] + det["combo"], det
+    return det["produtos"] + det["combo"] + det["combos_bebida"], det
 
 
 def extrair_pizzas(page, cfg, dia, id_store=None):
@@ -554,6 +582,7 @@ def main():
             print(f"  {round(o['qtd']):>5}  {o['nome']}")
         print(f"\n  pizzas de produtos = {det['produtos']}")
         print(f"  pizzas de combo    = {det['combo']}  (Pequena Combo sem 'Nenhum')")
+        print(f"  combos c/ bebida   = {det['combos_bebida']}  (COMBOS_PIZZA)")
         print(f"  PIZZAS = {total}")
         return
 
