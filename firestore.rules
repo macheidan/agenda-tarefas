@@ -533,6 +533,12 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+    // Vendas dia a dia por loja (sub-aba "Por Dia da Semana"): escrita só pelo
+    // Admin SDK de scripts/vendas/importar_diario.mjs.
+    match /vendas_diario/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
     // Histórico diário de vendas (card "Vendas por dia" da Mesa do Dono):
     // escrita só pelo Admin SDK de scripts/dash/importar_vendas_dias.mjs.
     match /vendas_dias/{id} {

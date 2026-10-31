@@ -1,6 +1,6 @@
 @echo off
-rem Vendas por bairro (sub-aba "Por Bairro" de Vendas): coleta o MES PASSADO no
-rem Saipos e importa para o Firestore.
+rem Vendas por bairro (sub-aba "Por Bairro") e dia a dia (sub-aba "Por Dia da
+rem Semana") de Vendas: coleta o MES PASSADO no Saipos e importa para o Firestore.
 rem
 rem Sem argumento pega o mes passado (fechado). Para refazer um periodo:
 rem   run_bairros.cmd 2024-01 2026-08
@@ -37,7 +37,7 @@ echo ===== %date% %time% ===== >> %LOG%
 if errorlevel 1 (
   echo COLETA FALHOU >> %LOG%
   set FALHA=1
-  goto :fim
+  goto :diario
 )
 
 node scripts\vendas\importar_bairros.mjs scripts\vendas\data\bairros-%HOJE%.json >> %LOG% 2>&1
@@ -46,6 +46,24 @@ if errorlevel 1 (
   set FALHA=1
 ) else (
   echo OK >> %LOG%
+)
+
+:diario
+rem Vendas dia a dia (sub-aba "Por Dia da Semana"): mesmo periodo, mesma
+rem sessao de madrugada. Roda mesmo se os bairros falharam.
+"C:\Python314\python.exe" scripts\vendas\coletar_diario.py %PERIODO% >> %LOG% 2>&1
+if errorlevel 1 (
+  echo COLETA DIARIO FALHOU >> %LOG%
+  set FALHA=1
+  goto :fim
+)
+
+node scripts\vendas\importar_diario.mjs scripts\vendas\data\diario-%HOJE%.json >> %LOG% 2>&1
+if errorlevel 1 (
+  echo IMPORTACAO DIARIO FALHOU >> %LOG%
+  set FALHA=1
+) else (
+  echo OK DIARIO >> %LOG%
 )
 
 :fim

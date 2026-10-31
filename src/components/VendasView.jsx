@@ -3,6 +3,7 @@ import { Tooltip } from 'recharts';
 import { useMarcaMes } from '../hooks/useMarcaMes';
 import { useVendasItens } from '../hooks/useVendasItens';
 import { useVendasBairros, chaveBairro } from '../hooks/useVendasBairros';
+import { useVendasDiario, mediasPorDiaSemana, DIAS_SEMANA } from '../hooks/useVendasDiario';
 import { useCheckpoints } from '../hooks/useCheckpoints';
 import MarcaMesPicker from './gestao/MarcaMesPicker';
 import SyncSheetButton from './gestao/SyncSheetButton';
@@ -34,7 +35,10 @@ const CATEGORIAS = [
 // relatório sales-by-store-district do Saipos (coleção `vendas_bairros`), por
 // isso é uma aba à parte e não mais uma categoria de `vendas_itens`.
 const SUB_BAIRRO = { key: 'bairro', label: 'Por Bairro' };
-const SUB_PAGES = [...CATEGORIAS, SUB_BAIRRO];
+// "Por Dia da Semana" também é à parte: vem do relatório Faturamento por dia do
+// Saipos (coleção `vendas_diario`).
+const SUB_DIA_SEMANA = { key: 'dia_semana', label: 'Por Dia da Semana' };
+const SUB_PAGES = [...CATEGORIAS, SUB_BAIRRO, SUB_DIA_SEMANA];
 
 export default function VendasView() {
   const { marca, setMarca, anoMes, setAnoMes } = useMarcaMes();
@@ -91,6 +95,8 @@ export default function VendasView() {
 
       {subPage === SUB_BAIRRO.key ? (
         <BairrosPanel key={subPage} marca={marca} anoMes={anoMes} />
+      ) : subPage === SUB_DIA_SEMANA.key ? (
+        <DiaSemanaPanel key={subPage} marca={marca} anoMes={anoMes} />
       ) : (
         <CategoriaPanel key={subPage} categoria={subPage} marca={marca} anoMes={anoMes} />
       )}
@@ -631,6 +637,269 @@ function BairrosPanel({ marca, anoMes }) {
                   `${formatMetrica(v)} (${formatPercent((v / (totalMes || 1)) * 100, 1)})`,
                   name,
                 ]}
+              />
+            )}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Por Dia da Semana ──────────────────────────────────────────────────────
+// Média de cada dia da semana dentro do mês escolhido (só dias com venda
+// entram na conta) + a mesma média mês a mês, de jan/2025 em diante. "vs mês"
+// compara com a média de um dia qualquer do mês: 150% = esse dia vende 1,5×.
+const METRICAS_DIA = [
+  { id: 'valor', label: 'Faturamento' },
+  { id: 'qtd', label: 'Pedidos' },
+  { id: 'ticket', label: 'Ticket médio' },
+];
+
+const corDia = (dow) => {
+  const idx = DIAS_SEMANA.findIndex((s) => s.dow === dow);
+  return `hsl(${(idx * 360) / DIAS_SEMANA.length}, 65%, 55%)`;
+};
+
+function DiaSemanaPanel({ marca, anoMes }) {
+  const { meses, loading, error } = useVendasDiario(marca);
+  const { byMes: checkpointsByMes } = useCheckpoints(marca);
+
+  const [metrica, setMetrica] = useState('valor');
+  const [selected, setSelected] = useState(() => new Set(DIAS_SEMANA.map((s) => s.dow)));
+  const [mixType, setMixType] = useChartType('vendas-dia-semana-mix', DISTRIB_CHART_OPTIONS, 'barras');
+  const [evoType, setEvoType] = useChartType('vendas-dia-semana-evolucao', SERIES_CHART_OPTIONS, 'linha');
+
+  const ehQtd = metrica === 'qtd';
+  const metricaLabel = METRICAS_DIA.find((m) => m.id === metrica).label.toLowerCase();
+  const formatMetrica = (v) => (v == null ? '—' : ehQtd ? formatNumber(v, 1) : formatCurrency(v, 2));
+
+  const doMes = useMemo(() => meses.find((m) => m.ano_mes === anoMes) ?? null, [meses, anoMes]);
+  const medias = useMemo(() => mediasPorDiaSemana(doMes), [doMes]);
+
+  // Um dia qualquer do mês, pra coluna "vs mês".
+  const mediaMes = useMemo(() => {
+    const dias = medias.reduce((s, m) => s + m.dias, 0);
+    const q = medias.reduce((s, m) => s + m.totalQtd, 0);
+    const v = medias.reduce((s, m) => s + m.totalValor, 0);
+    return { dias, q, v, qtd: dias ? q / dias : null, valor: dias ? v / dias : null, ticket: q ? v / q : null };
+  }, [medias]);
+
+  // [{ mes, ano_mes, d1: média de segunda, …, d0: domingo }] na métrica ativa.
+  const evolucao = useMemo(
+    () => meses.map((m) => {
+      const linha = { mes: formatAnoMes(m.ano_mes), ano_mes: m.ano_mes };
+      for (const s of mediasPorDiaSemana(m)) {
+        if (s[metrica] != null) linha[`d${s.dow}`] = Number(s[metrica].toFixed(2));
+      }
+      return linha;
+    }),
+    [meses, metrica]
+  );
+
+  const toggleDia = (dow) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(dow)) next.delete(dow);
+      else next.add(dow);
+      return next;
+    });
+  };
+  const allSelected = selected.size === DIAS_SEMANA.length;
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(DIAS_SEMANA.map((s) => s.dow)));
+
+  if (loading) return <div className={styles.loading}>Carregando…</div>;
+
+  if (error) {
+    return <div className={gStyles.empty}>Não deu pra carregar as vendas por dia: {error}</div>;
+  }
+
+  if (meses.length === 0) {
+    return (
+      <div className={gStyles.empty}>
+        Sem vendas dia a dia ainda. Rode <code>scripts/vendas/coletar_diario.py</code> pra
+        coletar o histórico no Saipos.
+      </div>
+    );
+  }
+
+  const melhor = medias.reduce(
+    (b, m) => (m[metrica] != null && (!b || m[metrica] > b[metrica]) ? m : b),
+    null
+  );
+
+  return (
+    <div className={styles.grid}>
+      <div className={`${gStyles.panel} ${styles.gridFull}`}>
+        <div className={gStyles.panelHeader}>
+          <h3 className={gStyles.panelTitle}>Média por dia da semana</h3>
+          <div className={styles.panelActions}>
+            {doMes && (
+              <span className={gStyles.panelHint}>
+                {mediaMes.dias} dias com venda · {formatNumber(mediaMes.q)} pedidos ·{' '}
+                {formatCurrency(mediaMes.v, 0)} · clique pra alternar no gráfico
+              </span>
+            )}
+            <div className={styles.metricaTabs}>
+              {METRICAS_DIA.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`${styles.sectionTab} ${metrica === m.id ? styles.sectionTabActive : ''}`}
+                  onClick={() => setMetrica(m.id)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {!doMes ? (
+          <p className={gStyles.panelHint}>
+            Sem dados de {formatAnoMesLong(anoMes)} ainda — o mês entra no dia 2 do mês
+            seguinte, junto com os bairros.
+          </p>
+        ) : (
+          <table className={styles.rankTable}>
+            <thead>
+              <tr>
+                <th>Dia</th>
+                <th className={styles.num}>Dias</th>
+                <th className={styles.num}>Pedidos/dia</th>
+                <th className={styles.num}>Faturamento/dia</th>
+                <th className={styles.num}>Ticket médio</th>
+                <th className={styles.num}>vs mês</th>
+              </tr>
+            </thead>
+            <tbody>
+              {medias.map((m) => {
+                const isSelected = selected.has(m.dow);
+                const vsMes = m[metrica] != null && mediaMes[metrica]
+                  ? (m[metrica] / mediaMes[metrica]) * 100
+                  : null;
+                return (
+                  <tr
+                    key={m.dow}
+                    className={`${styles.rankRow} ${isSelected ? styles.rankRowSelected : ''}`}
+                    onClick={() => toggleDia(m.dow)}
+                  >
+                    <td>
+                      <span className={styles.rankItem}>
+                        <span
+                          className={styles.rankDot}
+                          style={isSelected ? { background: corDia(m.dow), border: 'none' } : undefined}
+                        />
+                        {m.nome}{melhor?.dow === m.dow ? ' ★' : ''}
+                      </span>
+                    </td>
+                    <td className={styles.num}>{m.dias}</td>
+                    <td className={styles.num}>{m.qtd == null ? '—' : formatNumber(m.qtd, 1)}</td>
+                    <td className={styles.num}>{m.valor == null ? '—' : formatCurrency(m.valor, 0)}</td>
+                    <td className={styles.num}>{m.ticket == null ? '—' : formatCurrency(m.ticket, 2)}</td>
+                    <td className={`${styles.num} ${styles.rankPct}`}>
+                      {vsMes == null ? '—' : formatPercent(vsMes, 0)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className={gStyles.panel}>
+        <div className={gStyles.panelHeader}>
+          <h3 className={gStyles.panelTitle}>
+            Evolução mês a mês <span className={gStyles.panelHint}>· média de {metricaLabel}</span>
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className={gStyles.panelHint}>{meses.length} meses</span>
+            <ChartTypeMenu options={SERIES_CHART_OPTIONS} value={evoType} onChange={setEvoType} />
+          </div>
+        </div>
+
+        <div className={gStyles.chartBox}>
+          <SeriesFlexChart
+            type={evoType}
+            data={evolucao}
+            xKey="mes"
+            connectNulls
+            xInterval={Math.max(0, Math.ceil(evolucao.length / 12) - 1)}
+            yTickFormatter={ehQtd ? formatNumber : formatCompactCurrency}
+            yWidth={ehQtd ? undefined : 62}
+            tooltip={(
+              <Tooltip
+                content={(props) => (
+                  <CheckpointTooltip
+                    {...props}
+                    byMes={checkpointsByMes}
+                    formatValue={formatMetrica}
+                    resolveAnoMes={(_, item) => item.payload?.ano_mes ?? null}
+                  />
+                )}
+              />
+            )}
+            series={DIAS_SEMANA.filter((s) => selected.has(s.dow)).map((s) => ({
+              key: `d${s.dow}`,
+              name: s.nome,
+              color: corDia(s.dow),
+              strokeWidth: 2,
+              dot: makeCheckpointDot({
+                byMes: checkpointsByMes,
+                baseColor: corDia(s.dow),
+                resolve: (payload) => payload.ano_mes ?? null,
+              }),
+            }))}
+          />
+        </div>
+
+        <div className={gStyles.legend}>
+          <button type="button" className={gStyles.legendBtn} onClick={toggleAll}>
+            {allSelected ? 'Nenhum' : 'Todos'}
+          </button>
+          {DIAS_SEMANA.map((s) => {
+            const isSelected = selected.has(s.dow);
+            return (
+              <button
+                key={s.dow}
+                type="button"
+                className={`${gStyles.legendBtn} ${!isSelected ? gStyles.legendBtnOff : ''}`}
+                onClick={() => toggleDia(s.dow)}
+              >
+                <span
+                  className={gStyles.legendDot}
+                  style={{ background: isSelected ? corDia(s.dow) : 'var(--text-muted)' }}
+                />
+                {s.nome}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className={gStyles.panel}>
+        <div className={gStyles.panelHeader}>
+          <h3 className={gStyles.panelTitle}>
+            Semana do mês <span className={gStyles.panelHint}>· média de {metricaLabel}</span>
+          </h3>
+          <ChartTypeMenu options={DISTRIB_CHART_OPTIONS} value={mixType} onChange={setMixType} />
+        </div>
+        <div className={gStyles.chartBox} style={{ height: 256 }}>
+          <DistribFlexChart
+            type={mixType}
+            data={medias.filter((m) => m[metrica] != null).map((m) => ({
+              name: m.curto,
+              value: Number(m[metrica].toFixed(2)),
+              fill: corDia(m.dow),
+            }))}
+            tooltip={(
+              <Tooltip
+                contentStyle={{
+                  background: 'var(--card)', border: '1px solid var(--border)',
+                  borderRadius: 8, fontSize: 12,
+                }}
+                formatter={(v, name) => [formatMetrica(v), name]}
               />
             )}
           />
