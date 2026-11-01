@@ -23,12 +23,16 @@ const arq = readdirSync(dir).find((f) => f.endsWith('.json'));
 initializeApp({ credential: cert(JSON.parse(readFileSync(`${dir}/${arq}`, 'utf8'))) });
 const db = getFirestore();
 
+// No dia 01 a DRE do mes ainda nao fechou: a linha da aba DADOS tem pizzas
+// mas nao tem faturamento, e o SyncVendas so cria o doc com os dois. Isso NAO
+// e buraco - e o estado normal ate o /dre rodar `--completar-linha` (que
+// dispara o sync). Antes disso o job acusava falha todo mes (01/10 e 01/11).
+// Buraco de verdade = DRE fechada (faturamento no doc) sem a metade VENDAS.
 let falhou = false;
 for (const marca of ['dame', 'lov']) {
   const snap = await db.collection('fechamentos_mensais').doc(`${anoMes}_${marca}`).get();
-  if (!snap.exists) {
-    console.log(`${anoMes}_${marca}: doc NAO existe`);
-    falhou = true;
+  if (!snap.exists || !snap.data().faturamento) {
+    console.log(`${anoMes}_${marca}: aguardando DRE (faturamento ainda nao fechado) - nao e falha`);
     continue;
   }
   const v = snap.data();
