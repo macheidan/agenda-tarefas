@@ -5,7 +5,7 @@ import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { getNamedHolidays } from '../utils/holidays';
 import { useDepartamentoPessoal, ABSENCE_TYPES, SEM_FOLGA } from '../hooks/useDepartamentoPessoal';
-import { transporteDetalhe, empFolgaWeekdays } from '../utils/transporte';
+import { transporteDetalhe, empFolgaWeekdays, isFolgaAuto, isFeriadoTrabAuto, CARGOS } from '../utils/transporte';
 import SalariosView from './SalariosView';
 import SalariosFolhaView from './SalariosFolhaView';
 import TransporteView from './TransporteView';
@@ -126,6 +126,7 @@ export default function DepartamentoPessoalView() {
   const [fMonthN, setFMonthN] = useState(''); // '' | 1..5 (domingo do mês)
   const [fContractStart, setFContractStart] = useState(''); // YYYY-MM-DD
   const [fContractEnd, setFContractEnd] = useState(''); // YYYY-MM-DD
+  const [fCargo, setFCargo] = useState(''); // '' | pizzaiolo | atendente | gerente | supervisor | administrativo
   const [showArchived, setShowArchived] = useState(false);
   const [popover, setPopover] = useState(null);
   const [selectedEmp, setSelectedEmp] = useState(null); // funcionário escolhido no mobile
@@ -250,6 +251,7 @@ export default function DepartamentoPessoalView() {
     setFMonthN('');
     setFContractStart('');
     setFContractEnd('');
+    setFCargo('');
   };
 
   const openEdit = (emp) => {
@@ -261,6 +263,7 @@ export default function DepartamentoPessoalView() {
     setFMonthN(emp.folgaMonthN != null ? String(emp.folgaMonthN) : '');
     setFContractStart(emp.contractStart || '');
     setFContractEnd(emp.contractEnd || '');
+    setFCargo(emp.cargo || '');
   };
 
   const toggleFWeekday = (v) =>
@@ -279,9 +282,9 @@ export default function DepartamentoPessoalView() {
     }
     if (formMode === 'edit' && formId) {
       // Zera o campo antigo (1 dia) pra nao conflitar com o novo array.
-      updateEmployee(formId, { name, store: fStore, folgaWeekdays: wds, folgaWeekday: null, folgaMonthN: mn, contractStart: cStart, contractEnd: cEnd });
+      updateEmployee(formId, { name, store: fStore, folgaWeekdays: wds, folgaWeekday: null, folgaMonthN: mn, contractStart: cStart, contractEnd: cEnd, cargo: fCargo || null });
     } else {
-      addEmployee(name, fStore, user, { folgaWeekdays: wds, folgaMonthN: mn, contractStart: cStart, contractEnd: cEnd });
+      addEmployee(name, fStore, user, { folgaWeekdays: wds, folgaMonthN: mn, contractStart: cStart, contractEnd: cEnd, cargo: fCargo || null });
     }
     closeForm();
   };
@@ -297,18 +300,11 @@ export default function DepartamentoPessoalView() {
   const holidayFor = (d) => holidays[`${pad(month + 1)}-${pad(d)}`];
 
   const folgaType = typeByKey('folga');
-  const nthSundayOfMonth = (d) => {
-    let c = 0;
-    for (let i = 1; i <= d; i++) if (new Date(year, month, i).getDay() === 0) c++;
-    return c;
-  };
-  // Dia é folga (derivado da config do funcionário): dia fixo da semana OU o Nº domingo do mês.
-  const isFolgaDay = (emp, d) => {
-    const wd = new Date(year, month, d).getDay();
-    if (empFolgaWeekdays(emp).includes(wd)) return true;
-    if (emp.folgaMonthN != null && wd === 0 && nthSundayOfMonth(d) === emp.folgaMonthN) return true;
-    return false;
-  };
+
+  // Dia é folga (derivado da config do funcionário): dia fixo da semana, o Nº
+  // domingo do mês ou, no cargo Administrativo, fim de semana e feriado.
+  const isFolgaDay = (emp, d) => isFolgaAuto(emp, new Date(year, month, d));
+  const feriadoTrabType = typeByKey('feriado_trabalhado');
   const folgaDesc = (emp) => {
     const p = [];
     const wds = empFolgaWeekdays(emp);
@@ -328,9 +324,11 @@ export default function DepartamentoPessoalView() {
     // Qualquer marca real manda na célula — inclusive SEM_FOLGA, que não tem
     // tipo visível e serve justamente pra apagar a folga automática do dia.
     const autoFolga = !mark && isFolgaDay(emp, d);
-    const t = autoFolga ? folgaType : (mark ? typeByKey(mark.type) || null : null);
+    // Feriado sem folga: FT automático (conta como feriado trabalhado).
+    const autoFT = !autoFolga && isFeriadoTrabAuto(emp, new Date(year, month, d), mark || null);
+    const t = autoFolga ? folgaType : autoFT ? feriadoTrabType : (mark ? typeByKey(mark.type) || null : null);
     const wd = new Date(year, month, d).getDay();
-    return { date, mark, t, autoFolga, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
+    return { date, mark, t, autoFolga, autoFT, wd, weekend: wd === 0 || wd === 6, holiday: holidayFor(d) };
   };
 
   // Resumo do mês (só para editores). As colunas de falta e feriado trabalhado
@@ -704,6 +702,18 @@ export default function DepartamentoPessoalView() {
               </select>
             </label>
             <label className={styles.fieldLabel}>
+              Cargo
+              <select
+                className={styles.storeSelect}
+                value={fCargo}
+                onChange={(e) => setFCargo(e.target.value)}
+                title="Administrativo já vem com folga (FG) nos fins de semana e feriados"
+              >
+                <option value="">—</option>
+                {CARGOS.map(([v, n]) => <option key={v} value={v}>{n}</option>)}
+              </select>
+            </label>
+            <label className={styles.fieldLabel}>
               Folgas da semana
               <div className={styles.folgaDaysRow}>
                 {FOLGA_WEEK.map(([v, n]) => (
@@ -847,7 +857,7 @@ export default function DepartamentoPessoalView() {
                         key={d}
                         className={`${styles.mDay} ${info.weekend ? styles.mDayWeekend : ''} ${info.holiday ? styles.mDayHoliday : ''}`}
                         onClick={(e) => handleCellClick(e, emp, d)}
-                        title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.t ? info.t.label : info.holiday || ''}
+                        title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.autoFT ? `Feriado trabalhado automático (${info.holiday})` : info.t ? info.t.label : info.holiday || ''}
                       >
                         <span className={styles.mDayNum}>{d}</span>
                         {info.t && <span className={styles.mDayMark} style={{ background: info.t.color }}>{info.t.short}</span>}
@@ -927,7 +937,7 @@ export default function DepartamentoPessoalView() {
                         key={d}
                         className={`${styles.cell} ${info.weekend ? styles.weekend : ''} ${info.holiday ? styles.holidayCell : ''}`}
                         onClick={(e) => handleCellClick(e, emp, d)}
-                        title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.t ? info.t.label : info.holiday || ''}
+                        title={info.autoFolga ? 'Folga automática (config do funcionário)' : info.autoFT ? `Feriado trabalhado automático (${info.holiday})` : info.t ? info.t.label : info.holiday || ''}
                       >
                         {info.t && <span className={styles.mark} style={{ background: info.t.color }}>{info.t.short}</span>}
                       </td>

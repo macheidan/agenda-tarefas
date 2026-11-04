@@ -89,3 +89,22 @@ test('feriado trabalhado na folga fixa conta como dia trabalhado', () => {
   const abs = [{ employeeId: 'e1', date: '2026-08-10', type: 'feriado_trabalhado' }];
   assert.equal(transporteDetalhe(emp, abs, 2026, 7).dias, 28);
 });
+
+test('feriado sem folga vira FT automático; administrativo folga em fim de semana e feriado', async () => {
+  const { isFeriadoTrabAuto, isFolgaAuto } = await import('./transporte.js');
+  const feriado = new Date(2026, 9, 12); // 12/10/2026, segunda
+  const sabado = new Date(2026, 9, 10);
+  const operador = { id: 'o', folgaWeekdays: [2] };
+  const adm = { id: 'a', cargo: 'administrativo', folgaWeekdays: [] };
+  assert.equal(isFeriadoTrabAuto(operador, feriado, null), true);
+  assert.equal(isFeriadoTrabAuto(operador, feriado, { type: 'folga' }), false);
+  assert.equal(isFeriadoTrabAuto(operador, feriado, { type: 'sem_folga' }), true);
+  assert.equal(isFeriadoTrabAuto({ ...operador, folgaWeekdays: [1] }, feriado, null), false);
+  assert.equal(isFeriadoTrabAuto({ ...operador, contractStart: '2026-11-01' }, feriado, null), false);
+  assert.equal(isFolgaAuto(adm, feriado), true);
+  assert.equal(isFolgaAuto(adm, sabado), true);
+  assert.equal(isFolgaAuto(operador, sabado), false);
+  assert.equal(isFeriadoTrabAuto(adm, feriado, null), false);
+  // Novembro (ciclo anterior 06/10→05/11): 12/10 e 02/11 contam como FT.
+  assert.equal(transporteDetalhe(operador, [], 2026, 10).feriadoTrab, 2);
+});

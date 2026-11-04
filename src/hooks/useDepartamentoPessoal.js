@@ -215,6 +215,8 @@ export function useDepartamentoPessoal() {
       // some do calendário. null = sem limite naquele lado.
       contractStart: extra.contractStart ?? null,
       contractEnd: extra.contractEnd ?? null,
+      // Cargo (pizzaiolo | atendente | gerente | supervisor | administrativo).
+      cargo: extra.cargo ?? null,
       ...salaryExtra,
     });
   }, []);
@@ -233,6 +235,7 @@ export function useDepartamentoPessoal() {
     if (updates && 'folgaMonthN' in updates) clean.folgaMonthN = updates.folgaMonthN;
     if (updates && 'contractStart' in updates) clean.contractStart = updates.contractStart || null;
     if (updates && 'contractEnd' in updates) clean.contractEnd = updates.contractEnd || null;
+    if (updates && 'cargo' in updates) clean.cargo = updates.cargo || null;
     SALARY_FIELDS.forEach((k) => { if (updates && k in updates) clean[k] = updates[k]; });
     if (Object.keys(clean).length) {
       await updateDoc(doc(db, 'dpEmployees', employeeId), clean);

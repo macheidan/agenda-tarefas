@@ -16,6 +16,8 @@
 // feriados trabalhados do ciclo (marcados) − faltas e feriados trabalhados
 // tardios do ciclo anterior. Nunca fica negativo (não há saldo a compensar).
 
+import { getNamedHolidays } from './holidays.js';
+
 const pad = (n) => String(n).padStart(2, '0');
 const toISO = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
 
@@ -36,16 +38,52 @@ function nthSundayOf(dt) {
   return c;
 }
 
+// Cargos do cadastro. Administrativo nunca trabalha fim de semana nem feriado:
+// a Escala já desenha FG nesses dias.
+export const CARGOS = [
+  ['pizzaiolo', 'Pizzaiolo'],
+  ['atendente', 'Atendente'],
+  ['gerente', 'Gerente'],
+  ['supervisor', 'Supervisor'],
+  ['administrativo', 'Administrativo'],
+];
+
+const feriadosCache = {};
+// Nome do feriado na data (ou null). Mesma lista que a Escala pinta.
+export function feriadoDe(dt) {
+  const y = dt.getFullYear();
+  if (!feriadosCache[y]) feriadosCache[y] = getNamedHolidays(y);
+  return feriadosCache[y][`${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`] || null;
+}
+
+const noContrato = (emp, ds) =>
+  (!emp.contractStart || ds >= emp.contractStart) && (!emp.contractEnd || ds <= emp.contractEnd);
+
+// Folga automática (sem marcação no dia): dia fixo da semana, o Nº domingo do
+// mês ou, para o cargo Administrativo, fim de semana e feriado.
+export function isFolgaAuto(emp, dt) {
+  const wd = dt.getDay();
+  if (empFolgaWeekdays(emp).includes(wd)) return true;
+  if (emp.folgaMonthN != null && wd === 0 && nthSundayOf(dt) === emp.folgaMonthN) return true;
+  if (emp.cargo === 'administrativo' && (wd === 0 || wd === 6 || feriadoDe(dt))) return true;
+  return false;
+}
+
+// Feriado trabalhado automático: feriado em que o funcionário não está de folga
+// e não tem marcação (ou só o SEM_FOLGA que anula a folga automática).
+export function isFeriadoTrabAuto(emp, dt, real) {
+  if (!feriadoDe(dt) || !noContrato(emp, toISO(dt))) return false;
+  if (real) return real.type === 'sem_folga';
+  return !isFolgaAuto(emp, dt);
+}
+
 // Uma data é folga do funcionário: marca real de folga no banco tem prioridade;
-// senão, derivada da config (dia fixo da semana OU o Nº domingo do mês).
+// senão, a folga automática da config.
 function isFolgaOn(emp, dt, absences) {
   const ds = toISO(dt);
   const real = absences.find((a) => a.employeeId === emp.id && a.date === ds);
   if (real) return real.type === 'folga';
-  const wd = dt.getDay();
-  if (empFolgaWeekdays(emp).includes(wd)) return true;
-  if (emp.folgaMonthN != null && wd === 0 && nthSundayOf(dt) === emp.folgaMonthN) return true;
-  return false;
+  return isFolgaAuto(emp, dt);
 }
 
 // Data (ISO) em que a marcação foi criada. Sem createdAt (registro antigo ou
@@ -83,7 +121,12 @@ export function transporteDetalhe(emp, absences, year, month) {
   );
   const faltaJust = occAbs.filter((a) => a.type === 'falta_justificada').length;
   const faltaNaoJust = occAbs.filter((a) => a.type === 'falta_injustificada').length;
-  const feriadoTrab = occAbs.filter((a) => a.type === 'feriado_trabalhado').length;
+  // Feriado trabalhado do ciclo anterior: marcado ou automático (feriado sem folga).
+  let feriadoTrab = occAbs.filter((a) => a.type === 'feriado_trabalhado').length;
+  for (const dt = new Date(absStart); dt <= absEnd; dt.setDate(dt.getDate() + 1)) {
+    const real = absences.find((a) => a.employeeId === emp.id && a.date === toISO(dt));
+    if (isFeriadoTrabAuto(emp, dt, real)) feriadoTrab++;
+  }
   // Tardias: marcadas depois do pagamento do ciclo anterior (ou sem createdAt).
   const tardia = (a) => { const c = createdISO(a); return c == null || c > prevPaidISO; };
   const faltasTardias = occAbs.filter((a) => isFalta(a.type) && tardia(a)).length;
@@ -106,6 +149,7 @@ export function transporteDetalhe(emp, absences, year, month) {
     if (real?.type === 'ferias') ferias++;
     else if (isFalta(real?.type) && conhecida(real)) faltasCiclo++;
     else if (real?.type === 'feriado_trabalhado') { if (conhecida(real)) feriadoTrabCiclo++; }
+    else if (isFeriadoTrabAuto(emp, dt, real)) feriadoTrabCiclo++;
     else if (isFolgaOn(emp, dt, absences)) folgas++;
     dt.setDate(dt.getDate() + 1);
   }
