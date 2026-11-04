@@ -318,6 +318,29 @@
   font-weight: 700;
 }
 
+.roundRow td {
+  border: none;
+  padding-top: 6px;
+}
+
+.roundBtn {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--card);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.roundBtn:disabled {
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+  cursor: default;
+}
+
 /* Fundo por canal de pagamento (espelha o bg das planilhas).
    Nas linhas editáveis a cor vai no próprio input (ele cobre a célula);
    nas linhas calculadas (Dinheiro/Total) vai na td. */

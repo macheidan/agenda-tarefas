@@ -86,6 +86,8 @@ const somaBG = (l) =>
   num(l, 'adiantamento') + num(l, 'falta') + num(l, 'empres') + num(l, 'adianta');
 // Dinheiro (H) = Σ(B:G) − (Banco + Flash). Total (K) = Banco + Flash + Dinheiro.
 const dinheiroDe = (l) => somaBG(l) - (num(l, 'banco') + num(l, 'flash'));
+// Dinheiro no múltiplo de R$ 50 mais próximo (235 → 250, 313,10 → 300).
+const arred50 = (v) => Math.round(v / 50) * 50;
 const totalDe = (l) => num(l, 'banco') + num(l, 'flash') + dinheiroDe(l);
 
 export default function SalariosView({ visibleStores, storeMeta, employees, absences, salarios, setSalario, updateEmployee, transportes = [], setTransporte, isAdmin }) {
@@ -793,6 +795,33 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                       return <td key={line} className={`${styles.chTotal} ${t < 0 ? styles.neg : ''}`}>{formatBRL(t) || 'R$ 0,00'}</td>;
                     })}
                   </tr>
+                  {isAdmin && (
+                    <tr className={styles.roundRow}>
+                      <td className={styles.rowHead}></td>
+                      {LINES.map(([line]) => {
+                        if (line !== 'dia5') return <td key={line}></td>;
+                        const l = doc?.dia5 || {};
+                        const d = dinheiroDe(l);
+                        const alvo = arred50(d);
+                        const dif = Math.round((alvo - d) * 100) / 100;
+                        return (
+                          <td key={line}>
+                            <button
+                              type="button"
+                              className={styles.roundBtn}
+                              disabled={!dif}
+                              title={dif
+                                ? `Dinheiro ${formatBRL(d)} → ${formatBRL(alvo)}: ajusta a Entrada em ${formatBRL(dif)}`
+                                : 'Dinheiro já está em múltiplo de R$ 50'}
+                              onClick={() => commit('dia5', 'entrada', Math.round((num(l, 'entrada') + dif) * 100) / 100 || null)}
+                            >
+                              Arredondar R$ 50
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
