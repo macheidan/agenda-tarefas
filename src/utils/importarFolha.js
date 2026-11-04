@@ -101,7 +101,9 @@ export function montarLancamento({ tipo, item, emp, employees, absences, salario
     : null;
 
   patch.empres = item.emprestimoTotal ? neg(item.emprestimoTotal) : null;
-  patch.flash = det.dias ? det.dias * VALE_DIA : null;
+  patch.flash = perfil?.flashIgualTransporte
+    ? (patch.transporte ?? null)
+    : det.dias ? det.dias * VALE_DIA : null;
 
   return { line: 'dia5', patch, extras: [], transp, notas };
 }

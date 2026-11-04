@@ -155,6 +155,8 @@ export const PERFIS_TRANSP = [
     // Nome do funcionário na Escala (pra sugerir os dias do ciclo).
     empName: 'rumi',
     defaults: { vTransporte: 15.9, vAlimentacao: 22.7 },
+    // Flash do Dia 5 = Transporte do Dia 5 (não dias × R$12).
+    flashIgualTransporte: true,
   },
   {
     key: 'patricia',
@@ -214,3 +216,6 @@ export function calcTransporteEspecial(perfilKey, dias, uber, tarifa) {
   const noTri = perfilKey === 'patricia' ? linhas[0].valor + linhas[1].valor : 0;
   return { linhas, total, noTri };
 }
+
+// Funcionário cujo Flash do Dia 5 é sempre igual ao Transporte (Rumi).
+export const flashIgualTransporte = (emp) => !!perfilTranspDe(emp)?.flashIgualTransporte;

@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
 import ImportarFolhaView from './ImportarFolhaView';
 import { formatBRL } from '../utils/money';
-import { transporteDetalhe } from '../utils/transporte';
+import { transporteDetalhe, flashIgualTransporte } from '../utils/transporte';
 import styles from '../styles/SalariosView.module.css';
 import useSetasMes from '../hooks/useSetasMes';
 
@@ -86,9 +86,10 @@ const somaBG = (l) =>
   num(l, 'adiantamento') + num(l, 'falta') + num(l, 'empres') + num(l, 'adianta');
 // Dinheiro (H) = Σ(B:G) − (Banco + Flash). Total (K) = Banco + Flash + Dinheiro.
 const dinheiroDe = (l) => somaBG(l) - (num(l, 'banco') + num(l, 'flash'));
-// Dinheiro no múltiplo de R$ 50 mais próximo (235 → 250, 313,10 → 300). O botão
-// do Dia 5 compensa a diferença no Banco (Dinheiro = Σ − Banco − Flash).
-const arred50 = (v) => Math.round(v / 50) * 50;
+// Dinheiro sempre para baixo no múltiplo de R$ 50 (235 → 200, 313,10 → 300). O
+// botão do Dia 5 compensa a diferença no Banco (Dinheiro = Σ − Banco − Flash), que
+// assim nunca fica abaixo do líquido da folha.
+const arred50 = (v) => Math.floor(Math.round(v * 100) / 5000) * 50;
 const totalDe = (l) => num(l, 'banco') + num(l, 'flash') + dinheiroDe(l);
 
 export default function SalariosView({ visibleStores, storeMeta, employees, absences, salarios, setSalario, updateEmployee, transportes = [], setTransporte, isAdmin }) {
@@ -184,7 +185,10 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   const doc = docsByMonth[month];
 
   const dias = emp ? transporteDetalhe(emp, absences, year, month).dias : 0;
-  const flashEsperado = dias * VALE_DIA;
+  // Rumi: Flash = Transporte do Dia 5; demais: dias × R$12.
+  const flashIgual = flashIgualTransporte(emp);
+  const flashEsperado = flashIgual ? num(doc?.dia5, 'transporte') : dias * VALE_DIA;
+  const flashRegra = flashIgual ? 'igual ao Transporte' : 'transporte × R$12';
   const mode = emp?.salaryMode === 'fora' ? 'fora' : 'folha';
 
   // Histórico do ano: total pago e "por fora" por mês (visão de todos pagamentos).
@@ -317,7 +321,9 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
   const commitAt = (m, line, field, value) => {
     if (!isAdmin || !emp) return;
     const existing = docsByMonth[m]?.[line] || {};
-    setSalario(emp.id, emp.store, year, m, line, { ...existing, [field]: value }, user);
+    // Rumi: o Flash do Dia 5 acompanha o Transporte.
+    const extra = line === 'dia5' && field === 'transporte' && flashIgual ? { flash: value } : {};
+    setSalario(emp.id, emp.store, year, m, line, { ...existing, [field]: value, ...extra }, user);
     // Salário do Dia 20 → Adiantamento (negativo) do Dia 5 do mês seguinte.
     if (line === 'dia20' && field === 'salario' && autoAdianta(year, m)) {
       const ny = m === 11 ? year + 1 : year;
@@ -743,8 +749,8 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                 </div>
                 <span className={styles.transpInfo}>
                   Transporte: <strong>{dias}</strong> dias · Flash esperado <strong>{formatBRL(flashEsperado)}</strong>
-                  {isAdmin && dias > 0 && num(doc?.dia5, 'flash') !== flashEsperado && (
-                    <button className={styles.applyBtn} title="Preencher o Flash do Dia 5 com transporte × R$12" onClick={() => commit('dia5', 'flash', flashEsperado)}>usar</button>
+                  {isAdmin && (dias > 0 || flashIgual) && num(doc?.dia5, 'flash') !== flashEsperado && (
+                    <button className={styles.applyBtn} title={`Preencher o Flash do Dia 5 (${flashRegra})`} onClick={() => commit('dia5', 'flash', flashEsperado)}>usar</button>
                   )}
                 </span>
               </div>
@@ -768,12 +774,12 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                           const l = doc?.[line] || {};
                           const v = num(l, f);
                           const bancoWarn = f === 'banco' && l.liquidoFolha != null && l.liquidoFolha !== '' && num(l, 'banco') !== Number(l.liquidoFolha);
-                          const flashWarn = f === 'flash' && line === 'dia5' && dias > 0 && num(l, 'flash') !== flashEsperado;
+                          const flashWarn = f === 'flash' && line === 'dia5' && (dias > 0 || flashIgual) && num(l, 'flash') !== flashEsperado;
                           const warn = bancoWarn || flashWarn;
                           return (
                             <td key={line} className={`${grpCls} ${warn ? styles.warnCell : ''}`} title={
                               bancoWarn ? `Diverge do líquido da folha (${formatBRL(l.liquidoFolha)})`
-                                : flashWarn ? `Esperado ${formatBRL(flashEsperado)} (transporte × R$12)` : ''
+                                : flashWarn ? `Esperado ${formatBRL(flashEsperado)} (${flashRegra})` : ''
                             }>
                               <MoneyInput className={`${styles.moneyInput} ${bgCls} ${fontCls} ${v < 0 ? styles.neg : ''}`} value={l[f]} disabled={!isAdmin} normalize={NORMALIZE[f]} onCommit={(nv) => commit(line, f, nv)} />
                             </td>

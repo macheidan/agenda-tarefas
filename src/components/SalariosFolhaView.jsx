@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
 import { formatBRL } from '../utils/money';
-import { transporteDetalhe } from '../utils/transporte';
+import { transporteDetalhe, flashIgualTransporte } from '../utils/transporte';
 import { exportarResumoFolhaPdf } from '../lib/folhaPdf';
 import styles from '../styles/SalariosView.module.css';
 import useSetasMes from '../hooks/useSetasMes';
@@ -89,9 +89,11 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
   }, [salariosBanco, emp, year]);
   const doc = docsByMonth[month];
 
-  // Flash esperado do Dia 5 = dias de transporte a pagar × R$12 (regra da aba Salários).
   const dias = emp ? transporteDetalhe(emp, absences || [], year, month).dias : 0;
-  const flashEsperado = dias * VALE_DIA;
+  // Rumi: Flash = Transporte do Dia 5; demais: dias × R$12.
+  const flashIgual = flashIgualTransporte(emp);
+  const flashEsperado = flashIgual ? num(doc?.dia5, 'transporte') : dias * VALE_DIA;
+  const flashRegra = flashIgual ? 'igual ao Transporte' : 'transporte × R$12';
 
   // ---- Resumo Mensal por equipe (só Banco e Flash) ----
   // Agrupa por loja, com subtotal; total da linha = tudo que sai pro funcionário
@@ -139,7 +141,9 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
 
   const commit = (line, field, value) => {
     if (!canEdit || !emp) return;
-    setSalarioFolha(emp.id, emp.store, year, month, line, { [field]: value }, user);
+    // Rumi: o Flash do Dia 5 acompanha o Transporte.
+    const extra = line === 'dia5' && field === 'transporte' && flashIgual ? { flash: value } : {};
+    setSalarioFolha(emp.id, emp.store, year, month, line, { [field]: value, ...extra }, user);
   };
 
   const prevMonth = () => {
@@ -332,8 +336,8 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
                 </div>
                 <span className={styles.transpInfo}>
                   Transporte: <strong>{dias}</strong> dias · Flash esperado <strong>{formatBRL(flashEsperado)}</strong>
-                  {canEdit && dias > 0 && num(doc?.dia5, 'flash') !== flashEsperado && (
-                    <button className={styles.applyBtn} title="Preencher o Flash do Dia 5 com transporte × R$12" onClick={() => commit('dia5', 'flash', flashEsperado)}>usar</button>
+                  {canEdit && (dias > 0 || flashIgual) && num(doc?.dia5, 'flash') !== flashEsperado && (
+                    <button className={styles.applyBtn} title={`Preencher o Flash do Dia 5 (${flashRegra})`} onClick={() => commit('dia5', 'flash', flashEsperado)}>usar</button>
                   )}
                   {!canEdit && <> · Somente leitura</>}
                 </span>
@@ -352,9 +356,9 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
                       <td className={styles.rowHead}>{label}</td>
                       {LINES.map(([line]) => {
                         const v = num(doc?.[line], field);
-                        const flashWarn = field === 'flash' && line === 'dia5' && dias > 0 && v !== flashEsperado;
+                        const flashWarn = field === 'flash' && line === 'dia5' && (dias > 0 || flashIgual) && v !== flashEsperado;
                         return (
-                          <td key={line} className={flashWarn ? styles.warnCell : ''} title={flashWarn ? `Esperado ${formatBRL(flashEsperado)} (transporte × R$12)` : ''}>
+                          <td key={line} className={flashWarn ? styles.warnCell : ''} title={flashWarn ? `Esperado ${formatBRL(flashEsperado)} (${flashRegra})` : ''}>
                             <MoneyInput
                               className={`${styles.moneyInput} ${bgCls} ${v < 0 ? styles.neg : ''}`}
                               value={doc?.[line]?.[field]}
