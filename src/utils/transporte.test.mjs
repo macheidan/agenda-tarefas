@@ -15,7 +15,7 @@ test('sem marcações: dias = janela − folgas fixas', () => {
   assert.equal(r.dias, 27);
 });
 
-test('férias, faltas e feriado trabalhado do ciclo a pagar descontam', () => {
+test('férias e faltas do ciclo a pagar descontam; feriado trabalhado não', () => {
   const abs = [
     { employeeId: 'e1', date: '2026-08-11', type: 'ferias' },
     { employeeId: 'e1', date: '2026-08-12', type: 'ferias' },
@@ -26,7 +26,7 @@ test('férias, faltas e feriado trabalhado do ciclo a pagar descontam', () => {
   assert.equal(r.ferias, 2);
   assert.equal(r.faltasCiclo, 1);
   assert.equal(r.feriadoTrabCiclo, 1);
-  assert.equal(r.dias, 31 - 4 - 2 - 1 - 1);
+  assert.equal(r.dias, 31 - 4 - 2 - 1);
 });
 
 test('ciclo anterior: só marcação tardia desconta; a apuração completa continua nas colunas', () => {
@@ -42,7 +42,7 @@ test('ciclo anterior: só marcação tardia desconta; a apuração completa cont
   assert.equal(r.feriadoTrab, 1);
   assert.equal(r.faltasTardias, 2);
   assert.equal(r.feriadoTrabTardio, 1);
-  assert.equal(r.dias, 27 - 3);
+  assert.equal(r.dias, 27 - 2);
 });
 
 test('falta marcada depois do pagamento do ciclo não conta nele, só como tardia no seguinte', () => {
@@ -82,4 +82,10 @@ test('afastamento marcado no ciclo inteiro dá zero (caso Luis)', () => {
   const r = transporteDetalhe({ id: 'e1', folgaWeekday: 3, folgaMonthN: 1 }, abs, 2026, 8);
   assert.equal(r.faltasCiclo, 30);
   assert.equal(r.dias, 0);
+});
+
+test('feriado trabalhado na folga fixa conta como dia trabalhado', () => {
+  // 10/08 é segunda (folga fixa); trabalhou no feriado → não é folga.
+  const abs = [{ employeeId: 'e1', date: '2026-08-10', type: 'feriado_trabalhado' }];
+  assert.equal(transporteDetalhe(emp, abs, 2026, 7).dias, 28);
 });

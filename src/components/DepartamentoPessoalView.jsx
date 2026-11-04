@@ -964,8 +964,8 @@ export default function DepartamentoPessoalView() {
             </button>
           </div>
           <p className={styles.summaryNote}>
-            <strong>Transporte a pagar</strong> de {MONTHS[month]} (ciclo 06/{mmAtual} a 05/{mmSeg}, pago adiantado em 05/{mmAtual}) = dias − folgas − férias − faltas − feriado trabalhado,
-            com o que estava marcado até esse pagamento. Falta ou feriado trabalhado marcado depois do pagamento desconta
+            <strong>Transporte a pagar</strong> de {MONTHS[month]} (ciclo 06/{mmAtual} a 05/{mmSeg}, pago adiantado em 05/{mmAtual}) = dias − folgas − férias − faltas,
+            com o que estava marcado até esse pagamento (feriado trabalhado conta como dia trabalhado). Falta marcada depois do pagamento desconta
             uma vez só, no mês seguinte: por isso o ciclo anterior (06/{mmAnt} a 05/{mmAtual}) entra aqui com o que foi marcado depois de 05/{mmAnt}.
             As colunas de falta e feriado trabalhado mostram a apuração completa do ciclo anterior.
           </p>

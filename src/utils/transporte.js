@@ -90,8 +90,10 @@ export function transporteDetalhe(emp, absences, year, month) {
   const feriadoTrabTardio = occAbs.filter((a) => a.type === 'feriado_trabalhado' && tardia(a)).length;
 
   // Ciclo a pagar, dia a dia: a marcação real do dia manda; sem marcação, vale
-  // a folga automática da config. Cada dia desconta no máximo uma vez. Falta e
-  // feriado trabalhado só contam se estavam marcados até o pagamento do ciclo.
+  // a folga automática da config. Cada dia desconta no máximo uma vez. Falta só
+  // conta se estava marcada até o pagamento do ciclo. Feriado trabalhado é dia
+  // trabalhado: não desconta transporte (desde 04/11/2026; o valor do feriado é
+  // pago à parte) — só é contado para informação.
   const conhecida = (a) => { const c = createdISO(a); return c == null || c <= paidISO; };
   let folgas = 0;
   let ferias = 0;
@@ -103,14 +105,14 @@ export function transporteDetalhe(emp, absences, year, month) {
     const real = absences.find((a) => a.employeeId === emp.id && a.date === ds);
     if (real?.type === 'ferias') ferias++;
     else if (isFalta(real?.type) && conhecida(real)) faltasCiclo++;
-    else if (real?.type === 'feriado_trabalhado' && conhecida(real)) feriadoTrabCiclo++;
+    else if (real?.type === 'feriado_trabalhado') { if (conhecida(real)) feriadoTrabCiclo++; }
     else if (isFolgaOn(emp, dt, absences)) folgas++;
     dt.setDate(dt.getDate() + 1);
   }
 
   const dias = Math.max(
     0,
-    daysInWindow - folgas - ferias - faltasCiclo - feriadoTrabCiclo - faltasTardias - feriadoTrabTardio
+    daysInWindow - folgas - ferias - faltasCiclo - faltasTardias
   );
   return {
     dias, daysInWindow, folgas, ferias, faltasCiclo, feriadoTrabCiclo, faltasTardias, feriadoTrabTardio,
