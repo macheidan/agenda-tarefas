@@ -729,3 +729,57 @@
   font-weight: 700;
   background: var(--toolbar-bg);
 }
+
+/* ---- Importar folha (texto colado do PDF) ---- */
+.importGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.importCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+}
+.importHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.importTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  font-family: ui-monospace, Consolas, monospace;
+  padding: 8px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--card);
+  color: var(--text);
+  resize: vertical;
+}
+.importTextarea:focus { outline: none; border-color: var(--accent); }
+.importBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.importBtn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.importBtn:disabled { opacity: 0.5; cursor: default; }
+.importSkip td { color: var(--text-secondary); opacity: 0.7; }

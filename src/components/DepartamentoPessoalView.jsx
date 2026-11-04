@@ -489,6 +489,8 @@ export default function DepartamentoPessoalView() {
           salarios={salarios}
           setSalario={setSalario}
           updateEmployee={updateEmployee}
+          transportes={transportes}
+          setTransporte={setTransporte}
           isAdmin={isAdmin}
         />
       )}

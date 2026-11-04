@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
 import { formatBRL } from '../utils/money';
-import { transporteDetalhe } from '../utils/transporte';
+import { transporteDetalhe, diasSemTrabalho, PERFIS_TRANSP as PERFIS, empDoPerfil, calcTransporteEspecial } from '../utils/transporte';
 import { transporteDocId } from '../hooks/useDepartamentoPessoal';
 import styles from '../styles/TransporteView.module.css';
 
@@ -11,35 +11,7 @@ const MONTHS = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
-// As duas "abas" O1:R13 das planilhas de salário viram perfis aqui. Cada uma tem
-// um cálculo próprio (Rumi = transporte + alimentação por dia; Patricia = quatro
-// trechos de ônibus + Uber), então a estrutura é fixa em código e só os campos
-// amarelos da planilha são editáveis/gravados.
-const PERFIS = [
-  {
-    key: 'rumi',
-    label: 'Rumi',
-    loja: 'Lov',
-    // Nome do funcionário na Escala (pra sugerir os dias do ciclo).
-    empName: 'rumi',
-    defaults: { vTransporte: 15.9, vAlimentacao: 22.7 },
-  },
-  {
-    key: 'patricia',
-    label: 'Patricia',
-    loja: 'Dáme',
-    empName: 'paty',
-    defaults: { vTeu: 8.5, vTri: 5.3, vUber: 35 },
-    // Linhas anotadas na planilha que não entram na conta (referência de trajeto).
-    notas: [
-      ['t8 — 11:15 e 12h o último, vai até Antônio Carvalho', 5.3],
-      ['monte alegre castelinho', 7.85],
-    ],
-  },
-];
-
 const n = (v) => Number(v) || 0;
-const norm = (s) => (s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase();
 
 export default function TransporteView({ employees, absences, transportes, setTransporte, isAdmin }) {
   const { user } = useAuth();
@@ -87,38 +59,20 @@ export default function TransporteView({ employees, absences, transportes, setTr
   };
 
   // Sugestão de dias vinda da Escala (mesmo número do resumo do mês).
-  const emp = useMemo(
-    () => employees.find((e) => e.active !== false && norm(e.name).startsWith(perfil.empName)) || null,
-    [employees, perfil.empName]
-  );
+  const emp = useMemo(() => empDoPerfil(employees, perfil.empName), [employees, perfil.empName]);
   const diasEscala = emp ? transporteDetalhe(emp, absences, year, month).dias : null;
+  // Patricia: Uber nos dias em que a Cintia não trabalha (folga/falta/férias).
+  const empUber = useMemo(
+    () => (perfil.uberDe ? empDoPerfil(employees, perfil.uberDe) : null),
+    [employees, perfil.uberDe]
+  );
+  const uberEscala = empUber ? diasSemTrabalho(empUber, absences, year, month) : null;
 
   const dias = doMes('dias');
   const uber = doMes('uber');
 
-  // ---- Fórmulas (espelho de O1:R13) ----
-  const linhas = [];
-  let total = 0;
-  if (perfil.key === 'rumi') {
-    const vT = tarifa('vTransporte');
-    const vA = tarifa('vAlimentacao');
-    linhas.push({ label: 'Transporte', qtd: n(dias), valor: n(dias) * n(vT) });
-    linhas.push({ label: 'Alimentação', qtd: n(dias), valor: n(dias) * n(vA) });
-    total = linhas.reduce((t, l) => t + l.valor, 0);
-  } else {
-    const vTri = tarifa('vTri');
-    const vTeu = tarifa('vTeu');
-    const vUber = tarifa('vUber');
-    const comUber = Math.max(0, n(dias) - n(uber)); // dias em que não usou Uber
-    linhas.push({ label: 'tri ida', qtd: n(dias), valor: n(dias) * n(vTri) });
-    linhas.push({ label: 'tri volta', qtd: comUber, valor: comUber * n(vTri) });
-    linhas.push({ label: 'teu ida', qtd: n(dias), valor: n(dias) * n(vTeu) });
-    linhas.push({ label: 'teu volta', qtd: comUber, valor: comUber * n(vTeu) });
-    linhas.push({ label: 'uber', qtd: n(uber), valor: n(uber) * n(vUber), campo: 'uber' });
-    total = linhas.reduce((t, l) => t + l.valor, 0);
-  }
-  // Patricia: o que sai em dinheiro (teu + uber) e o que vai de recarga no Tri.
-  const noTri = perfil.key === 'patricia' ? linhas[0].valor + linhas[1].valor : 0;
+  // ---- Fórmulas (espelho de O1:R13) — mesmas da importação da folha ----
+  const { linhas, total, noTri } = calcTransporteEspecial(perfil.key, dias, uber, tarifa);
   const emDinheiro = total - noTri;
 
   // Rascunho (coluna R da planilha): dois somatórios encadeados.
@@ -162,7 +116,7 @@ export default function TransporteView({ employees, absences, transportes, setTr
         {perfil.key === 'rumi' && emp && (
           <p className={styles.cadastro}>
             Cadastro: Salário <strong>{emp.salaryMode === 'fora' ? 'por fora' : 'folha'}</strong>
-            {emp.transporteRef != null && <> · Transporte <strong>{formatBRL(emp.transporteRef)}</strong></>}
+            {emp.transporteRef != null && <> · Transporte/dia <strong>{formatBRL(emp.transporteRef)}</strong></>}
             {emp.feriadoUnit != null && <> · Feriado <strong>{formatBRL(emp.feriadoUnit)}</strong></>}
           </p>
         )}
@@ -209,6 +163,14 @@ export default function TransporteView({ employees, absences, transportes, setTr
                     />
                   ) : (
                     l.qtd
+                  )}
+                  {l.campo === 'uber' && uberEscala != null && (
+                    <span className={styles.diasEscala}>
+                      {' '}Cintia fora: <strong>{uberEscala}</strong>
+                      {canEdit && uberEscala !== uber && (
+                        <button type="button" className={styles.applyBtn} onClick={() => commit('uber', uberEscala)}>usar</button>
+                      )}
+                    </span>
                   )}
                 </td>
                 <td className={styles.colValor}>{formatBRL(l.valor)}</td>

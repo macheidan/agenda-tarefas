@@ -1,6 +1,7 @@
-import { useState, useMemo, useCallback, Fragment } from 'react';
+import { useState, useMemo, useCallback, useEffect, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MoneyInput from './MoneyInput';
+import ImportarFolhaView from './ImportarFolhaView';
 import { formatBRL } from '../utils/money';
 import { transporteDetalhe } from '../utils/transporte';
 import styles from '../styles/SalariosView.module.css';
@@ -86,7 +87,7 @@ const somaBG = (l) =>
 const dinheiroDe = (l) => somaBG(l) - (num(l, 'banco') + num(l, 'flash'));
 const totalDe = (l) => num(l, 'banco') + num(l, 'flash') + dinheiroDe(l);
 
-export default function SalariosView({ visibleStores, storeMeta, employees, absences, salarios, setSalario, updateEmployee, isAdmin }) {
+export default function SalariosView({ visibleStores, storeMeta, employees, absences, salarios, setSalario, updateEmployee, transportes = [], setTransporte, isAdmin }) {
   const { user } = useAuth();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -144,6 +145,28 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     archived[0] ||
     null;
   const empArchived = !!emp && isArchived(emp);
+
+  // Seta ↓/↑ troca de funcionário (mesma ordem do dropdown: equipe e depois
+  // arquivados). Não rouba a seta de quem está digitando num campo.
+  useEffect(() => {
+    if (view !== 'func' && view !== 'anual') return undefined;
+    const onKey = (ev) => {
+      if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
+      if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+      const t = ev.target;
+      const tag = t?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return;
+      const ordem = [...list, ...archived];
+      if (!ordem.length || !emp) return;
+      const i = ordem.findIndex((e) => e.id === emp.id);
+      const j = ev.key === 'ArrowDown' ? Math.min(ordem.length - 1, i + 1) : Math.max(0, i - 1);
+      if (j === i) return;
+      ev.preventDefault();
+      setSelectedEmpId(ordem[j].id);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [view, list, archived, emp]);
 
   // Docs de salário do funcionário no ano exibido, indexados por mês.
   const docsByMonth = useMemo(() => {
@@ -388,8 +411,16 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
           >
             Resumo mensal
           </button>
+          {isAdmin && (
+            <button
+              className={`${styles.viewBtn} ${view === 'importar' ? styles.viewBtnActive : ''}`}
+              onClick={() => setView('importar')}
+            >
+              Importar folha
+            </button>
+          )}
         </div>
-        {view !== 'resumo' && (
+        {(view === 'func' || view === 'anual') && (
           <select
             className={styles.empSelect}
             value={emp?.id || ''}
@@ -414,7 +445,17 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
         )}
       </div>
 
-      {view === 'resumo' ? (
+      {view === 'importar' && isAdmin ? (
+        <ImportarFolhaView
+          employees={employees}
+          absences={absences}
+          salarios={salarios}
+          transportes={transportes}
+          storeMeta={storeMeta}
+          setSalario={setSalario}
+          setTransporte={setTransporte}
+        />
+      ) : view === 'resumo' ? (
         <div className={styles.resumo}>
           <div className={styles.resumoBar}>
             <div className={styles.monthNav}>
@@ -662,7 +703,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                 ) : <span className={styles.ro}>{mode === 'folha' ? 'folha' : formatBRL(emp.salaryBase)}</span>}
               </label>
               <label className={styles.field}>
-                <span>Transporte (mês)</span>
+                <span title="Valor por dia de transporte a pagar (seção Escala). Em branco = não preenche na importação.">Transporte (dia)</span>
                 {isAdmin ? <MoneyInput className={styles.moneyInput} value={emp.transporteRef} onCommit={(v) => setProfile('transporteRef', v)} /> : <span className={styles.ro}>{formatBRL(emp.transporteRef)}</span>}
               </label>
               <label className={styles.field}>
