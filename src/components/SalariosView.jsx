@@ -703,7 +703,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                 ) : <span className={styles.ro}>{mode === 'folha' ? 'folha' : formatBRL(emp.salaryBase)}</span>}
               </label>
               <label className={styles.field}>
-                <span title="Valor por dia de transporte a pagar (seção Escala). Em branco = não preenche na importação.">Transporte (dia)</span>
+                <span title="Valor por dia de transporte a pagar (seção Escala). Em branco = não preenche na importação. Sócio: valor do Flash do mês inteiro.">Transporte (dia)</span>
                 {isAdmin ? <MoneyInput className={styles.moneyInput} value={emp.transporteRef} onCommit={(v) => setProfile('transporteRef', v)} /> : <span className={styles.ro}>{formatBRL(emp.transporteRef)}</span>}
               </label>
               <label className={styles.field}>

@@ -17,6 +17,8 @@
 //     por falta não justificada (o dia + o DSR).
 //   • Empréstimo = −(soma dos DESC. EMP. CRED. TRAB da folha).
 //   • Flash = dias de transporte a pagar × R$12.
+//   • Sócio: Salário = Banco = líquido; Transporte = Flash = valor mensal do
+//     campo transporte do cadastro.
 // Entrada fica de fora (é manual).
 
 import {
@@ -51,6 +53,15 @@ export function montarLancamento({ tipo, item, emp, employees, absences, salario
       transp: null,
       notas,
     };
+  }
+
+  // Sócio (pró-labore): salário = líquido da folha; o "transporte" do cadastro
+  // dele é o Flash do mês inteiro (valor fixo, não por dia) e vai igual no Flash.
+  if (item.socio) {
+    const ref = emp.transporteRef != null && emp.transporteRef !== '' ? Number(emp.transporteRef) : null;
+    const p = { salario: liq, banco: liq, liquidoFolha: liq };
+    if (ref != null) { p.transporte = ref; p.flash = ref; notas.push('sócio: transporte = flash do mês'); }
+    return { line: 'dia5', patch: p, extras: [], transp: null, notas };
   }
 
   const mode = emp.salaryMode === 'fora' ? 'fora' : 'folha';

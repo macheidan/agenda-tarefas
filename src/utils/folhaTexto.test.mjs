@@ -37,3 +37,9 @@ test('casa apelido e desempata homônimo pela loja', () => {
   assert.equal(casarFuncionario('JULIO CESAR MEDINA', emps, 'd').id, 'j2');
   assert.equal(casarFuncionario('JULIO CESAR MEDINA', emps, null), null);
 });
+
+test('apelido que é começo do nome ganha do parecido (Fabi × Fabio)', () => {
+  const emps = [{ id: 'fa', name: 'Fabi', store: 'd' }, { id: 'fo', name: 'Fabio', store: 'd' }];
+  assert.equal(casarFuncionario('FABIANA SANTOS', emps, 'd').id, 'fa');
+  assert.equal(casarFuncionario('FABIO LUIZ', emps, 'd').id, 'fo');
+});

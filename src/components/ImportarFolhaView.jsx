@@ -44,7 +44,7 @@ function Bloco({ tipo, titulo, ajuda, employees, absences, salarios, transportes
     setAlvo(ref ? mesAlvo(tipo, ref.ano, ref.mes) : null);
     const ini = {};
     for (const x of r) {
-      const pular = x.socio || x.rescisao || !x.liquido;
+      const pular = x.rescisao || !x.liquido;
       const emp = pular ? null : casarFuncionario(x.nome, ativos, storeDaEmpresa(x.empresa, storeMeta));
       ini[x.nome] = emp?.id || '';
     }
@@ -135,7 +135,7 @@ function Bloco({ tipo, titulo, ajuda, employees, absences, salarios, transportes
               </thead>
               <tbody>
                 {linhas.map(({ item, lanc }) => {
-                  const motivo = item.socio ? 'sócio' : item.rescisao ? 'rescisão' : !item.liquido ? 'sem líquido' : '';
+                  const motivo = item.rescisao ? 'rescisão' : !item.liquido ? 'sem líquido' : '';
                   return (
                     <tr key={item.nome} className={lanc ? '' : styles.importSkip}>
                       <td className={styles.resumoNameCol}>{item.nome}</td>

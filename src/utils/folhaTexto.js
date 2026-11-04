@@ -152,8 +152,12 @@ export function casarFuncionario(nomeFolha, employees, storeIdDaEmpresa) {
     const c = prefixo(p, prim);
     return c >= 3 && c >= Math.min(p.length, prim.length) - 1;
   });
-  const exatos = cands.filter((e) => normNome(e.name).split(/\s+/)[0] === prim);
-  const pool = exatos.length ? exatos : cands;
+  // Ordem de confiança: nome igual → apelido que é começo do nome ("Fabi" ⊂
+  // FABIANA, e não "Fabio") → parecido ("Paty" ↔ PATRICIA).
+  const pnome = (e) => normNome(e.name).split(/\s+/)[0];
+  const exatos = cands.filter((e) => pnome(e) === prim);
+  const prefixos = cands.filter((e) => prim.startsWith(pnome(e)));
+  const pool = exatos.length ? exatos : prefixos.length ? prefixos : cands;
   if (pool.length === 1) return pool[0];
   if (storeIdDaEmpresa) {
     const daLoja = pool.filter((e) => e.store === storeIdDaEmpresa);
