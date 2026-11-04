@@ -86,7 +86,8 @@ const somaBG = (l) =>
   num(l, 'adiantamento') + num(l, 'falta') + num(l, 'empres') + num(l, 'adianta');
 // Dinheiro (H) = Σ(B:G) − (Banco + Flash). Total (K) = Banco + Flash + Dinheiro.
 const dinheiroDe = (l) => somaBG(l) - (num(l, 'banco') + num(l, 'flash'));
-// Dinheiro no múltiplo de R$ 50 mais próximo (235 → 250, 313,10 → 300).
+// Dinheiro no múltiplo de R$ 50 mais próximo (235 → 250, 313,10 → 300). O botão
+// do Dia 5 compensa a diferença no Banco (Dinheiro = Σ − Banco − Flash).
 const arred50 = (v) => Math.round(v / 50) * 50;
 const totalDe = (l) => num(l, 'banco') + num(l, 'flash') + dinheiroDe(l);
 
@@ -811,9 +812,9 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
                               className={styles.roundBtn}
                               disabled={!dif}
                               title={dif
-                                ? `Dinheiro ${formatBRL(d)} → ${formatBRL(alvo)}: ajusta a Entrada em ${formatBRL(dif)}`
+                                ? `Dinheiro ${formatBRL(d)} → ${formatBRL(alvo)}: Banco ${formatBRL(num(l, 'banco'))} → ${formatBRL(num(l, 'banco') - dif)}`
                                 : 'Dinheiro já está em múltiplo de R$ 50'}
-                              onClick={() => commit('dia5', 'entrada', Math.round((num(l, 'entrada') + dif) * 100) / 100 || null)}
+                              onClick={() => commit('dia5', 'banco', Math.round((num(l, 'banco') - dif) * 100) / 100)}
                             >
                               Arredondar R$ 50
                             </button>
