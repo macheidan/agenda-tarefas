@@ -5,6 +5,7 @@ import { formatBRL } from '../utils/money';
 import { transporteDetalhe } from '../utils/transporte';
 import { exportarResumoFolhaPdf } from '../lib/folhaPdf';
 import styles from '../styles/SalariosView.module.css';
+import useSetasMes from '../hooks/useSetasMes';
 
 // Salários Folha: a ficha "Por funcionário" reduzida ao que quem fecha a folha
 // precisa — loja, funcionário, mês e, em cada linha, o que vai pro BANCO e pro
@@ -149,6 +150,7 @@ export default function SalariosFolhaView({ visibleStores, storeMeta, employees,
     if (month === 11) { setMonth(0); setYear((y) => y + 1); }
     else setMonth((m) => m + 1);
   };
+  useSetasMes(prevMonth, nextMonth);
   const pickStore = (id) => { setSelectedStore(id); setSelectedEmpId(null); };
 
   return (

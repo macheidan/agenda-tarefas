@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import useSetasMes from '../hooks/useSetasMes';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../hooks/useSettings';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -222,6 +223,7 @@ export default function DepartamentoPessoalView() {
     if (month === 11) { setMonth(0); setYear((y) => y + 1); }
     else setMonth((m) => m + 1);
   };
+  useSetasMes(prevMonth, nextMonth, effectiveSection === 'escala');
 
   const handleCellClick = (e, emp, day) => {
     if (!canEdit) return; // só editores/admin marcam faltas

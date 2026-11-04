@@ -5,6 +5,7 @@ import { formatBRL } from '../utils/money';
 import { transporteDetalhe, diasSemTrabalho, PERFIS_TRANSP as PERFIS, empDoPerfil, calcTransporteEspecial } from '../utils/transporte';
 import { transporteDocId } from '../hooks/useDepartamentoPessoal';
 import styles from '../styles/TransporteView.module.css';
+import useSetasMes from '../hooks/useSetasMes';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -29,6 +30,7 @@ export default function TransporteView({ employees, absences, transportes, setTr
   const nextMonth = () => {
     if (month === 11) { setMonth(0); setYear((y) => y + 1); } else setMonth((m) => m + 1);
   };
+  useSetasMes(prevMonth, nextMonth);
 
   const doc = useMemo(
     () => transportes.find((t) => t.id === transporteDocId(perfil.key, year, month)) || null,

@@ -5,6 +5,7 @@ import ImportarFolhaView from './ImportarFolhaView';
 import { formatBRL } from '../utils/money';
 import { transporteDetalhe } from '../utils/transporte';
 import styles from '../styles/SalariosView.module.css';
+import useSetasMes from '../hooks/useSetasMes';
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -344,6 +345,7 @@ export default function SalariosView({ visibleStores, storeMeta, employees, abse
     if (month === 11) { setMonth(0); setYear((y) => y + 1); }
     else setMonth((m) => m + 1);
   };
+  useSetasMes(prevMonth, nextMonth, view !== 'importar');
   const pickStore = (id) => { setSelectedStore(id); setSelectedEmpId(null); };
 
   // Cabeçalho do funcionário — compartilhado por "Por funcionário" e "Anual".
