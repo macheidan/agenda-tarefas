@@ -34,7 +34,7 @@ const RE_EMP = /DESC\.?\s*EMP\.?\s*CRED\.?\s*TRAB\.?\s*N\S*\s*(\d+)/i;
 const cents = (n) => Math.round(n * 100) / 100;
 
 function lerBloco(linhas) {
-  const b = { nome: null, empresa: null, cargo: null, mes: null, ano: null, liquido: null, linhas };
+  const b = { nome: null, empresa: null, cargo: null, mes: null, ano: null, liquido: null, bruto: null, linhas };
   for (let i = 0; i < linhas.length; i++) {
     const l = linhas[i];
     if (!b.nome && /^Nome do Funcion/i.test(l) && i > 0) b.nome = linhas[i - 1];
@@ -54,7 +54,7 @@ function lerBloco(linhas) {
       }
       for (let j = 0; j + 2 < vals.length; j++) {
         const [a, d, c] = vals.slice(j, j + 3);
-        if (Math.abs(a - d - c) < 0.02) { b.liquido = c; break; }
+        if (Math.abs(a - d - c) < 0.02) { b.liquido = c; b.bruto = a; break; }
       }
     }
   }
@@ -97,7 +97,7 @@ function lerEmprestimos(blocos) {
   return out;
 }
 
-// Texto inteiro → [{ nome, empresa, cargo, mes, ano, liquido, emprestimos, emprestimoTotal, socio, rescisao }]
+// Texto inteiro → [{ nome, empresa, cargo, mes, ano, liquido, bruto (total de vencimentos), emprestimos, emprestimoTotal, socio, rescisao }]
 export function lerFolhaTexto(texto) {
   const linhas = String(texto || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const blocos = [];
@@ -129,6 +129,7 @@ export function lerFolhaTexto(texto) {
       mes: pick('mes'),
       ano: pick('ano'),
       liquido: pick('liquido'),
+      bruto: pick('bruto'),
       emprestimos,
       emprestimoTotal: cents(Object.values(emprestimos).reduce((t, v) => t + v, 0)),
       socio: /PRO-?LABORE/i.test(texto) || /^SOCIO$/i.test(pick('cargo') || ''),

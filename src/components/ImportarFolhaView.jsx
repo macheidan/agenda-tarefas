@@ -14,7 +14,7 @@ const COLS = {
     ['salario', 'Salário'], ['transporte', 'Transp.'], ['feriado', 'Feriado'], ['adiantamento', 'Adiant.'],
     ['falta', 'Faltas'], ['empres', 'Empr.'], ['banco', 'Banco'], ['flash', 'Flash'],
   ],
-  dia20: [['salario', 'Salário'], ['banco', 'Banco']],
+  dia20: [['salario', 'Salário (bruto)'], ['empres', 'Empr.'], ['banco', 'Banco']],
 };
 
 // Loja dona do CNPJ da folha (só para desempatar homônimos, ex.: dois Julios).

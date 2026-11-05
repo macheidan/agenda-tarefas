@@ -1,8 +1,9 @@
 // Monta os lançamentos de Salários (linhas Dia 5 / Dia 20) a partir de um
 // funcionário lido do texto da folha (utils/folhaTexto.js).
 //
-// Dia 20 (adiantamento): Salário = Banco = líquido da folha. O mesmo valor,
-// negativo, vira o Adiantamento do Dia 5 do mês seguinte.
+// Dia 20 (adiantamento): Salário = bruto (total de vencimentos), Empréstimo =
+// −(empréstimos da folha), Banco = líquido. O Salário, negativo, vira o
+// Adiantamento do Dia 5 do mês seguinte.
 //
 // Dia 5 (folha do mês anterior, paga no dia 5):
 //   • Salário: "Tudo na folha" → líquido (sem desconto de falta da escala);
@@ -47,10 +48,17 @@ export function montarLancamento({ tipo, item, emp, employees, absences, salario
   if (tipo === 'dia20') {
     const ny = month === 11 ? year + 1 : year;
     const nm = (month + 1) % 12;
+    const bruto = item.bruto ?? liq;
+    if (item.bruto == null) notas.push('sem total de vencimentos: salário = líquido');
     return {
       line: 'dia20',
-      patch: { salario: liq, banco: liq, liquidoFolha: liq },
-      extras: [{ year: ny, month: nm, line: 'dia5', patch: { adiantamento: neg(liq) } }],
+      patch: {
+        salario: bruto,
+        empres: item.emprestimoTotal ? neg(item.emprestimoTotal) : null,
+        banco: liq,
+        liquidoFolha: liq,
+      },
+      extras: [{ year: ny, month: nm, line: 'dia5', patch: { adiantamento: neg(bruto) } }],
       transp: null,
       notas,
     };
