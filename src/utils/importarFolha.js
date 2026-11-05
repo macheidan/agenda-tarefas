@@ -15,7 +15,8 @@
 //   • Adiantamento = −(Salário do Dia 20 do mês anterior).
 //   • Faltas: "Tudo na folha" → em branco; "Parte por fora" → −(base ÷ 30 × 2)
 //     por falta não justificada (o dia + o DSR).
-//   • Empréstimo = −(soma dos DESC. EMP. CRED. TRAB da folha).
+//   • Empréstimo = −(soma dos DESC. EMP. CRED. TRAB da folha); em "Parte por
+//     fora", menos o empréstimo já descontado no Dia 20 do mês anterior.
 //   • Flash = dias de transporte a pagar × R$12.
 //   • Sócio: Salário = Banco = líquido; Transporte = Flash = valor mensal do
 //     campo transporte do cadastro.
@@ -100,7 +101,15 @@ export function montarLancamento({ tipo, item, emp, employees, absences, salario
     ? neg(cents((Number(emp.salaryBase) / 30) * 2 * nFaltas))
     : null;
 
-  patch.empres = item.emprestimoTotal ? neg(item.emprestimoTotal) : null;
+  // "Parte por fora": o que já foi descontado de empréstimo no Dia 20 anterior
+  // sai da soma da folha (o desconto não se repete no Dia 5).
+  let emp20 = 0;
+  if (mode === 'fora') {
+    emp20 = Math.abs(Number(docDe(salarios, emp.id, py, pm)?.dia20?.empres) || 0);
+    if (emp20 && item.emprestimoTotal) notas.push(`empréstimo: folha ${item.emprestimoTotal.toFixed(2)} − dia 20 ${emp20.toFixed(2)}`);
+  }
+  const empLiq = cents((item.emprestimoTotal || 0) - emp20);
+  patch.empres = empLiq ? -empLiq : null;
   patch.flash = perfil?.flashIgualTransporte
     ? (patch.transporte ?? null)
     : det.dias ? det.dias * VALE_DIA : null;
